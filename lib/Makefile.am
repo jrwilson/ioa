@@ -7,7 +7,6 @@ descriptor.c \
 buffers.c \
 receipts.c \
 runq.c \
-queue.c \
 system.c \
 table.c \
 ueioa.c \
