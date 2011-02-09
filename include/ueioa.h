@@ -38,19 +38,19 @@ typedef struct {
       descriptor_t* descriptor;
     } create;
     struct {
-      aid_t out_automaton;
+      aid_t out_aid;
       output_t output;
-      aid_t in_automaton;
+      aid_t in_aid;
       input_t input;
     } compose;
     struct {
-      aid_t out_automaton;
+      aid_t out_aid;
       output_t output;
-      aid_t in_automaton;
+      aid_t in_aid;
       input_t input;
     } decompose;
     struct {
-      aid_t automaton;
+      aid_t aid;
     } destroy;
   };
 } order_t;
@@ -69,9 +69,11 @@ typedef enum {
   COMPOSED,
   OUTPUT_COMPOSED,
 
+  NOT_COMPOSER,
+  NOT_COMPOSED,
   DECOMPOSED,
   OUTPUT_DECOMPOSED,
-  NOT_COMPOSED,
+
   AUTOMATON_DNE,
   NOT_OWNER,
   CHILD_DESTROYED

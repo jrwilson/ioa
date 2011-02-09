@@ -204,8 +204,8 @@ composition_sorted (const void* x0, const void* y0)
   }
 }
 
-static internal_entry_t*
-composition_entry_for_in_aid_input (automata_t* automata, aid_t in_aid, input_t input)
+static composition_entry_t*
+composition_entry_for_in_aid_input (automata_t* automata, aid_t in_aid, input_t input, iterator_t* ptr)
 {
   assert (automata != NULL);
   
@@ -219,7 +219,7 @@ composition_entry_for_in_aid_input (automata_t* automata, aid_t in_aid, input_t 
 			   index_end (automata->composition_index),
 			   composition_entry_in_aid_input_equal,
 			   &key,
-			   NULL);
+			   ptr);
 }
 
 static bool
@@ -234,7 +234,7 @@ composition_entry_out_aid_output_in_aid_equal (const void* x0, const void* y0)
     x->in_aid == y->in_aid;
 }
 
-static internal_entry_t*
+static composition_entry_t*
 composition_entry_for_out_aid_output_in_aid (automata_t* automata, aid_t out_aid, output_t output, aid_t in_aid)
 {
   assert (automata != NULL);
@@ -332,21 +332,25 @@ automata_compose (automata_t* automata, aid_t aid, aid_t out_aid, output_t outpu
 {
   assert (automata != NULL);
 
+  int retval;
+
+  pthread_rwlock_wrlock (&automata->lock);
+
   if (output_entry_for_aid_output (automata, out_aid, output) == NULL) {
     /* Output doesn't exist. */
-    return OUTPUT_DNE;
+    retval = A_OUTPUT_DNE;
   }
   else if (input_entry_for_aid_input (automata, in_aid, input) == NULL) {
     /* Input doesn't exist. */
-    return INPUT_DNE;
+    retval = A_INPUT_DNE;
   }
-  else if (composition_entry_for_in_aid_input (automata, in_aid, input) != NULL) {
+  else if (composition_entry_for_in_aid_input (automata, in_aid, input, NULL) != NULL) {
     /* Input isn't available. */
-    return INPUT_UNAVAILABLE;
+    retval = A_INPUT_UNAVAILABLE;
   }
   else if (composition_entry_for_out_aid_output_in_aid (automata, out_aid, output, in_aid) != NULL) {
     /* Output isn't available. */
-    return OUTPUT_UNAVAILABLE;
+    retval = A_OUTPUT_UNAVAILABLE;
   }
   else {
     /* Compose. */
@@ -358,9 +362,46 @@ automata_compose (automata_t* automata, aid_t aid, aid_t out_aid, output_t outpu
       .input = input
     };
     index_insert (automata->composition_index, &entry);
-    return COMPOSED;
+    retval = A_COMPOSED;
   }
-  
+
+  pthread_rwlock_unlock (&automata->lock);
+
+  return retval;
+}
+
+/* #define A_NOT_COMPOSER 0 */
+/* #define A_DECOMPOSED 2 */
+int
+automata_decompose (automata_t* automata, aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+{
+  assert (automata != NULL);
+
+  int retval;
+
+  pthread_rwlock_wrlock (&automata->lock);
+
+  /* Look up the composition.
+     We only need to use the input since it must be unique.
+  */
+  iterator_t iterator;
+  composition_entry_t* entry = composition_entry_for_in_aid_input (automata, in_aid, input, &iterator);
+  if (entry != NULL) {
+    if (entry->aid == aid) {
+      index_erase (automata->composition_index, iterator);
+      retval = A_DECOMPOSED;
+    }
+    else {
+      retval = A_NOT_COMPOSER;
+    }
+  }
+  else {
+    retval = A_NOT_COMPOSED;
+  }
+
+  pthread_rwlock_unlock (&automata->lock);
+
+  return retval;
 }
 
 void
@@ -402,7 +443,7 @@ automata_system_output_exec (automata_t* automata, buffers_t* buffers, aid_t aid
   assert (buffers != NULL);
   assert (order != NULL);
 
-  int retval = BAD_ORDER;
+  int retval;
 
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
@@ -422,17 +463,17 @@ automata_system_output_exec (automata_t* automata, buffers_t* buffers, aid_t aid
     
     if (buffers_size (buffers, aid, bid) == sizeof (order_t)) {
       *order = *(order_t*)buffers_read_ptr (buffers, aid, bid);
-      retval = GOOD_ORDER;
+      retval = A_GOOD_ORDER;
     }
     else {
-      retval = BAD_ORDER;
+      retval = A_BAD_ORDER;
     }
     
     buffers_decref (buffers, aid, bid);
   }
   else {
     /* No bid. */
-    retval = NO_ORDER;
+    retval = A_NO_ORDER;
   }
 
   /* Release the read lock. */

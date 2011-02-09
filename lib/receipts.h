@@ -21,9 +21,10 @@ void receipts_push_input_unavailable (receipts_t*, aid_t);
 void receipts_push_composed (receipts_t*, aid_t);
 void receipts_push_output_composed (receipts_t*, aid_t, output_t);
 
+void receipts_push_not_composer (receipts_t*, aid_t);
+void receipts_push_not_composed (receipts_t*, aid_t);
 void receipts_push_decomposed (receipts_t*, aid_t);
 void receipts_push_output_decomposed (receipts_t*, aid_t, output_t);
-void receipts_push_not_composed (receipts_t*, aid_t);
 
 void receipts_push_automaton_dne (receipts_t*, aid_t);
 void receipts_push_not_owner (receipts_t*, aid_t);

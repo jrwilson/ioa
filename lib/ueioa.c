@@ -85,29 +85,29 @@ static void
 compose (aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
 {
   switch (automata_compose (automata, aid, out_aid, output, in_aid, input)) {
-  case COMPOSED:
+  case A_OUTPUT_DNE:
+    receipts_push_output_dne (receipts, aid);
+    runq_insert_system_input (runq, aid);
+    break;
+  case A_INPUT_DNE:
+    receipts_push_input_dne (receipts, aid);
+    runq_insert_system_input (runq, aid);
+    break;
+  case A_INPUT_UNAVAILABLE:
+    receipts_push_input_unavailable (receipts, aid);
+    runq_insert_system_input (runq, aid);
+    break;
+  case A_OUTPUT_UNAVAILABLE:
+    receipts_push_output_unavailable (receipts, aid);
+    runq_insert_system_input (runq, aid);
+    break;
+  case A_COMPOSED:
     receipts_push_composed (receipts, aid);
     runq_insert_system_input (runq, aid);
 
     receipts_push_output_composed (receipts, out_aid, output);
     runq_insert_system_input (runq, out_aid);
 
-    break;
-  case OUTPUT_DNE:
-    receipts_push_output_dne (receipts, aid);
-    runq_insert_system_input (runq, aid);
-    break;
-  case INPUT_DNE:
-    receipts_push_input_dne (receipts, aid);
-    runq_insert_system_input (runq, aid);
-    break;
-  case INPUT_UNAVAILABLE:
-    receipts_push_input_unavailable (receipts, aid);
-    runq_insert_system_input (runq, aid);
-    break;
-  case OUTPUT_UNAVAILABLE:
-    receipts_push_output_unavailable (receipts, aid);
-    runq_insert_system_input (runq, aid);
     break;
   default:
     /* Unhandled case. */
@@ -116,25 +116,26 @@ compose (aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
 }
 
 static void
-decompose (aid_t automaton, aid_t out_automaton, output_t output, aid_t in_automaton, input_t input)
+decompose (aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
 {
-  assert (0);
-  /* if (automaton_exists (out_automaton) && */
-  /*     automaton_exists (in_automaton) && */
-  /*     automaton_composition_composed (automaton, out_automaton, output, in_automaton, input)) { */
-  /*   /\* Decompose. *\/ */
-  /*   automaton_composition_decompose (automaton, out_automaton, output, in_automaton, input); */
-  /*   automaton_output_decompose (out_automaton, output, in_automaton); */
-  /*   automaton_input_decompose (in_automaton, input); */
+  switch (automata_decompose (automata, aid, out_aid, output, in_aid, input)) {
+  case A_NOT_COMPOSER:
+    receipts_push_not_composer (receipts, aid);
+    runq_insert_system_input (runq, aid);
+    break;
+  case A_NOT_COMPOSED:
+    receipts_push_not_composed (receipts, aid);
+    runq_insert_system_input (runq, aid);
+    break;
+  case A_DECOMPOSED:
+    receipts_push_decomposed (receipts, aid);
+    runq_insert_system_input (runq, aid);
 
-  /*   /\* Tell the composer and output. *\/ */
-  /*   decomposed (automaton); */
-  /*   output_decomposed (out_automaton, output); */
-  /* } */
-  /* else { */
-  /*   /\* Tell the composer. *\/ */
-  /*   not_composed (automaton); */
-  /* } */
+    receipts_push_output_decomposed (receipts, out_aid, output);
+    runq_insert_system_input (runq, out_aid);
+
+    break;
+  }
 }
 
 static void
@@ -268,19 +269,19 @@ ueioa_run (descriptor_t* descriptor)
       {
 	order_t order;
 	int s = automata_system_output_exec (automata, buffers, runnable.aid, &order);
-	if (s == GOOD_ORDER) {
+	if (s == A_GOOD_ORDER) {
 	  switch (order.type) {
 	  case CREATE:
 	    create (runnable.aid, order.create.descriptor);
 	    break;
 	  case COMPOSE:
-	    compose (runnable.aid, order.compose.out_automaton, order.compose.output, order.compose.in_automaton, order.compose.input);
+	    compose (runnable.aid, order.compose.out_aid, order.compose.output, order.compose.in_aid, order.compose.input);
 	    break;
 	  case DECOMPOSE:
-	    decompose (runnable.aid, order.decompose.out_automaton, order.decompose.output, order.decompose.in_automaton, order.decompose.input);
+	    decompose (runnable.aid, order.decompose.out_aid, order.decompose.output, order.decompose.in_aid, order.decompose.input);
 	    break;
 	  case DESTROY:
-	    destroy (runnable.aid, order.destroy.automaton);
+	    destroy (runnable.aid, order.destroy.aid);
 	    break;
 	  default:
 	    receipts_push_bad_order (receipts, runnable.aid);
@@ -288,7 +289,7 @@ ueioa_run (descriptor_t* descriptor)
 	    break;
 	  }
 	}
-	else if (s == BAD_ORDER) {
+	else if (s == A_BAD_ORDER) {
 	  receipts_push_bad_order (receipts, runnable.aid);
 	  runq_insert_system_input (runq, runnable.aid);
 	}

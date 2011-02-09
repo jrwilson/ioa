@@ -196,29 +196,52 @@ receipts_push_output_composed (receipts_t* receipts, aid_t to, output_t output)
 }
 
 void
-receipts_push_decomposed (receipts_t* receipts, aid_t to)
+receipts_push_not_composer (receipts_t* receipts, aid_t to)
 { 
-  assert (0);
-}
+  assert (receipts != NULL);
 
-/* void */
-/* system_receipt_bad_descriptor (system_receipt_t* receipt) */
-/* { */
-/*   assert (receipt != NULL); */
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = NOT_COMPOSER;
 
-/*   receipt->type = SYS_BAD_DESCRIPTOR; */
-/* } */
-
-void
-receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output)
-{ 
-  assert (0);
+  push (receipts, &receipt);
 }
 
 void
 receipts_push_not_composed (receipts_t* receipts, aid_t to)
 { 
-  assert (0);
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = NOT_COMPOSED;
+
+  push (receipts, &receipt);
+}
+
+void
+receipts_push_decomposed (receipts_t* receipts, aid_t to)
+{ 
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = DECOMPOSED;
+
+  push (receipts, &receipt);
+}
+
+void
+receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output)
+{ 
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = OUTPUT_DECOMPOSED;
+  receipt.receipt.output_decomposed.output = output;
+
+  push (receipts, &receipt);
 }
 
 void
@@ -274,3 +297,28 @@ receipts_empty (receipts_t* receipts, aid_t to)
 
   return retval;
 }
+
+/* void */
+/* system_receipt_automaton_dne (receipt_t* receipt) */
+/* { */
+/*   assert (receipt != NULL); */
+
+/*   receipt->type = AUTOMATON_DNE; */
+/* } */
+
+/* void */
+/* system_receipt_not_owner (receipt_t* receipt) */
+/* { */
+/*   assert (receipt != NULL); */
+
+/*   receipt->type = NOT_OWNER; */
+/* } */
+
+/* void */
+/* system_receipt_child_destroyed (receipt_t* receipt, aid_t child) */
+/* { */
+/*   assert (receipt != NULL); */
+
+/*   receipt->type = CHILD_DESTROYED; */
+/*   receipt->child_destroyed.child = child; */
+/* } */
