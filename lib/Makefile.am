@@ -9,5 +9,4 @@ receipts.c \
 runq.c \
 system.c \
 table.c \
-ueioa.c \
-xstdlib.c
+ueioa.c

@@ -3,9 +3,8 @@
 #include <pthread.h>
 #include <assert.h>
 #include <string.h>
-#include <pthread.h>
+#include <stdlib.h>
 
-#include "xstdlib.h"
 #include "table.h"
 #include "buffers.h"
 
@@ -273,7 +272,7 @@ automaton_create (automata_t* automata, automaton_descriptor_t* descriptor, aid_
   aid_t aid = automata->next_aid;
 
   /* Insert. */
-  pthread_mutex_t* lock = xmalloc (sizeof (pthread_mutex_t));
+  pthread_mutex_t* lock = malloc (sizeof (pthread_mutex_t));
   pthread_mutex_init (lock, NULL);
   automaton_entry_t entry = {
     .aid = aid,
@@ -645,7 +644,7 @@ automaton_buffer_size (automata_t* automata, bid_t bid)
 automata_t*
 automata_create (void)
 {
-  automata_t* automata = xmalloc (sizeof (automata_t));
+  automata_t* automata = malloc (sizeof (automata_t));
 
   pthread_key_create (&automata->current_aid, NULL);
   pthread_rwlock_init (&automata->lock, NULL);
@@ -688,5 +687,5 @@ automata_destroy (automata_t* automata)
   pthread_rwlock_destroy (&automata->lock);
   pthread_key_delete (automata->current_aid);
 
-  xfree (automata);
+  free (automata);
 }

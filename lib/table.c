@@ -2,8 +2,7 @@
 
 #include <assert.h>
 #include <string.h>
-
-#include "xstdlib.h"
+#include <stdlib.h>
 
 typedef struct {
   iterator_t prev;
@@ -105,8 +104,8 @@ insert (table_t* table, iterator_t next_entry, const void* value)
     else {
       table->capacity = 1;
     }
-    table->entries = xrealloc (table->entries, table->capacity * sizeof (entry_t));
-    table->values = xrealloc (table->values, table->capacity * table->value_size);
+    table->entries = realloc (table->entries, table->capacity * sizeof (entry_t));
+    table->values = realloc (table->values, table->capacity * table->value_size);
     
     for (; old_capacity < table->capacity; ++old_capacity) {
       free_insert (table, old_capacity);
@@ -218,7 +217,7 @@ table_create (size_t value_size)
 {
   assert (value_size > 0);
 
-  table_t* table = xmalloc (sizeof (table_t));
+  table_t* table = malloc (sizeof (table_t));
   table->used_head = -1;
   table->used_tail = -1;
   table->free_head = -1;
@@ -241,12 +240,12 @@ table_destroy (table_t* table)
     index_t* temp = table->indices;
     table->indices = temp->next;
     temp->destroy (temp->this, table);
-    xfree (temp);
+    free (temp);
   }
 
-  xfree (table->entries);
-  xfree (table->values);
-  xfree (table);
+  free (table->entries);
+  free (table->values);
+  free (table);
 }
 
 /**************
@@ -397,7 +396,7 @@ ordered_list_destroy (void* this, table_t* table)
   assert (ordered_list != NULL);
   assert (table != NULL);
 
-  xfree (ordered_list->entries);
+  free (ordered_list->entries);
 }
 
 static void
@@ -407,7 +406,7 @@ ordered_list_new_capacity (void* this, table_t* table)
   assert (ordered_list != NULL);
   assert (table != NULL);
 
-  ordered_list->entries = xrealloc (ordered_list->entries, table->capacity * sizeof (ordered_list_entry_t));
+  ordered_list->entries = realloc (ordered_list->entries, table->capacity * sizeof (ordered_list_entry_t));
 }
 
 static iterator_t
@@ -597,7 +596,7 @@ index_destroy (index_t* index)
 
   *ptr = index->next;
   
-  xfree (index);
+  free (index);
 }
 
 index_t*
@@ -605,7 +604,7 @@ index_create_list (table_t* table)
 {
   assert (table != NULL);
 
-  index_t* index = xmalloc (sizeof (index_t));
+  index_t* index = malloc (sizeof (index_t));
   index->this = NULL;
   index->table = table;
   index->destroy = list_destroy;
@@ -633,13 +632,13 @@ index_create_ordered_list (table_t* table, predicate_t predicate)
   assert (table != NULL);
   assert (predicate != NULL);
 
-  ordered_list_t* ordered_list = xmalloc (sizeof (ordered_list));
+  ordered_list_t* ordered_list = malloc (sizeof (ordered_list));
   ordered_list->head = -1;
   ordered_list->tail = -1;
   ordered_list->entries = NULL;
   ordered_list->predicate = predicate;
 
-  index_t* index = xmalloc (sizeof (index_t));
+  index_t* index = malloc (sizeof (index_t));
   index->this = ordered_list;
   index->table = table;
   index->destroy = ordered_list_destroy;

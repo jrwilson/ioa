@@ -2,11 +2,9 @@
 
 #include <assert.h>
 #include <pthread.h>
-#include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 #include "table.h"
-#include "xstdlib.h"
 
 static bool
 runnable_equal (const void* x0, const void* y0)
@@ -56,7 +54,7 @@ struct runq_struct {
 runq_t*
 runq_create (void)
 {
-  runq_t* runq = xmalloc (sizeof (runq_t));
+  runq_t* runq = malloc (sizeof (runq_t));
   pthread_cond_init (&runq->cond, NULL);
   pthread_mutex_init (&runq->mutex, NULL);
   runq->table = table_create (sizeof (runnable_t));
@@ -71,7 +69,7 @@ runq_destroy (runq_t* runq)
   pthread_cond_destroy (&runq->cond);
   pthread_mutex_destroy (&runq->mutex);
   table_destroy (runq->table);
-  xfree (runq);
+  free (runq);
 }
 
 size_t

@@ -2,7 +2,8 @@
 
 #include <assert.h>
 #include <pthread.h>
-#include "xstdlib.h"
+#include <stdlib.h>
+
 #include "table.h"
 
 struct receipts_struct {
@@ -43,7 +44,7 @@ receipt_for_to (receipts_t* receipts, aid_t to, iterator_t* ptr)
 receipts_t*
 receipts_create (void)
 {
-  receipts_t* receipts = xmalloc (sizeof (receipts_t));
+  receipts_t* receipts = malloc (sizeof (receipts_t));
   pthread_rwlock_init (&receipts->lock, NULL);
   receipts->table = table_create (sizeof (receipt_t));
   receipts->index = index_create_list (receipts->table);
@@ -57,7 +58,7 @@ receipts_destroy (receipts_t* receipts)
 
   pthread_rwlock_destroy (&receipts->lock);
   table_destroy (receipts->table);
-  xfree (receipts);
+  free (receipts);
 }
 
 static void

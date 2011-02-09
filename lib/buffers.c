@@ -3,10 +3,9 @@
 #include <pthread.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
-#include "xstdlib.h"
 #include "table.h"
-#include <pthread.h>
 
 struct buffers_struct {
   pthread_rwlock_t lock;
@@ -208,7 +207,7 @@ static void
 free_data (const void* e, void* ignored)
 {
   const buffer_entry_t* buffer_entry = e;
-  xfree (buffer_entry->data);
+  free (buffer_entry->data);
 }
 
 static buffer_entry_t*
@@ -228,7 +227,7 @@ allocate (buffers_t* buffers, aid_t owner, size_t size)
     .bid = bid,
     .owner = owner,
     .size = size,
-    .data = xmalloc (size),
+    .data = malloc (size),
     .ref_count = 0 };
   return index_value (buffers->buffer_index, index_insert (buffers->buffer_index, &entry));
 }
@@ -503,7 +502,7 @@ remove_buffer_entry (buffers_t* buffers, buffer_entry_t* buffer_entry, iterator_
 		&key);
   
   /* Free the data. */
-  xfree (buffer_entry->data);
+  free (buffer_entry->data);
   
   /* Remove. */
   index_erase (buffers->buffer_index, buffer_entry_idx);
@@ -918,7 +917,7 @@ buffer_dup (buffers_t* buffers, aid_t aid, bid_t bid)
 buffers_t*
 buffers_create (void)
 {
-  buffers_t* buffers = xmalloc (sizeof (buffers_t));
+  buffers_t* buffers = malloc (sizeof (buffers_t));
 
   buffers->next_bid = 0;
   pthread_rwlock_init (&buffers->lock, NULL);
@@ -961,5 +960,5 @@ buffers_destroy (buffers_t* buffers)
 
   pthread_rwlock_destroy (&buffers->lock);
 
-  xfree (buffers);
+  free (buffers);
 }
