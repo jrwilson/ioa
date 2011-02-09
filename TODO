@@ -1,0 +1,12 @@
+* Reimplement the runq using a table.
+  Remove queue.c
+* Insert unique in runq
+* Evaluate system.c
+* Rename ueioa.c
+* Remove xstdlib.c
+* Implement destroy and decompose
+* Implement parameterized actions
+* Implement multithreading
+* Implement I/O
+** Timers
+** File descriptors

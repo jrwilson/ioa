@@ -247,40 +247,38 @@ ueioa_run (automaton_descriptor_t* descriptor)
 
   for (;;) {
     printf ("runq size = %lu\n", runq_size (runq));
-    runnable_t* runnable = runq_pop (runq);
-    switch (runnable_type (runnable)) {
+    runnable_t runnable;
+    runq_pop (runq, &runnable);
+    switch (runnable.type) {
     case SYSTEM_INPUT:
       {
-	/* Unpack. */
-	aid_t aid = runnable_aid (runnable);
 	system_receipt_t receipt;
-	if (receipts_pop (receipts, aid, &receipt) == 0) {
-	  automaton_system_input_exec (automata, aid, &receipt);
+	if (receipts_pop (receipts, runnable.aid, &receipt) == 0) {
+	  automaton_system_input_exec (automata, runnable.aid, &receipt);
 	  /* Schedule again. */
-	  if (!receipts_empty (receipts, aid)) {
-	    runq_insert_system_input (runq, aid);
+	  if (!receipts_empty (receipts, runnable.aid)) {
+	    runq_insert_system_input (runq, runnable.aid);
 	  }
 	}
       }
       break;
     case SYSTEM_OUTPUT:
       {
-	aid_t aid = runnable_aid (runnable);
 	system_order_t order;
-	int s = automaton_system_output_exec (automata, aid, &order);
+	int s = automaton_system_output_exec (automata, runnable.aid, &order);
 	if (s == 1) {
 	  switch (order.type) {
 	  case SYS_CREATE:
-	    create (aid, order.create.descriptor);
+	    create (runnable.aid, order.create.descriptor);
 	    break;
 	  case SYS_COMPOSE:
-	    compose (aid, order.compose.out_automaton, order.compose.output, order.compose.in_automaton, order.compose.input);
+	    compose (runnable.aid, order.compose.out_automaton, order.compose.output, order.compose.in_automaton, order.compose.input);
 	    break;
 	  case SYS_DECOMPOSE:
-	    decompose (aid, order.decompose.out_automaton, order.decompose.output, order.decompose.in_automaton, order.decompose.input);
+	    decompose (runnable.aid, order.decompose.out_automaton, order.decompose.output, order.decompose.in_automaton, order.decompose.input);
 	    break;
 	  case SYS_DESTROY:
-	    destroy (aid, order.destroy.automaton);
+	    destroy (runnable.aid, order.destroy.automaton);
 	    break;
 	  default:
 	    /* TODO: Bad order. */
@@ -295,13 +293,12 @@ ueioa_run (automaton_descriptor_t* descriptor)
       }
       break;
     case OUTPUT:
-      automaton_output_exec (automata, runnable_aid (runnable), runnable_output_output (runnable));
+      automaton_output_exec (automata, runnable.aid, runnable.output.output);
       break;
     case INTERNAL:
-      automaton_internal_exec (automata, runnable_aid (runnable), runnable_internal_internal (runnable));
+      automaton_internal_exec (automata, runnable.aid, runnable.internal.internal);
       break;
     }
-    runnable_destroy (runnable);
   }
 
   receipts_destroy (receipts);

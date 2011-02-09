@@ -63,6 +63,8 @@ receipts_destroy (receipts_t* receipts)
 static void
 push (receipts_t* receipts, receipt_t* receipt)
 {
+  assert (receipts != NULL);
+  assert (receipt != NULL);
   pthread_rwlock_wrlock (&receipts->lock);
   index_push_back (receipts->index, receipt);
   pthread_rwlock_unlock (&receipts->lock);
