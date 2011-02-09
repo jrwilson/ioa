@@ -65,5 +65,6 @@ void* index_find_value (index_t*, iterator_t, iterator_t, predicate_t, const voi
 void index_remove (index_t*, iterator_t, iterator_t, predicate_t, const void*);
 
 void index_transform (index_t*, iterator_t, iterator_t, tfunction_t, void*);
+void index_insert_unique (index_t*, predicate_t, const void*);
 
 #endif /* __table_h__ */

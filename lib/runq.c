@@ -8,6 +8,44 @@
 #include "table.h"
 #include "xstdlib.h"
 
+static bool
+runnable_equal (const void* x0, const void* y0)
+{
+  const runnable_t* x = x0;
+  const runnable_t* y = y0;
+  if (x->type != y->type) {
+    return false;
+  }
+  if (x->aid != y->aid) {
+    return false;
+  }
+  switch (x->type) {
+  case SYSTEM_INPUT:
+  case SYSTEM_OUTPUT:
+    return true;
+    break;
+  case OUTPUT:
+    return x->output.output == y->output.output;
+    break;
+  case INTERNAL:
+    return x->internal.internal == y->internal.internal;
+    break;
+  }
+
+  /* Not reached. */
+  assert (0);
+  return true;
+}
+
+
+static bool
+runnable_aid_equal (const void* x0, const void* y0)
+{
+  const runnable_t* x = x0;
+  const runnable_t* y = y0;
+  return x->aid == y->aid;
+}
+
 struct runq_struct {
   pthread_cond_t cond;
   pthread_mutex_t mutex;
@@ -58,13 +96,15 @@ runq_empty (runq_t* runq)
   return retval;
 }
 
+
+
 static void
 push (runq_t* runq, runnable_t* runnable)
 {
   assert (runq != NULL);
   assert (runnable != NULL);
   pthread_mutex_lock (&runq->mutex);
-  index_insert (runq->index, runnable);
+  index_insert_unique (runq->index, runnable_equal, runnable);
   pthread_cond_broadcast (&runq->cond);
   pthread_mutex_unlock (&runq->mutex);
 }
@@ -139,14 +179,6 @@ runq_pop (runq_t* runq, runnable_t* runnable)
   *runnable = *r;
   index_pop_front (runq->index);
   pthread_mutex_unlock (&runq->mutex);
-}
-
-static bool
-runnable_aid_equal (const void* x0, const void* y0)
-{
-  const runnable_t* x = x0;
-  const runnable_t* y = y0;
-  return x->aid == y->aid;
 }
 
 void

@@ -988,3 +988,19 @@ index_transform (index_t* index, iterator_t begin, iterator_t end, tfunction_t f
   }
 
 }
+
+void
+index_insert_unique (index_t* index, predicate_t predicate, const void* value)
+{
+  assert (index != NULL);
+  assert (predicate != NULL);
+
+  iterator_t iterator = index_find (index,
+				    index_begin (index),
+				    index_end (index),
+				    predicate,
+				    value);
+  if (iterator == index_end (index)) {
+    index_insert (index, value);
+  }
+}
