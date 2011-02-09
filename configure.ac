@@ -8,6 +8,7 @@ AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
 
 # Checks for programs.
+AC_PROG_LIBTOOL
 AC_PROG_CC
 
 # Checks for libraries.
@@ -19,5 +20,6 @@ AC_PROG_CC
 # Checks for library functions.
 
 AC_CONFIG_FILES([Makefile
+                 lib/Makefile
                  src/Makefile])
 AC_OUTPUT

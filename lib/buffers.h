@@ -1,9 +1,7 @@
 #ifndef __buffers_h__
 #define __buffers_h__
 
-#include <stddef.h>
-#include <stdbool.h>
-#include "types.h"
+#include <ueioa.h>
 
 typedef struct buffers_struct buffers_t;
 

@@ -1,7 +1,7 @@
 #ifndef __automata_h__
 #define __automata_h__
 
-#include "types.h"
+#include <ueioa.h>
 
 #define COMPOSED 0
 #define OUTPUT_DNE -1

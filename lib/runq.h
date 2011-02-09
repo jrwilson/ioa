@@ -1,10 +1,7 @@
 #ifndef __runq_h__
 #define __runq_h__
 
-#include <stddef.h>
-#include <stdbool.h>
-
-#include "types.h"
+#include <ueioa.h>
 
 typedef enum {
   SYSTEM_INPUT,

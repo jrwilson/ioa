@@ -1,7 +1,7 @@
 #ifndef __receipts_h__
 #define __receipts_h__
 
-#include "types.h"
+#include <ueioa.h>
 
 typedef struct receipts_struct receipts_t;
 
