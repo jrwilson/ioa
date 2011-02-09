@@ -56,11 +56,11 @@ static receipts_t* receipts;
 /* } */
 
 static void
-create (aid_t parent, automaton_descriptor_t* descriptor)
+create (aid_t parent, descriptor_t* descriptor)
 {
   /* Parent can be -1, i.e., for the first automaton. */
-  if (descriptor != NULL && automaton_descriptor_check (descriptor)) {
-    aid_t aid = automaton_create (automata, descriptor, parent);
+  if (descriptor != NULL && descriptor_check (descriptor)) {
+    aid_t aid = automata_create_automaton (automata, descriptor, parent);
     /* Tell the automaton that it has been created. */
     receipts_push_self_created (receipts, aid, aid, parent);
     runq_insert_system_input (runq, aid);
@@ -83,7 +83,7 @@ create (aid_t parent, automaton_descriptor_t* descriptor)
 static void
 compose (aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
 {
-  switch (automaton_compose (automata, aid, out_aid, output, in_aid, input)) {
+  switch (automata_compose (automata, aid, out_aid, output, in_aid, input)) {
   case COMPOSED:
     receipts_push_composed (receipts, aid);
     runq_insert_system_input (runq, aid);
@@ -234,10 +234,10 @@ destroy (aid_t destroyer, aid_t target)
 }
 
 void
-ueioa_run (automaton_descriptor_t* descriptor)
+ueioa_run (descriptor_t* descriptor)
 {
   assert (descriptor != NULL);
-  assert (automaton_descriptor_check (descriptor));
+  assert (descriptor_check (descriptor));
 
   runq = runq_create ();
   automata = automata_create ();
@@ -252,9 +252,9 @@ ueioa_run (automaton_descriptor_t* descriptor)
     switch (runnable.type) {
     case SYSTEM_INPUT:
       {
-	system_receipt_t receipt;
+	receipt_t receipt;
 	if (receipts_pop (receipts, runnable.aid, &receipt) == 0) {
-	  automaton_system_input_exec (automata, runnable.aid, &receipt);
+	  automata_system_input_exec (automata, runnable.aid, &receipt);
 	  /* Schedule again. */
 	  if (!receipts_empty (receipts, runnable.aid)) {
 	    runq_insert_system_input (runq, runnable.aid);
@@ -264,20 +264,20 @@ ueioa_run (automaton_descriptor_t* descriptor)
       break;
     case SYSTEM_OUTPUT:
       {
-	system_order_t order;
-	int s = automaton_system_output_exec (automata, runnable.aid, &order);
+	order_t order;
+	int s = automata_system_output_exec (automata, runnable.aid, &order);
 	if (s == GOOD_ORDER) {
 	  switch (order.type) {
-	  case SYS_CREATE:
+	  case CREATE:
 	    create (runnable.aid, order.create.descriptor);
 	    break;
-	  case SYS_COMPOSE:
+	  case COMPOSE:
 	    compose (runnable.aid, order.compose.out_automaton, order.compose.output, order.compose.in_automaton, order.compose.input);
 	    break;
-	  case SYS_DECOMPOSE:
+	  case DECOMPOSE:
 	    decompose (runnable.aid, order.decompose.out_automaton, order.decompose.output, order.decompose.in_automaton, order.decompose.input);
 	    break;
-	  case SYS_DESTROY:
+	  case DESTROY:
 	    destroy (runnable.aid, order.destroy.automaton);
 	    break;
 	  default:
@@ -293,10 +293,10 @@ ueioa_run (automaton_descriptor_t* descriptor)
       }
       break;
     case OUTPUT:
-      automaton_output_exec (automata, runnable.aid, runnable.output.output);
+      automata_output_exec (automata, runnable.aid, runnable.output.output);
       break;
     case INTERNAL:
-      automaton_internal_exec (automata, runnable.aid, runnable.internal.internal);
+      automata_internal_exec (automata, runnable.aid, runnable.internal.internal);
       break;
     }
   }
@@ -307,18 +307,18 @@ ueioa_run (automaton_descriptor_t* descriptor)
 }
 
 void
-ueioa_schedule_system_output (void)
+schedule_system_output (void)
 {
-  runq_insert_system_output (runq, automaton_get_current_aid (automata));
+  runq_insert_system_output (runq, automata_get_current_aid (automata));
 }
 
 int
-ueioa_schedule_output (output_t output)
+schedule_output (output_t output)
 {
   /* Get the current automaton.  Guaranteed to exist. */
-  aid_t aid = automaton_get_current_aid (automata);
+  aid_t aid = automata_get_current_aid (automata);
 
-  if (automaton_output_exists (automata, aid, output)) {
+  if (automata_output_exists (automata, aid, output)) {
     runq_insert_output (runq, aid, output);
     return 0;
   }
@@ -328,12 +328,12 @@ ueioa_schedule_output (output_t output)
 }
 
 int
-ueioa_schedule_internal (internal_t internal)
+schedule_internal (internal_t internal)
 {
   /* Get the current automaton.  Guaranteed to exist. */
-  aid_t aid = automaton_get_current_aid (automata);
+  aid_t aid = automata_get_current_aid (automata);
 
-  if (automaton_internal_exists (automata, aid, internal)) {
+  if (automata_internal_exists (automata, aid, internal)) {
     runq_insert_internal (runq, aid, internal);
     return 0;
   }
@@ -343,25 +343,25 @@ ueioa_schedule_internal (internal_t internal)
 }
 
 bid_t
-ueioa_buffer_alloc (size_t size)
+buffer_alloc (size_t size)
 {
-  return automaton_buffer_alloc (automata, size);
+  return automata_buffer_alloc (automata, size);
 }
 
 void*
-ueioa_buffer_write_ptr (bid_t bid)
+buffer_write_ptr (bid_t bid)
 {
-  return automaton_buffer_write_ptr (automata, bid);
+  return automata_buffer_write_ptr (automata, bid);
 }
 
 const void*
-ueioa_buffer_read_ptr (bid_t bid)
+buffer_read_ptr (bid_t bid)
 {
-  return automaton_buffer_read_ptr (automata, bid);
+  return automata_buffer_read_ptr (automata, bid);
 }
 
 size_t
-ueioa_buffer_size (bid_t bid)
+buffer_size (bid_t bid)
 {
-  return automaton_buffer_size (automata, bid);
+  return automata_buffer_size (automata, bid);
 }

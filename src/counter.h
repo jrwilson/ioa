@@ -1,15 +1,15 @@
 #ifndef __counter_h__
 #define __counter_h__
 
-#include "ueioa.h"
+#include <ueioa.h>
 
-void counter_input (state_ptr_t, bid_t);
+void counter_input (void*, bid_t);
 
 typedef struct {
   int count;
 } counter_output_t;
-bid_t counter_output (state_ptr_t);
+bid_t counter_output (void*);
 
-extern automaton_descriptor_t counter_descriptor;
+extern descriptor_t counter_descriptor;
 
 #endif /* __counter_h__ */

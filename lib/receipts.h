@@ -27,7 +27,7 @@ void receipts_push_automaton_dne (receipts_t*, aid_t);
 void receipts_push_not_owner (receipts_t*, aid_t);
 void receipts_push_child_destroyed (receipts_t*, aid_t, aid_t);
 
-int receipts_pop (receipts_t*, aid_t, system_receipt_t*);
+int receipts_pop (receipts_t*, aid_t, receipt_t*);
 bool receipts_empty (receipts_t*, aid_t);
 
 #endif /* __receipts_h__ */

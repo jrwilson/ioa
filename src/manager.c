@@ -20,7 +20,7 @@ automata_key_equal (const void* x0, const void* y0)
 }
 
 typedef struct {
-  automaton_descriptor_t* descriptor;
+  descriptor_t* descriptor;
 } automata_value_t;
 
 typedef struct {
@@ -53,7 +53,7 @@ typedef enum {
 
 struct manager_struct {
   status_t status;
-  system_order_t last_order;
+  order_t last_order;
   automata_key_t last_automaton;
   compositions_key_t last_composition;
   aid_t* self;
@@ -88,12 +88,12 @@ manager_parent_set (manager_t* manager, aid_t* parent)
 }
 
 void
-manager_automaton_add (manager_t* manager, aid_t* automaton, automaton_descriptor_t* descriptor)
+manager_automaton_add (manager_t* manager, aid_t* automaton, descriptor_t* descriptor)
 {
   assert (manager != NULL);
   assert (automaton != NULL);
   assert (descriptor != NULL);
-  assert (automaton_descriptor_check (descriptor));
+  assert (descriptor_check (descriptor));
 
   /* Clear the automaton. */
   *automaton = -1;
@@ -120,7 +120,7 @@ manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t outp
 }
 
 bool
-manager_apply (manager_t* manager, const system_receipt_t* receipt)
+manager_apply (manager_t* manager, const receipt_t* receipt)
 {
   assert (manager != NULL);
   assert (receipt != NULL);
@@ -128,7 +128,7 @@ manager_apply (manager_t* manager, const system_receipt_t* receipt)
   bool something_changed = false;
 
   switch (receipt->type) {
-  case SYS_SELF_CREATED:
+  case SELF_CREATED:
     {
       if (manager->self != NULL) {
 	*manager->self = receipt->self_created.self;
@@ -139,68 +139,68 @@ manager_apply (manager_t* manager, const system_receipt_t* receipt)
       something_changed = true;
     }
     break;
-  case SYS_CHILD_CREATED:
+  case CHILD_CREATED:
     {
-      assert (manager->status == OUTSTANDING && manager->last_order.type == SYS_CREATE);
+      assert (manager->status == OUTSTANDING && manager->last_order.type == CREATE);
       *manager->last_automaton.automaton = receipt->child_created.child;
       something_changed = true;
       manager->status = NORMAL;
     }
     break;
-  case SYS_BAD_DESCRIPTOR:
+  case BAD_DESCRIPTOR:
     /* TODO */
     assert (0);
     break;
-  case SYS_OUTPUT_DNE:
+  case OUTPUT_DNE:
     /* TODO */
     assert (0);
     break;
-  case SYS_INPUT_DNE:
+  case INPUT_DNE:
     /* TODO */
     assert (0);
     break;
-  case SYS_OUTPUT_UNAVAILABLE:
+  case OUTPUT_UNAVAILABLE:
     /* TODO */
     assert (0);
     break;
-  case SYS_INPUT_UNAVAILABLE:
+  case INPUT_UNAVAILABLE:
     /* TODO */
     assert (0);
     break;
-  case SYS_COMPOSED:
+  case COMPOSED:
     {
-      assert (manager->status == OUTSTANDING && manager->last_order.type == SYS_COMPOSE);
+      assert (manager->status == OUTSTANDING && manager->last_order.type == COMPOSE);
       compositions_value_t* value = hashtable_value (manager->compositions, &manager->last_composition);
       value->composed = true;
       something_changed = true;
       manager->status = NORMAL;
     }
     break;
-  case SYS_OUTPUT_COMPOSED:
+  case OUTPUT_COMPOSED:
     /* TODO */
     assert (0);
     break;
-  case SYS_NOT_COMPOSED:
+  case NOT_COMPOSED:
     /* TODO */
     assert (0);
     break;
-  case SYS_DECOMPOSED:
+  case DECOMPOSED:
     /* TODO */
     assert (0);
     break;
-  case SYS_OUTPUT_DECOMPOSED:
+  case OUTPUT_DECOMPOSED:
     /* TODO */
     assert (0);
     break;
-  case SYS_AUTOMATON_DNE:
+  case AUTOMATON_DNE:
     /* TODO */
     assert (0);
     break;
-  case SYS_NOT_OWNER:
+  case NOT_OWNER:
     /* TODO */
     assert (0);
     break;
-  case SYS_CHILD_DESTROYED:
+  case CHILD_DESTROYED:
     /* TODO */
     assert (0);
     break;
@@ -224,7 +224,7 @@ fire (manager_t* manager)
     if (*key->automaton == -1) {
       /* We need to create an automaton. */
       automata_value_t* value = hashtable_value_at (manager->automata, idx);
-      system_order_create (&manager->last_order, value->descriptor);
+      order_create_init (&manager->last_order, value->descriptor);
       manager->last_automaton = *key;
       return true;
     }
@@ -240,7 +240,7 @@ fire (manager_t* manager)
 	*key->in_automaton != -1 &&
 	!value->composed) {
       /* We need to compose. */
-      system_order_compose (&manager->last_order, *key->out_automaton, key->output, *key->in_automaton, key->input);
+      order_compose_init (&manager->last_order, *key->out_automaton, key->output, *key->in_automaton, key->input);
       manager->last_composition = *key;
       return true;
     }
@@ -258,8 +258,8 @@ manager_action (manager_t* manager)
   case NORMAL:
     {
       if (fire (manager)) {
-	bid_t bid = ueioa_buffer_alloc (sizeof (system_order_t));
-	system_order_t* order = ueioa_buffer_write_ptr (bid);
+	bid_t bid = buffer_alloc (sizeof (order_t));
+	order_t* order = buffer_write_ptr (bid);
 	*order = manager->last_order;
 	manager->status = OUTSTANDING;
 	return bid;

@@ -256,7 +256,7 @@ composition_entry_for_out_aid_output_in_aid (automata_t* automata, aid_t out_aid
 }
 
 aid_t
-automaton_create (automata_t* automata, automaton_descriptor_t* descriptor, aid_t parent)
+automata_create_automaton (automata_t* automata, descriptor_t* descriptor, aid_t parent)
 {
   assert (automata != NULL);
 
@@ -330,7 +330,7 @@ automaton_create (automata_t* automata, automaton_descriptor_t* descriptor, aid_
 }
 
 int
-automaton_compose (automata_t* automata, aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+automata_compose (automata_t* automata, aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
 {
   assert (automata != NULL);
 
@@ -366,7 +366,7 @@ automaton_compose (automata_t* automata, aid_t aid, aid_t out_aid, output_t outp
 }
 
 void
-automaton_system_input_exec (automata_t* automata, aid_t aid, const system_receipt_t* receipt)
+automata_system_input_exec (automata_t* automata, aid_t aid, const receipt_t* receipt)
 {
   assert (automata != NULL);
   assert (receipt != NULL);
@@ -378,11 +378,11 @@ automaton_system_input_exec (automata_t* automata, aid_t aid, const system_recei
   assert (entry != NULL);
 
   /* Prepare the buffer. */
-  bid_t bid = buffer_alloc (automata->buffers, aid, sizeof (system_receipt_t));
-  system_receipt_t* r = buffer_write_ptr (automata->buffers, aid, bid);
+  bid_t bid = buffers_alloc (automata->buffers, aid, sizeof (receipt_t));
+  receipt_t* r = buffers_write_ptr (automata->buffers, aid, bid);
   *r = *receipt;
   
-  buffer_incref (automata->buffers, aid, bid);
+  buffers_incref (automata->buffers, aid, bid);
   set_current_aid (automata, aid);
   pthread_mutex_lock (entry->lock);
   
@@ -390,14 +390,14 @@ automaton_system_input_exec (automata_t* automata, aid_t aid, const system_recei
   
   pthread_mutex_unlock (entry->lock);
   set_current_aid (automata, -1);
-  buffer_decref (automata->buffers, aid, bid);
+  buffers_decref (automata->buffers, aid, bid);
   
   /* Release the read lock. */
   pthread_rwlock_unlock (&automata->lock);
 }
 
 int
-automaton_system_output_exec (automata_t* automata, aid_t aid, system_order_t* order)
+automata_system_output_exec (automata_t* automata, aid_t aid, order_t* order)
 {
   assert (automata != NULL);
   assert (order != NULL);
@@ -418,17 +418,17 @@ automaton_system_output_exec (automata_t* automata, aid_t aid, system_order_t* o
   set_current_aid (automata, -1);
   
   if (bid != -1) {
-    buffer_incref (automata->buffers, aid, bid);
+    buffers_incref (automata->buffers, aid, bid);
     
-    if (buffer_size (automata->buffers, aid, bid) == sizeof (system_order_t)) {
-      *order = *(system_order_t*)buffer_read_ptr (automata->buffers, aid, bid);
+    if (buffers_size (automata->buffers, aid, bid) == sizeof (order_t)) {
+      *order = *(order_t*)buffers_read_ptr (automata->buffers, aid, bid);
       retval = GOOD_ORDER;
     }
     else {
       retval = BAD_ORDER;
     }
     
-    buffer_decref (automata->buffers, aid, bid);
+    buffers_decref (automata->buffers, aid, bid);
   }
   else {
     /* No bid. */
@@ -475,7 +475,7 @@ output_exec (const void* e, void* a)
   if (composition_entry->out_aid == arg->out_aid && composition_entry->output == arg->output) {
     automaton_entry_t* in_entry = automaton_entry_for_aid (arg->automata, composition_entry->in_aid, NULL);
     set_current_aid (arg->automata, composition_entry->in_aid);
-    buffer_change_owner (arg->automata->buffers, composition_entry->in_aid, arg->bid);
+    buffers_change_owner (arg->automata->buffers, composition_entry->in_aid, arg->bid);
     composition_entry->input (in_entry->state, arg->bid);
   }
 }
@@ -497,7 +497,7 @@ output_unlock (const void* e, void* a)
 }
 
 void
-automaton_output_exec (automata_t* automata, aid_t out_aid, output_t output)
+automata_output_exec (automata_t* automata, aid_t out_aid, output_t output)
 {
   assert (automata != NULL);
 
@@ -529,7 +529,7 @@ automaton_output_exec (automata_t* automata, aid_t out_aid, output_t output)
     /* Increment the reference count so the following decref will destroy the buffer if no
      * input references the buffer.
      */
-    buffer_incref (automata->buffers, out_aid, bid);
+    buffers_incref (automata->buffers, out_aid, bid);
       
     arg.bid = bid;
     /* Execute the inputs. */
@@ -539,9 +539,9 @@ automaton_output_exec (automata_t* automata, aid_t out_aid, output_t output)
 		    output_exec,
 		    &arg);
 
-    buffer_change_owner (automata->buffers, -1, bid);
+    buffers_change_owner (automata->buffers, -1, bid);
             
-    buffer_decref (automata->buffers, out_aid, bid);
+    buffers_decref (automata->buffers, out_aid, bid);
   }
     
   set_current_aid (automata, -1);
@@ -559,7 +559,7 @@ automaton_output_exec (automata_t* automata, aid_t out_aid, output_t output)
 }
 
 void
-automaton_internal_exec (automata_t* automata, aid_t aid, internal_t internal)
+automata_internal_exec (automata_t* automata, aid_t aid, internal_t internal)
 {
   assert (automata != NULL);
 
@@ -590,7 +590,7 @@ automaton_internal_exec (automata_t* automata, aid_t aid, internal_t internal)
 }
 
 aid_t
-automaton_get_current_aid (automata_t* automata)
+automata_get_current_aid (automata_t* automata)
 {
   assert (automata != NULL);
 
@@ -598,7 +598,7 @@ automaton_get_current_aid (automata_t* automata)
 }
 
 bool
-automaton_output_exists (automata_t* automata, aid_t aid, output_t output)
+automata_output_exists (automata_t* automata, aid_t aid, output_t output)
 {
   assert (automata != NULL);
 
@@ -606,7 +606,7 @@ automaton_output_exists (automata_t* automata, aid_t aid, output_t output)
 }
 
 bool
-automaton_internal_exists (automata_t* automata, aid_t aid, internal_t internal)
+automata_internal_exists (automata_t* automata, aid_t aid, internal_t internal)
 {
   assert (automata != NULL);
   
@@ -614,31 +614,31 @@ automaton_internal_exists (automata_t* automata, aid_t aid, internal_t internal)
 }
 
 bid_t
-automaton_buffer_alloc (automata_t* automata, size_t size)
+automata_buffer_alloc (automata_t* automata, size_t size)
 {
   assert (automata != NULL);
-  return buffer_alloc (automata->buffers, automaton_get_current_aid (automata), size);
+  return buffers_alloc (automata->buffers, automata_get_current_aid (automata), size);
 }
 
 void*
-automaton_buffer_write_ptr (automata_t* automata, bid_t bid)
+automata_buffer_write_ptr (automata_t* automata, bid_t bid)
 {
   assert (automata != NULL);
-  return buffer_write_ptr (automata->buffers, automaton_get_current_aid (automata), bid);
+  return buffers_write_ptr (automata->buffers, automata_get_current_aid (automata), bid);
 }
 
 const void*
-automaton_buffer_read_ptr (automata_t* automata, bid_t bid)
+automata_buffer_read_ptr (automata_t* automata, bid_t bid)
 {
   assert (automata != NULL);
-  return buffer_read_ptr (automata->buffers, automaton_get_current_aid (automata), bid);
+  return buffers_read_ptr (automata->buffers, automata_get_current_aid (automata), bid);
 }
 
 size_t
-automaton_buffer_size (automata_t* automata, bid_t bid)
+automata_buffer_size (automata_t* automata, bid_t bid)
 {
   assert (automata != NULL);
-  return buffer_size (automata->buffers, automaton_get_current_aid (automata), bid);
+  return buffers_size (automata->buffers, automata_get_current_aid (automata), bid);
 }
 
 automata_t*

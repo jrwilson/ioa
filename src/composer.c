@@ -20,7 +20,7 @@ typedef struct {
   aid_t counter2;
 } composer_t;
 
-static state_ptr_t
+static void*
 composer_create (void)
 {
   printf ("composer_create\n");
@@ -40,26 +40,26 @@ composer_create (void)
   return composer;
 }
 
-static bid_t composer_system_output (state_ptr_t state);
+static bid_t composer_system_output (void* state);
 
 static void
-composer_system_input (state_ptr_t state, bid_t bid)
+composer_system_input (void* state, bid_t bid)
 {
   printf ("composer_system_input\n");
   assert (state != NULL);
   composer_t* composer = state;
 
   assert (bid != -1);
-  assert (ueioa_buffer_size (bid) == sizeof (system_receipt_t));
-  const system_receipt_t* receipt = ueioa_buffer_read_ptr (bid);
+  assert (buffer_size (bid) == sizeof (receipt_t));
+  const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (manager_apply (composer->manager, receipt)) {
-    ueioa_schedule_system_output ();
+    schedule_system_output ();
   }
 }
 
 static bid_t
-composer_system_output (state_ptr_t state)
+composer_system_output (void* state)
 {
   printf ("composer_system_output\n");
   assert (state != NULL);
@@ -69,28 +69,28 @@ composer_system_output (state_ptr_t state)
 }
 
 void
-composer_input1 (state_ptr_t state, bid_t bid)
+composer_input1 (void* state, bid_t bid)
 {
   assert (bid != -1);
-  assert (ueioa_buffer_size (bid) == sizeof (counter_output_t));
+  assert (buffer_size (bid) == sizeof (counter_output_t));
 
-  const counter_output_t* output = ueioa_buffer_read_ptr (bid);
+  const counter_output_t* output = buffer_read_ptr (bid);
   printf ("count(1) = %d\n", output->count);
 }
 
 void
-composer_input2 (state_ptr_t state, bid_t bid)
+composer_input2 (void* state, bid_t bid)
 {
   assert (bid != -1);
-  assert (ueioa_buffer_size (bid) == sizeof (counter_output_t));
+  assert (buffer_size (bid) == sizeof (counter_output_t));
 
-  const counter_output_t* output = ueioa_buffer_read_ptr (bid);
+  const counter_output_t* output = buffer_read_ptr (bid);
   printf ("count(2) = %d\n", output->count);
 }
 
 static input_t composer_inputs[] = { composer_input1, composer_input2 };
 
-automaton_descriptor_t composer_descriptor = {
+descriptor_t composer_descriptor = {
   .constructor = composer_create,
   .system_input = composer_system_input,
   .system_output = composer_system_output,

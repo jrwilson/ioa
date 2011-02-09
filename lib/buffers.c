@@ -233,7 +233,7 @@ allocate (buffers_t* buffers, aid_t owner, size_t size)
 }
 
 bid_t
-buffer_alloc (buffers_t* buffers, aid_t owner, size_t size)
+buffers_alloc (buffers_t* buffers, aid_t owner, size_t size)
 {
   assert (buffers != NULL);
 
@@ -250,7 +250,7 @@ buffer_alloc (buffers_t* buffers, aid_t owner, size_t size)
 }
 
 void*
-buffer_write_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_write_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -269,7 +269,7 @@ buffer_write_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
 }
 
 const void*
-buffer_read_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_read_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -290,7 +290,7 @@ buffer_read_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
 }
 
 size_t
-buffer_size (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_size (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -310,7 +310,7 @@ buffer_size (buffers_t* buffers, aid_t aid, bid_t bid)
 }
 
 size_t
-buffer_ref_count (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_ref_count (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -328,7 +328,7 @@ buffer_ref_count (buffers_t* buffers, aid_t aid, bid_t bid)
 }
 
 bool
-buffer_exists (buffers_t* buffers, bid_t bid)
+buffers_exists (buffers_t* buffers, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -337,7 +337,7 @@ buffer_exists (buffers_t* buffers, bid_t bid)
 }
 
 void
-buffer_change_owner (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_change_owner (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -450,7 +450,7 @@ incref_bid (const void* value, void* a)
 }
 
 void
-buffer_incref (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_incref (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
@@ -542,7 +542,7 @@ decref_bid (const void* value, void* a)
 }
 
 void
-buffer_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
+buffers_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
 {
   assert (buffers != NULL);
 
@@ -639,7 +639,7 @@ transfer1 (const void* value, void* a)
 }
 
 void
-buffer_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
+buffers_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 {
   assert (buffers != NULL);
 
@@ -712,7 +712,7 @@ buffer_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 }
 
 void
-buffer_remove_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
+buffers_remove_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 {
   assert (buffers != NULL);
 
@@ -808,7 +808,7 @@ dec_global (const void* e, void* a)
 }
 
 void
-buffer_purge_aid (buffers_t* buffers, aid_t aid)
+buffers_purge_aid (buffers_t* buffers, aid_t aid)
 {
   assert (buffers != NULL);
 
@@ -871,7 +871,7 @@ dup_edge (const void* e, void* a)
 }
 
 bid_t
-buffer_dup (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 

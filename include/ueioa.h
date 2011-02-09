@@ -7,11 +7,10 @@
 typedef int aid_t;
 typedef int bid_t;
 
-typedef void* state_ptr_t;
-typedef state_ptr_t (*constructor_t) (void);
-typedef void (*input_t) (state_ptr_t, bid_t);
-typedef bid_t (*output_t) (state_ptr_t);
-typedef void (*internal_t) (state_ptr_t);
+typedef void* (*constructor_t) (void);
+typedef void (*input_t) (void*, bid_t);
+typedef bid_t (*output_t) (void*);
+typedef void (*internal_t) (void*);
 
 typedef struct {
   constructor_t constructor;
@@ -23,20 +22,20 @@ typedef struct {
   output_t* outputs;
   size_t internal_count;
   internal_t* internals;
-} automaton_descriptor_t;
+} descriptor_t;
 
 typedef enum {
-  SYS_CREATE,
-  SYS_COMPOSE,
-  SYS_DECOMPOSE,
-  SYS_DESTROY
+  CREATE,
+  COMPOSE,
+  DECOMPOSE,
+  DESTROY
 } order_type_t;
 
 typedef struct {
   order_type_t type;
   union {
     struct {
-      automaton_descriptor_t* descriptor;
+      descriptor_t* descriptor;
     } create;
     struct {
       aid_t out_automaton;
@@ -54,24 +53,24 @@ typedef struct {
       aid_t automaton;
     } destroy;
   };
-} system_order_t;
+} order_t;
 
 typedef enum {
-  SYS_SELF_CREATED,
-  SYS_CHILD_CREATED,
-  SYS_BAD_DESCRIPTOR,
-  SYS_OUTPUT_DNE,
-  SYS_INPUT_DNE,
-  SYS_OUTPUT_UNAVAILABLE,
-  SYS_INPUT_UNAVAILABLE,
-  SYS_COMPOSED,
-  SYS_OUTPUT_COMPOSED,
-  SYS_DECOMPOSED,
-  SYS_OUTPUT_DECOMPOSED,
-  SYS_NOT_COMPOSED,
-  SYS_AUTOMATON_DNE,
-  SYS_NOT_OWNER,
-  SYS_CHILD_DESTROYED
+  SELF_CREATED,
+  CHILD_CREATED,
+  BAD_DESCRIPTOR,
+  OUTPUT_DNE,
+  INPUT_DNE,
+  OUTPUT_UNAVAILABLE,
+  INPUT_UNAVAILABLE,
+  COMPOSED,
+  OUTPUT_COMPOSED,
+  DECOMPOSED,
+  OUTPUT_DECOMPOSED,
+  NOT_COMPOSED,
+  AUTOMATON_DNE,
+  NOT_OWNER,
+  CHILD_DESTROYED
 } receipt_type_t;
 
 typedef struct {
@@ -94,24 +93,24 @@ typedef struct {
       aid_t child;
     } child_destroyed;
   };
-} system_receipt_t;
+} receipt_t;
 
-bool automaton_descriptor_check (automaton_descriptor_t*);
+bool descriptor_check (descriptor_t*);
 
-void system_order_create (system_order_t*, automaton_descriptor_t*);
-void system_order_compose (system_order_t*, aid_t, output_t, aid_t, input_t);
-void system_order_decompose (system_order_t*, aid_t, output_t, aid_t, input_t);
-void system_order_destroy (system_order_t*, aid_t);
+void order_create_init (order_t*, descriptor_t*);
+void order_compose_init (order_t*, aid_t, output_t, aid_t, input_t);
+void order_decompose_init (order_t*, aid_t, output_t, aid_t, input_t);
+void order_destroy_init (order_t*, aid_t);
 
-void ueioa_run (automaton_descriptor_t*);
+void ueioa_run (descriptor_t*);
 
-void ueioa_schedule_system_output (void);
-int ueioa_schedule_output (output_t);
-int ueioa_schedule_internal (internal_t);
+void schedule_system_output (void);
+int schedule_output (output_t);
+int schedule_internal (internal_t);
 
-bid_t ueioa_buffer_alloc (size_t);
-void* ueioa_buffer_write_ptr (bid_t);
-const void* ueioa_buffer_read_ptr (bid_t);
-size_t ueioa_buffer_size (bid_t);
+bid_t buffer_alloc (size_t);
+void* buffer_write_ptr (bid_t);
+const void* buffer_read_ptr (bid_t);
+size_t buffer_size (bid_t);
 
 #endif /* __ueioa_h__ */

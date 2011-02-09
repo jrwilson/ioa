@@ -3,20 +3,20 @@
 #include <assert.h>
 
 void
-system_order_create (system_order_t* order, automaton_descriptor_t* descriptor)
+order_create_init (order_t* order, descriptor_t* descriptor)
 {
   assert (order != NULL);
 
-  order->type = SYS_CREATE;
+  order->type = CREATE;
   order->create.descriptor = descriptor;
 }
 
 void
-system_order_compose (system_order_t* order, aid_t out_automaton, output_t output, aid_t in_automaton, input_t input)
+order_compose_init (order_t* order, aid_t out_automaton, output_t output, aid_t in_automaton, input_t input)
 {
   assert (order != NULL);
 
-  order->type = SYS_COMPOSE;
+  order->type = COMPOSE;
   order->compose.out_automaton = out_automaton;
   order->compose.output = output;
   order->compose.in_automaton = in_automaton;
@@ -24,11 +24,11 @@ system_order_compose (system_order_t* order, aid_t out_automaton, output_t outpu
 }
 
 void
-system_order_decompose (system_order_t* order, aid_t out_automaton, output_t output, aid_t in_automaton, input_t input)
+system_order_decompose (order_t* order, aid_t out_automaton, output_t output, aid_t in_automaton, input_t input)
 {
   assert (order != NULL);
 
-  order->type = SYS_DECOMPOSE;
+  order->type = DECOMPOSE;
   order->decompose.out_automaton = out_automaton;
   order->decompose.output = output;
   order->decompose.in_automaton = in_automaton;
@@ -36,60 +36,60 @@ system_order_decompose (system_order_t* order, aid_t out_automaton, output_t out
 }
 
 void
-system_order_destroy (system_order_t* order, aid_t automaton)
+system_order_destroy (order_t* order, aid_t automaton)
 {
   assert (order != NULL);
 
-  order->type = SYS_DESTROY;
+  order->type = DESTROY;
   order->destroy.automaton = automaton;
 }
 
 void
-system_receipt_decomposed (system_receipt_t* receipt)
+system_receipt_decomposed (receipt_t* receipt)
 {
   assert (receipt != NULL);
 
-  receipt->type = SYS_DECOMPOSED;
+  receipt->type = DECOMPOSED;
 }
 
 void
-system_receipt_output_decomposed (system_receipt_t* receipt, output_t output)
+system_receipt_output_decomposed (receipt_t* receipt, output_t output)
 {
   assert (receipt != NULL);
 
-  receipt->type = SYS_OUTPUT_DECOMPOSED;
+  receipt->type = OUTPUT_DECOMPOSED;
   receipt->output_decomposed.output = output;
 }
 
 void
-system_receipt_not_composed (system_receipt_t* receipt)
+system_receipt_not_composed (receipt_t* receipt)
 {
   assert (receipt != NULL);
 
-  receipt->type = SYS_NOT_COMPOSED;
+  receipt->type = NOT_COMPOSED;
 }
 
 void
-system_receipt_automaton_dne (system_receipt_t* receipt)
+system_receipt_automaton_dne (receipt_t* receipt)
 {
   assert (receipt != NULL);
 
-  receipt->type = SYS_AUTOMATON_DNE;
+  receipt->type = AUTOMATON_DNE;
 }
 
 void
-system_receipt_not_owner (system_receipt_t* receipt)
+system_receipt_not_owner (receipt_t* receipt)
 {
   assert (receipt != NULL);
 
-  receipt->type = SYS_NOT_OWNER;
+  receipt->type = NOT_OWNER;
 }
 
 void
-system_receipt_child_destroyed (system_receipt_t* receipt, aid_t child)
+system_receipt_child_destroyed (receipt_t* receipt, aid_t child)
 {
   assert (receipt != NULL);
 
-  receipt->type = SYS_CHILD_DESTROYED;
+  receipt->type = CHILD_DESTROYED;
   receipt->child_destroyed.child = child;
 }

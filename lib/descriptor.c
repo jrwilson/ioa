@@ -3,7 +3,7 @@
 #include <assert.h>
 
 bool
-automaton_descriptor_check (automaton_descriptor_t* descriptor)
+descriptor_check (descriptor_t* descriptor)
 {
   assert (descriptor != NULL);
   /* Check that various things are not NULL. */
