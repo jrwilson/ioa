@@ -50,7 +50,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) trigger.$(OBJEXT) \
 	counter.$(OBJEXT) manager.$(OBJEXT) hashtable.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
-main_LDADD = $(LDADD)
+main_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -185,6 +185,7 @@ top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 main_SOURCES = main.c composer.c trigger.c counter.c manager.c hashtable.c
 main_includedir = lib
+main_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:

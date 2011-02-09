@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <string.h>
-#include "xstdlib.h"
+#include <stdlib.h>
 
 /* TODO: Linked list instead of compacting.  Sorting. */
 /* TODO: Hash size should always be power of 2.  Remove % and *. */
@@ -148,14 +148,14 @@ hashtable_create (size_t key_size, size_t value_size, hashtable_equal_t equal, h
 {
   assert (key_size > 0);
   assert (equal != NULL);
-  hashtable_t* hashtable = xmalloc (sizeof (hashtable_t));
+  hashtable_t* hashtable = malloc (sizeof (hashtable_t));
   hashtable->key_size = key_size;
   hashtable->value_size = value_size;
   hashtable->equal = equal;
   hashtable->sorted = sorted;
   hashtable->node_size = 0;
   hashtable->node_capacity = 1;
-  hashtable->node_data = xmalloc (hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size + hashtable->value_size));
+  hashtable->node_data = malloc (hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size + hashtable->value_size));
   hashtable->node_head = -1;
   hashtable->node_tail = -1;
   hashtable->node_free = -1;
@@ -164,7 +164,7 @@ hashtable_create (size_t key_size, size_t value_size, hashtable_equal_t equal, h
     free_insert (hashtable, idx);
   }
   hashtable->hash_size = 1;
-  hashtable->hash = xmalloc (hashtable->hash_size * sizeof (size_t));
+  hashtable->hash = malloc (hashtable->hash_size * sizeof (size_t));
   for (idx = 0; idx < hashtable->hash_size; ++idx) {
     hashtable->hash[idx] = -1;
   }
@@ -175,9 +175,9 @@ void
 hashtable_destroy (hashtable_t* hashtable)
 {
   assert (hashtable != NULL);
-  xfree (hashtable->node_data);
-  xfree (hashtable->hash);
-  xfree (hashtable);
+  free (hashtable->node_data);
+  free (hashtable->hash);
+  free (hashtable);
 }
 
 size_t
@@ -220,7 +220,7 @@ hashtable_insert (hashtable_t* hashtable, void* key, void* value)
   if (hashtable->node_size == hashtable->node_capacity) {
     size_t oldcapacity = hashtable->node_capacity;
     hashtable->node_capacity <<= 1;
-    hashtable->node_data = xrealloc (hashtable->node_data, hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size + hashtable->value_size));
+    hashtable->node_data = realloc (hashtable->node_data, hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size + hashtable->value_size));
     for (; oldcapacity < hashtable->node_capacity; ++oldcapacity) {
       free_insert (hashtable, oldcapacity);
     }
@@ -230,7 +230,7 @@ hashtable_insert (hashtable_t* hashtable, void* key, void* value)
   if (LOAD_DENOM * hashtable->node_size > LOAD_NUMER * hashtable->hash_size) {
     size_t oldsize = hashtable->hash_size;
     hashtable->hash_size <<= 1;
-    hashtable->hash = xrealloc (hashtable->hash, hashtable->hash_size * sizeof (size_t));
+    hashtable->hash = realloc (hashtable->hash, hashtable->hash_size * sizeof (size_t));
     size_t idx;
     for (idx = oldsize; idx < hashtable->hash_size; ++idx) {
       hashtable->hash[idx] = -1;

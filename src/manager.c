@@ -1,11 +1,11 @@
 #include "manager.h"
 
 #include <assert.h>
-#include "xstdlib.h"
-#include "hashtable.h"
-#include "ueioa.h"
-
+#include <stdlib.h>
 #include <stdio.h>
+#include <ueioa.h>
+
+#include "hashtable.h"
 
 typedef struct {
   aid_t* automaton;
@@ -65,7 +65,7 @@ struct manager_struct {
 manager_t*
 manager_create (void)
 {
-  manager_t* manager = xmalloc (sizeof (manager_t));
+  manager_t* manager = malloc (sizeof (manager_t));
   manager->status = NORMAL;
   manager->automata = hashtable_create (sizeof (automata_key_t), sizeof (automata_value_t), automata_key_equal, NULL);
   manager->compositions = hashtable_create (sizeof (compositions_key_t), sizeof (compositions_value_t), compositions_key_equal, NULL);

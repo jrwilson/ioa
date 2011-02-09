@@ -1,7 +1,7 @@
 #ifndef __manager_h__
 #define __manager_h__
 
-#include "types.h"
+#include <ueioa.h>
 
 typedef struct manager_struct manager_t;
 

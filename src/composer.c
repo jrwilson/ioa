@@ -1,13 +1,14 @@
 #include "composer.h"
 
 #include <assert.h>
-#include "xstdlib.h"
-#include "ueioa.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#include <ueioa.h>
+
 #include "manager.h"
 #include "trigger.h"
 #include "counter.h"
-
-#include <stdio.h>
 
 typedef struct {
   manager_t* manager;
@@ -23,7 +24,7 @@ static state_ptr_t
 composer_create (void)
 {
   printf ("composer_create\n");
-  composer_t* composer = xmalloc (sizeof (composer_t));
+  composer_t* composer = malloc (sizeof (composer_t));
 
   composer->manager = manager_create ();
   manager_self_set (composer->manager, &composer->self);

@@ -1,10 +1,10 @@
 #include "trigger.h"
 
 #include <assert.h>
-#include "xstdlib.h"
-#include "ueioa.h"
-
+#include <stdlib.h>
 #include <stdio.h>
+
+#include <ueioa.h>
 
 typedef struct {
   bool composed;
@@ -14,7 +14,7 @@ static state_ptr_t
 trigger_create (void)
 {
   printf ("trigger_create\n");
-  trigger_t* trigger = xmalloc (sizeof (trigger_t));
+  trigger_t* trigger = malloc (sizeof (trigger_t));
   trigger->composed = false;
   return trigger;
 }

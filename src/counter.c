@@ -1,10 +1,10 @@
 #include "counter.h"
 
 #include <assert.h>
-#include "xstdlib.h"
-#include "ueioa.h"
-
+#include <stdlib.h>
 #include <stdio.h>
+
+#include <ueioa.h>
 
 typedef struct {
   int count;
@@ -17,7 +17,7 @@ static state_ptr_t
 counter_create (void)
 {
   printf ("counter_create\n");
-  counter_t* counter = xmalloc (sizeof (counter_t));
+  counter_t* counter = malloc (sizeof (counter_t));
   counter->count = 0;
   counter->flag = false;
   return counter;
