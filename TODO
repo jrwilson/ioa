@@ -1,4 +1,3 @@
-* Evaluate system.c
 * Implement destroy and decompose
 * Implement parameterized actions
 * Implement multithreading
@@ -8,4 +7,3 @@
 * Bad orders
 * Automata destroy
 * Testing, Testing, Testing
-* Rename ueioa.c

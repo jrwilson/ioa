@@ -5,8 +5,8 @@ libueioa_la_SOURCES = \
 automata.c \
 descriptor.c \
 buffers.c \
+order.c \
 receipts.c \
 runq.c \
-system.c \
 table.c \
 ueioa.c

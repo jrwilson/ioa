@@ -68,8 +68,8 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_LIBADD =
-am_libueioa_la_OBJECTS = automata.lo descriptor.lo buffers.lo \
-	receipts.lo runq.lo system.lo table.lo ueioa.lo
+am_libueioa_la_OBJECTS = automata.lo descriptor.lo buffers.lo order.lo \
+	receipts.lo runq.lo table.lo ueioa.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -208,9 +208,9 @@ libueioa_la_SOURCES = \
 automata.c \
 descriptor.c \
 buffers.c \
+order.c \
 receipts.c \
 runq.c \
-system.c \
 table.c \
 ueioa.c
 
@@ -291,9 +291,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automata.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/descriptor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/receipts.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runq.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/system.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/table.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ueioa.Plo@am__quote@
 

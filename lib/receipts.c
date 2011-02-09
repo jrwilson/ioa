@@ -72,6 +72,18 @@ push (receipts_t* receipts, receipt_entry_t* receipt)
 }
 
 void
+receipts_push_bad_order (receipts_t* receipts, aid_t to)
+{
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = BAD_ORDER;
+
+  push (receipts, &receipt);
+}
+
+void
 receipts_push_self_created (receipts_t* receipts, aid_t to, aid_t self, aid_t parent)
 {
   assert (receipts != NULL);

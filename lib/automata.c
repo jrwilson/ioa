@@ -6,13 +6,11 @@
 #include <stdlib.h>
 
 #include "table.h"
-#include "buffers.h"
 
 struct automata_struct {
   pthread_rwlock_t lock;
   pthread_key_t current_aid;
   aid_t next_aid;
-  buffers_t* buffers;
 
   table_t* automaton_table;
   index_t* automaton_index;
@@ -366,9 +364,10 @@ automata_compose (automata_t* automata, aid_t aid, aid_t out_aid, output_t outpu
 }
 
 void
-automata_system_input_exec (automata_t* automata, aid_t aid, const receipt_t* receipt)
+automata_system_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, const receipt_t* receipt)
 {
   assert (automata != NULL);
+  assert (buffers != NULL);
   assert (receipt != NULL);
 
   /* Acquire the read lock. */
@@ -378,11 +377,11 @@ automata_system_input_exec (automata_t* automata, aid_t aid, const receipt_t* re
   assert (entry != NULL);
 
   /* Prepare the buffer. */
-  bid_t bid = buffers_alloc (automata->buffers, aid, sizeof (receipt_t));
-  receipt_t* r = buffers_write_ptr (automata->buffers, aid, bid);
+  bid_t bid = buffers_alloc (buffers, aid, sizeof (receipt_t));
+  receipt_t* r = buffers_write_ptr (buffers, aid, bid);
   *r = *receipt;
   
-  buffers_incref (automata->buffers, aid, bid);
+  buffers_incref (buffers, aid, bid);
   set_current_aid (automata, aid);
   pthread_mutex_lock (entry->lock);
   
@@ -390,16 +389,17 @@ automata_system_input_exec (automata_t* automata, aid_t aid, const receipt_t* re
   
   pthread_mutex_unlock (entry->lock);
   set_current_aid (automata, -1);
-  buffers_decref (automata->buffers, aid, bid);
+  buffers_decref (buffers, aid, bid);
   
   /* Release the read lock. */
   pthread_rwlock_unlock (&automata->lock);
 }
 
 int
-automata_system_output_exec (automata_t* automata, aid_t aid, order_t* order)
+automata_system_output_exec (automata_t* automata, buffers_t* buffers, aid_t aid, order_t* order)
 {
   assert (automata != NULL);
+  assert (buffers != NULL);
   assert (order != NULL);
 
   int retval = BAD_ORDER;
@@ -418,17 +418,17 @@ automata_system_output_exec (automata_t* automata, aid_t aid, order_t* order)
   set_current_aid (automata, -1);
   
   if (bid != -1) {
-    buffers_incref (automata->buffers, aid, bid);
+    buffers_incref (buffers, aid, bid);
     
-    if (buffers_size (automata->buffers, aid, bid) == sizeof (order_t)) {
-      *order = *(order_t*)buffers_read_ptr (automata->buffers, aid, bid);
+    if (buffers_size (buffers, aid, bid) == sizeof (order_t)) {
+      *order = *(order_t*)buffers_read_ptr (buffers, aid, bid);
       retval = GOOD_ORDER;
     }
     else {
       retval = BAD_ORDER;
     }
     
-    buffers_decref (automata->buffers, aid, bid);
+    buffers_decref (buffers, aid, bid);
   }
   else {
     /* No bid. */
@@ -443,6 +443,7 @@ automata_system_output_exec (automata_t* automata, aid_t aid, order_t* order)
 
 typedef struct {
   automata_t* automata;
+  buffers_t* buffers;
   automaton_entry_t* out_entry;
   aid_t out_aid;
   output_t output;
@@ -475,7 +476,7 @@ output_exec (const void* e, void* a)
   if (composition_entry->out_aid == arg->out_aid && composition_entry->output == arg->output) {
     automaton_entry_t* in_entry = automaton_entry_for_aid (arg->automata, composition_entry->in_aid, NULL);
     set_current_aid (arg->automata, composition_entry->in_aid);
-    buffers_change_owner (arg->automata->buffers, composition_entry->in_aid, arg->bid);
+    buffers_change_owner (arg->buffers, composition_entry->in_aid, arg->bid);
     composition_entry->input (in_entry->state, arg->bid);
   }
 }
@@ -497,9 +498,10 @@ output_unlock (const void* e, void* a)
 }
 
 void
-automata_output_exec (automata_t* automata, aid_t out_aid, output_t output)
+automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, output_t output)
 {
   assert (automata != NULL);
+  assert (buffers != NULL);
 
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
@@ -509,6 +511,7 @@ automata_output_exec (automata_t* automata, aid_t out_aid, output_t output)
 
   output_arg_t arg = {
     .automata = automata,
+    .buffers = buffers,
     .out_entry = out_entry,
     .out_aid = out_aid,
     .output = output,
@@ -529,7 +532,7 @@ automata_output_exec (automata_t* automata, aid_t out_aid, output_t output)
     /* Increment the reference count so the following decref will destroy the buffer if no
      * input references the buffer.
      */
-    buffers_incref (automata->buffers, out_aid, bid);
+    buffers_incref (buffers, out_aid, bid);
       
     arg.bid = bid;
     /* Execute the inputs. */
@@ -539,9 +542,9 @@ automata_output_exec (automata_t* automata, aid_t out_aid, output_t output)
 		    output_exec,
 		    &arg);
 
-    buffers_change_owner (automata->buffers, -1, bid);
+    buffers_change_owner (buffers, -1, bid);
             
-    buffers_decref (automata->buffers, out_aid, bid);
+    buffers_decref (buffers, out_aid, bid);
   }
     
   set_current_aid (automata, -1);
@@ -613,34 +616,6 @@ automata_internal_exists (automata_t* automata, aid_t aid, internal_t internal)
   return internal_entry_for_aid_internal (automata, aid, internal) != NULL;
 }
 
-bid_t
-automata_buffer_alloc (automata_t* automata, size_t size)
-{
-  assert (automata != NULL);
-  return buffers_alloc (automata->buffers, automata_get_current_aid (automata), size);
-}
-
-void*
-automata_buffer_write_ptr (automata_t* automata, bid_t bid)
-{
-  assert (automata != NULL);
-  return buffers_write_ptr (automata->buffers, automata_get_current_aid (automata), bid);
-}
-
-const void*
-automata_buffer_read_ptr (automata_t* automata, bid_t bid)
-{
-  assert (automata != NULL);
-  return buffers_read_ptr (automata->buffers, automata_get_current_aid (automata), bid);
-}
-
-size_t
-automata_buffer_size (automata_t* automata, bid_t bid)
-{
-  assert (automata != NULL);
-  return buffers_size (automata->buffers, automata_get_current_aid (automata), bid);
-}
-
 automata_t*
 automata_create (void)
 {
@@ -649,7 +624,6 @@ automata_create (void)
   pthread_key_create (&automata->current_aid, NULL);
   pthread_rwlock_init (&automata->lock, NULL);
   automata->next_aid = 0;
-  automata->buffers = buffers_create ();
 
   automata->automaton_table = table_create (sizeof (automaton_entry_t));
   automata->automaton_index = index_create_list (automata->automaton_table);
@@ -668,6 +642,16 @@ automata_create (void)
   return automata;
 }
 
+static void
+free_state_and_lock (void* e, void* ignored)
+{
+  automaton_entry_t* entry = e;
+
+  free (entry->state);
+  pthread_mutex_destroy (entry->lock);
+  free (entry->lock);
+}
+
 void
 automata_destroy (automata_t* automata)
 {
@@ -679,10 +663,12 @@ automata_destroy (automata_t* automata)
   table_destroy (automata->output_table);
   table_destroy (automata->input_table);
   table_destroy (automata->automaton_edge_table);
-  assert (0); /* TODO: Free dynamic structures. */
+  index_transform (automata->automaton_index,
+		   index_begin (automata->automaton_index),
+		   index_end (automata->automaton_index),
+		   free_state_and_lock,
+		   NULL);
   table_destroy (automata->automaton_table);
-
-  buffers_destroy (automata->buffers);
 
   pthread_rwlock_destroy (&automata->lock);
   pthread_key_delete (automata->current_aid);

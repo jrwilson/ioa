@@ -11,6 +11,7 @@
 
 static runq_t* runq;
 static automata_t* automata;
+static buffers_t* buffers;
 static receipts_t* receipts;
 
 /* static void */
@@ -241,6 +242,7 @@ ueioa_run (descriptor_t* descriptor)
 
   runq = runq_create ();
   automata = automata_create ();
+  buffers = buffers_create ();
   receipts = receipts_create ();
   
   create (-1, descriptor);
@@ -254,7 +256,7 @@ ueioa_run (descriptor_t* descriptor)
       {
 	receipt_t receipt;
 	if (receipts_pop (receipts, runnable.aid, &receipt) == 0) {
-	  automata_system_input_exec (automata, runnable.aid, &receipt);
+	  automata_system_input_exec (automata, buffers, runnable.aid, &receipt);
 	  /* Schedule again. */
 	  if (!receipts_empty (receipts, runnable.aid)) {
 	    runq_insert_system_input (runq, runnable.aid);
@@ -265,7 +267,7 @@ ueioa_run (descriptor_t* descriptor)
     case SYSTEM_OUTPUT:
       {
 	order_t order;
-	int s = automata_system_output_exec (automata, runnable.aid, &order);
+	int s = automata_system_output_exec (automata, buffers, runnable.aid, &order);
 	if (s == GOOD_ORDER) {
 	  switch (order.type) {
 	  case CREATE:
@@ -281,19 +283,19 @@ ueioa_run (descriptor_t* descriptor)
 	    destroy (runnable.aid, order.destroy.automaton);
 	    break;
 	  default:
-	    /* TODO: Bad order. */
-	    assert (0);
+	    receipts_push_bad_order (receipts, runnable.aid);
+	    runq_insert_system_input (runq, runnable.aid);
 	    break;
 	  }
 	}
 	else if (s == BAD_ORDER) {
-	  /* TODO: Bad order. */
-	  assert (0);
+	  receipts_push_bad_order (receipts, runnable.aid);
+	  runq_insert_system_input (runq, runnable.aid);
 	}
       }
       break;
     case OUTPUT:
-      automata_output_exec (automata, runnable.aid, runnable.output.output);
+      automata_output_exec (automata, buffers, runnable.aid, runnable.output.output);
       break;
     case INTERNAL:
       automata_internal_exec (automata, runnable.aid, runnable.internal.internal);
@@ -302,6 +304,7 @@ ueioa_run (descriptor_t* descriptor)
   }
 
   receipts_destroy (receipts);
+  buffers_destroy (buffers);
   automata_destroy (automata);
   runq_destroy (runq);
 }
@@ -345,23 +348,53 @@ schedule_internal (internal_t internal)
 bid_t
 buffer_alloc (size_t size)
 {
-  return automata_buffer_alloc (automata, size);
+  return buffers_alloc (buffers, automata_get_current_aid (automata), size);
 }
 
 void*
 buffer_write_ptr (bid_t bid)
 {
-  return automata_buffer_write_ptr (automata, bid);
+  return buffers_write_ptr (buffers, automata_get_current_aid (automata), bid);
 }
 
 const void*
 buffer_read_ptr (bid_t bid)
 {
-  return automata_buffer_read_ptr (automata, bid);
+  return buffers_read_ptr (buffers, automata_get_current_aid (automata), bid);
 }
 
 size_t
 buffer_size (bid_t bid)
 {
-  return automata_buffer_size (automata, bid);
+  return buffers_size (buffers, automata_get_current_aid (automata), bid);
+}
+
+void
+buffer_incref (bid_t bid)
+{
+  buffers_incref (buffers, automata_get_current_aid (automata), bid);
+}
+
+void
+buffer_decref (bid_t bid)
+{
+  buffers_decref (buffers, automata_get_current_aid (automata), bid);
+}
+
+void
+buffer_add_child (bid_t parent, bid_t child)
+{
+  buffers_add_child (buffers, automata_get_current_aid (automata), parent, child);
+}
+
+void
+buffer_remove_child (bid_t parent, bid_t child)
+{
+  buffers_remove_child (buffers, automata_get_current_aid (automata), parent, child);
+}
+
+bid_t
+buffer_dup (bid_t bid)
+{
+  return buffers_dup (buffers, automata_get_current_aid (automata), bid);
 }

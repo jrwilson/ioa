@@ -128,6 +128,10 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   bool something_changed = false;
 
   switch (receipt->type) {
+  case BAD_ORDER:
+    /* TODO */
+    assert (0);
+    break;
   case SELF_CREATED:
     {
       if (manager->self != NULL) {

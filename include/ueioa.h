@@ -56,15 +56,19 @@ typedef struct {
 } order_t;
 
 typedef enum {
+  BAD_ORDER,
+
   SELF_CREATED,
   CHILD_CREATED,
   BAD_DESCRIPTOR,
+
   OUTPUT_DNE,
   INPUT_DNE,
   OUTPUT_UNAVAILABLE,
   INPUT_UNAVAILABLE,
   COMPOSED,
   OUTPUT_COMPOSED,
+
   DECOMPOSED,
   OUTPUT_DECOMPOSED,
   NOT_COMPOSED,
@@ -112,5 +116,10 @@ bid_t buffer_alloc (size_t);
 void* buffer_write_ptr (bid_t);
 const void* buffer_read_ptr (bid_t);
 size_t buffer_size (bid_t);
+void buffer_incref (bid_t);
+void buffer_decref (bid_t);
+void buffer_add_child (bid_t, bid_t);
+void buffer_remove_child (bid_t, bid_t);
+bid_t buffer_dup (bid_t);
 
 #endif /* __ueioa_h__ */
