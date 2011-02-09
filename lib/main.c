@@ -1,6 +1,8 @@
 #include <stdlib.h>
+#include <stdbool.h>
+#include <assert.h>
 
-#include <ueioa.h>
+#include "ueioa.h"
 #include "composer.h"
 
 int
