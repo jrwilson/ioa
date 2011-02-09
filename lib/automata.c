@@ -376,24 +376,23 @@ automaton_system_input_exec (automata_t* automata, aid_t aid, const system_recei
   pthread_rwlock_rdlock (&automata->lock);
 
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
-  if (entry != NULL) {
+  assert (entry != NULL);
 
-    /* Prepare the buffer. */
-    bid_t bid = buffer_alloc (automata->buffers, aid, sizeof (system_receipt_t));
-    system_receipt_t* r = buffer_write_ptr (automata->buffers, aid, bid);
-    *r = *receipt;
-
-    buffer_incref (automata->buffers, aid, bid);
-    set_current_aid (automata, aid);
-    pthread_mutex_lock (entry->lock);
-        
-    entry->system_input (entry->state, bid);
-       
-    pthread_mutex_unlock (entry->lock);
-    set_current_aid (automata, -1);
-    buffer_decref (automata->buffers, aid, bid);
-  }
-
+  /* Prepare the buffer. */
+  bid_t bid = buffer_alloc (automata->buffers, aid, sizeof (system_receipt_t));
+  system_receipt_t* r = buffer_write_ptr (automata->buffers, aid, bid);
+  *r = *receipt;
+  
+  buffer_incref (automata->buffers, aid, bid);
+  set_current_aid (automata, aid);
+  pthread_mutex_lock (entry->lock);
+  
+  entry->system_input (entry->state, bid);
+  
+  pthread_mutex_unlock (entry->lock);
+  set_current_aid (automata, -1);
+  buffer_decref (automata->buffers, aid, bid);
+  
   /* Release the read lock. */
   pthread_rwlock_unlock (&automata->lock);
 }
@@ -404,38 +403,37 @@ automaton_system_output_exec (automata_t* automata, aid_t aid, system_order_t* o
   assert (automata != NULL);
   assert (order != NULL);
 
-  int retval = -1;
+  int retval = BAD_ORDER;
 
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
 
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
-  if (entry != NULL) {
+  assert (entry != NULL);
 
-    /* Execute. */
-    set_current_aid (automata, aid);
-    pthread_mutex_lock (entry->lock);
-    bid_t bid = entry->system_output (entry->state);
-    pthread_mutex_unlock (entry->lock);
-    set_current_aid (automata, -1);
+  /* Execute. */
+  set_current_aid (automata, aid);
+  pthread_mutex_lock (entry->lock);
+  bid_t bid = entry->system_output (entry->state);
+  pthread_mutex_unlock (entry->lock);
+  set_current_aid (automata, -1);
+  
+  if (bid != -1) {
+    buffer_incref (automata->buffers, aid, bid);
     
-    if (bid != -1) {
-      buffer_incref (automata->buffers, aid, bid);
-
-      if (buffer_size (automata->buffers, aid, bid) == sizeof (system_order_t)) {
-	*order = *(system_order_t*)buffer_read_ptr (automata->buffers, aid, bid);
-	retval = 1;
-      }
-      else {
-	retval = -1;
-      }
-      
-      buffer_decref (automata->buffers, aid, bid);
+    if (buffer_size (automata->buffers, aid, bid) == sizeof (system_order_t)) {
+      *order = *(system_order_t*)buffer_read_ptr (automata->buffers, aid, bid);
+      retval = GOOD_ORDER;
     }
     else {
-      /* No bid. */
-      retval = 0;
+      retval = BAD_ORDER;
     }
+    
+    buffer_decref (automata->buffers, aid, bid);
+  }
+  else {
+    /* No bid. */
+    retval = NO_ORDER;
   }
 
   /* Release the read lock. */
@@ -508,55 +506,54 @@ automaton_output_exec (automata_t* automata, aid_t out_aid, output_t output)
   pthread_rwlock_rdlock (&automata->lock);
 
   automaton_entry_t* out_entry = automaton_entry_for_aid (automata, out_aid, NULL);
-  if (out_entry != NULL) {
+  assert (out_entry != NULL);
 
-    output_arg_t arg = {
-      .automata = automata,
-      .out_entry = out_entry,
-      .out_aid = out_aid,
-      .output = output,
-      .output_done = false,
-    };
+  output_arg_t arg = {
+    .automata = automata,
+    .out_entry = out_entry,
+    .out_aid = out_aid,
+    .output = output,
+    .output_done = false,
+  };
 
-    /* Lock the automata in order. */
-    index_for_each (automata->composition_index,
-		    index_begin (automata->composition_index),
-		    index_end (automata->composition_index),
-		    output_lock,
-		    &arg);
+  /* Lock the automata in order. */
+  index_for_each (automata->composition_index,
+		  index_begin (automata->composition_index),
+		  index_end (automata->composition_index),
+		  output_lock,
+		  &arg);
     
-    /* Execute the output. */
-    set_current_aid (automata, out_aid);
-    bid_t bid = output (out_entry->state);
-    if (bid != -1) {
-      /* Increment the reference count so the following decref will destroy the buffer if no
-       * input references the buffer.
-       */
-      buffer_incref (automata->buffers, out_aid, bid);
+  /* Execute the output. */
+  set_current_aid (automata, out_aid);
+  bid_t bid = output (out_entry->state);
+  if (bid != -1) {
+    /* Increment the reference count so the following decref will destroy the buffer if no
+     * input references the buffer.
+     */
+    buffer_incref (automata->buffers, out_aid, bid);
       
-      arg.bid = bid;
-      /* Execute the inputs. */
-      index_for_each (automata->composition_index,
-		      index_begin (automata->composition_index),
-		      index_end (automata->composition_index),
-		      output_exec,
-		      &arg);
-
-      buffer_change_owner (automata->buffers, -1, bid);
-            
-      buffer_decref (automata->buffers, out_aid, bid);
-    }
-    
-    set_current_aid (automata, -1);
-
-    arg.output_done = false;
-    /* Unlock. */
+    arg.bid = bid;
+    /* Execute the inputs. */
     index_for_each (automata->composition_index,
 		    index_begin (automata->composition_index),
 		    index_end (automata->composition_index),
-		    output_unlock,
+		    output_exec,
 		    &arg);
+
+    buffer_change_owner (automata->buffers, -1, bid);
+            
+    buffer_decref (automata->buffers, out_aid, bid);
   }
+    
+  set_current_aid (automata, -1);
+
+  arg.output_done = false;
+  /* Unlock. */
+  index_for_each (automata->composition_index,
+		  index_begin (automata->composition_index),
+		  index_end (automata->composition_index),
+		  output_unlock,
+		  &arg);
 
   /* Release the read lock. */
   pthread_rwlock_unlock (&automata->lock);
@@ -572,24 +569,23 @@ automaton_internal_exec (automata_t* automata, aid_t aid, internal_t internal)
 
   /* Look up the automaton. */
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  assert (entry != NULL);
 
-  if (entry != NULL) {
-    /* Set the current automaton. */
-    set_current_aid (automata, aid);
-    
-    /* Lock the automaton. */
-    pthread_mutex_lock (entry->lock);
-    
-    /* Execute. */
-    internal (entry->state);
-    
-    /* Unlock the automaton. */
-    pthread_mutex_unlock (entry->lock);
-    
-    /* Clear the current automaton. */
-    set_current_aid (automata, -1);
-  }
+  /* Set the current automaton. */
+  set_current_aid (automata, aid);
   
+  /* Lock the automaton. */
+  pthread_mutex_lock (entry->lock);
+  
+  /* Execute. */
+  internal (entry->state);
+  
+  /* Unlock the automaton. */
+  pthread_mutex_unlock (entry->lock);
+  
+  /* Clear the current automaton. */
+  set_current_aid (automata, -1);
+
   /* Release the read lock. */
   pthread_rwlock_unlock (&automata->lock);
 }

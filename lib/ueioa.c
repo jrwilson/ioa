@@ -266,7 +266,7 @@ ueioa_run (automaton_descriptor_t* descriptor)
       {
 	system_order_t order;
 	int s = automaton_system_output_exec (automata, runnable.aid, &order);
-	if (s == 1) {
+	if (s == GOOD_ORDER) {
 	  switch (order.type) {
 	  case SYS_CREATE:
 	    create (runnable.aid, order.create.descriptor);
@@ -286,7 +286,7 @@ ueioa_run (automaton_descriptor_t* descriptor)
 	    break;
 	  }
 	}
-	else if (s == -1) {
+	else if (s == BAD_ORDER) {
 	  /* TODO: Bad order. */
 	  assert (0);
 	}

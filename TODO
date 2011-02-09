@@ -1,4 +1,3 @@
-* Insert unique in runq
 * Clean up SYSTEM_OUTPUT in main loop
 * Rename ueioa.c
 * Remove xstdlib.c
@@ -10,3 +9,6 @@
 * Implement I/O
 ** Timers
 ** File descriptors
+* Bad orders
+* Automata destroy
+* Testing, Testing, Testing

@@ -3,21 +3,24 @@
 
 #include <ueioa.h>
 
-#define COMPOSED 0
-#define OUTPUT_DNE -1
-#define INPUT_DNE -2
-#define OUTPUT_UNAVAILABLE -3
-#define INPUT_UNAVAILABLE -4
-
 typedef struct automata_struct automata_t;
 
 automata_t* automata_create (void);
 void automata_destroy (automata_t*);
 
 aid_t automaton_create (automata_t*, automaton_descriptor_t*, aid_t);
+
+#define COMPOSED 0
+#define OUTPUT_DNE -1
+#define INPUT_DNE -2
+#define OUTPUT_UNAVAILABLE -3
+#define INPUT_UNAVAILABLE -4
 int automaton_compose (automata_t*, aid_t, aid_t, output_t, aid_t, input_t);
 
 void automaton_system_input_exec (automata_t*, aid_t, const system_receipt_t*);
+#define GOOD_ORDER 1
+#define NO_ORDER 0
+#define BAD_ORDER -1
 int automaton_system_output_exec (automata_t*, aid_t, system_order_t*);
 void automaton_output_exec (automata_t*, aid_t, output_t);
 void automaton_internal_exec (automata_t*, aid_t, internal_t);
