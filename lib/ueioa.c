@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include <stdio.h>
-
 #include "runq.h"
 #include "automata.h"
 #include "receipts.h"
@@ -28,7 +26,6 @@ ueioa_run (descriptor_t* descriptor)
   automata_create_automaton (automata, receipts, runq, descriptor);
 
   for (;;) {
-    printf ("runq size = %lu\n", runq_size (runq));
     runnable_t runnable;
     runq_pop (runq, &runnable);
     switch (runnable.type) {

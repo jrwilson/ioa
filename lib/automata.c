@@ -343,7 +343,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     index_insert (automata->automaton_index, &entry);
     
     size_t idx;
-    for (idx = 0; idx < descriptor->input_count; ++idx) {
+    for (idx = 0; descriptor->inputs[idx] != NULL; ++idx) {
       input_entry_t entry = {
 	.aid = aid,
 	.input = descriptor->inputs[idx],
@@ -352,7 +352,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       index_insert (automata->input_index, &entry);
     }
     
-    for (idx = 0; idx < descriptor->output_count; ++idx) {
+    for (idx = 0; descriptor->outputs[idx] != NULL; ++idx) {
       output_entry_t entry = {
 	.aid = aid,
 	.output = descriptor->outputs[idx],
@@ -361,7 +361,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       index_insert (automata->output_index, &entry);
     }
     
-    for (idx = 0; idx < descriptor->internal_count; ++idx) {
+    for (idx = 0; descriptor->internals[idx] != NULL; ++idx) {
       internal_entry_t entry = {
 	.aid = aid,
 	.internal = descriptor->internals[idx],

@@ -1,8 +1,20 @@
+* Testing
+  case OUTPUT_DNE:
+  case INPUT_DNE:
+  case OUTPUT_UNAVAILABLE:
+  case INPUT_UNAVAILABLE:
+  case COMPOSED:
+  case OUTPUT_COMPOSED:
+  case NOT_COMPOSER:
+  case NOT_COMPOSED:
+  case DECOMPOSED:
+  case OUTPUT_DECOMPOSED:
+  case AUTOMATON_DNE:
+  case NOT_OWNER:
+  case CHILD_DESTROYED:
 * Implement parameterized actions
 * Implement multithreading
 * Implement I/O
 ** Timers
 ** File descriptors
-* Bad orders
-* Automata destroy
-* Testing, Testing, Testing
+* Test for memory leaks

@@ -88,16 +88,15 @@ composer_input2 (void* state, bid_t bid)
   printf ("count(2) = %d\n", output->count);
 }
 
-static input_t composer_inputs[] = { composer_input1, composer_input2 };
+static input_t composer_inputs[] = { composer_input1, composer_input2, NULL };
+static output_t composer_outputs[] = { NULL };
+static internal_t composer_internals[] = { NULL };
 
 descriptor_t composer_descriptor = {
   .constructor = composer_create,
   .system_input = composer_system_input,
   .system_output = composer_system_output,
-  .input_count = 2,
   .inputs = composer_inputs,
-  .output_count = 0,
-  .outputs = NULL,
-  .internal_count = 0,
-  .internals = NULL
+  .outputs = composer_outputs,
+  .internals = composer_internals,
 };

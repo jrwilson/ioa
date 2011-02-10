@@ -82,18 +82,15 @@ counter_output (void* state)
   }
 }
 
-static input_t counter_inputs[] = { counter_input };
-static output_t counter_outputs[] = { counter_output };
-static internal_t counter_internals[] = { counter_internal };
+static input_t counter_inputs[] = { counter_input, NULL };
+static output_t counter_outputs[] = { counter_output, NULL };
+static internal_t counter_internals[] = { counter_internal, NULL };
 
 descriptor_t counter_descriptor = {
   .constructor = counter_create,
   .system_input = counter_system_input,
   .system_output = counter_system_output,
   .inputs = counter_inputs,
-  .input_count = 1,
   .outputs = counter_outputs,
-  .output_count = 1,
   .internals = counter_internals,
-  .internal_count = 1,
 };

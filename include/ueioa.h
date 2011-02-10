@@ -16,11 +16,8 @@ typedef struct {
   constructor_t constructor;
   input_t system_input;
   output_t system_output;
-  size_t input_count;
   input_t* inputs;
-  size_t output_count;
   output_t* outputs;
-  size_t internal_count;
   internal_t* internals;
 } descriptor_t;
 
