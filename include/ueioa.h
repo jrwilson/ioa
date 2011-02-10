@@ -93,6 +93,12 @@ typedef struct {
       output_t output;
     } output_composed;
     struct {
+      aid_t out_aid;
+      output_t output;
+      aid_t in_aid;
+      input_t input;
+    } decomposed;
+    struct {
       output_t output;
     } output_decomposed;
     struct {

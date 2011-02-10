@@ -220,13 +220,17 @@ receipts_push_not_composed (receipts_t* receipts, aid_t to)
 }
 
 void
-receipts_push_decomposed (receipts_t* receipts, aid_t to)
+receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
 { 
   assert (receipts != NULL);
 
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = DECOMPOSED;
+  receipt.receipt.decomposed.out_aid = out_aid;
+  receipt.receipt.decomposed.output = output;
+  receipt.receipt.decomposed.in_aid = in_aid;
+  receipt.receipt.decomposed.input = input;
 
   push (receipts, &receipt);
 }
@@ -247,19 +251,38 @@ receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output
 void
 receipts_push_automaton_dne (receipts_t* receipts, aid_t to)
 { 
-  assert (0);
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = AUTOMATON_DNE;
+
+  push (receipts, &receipt);
 }
 
 void
 receipts_push_not_owner (receipts_t* receipts, aid_t to)
 { 
-  assert (0);
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = NOT_OWNER;
+
+  push (receipts, &receipt);
 }
 
 void
 receipts_push_child_destroyed (receipts_t* receipts, aid_t to, aid_t child)
 { 
-  assert (0);
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = CHILD_DESTROYED;
+  receipt.receipt.child_destroyed.child = child;
+
+  push (receipts, &receipt);
 }
 
 int
@@ -298,27 +321,20 @@ receipts_empty (receipts_t* receipts, aid_t to)
   return retval;
 }
 
-/* void */
-/* system_receipt_automaton_dne (receipt_t* receipt) */
-/* { */
-/*   assert (receipt != NULL); */
+void
+receipts_purge_aid (receipts_t* receipts, aid_t to)
+{
+  assert (receipts != NULL);
 
-/*   receipt->type = AUTOMATON_DNE; */
-/* } */
+  receipt_entry_t key = {
+    .to = to
+  };
 
-/* void */
-/* system_receipt_not_owner (receipt_t* receipt) */
-/* { */
-/*   assert (receipt != NULL); */
-
-/*   receipt->type = NOT_OWNER; */
-/* } */
-
-/* void */
-/* system_receipt_child_destroyed (receipt_t* receipt, aid_t child) */
-/* { */
-/*   assert (receipt != NULL); */
-
-/*   receipt->type = CHILD_DESTROYED; */
-/*   receipt->child_destroyed.child = child; */
-/* } */
+  pthread_rwlock_wrlock (&receipts->lock);
+  index_remove (receipts->index,
+		index_begin (receipts->index),
+		index_end (receipts->index),
+		receipt_entry_to_equal,
+		&key);
+  pthread_rwlock_unlock (&receipts->lock);
+}

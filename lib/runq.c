@@ -180,7 +180,7 @@ runq_pop (runq_t* runq, runnable_t* runnable)
 }
 
 void
-runq_purge (runq_t* runq, aid_t aid)
+runq_purge_aid (runq_t* runq, aid_t aid)
 {
   assert (runq != NULL);
 

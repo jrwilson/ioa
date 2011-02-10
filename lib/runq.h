@@ -37,6 +37,6 @@ void runq_insert_output (runq_t*, aid_t, output_t);
 void runq_insert_internal (runq_t*, aid_t, internal_t);
 
 void runq_pop (runq_t*, runnable_t*);
-void runq_purge (runq_t*, aid_t);
+void runq_purge_aid (runq_t*, aid_t);
 
 #endif /* __runq_h__ */
