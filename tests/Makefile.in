@@ -35,10 +35,10 @@ build_triplet = @build@
 host_triplet = @host@
 TESTS = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	automaton_dne$(EXEEXT)
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT)
 check_PROGRAMS = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	automaton_dne$(EXEEXT)
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -61,6 +61,9 @@ bad_order_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_child_created_OBJECTS = child_created.$(OBJEXT)
 child_created_OBJECTS = $(am_child_created_OBJECTS)
 child_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_not_owner_OBJECTS = not_owner.$(OBJEXT)
+not_owner_OBJECTS = $(am_not_owner_OBJECTS)
+not_owner_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_self_created_OBJECTS = self_created.$(OBJEXT)
 self_created_OBJECTS = $(am_self_created_OBJECTS)
 self_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -79,10 +82,10 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(self_created_SOURCES)
+	$(not_owner_SOURCES) $(self_created_SOURCES)
 DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(self_created_SOURCES)
+	$(not_owner_SOURCES) $(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -212,6 +215,8 @@ bad_descriptor_SOURCES = bad_descriptor.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
 automaton_dne_SOURCES = automaton_dne.c
 automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la
+not_owner_SOURCES = not_owner.c
+not_owner_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:
@@ -267,6 +272,9 @@ bad_order$(EXEEXT): $(bad_order_OBJECTS) $(bad_order_DEPENDENCIES)
 child_created$(EXEEXT): $(child_created_OBJECTS) $(child_created_DEPENDENCIES) 
 	@rm -f child_created$(EXEEXT)
 	$(LINK) $(child_created_OBJECTS) $(child_created_LDADD) $(LIBS)
+not_owner$(EXEEXT): $(not_owner_OBJECTS) $(not_owner_DEPENDENCIES) 
+	@rm -f not_owner$(EXEEXT)
+	$(LINK) $(not_owner_OBJECTS) $(not_owner_LDADD) $(LIBS)
 self_created$(EXEEXT): $(self_created_OBJECTS) $(self_created_DEPENDENCIES) 
 	@rm -f self_created$(EXEEXT)
 	$(LINK) $(self_created_OBJECTS) $(self_created_LDADD) $(LIBS)
@@ -281,6 +289,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_descriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_created.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_owner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
 
 .c.o:

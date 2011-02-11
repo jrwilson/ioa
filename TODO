@@ -9,12 +9,10 @@
   case NOT_COMPOSED:
   case DECOMPOSED:
   case OUTPUT_DECOMPOSED:
-  case NOT_OWNER:
   case CHILD_DESTROYED:
 
-* null or null
-* not_owner test
 * input composed
+* child_destroyed test
 * input decomposed
 * Implement parameterized actions
 * Implement multithreading
