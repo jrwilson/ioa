@@ -2,7 +2,6 @@
   case NOT_COMPOSER:
   case NOT_COMPOSED:
 
-  case INPUT_DECOMPOSED:
   case OUTPUT_DECOMPOSED:
   void schedule_system_output (void);
   int schedule_output (output_t, void*);
