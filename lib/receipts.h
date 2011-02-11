@@ -30,6 +30,8 @@ void receipts_push_decomposed (receipts_t*, aid_t, aid_t, input_t, void*);
 void receipts_push_input_decomposed (receipts_t*, aid_t, input_t, void*);
 void receipts_push_output_decomposed (receipts_t*, aid_t, output_t, void*);
 
+void receipts_push_rescinded (receipts_t*, aid_t);
+
 void receipts_push_automaton_dne (receipts_t*, aid_t);
 void receipts_push_not_owner (receipts_t*, aid_t);
 void receipts_push_child_destroyed (receipts_t*, aid_t, aid_t);

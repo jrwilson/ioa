@@ -26,6 +26,7 @@ typedef enum {
   DECLARE,
   COMPOSE,
   DECOMPOSE,
+  RESCIND,
   DESTROY
 } order_type_t;
 
@@ -55,6 +56,9 @@ typedef struct {
       void* in_param;
     } decompose;
     struct {
+      void* param;
+    } rescind;
+    struct {
       aid_t aid;
     } destroy;
   };
@@ -82,6 +86,8 @@ typedef enum {
   DECOMPOSED,
   INPUT_DECOMPOSED,
   OUTPUT_DECOMPOSED,
+
+  RESCINDED,
 
   AUTOMATON_DNE,
   NOT_OWNER,
@@ -131,6 +137,7 @@ void order_create_init (order_t*, descriptor_t*);
 void order_declare_init (order_t*, void*);
 void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
+void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
 void ueioa_run (descriptor_t*);

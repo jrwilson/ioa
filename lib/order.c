@@ -48,6 +48,14 @@ order_decompose_init (order_t* order, aid_t out_aid, output_t output, void* out_
 }
 
 void
+order_rescind_init (order_t* order, void* param)
+{
+  assert (order != NULL);
+  order->type = RESCIND;
+  order->rescind.param = param;
+}
+
+void
 order_destroy_init (order_t* order, aid_t aid)
 {
   assert (order != NULL);

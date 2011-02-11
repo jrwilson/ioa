@@ -188,7 +188,7 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     break;
   case INPUT_COMPOSED:
     /* TODO */
-    assert (0);
+    /* assert (0); */
     break;
   case OUTPUT_COMPOSED:
     /* TODO */
@@ -211,6 +211,10 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     assert (0);
     break;
   case OUTPUT_DECOMPOSED:
+    /* TODO */
+    assert (0);
+    break;
+  case RESCINDED:
     /* TODO */
     assert (0);
     break;

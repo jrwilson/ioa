@@ -36,10 +36,10 @@ ueioa_run (descriptor_t* descriptor)
       automata_system_output_exec (automata, receipts, runq, buffers, runnable.aid);
       break;
     case OUTPUT:
-      automata_output_exec (automata, buffers, runnable.aid, runnable.output.output, runnable.output.param);
+      automata_output_exec (automata, buffers, runnable.aid, runnable.output.output, runnable.param);
       break;
     case INTERNAL:
-      automata_internal_exec (automata, runnable.aid, runnable.internal.internal, runnable.internal.param);
+      automata_internal_exec (automata, runnable.aid, runnable.internal.internal, runnable.param);
       break;
     }
   }

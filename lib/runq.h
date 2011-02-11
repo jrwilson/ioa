@@ -13,14 +13,13 @@ typedef enum {
 typedef struct {
   runnable_type_t type;
   aid_t aid;
+  void* param;
   union {
     struct {
       output_t output;
-      void* param;
     } output;
     struct {
       internal_t internal;
-      void* param;
     } internal;
   };
 } runnable_t;
@@ -40,5 +39,6 @@ void runq_insert_internal (runq_t*, aid_t, internal_t, void*);
 
 void runq_pop (runq_t*, runnable_t*);
 void runq_purge_aid (runq_t*, aid_t);
+void runq_purge_aid_param (runq_t*, aid_t, void*);
 
 #endif /* __runq_h__ */

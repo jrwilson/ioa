@@ -349,6 +349,17 @@ composition_entry_for_out_aid_output_out_param_in_aid (automata_t* automata, aid
 }
 
 static bool
+composition_entry_any_param_equal (const void* x0, const void* y0)
+{
+  const composition_entry_t* x = x0;
+  const composition_entry_t* y = y0;
+
+  return
+    (x->out_aid == y->out_aid && x->out_param == y->out_param) ||
+    (x->in_aid == y->in_aid && x->in_param == y->in_param);
+}
+
+static bool
 composition_entry_any_aid_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
@@ -461,7 +472,7 @@ declare (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, vo
 
   param_entry_t entry = {
     .aid = aid,
-    .param = NULL,
+    .param = param,
   };
   index_insert_unique (automata->param_index, param_entry_aid_param_equal, &entry);
 
@@ -572,27 +583,110 @@ decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, 
 
 typedef struct {
   aid_t aid;
+  void* param;
   receipts_t* receipts;
   runq_t* runq;
-} decomposer_arg_t;
+} rescind_decompose_arg_t;
+
+static void
+rescind_decompose (const void* e, void* a)
+{
+  const composition_entry_t* entry = e;
+  rescind_decompose_arg_t* arg = a;
+
+  if ((entry->in_aid == arg->aid && entry->in_param == arg->param) ||
+      (entry->out_aid == arg->aid && entry->out_param == arg->param)) {
+    /* Composer. */
+    receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
+    runq_insert_system_input (arg->runq, entry->aid);
+    
+    /* Input. */
+    receipts_push_input_decomposed (arg->receipts, entry->in_aid, entry->input, entry->in_param);
+    runq_insert_system_input (arg->runq, entry->in_aid);
+    
+    /* Output. */
+    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
+    runq_insert_system_input (arg->runq, entry->out_aid);
+  }
+}
+
+static void
+rescind (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, void* param)
+{
+  assert (automata != NULL);
+  assert (receipts != NULL);
+  assert (runq != NULL);
+
+  /* Params. */
+  param_entry_t param_key = {
+    .aid = aid,
+    .param = param,
+  };
+  index_remove (automata->param_index,
+  		index_begin (automata->param_index),
+  		index_end (automata->param_index),
+  		param_entry_aid_param_equal,
+  		&param_key);
+
+  receipts_push_rescinded (receipts, aid);
+  runq_insert_system_input (runq, aid);
+
+  /* Compositions. */
+  rescind_decompose_arg_t arg = {
+    .aid = aid,
+    .param = param,
+    .receipts = receipts,
+    .runq = runq
+  };
+  index_for_each (automata->param_index,
+  		  index_begin (automata->param_index),
+  		  index_end (automata->param_index),
+  		  rescind_decompose,
+  		  &arg);
+
+  composition_entry_t composition_key = {
+    .out_aid = aid,
+    .out_param = param,
+    .in_aid = aid,
+    .in_param = param,
+  };
+  index_remove (automata->composition_index,
+  		index_begin (automata->composition_index),
+  		index_end (automata->composition_index),
+  		composition_entry_any_param_equal,
+  		&composition_key);
+
+  /* Runq. */
+  runq_purge_aid_param (runq, aid, param);
+}
+
+typedef struct {
+  aid_t aid;
+  receipts_t* receipts;
+  runq_t* runq;
+} destroy_decompose_arg_t;
 
 static void
 destroy_decompose (const void* e, void* a)
 {
   const composition_entry_t* entry = e;
-  decomposer_arg_t* arg = a;
+  destroy_decompose_arg_t* arg = a;
 
-  /* Composer. */
-  receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
-  runq_insert_system_input (arg->runq, entry->aid);
-
-  /* Input. */
-  receipts_push_input_decomposed (arg->receipts, entry->in_aid, entry->input, entry->in_param);
-  runq_insert_system_input (arg->runq, entry->in_aid);
-
-  /* Output. */
-  receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
-  runq_insert_system_input (arg->runq, entry->out_aid);
+  if (arg->aid == entry->aid ||
+      arg->aid == entry->in_aid ||
+      arg->aid == entry->out_aid) {
+    /* Composer. */
+    receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
+    runq_insert_system_input (arg->runq, entry->aid);
+    
+    /* Input. */
+    receipts_push_input_decomposed (arg->receipts, entry->in_aid, entry->input, entry->in_param);
+    runq_insert_system_input (arg->runq, entry->in_aid);
+    
+    /* Output. */
+    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
+    runq_insert_system_input (arg->runq, entry->out_aid);
+  }
 }
 
 static void
@@ -653,7 +747,7 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
 		&param_key);
 
   /* Compositions. */
-  decomposer_arg_t arg = {
+  destroy_decompose_arg_t arg = {
     .aid = aid,
     .receipts = receipts,
     .runq = runq
@@ -673,11 +767,11 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
   		composition_entry_any_aid_equal,
   		&composition_key);
 
-  /* Receipts. */
-  receipts_purge_aid (receipts, aid);
-  
   /* Runq. */
   runq_purge_aid (runq, aid);
+
+  /* Receipts. */
+  receipts_purge_aid (receipts, aid);
   
   /* Buffers. */
   buffers_purge_aid (buffers, aid);
@@ -814,6 +908,9 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 	  break;
 	case DECOMPOSE:
 	  decompose (automata, receipts, runq, aid, order.decompose.out_aid, order.decompose.output, order.decompose.out_param, order.decompose.in_aid, order.decompose.input, order.decompose.in_param);
+	  break;
+	case RESCIND:
+	  rescind (automata, receipts, runq, aid, order.rescind.param);
 	  break;
 	case DESTROY:
 	  destroy (automata, receipts, runq, buffers, aid, order.destroy.aid);

@@ -44,6 +44,14 @@ runnable_aid_equal (const void* x0, const void* y0)
   return x->aid == y->aid;
 }
 
+static bool
+runnable_aid_param_equal (const void* x0, const void* y0)
+{
+  const runnable_t* x = x0;
+  const runnable_t* y = y0;
+  return x->aid == y->aid && x->param == y->param;
+}
+
 struct runq_struct {
   pthread_cond_t cond;
   pthread_mutex_t mutex;
@@ -115,7 +123,8 @@ runq_insert_system_input (runq_t* runq, aid_t aid)
 
   runnable_t runnable = {
     .type = SYSTEM_INPUT,
-    .aid = aid
+    .aid = aid,
+    .param = NULL,
   };
   push (runq, &runnable);
 }
@@ -128,7 +137,8 @@ runq_insert_system_output (runq_t* runq, aid_t aid)
 
   runnable_t runnable = {
     .type = SYSTEM_OUTPUT,
-    .aid = aid
+    .aid = aid,
+    .param = NULL,
   };
   push (runq, &runnable);
 }
@@ -143,9 +153,9 @@ runq_insert_output (runq_t* runq, aid_t aid, output_t output, void* param)
   runnable_t runnable = {
     .type = OUTPUT,
     .aid = aid,
+    .param = param,
   };
   runnable.output.output = output;
-  runnable.output.param = param;
   push (runq, &runnable);
 }
 
@@ -159,9 +169,9 @@ runq_insert_internal (runq_t* runq, aid_t aid, internal_t internal, void* param)
   runnable_t runnable = {
     .type = INTERNAL,
     .aid = aid,
+    .param = param,
   };
   runnable.internal.internal = internal;
-  runnable.internal.param = param;
   push (runq, &runnable);
 }
 
@@ -194,6 +204,24 @@ runq_purge_aid (runq_t* runq, aid_t aid)
 		index_begin (runq->index),
 		index_end (runq->index),
 		runnable_aid_equal,
+		&key);
+  pthread_mutex_unlock (&runq->mutex);
+}
+
+void
+runq_purge_aid_param (runq_t* runq, aid_t aid, void* param)
+{
+  assert (runq != NULL);
+
+  runnable_t key = {
+    .aid = aid,
+    .param = param,
+  };
+  pthread_mutex_lock (&runq->mutex);
+  index_remove (runq->index,
+		index_begin (runq->index),
+		index_end (runq->index),
+		runnable_aid_param_equal,
 		&key);
   pthread_mutex_unlock (&runq->mutex);
 }
