@@ -8,6 +8,7 @@ bad_descriptor \
 declared \
 output_dne \
 input_dne \
+output_unavailable \
 composed \
 rescinded \
 automaton_dne \
@@ -36,6 +37,9 @@ output_dne_LDADD = $(top_builddir)/lib/libueioa.la
 
 input_dne_SOURCES = input_dne.c
 input_dne_LDADD = $(top_builddir)/lib/libueioa.la
+
+output_unavailable_SOURCES = output_unavailable.c
+output_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
 
 composed_SOURCES = composed.c
 composed_LDADD = $(top_builddir)/lib/libueioa.la

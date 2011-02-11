@@ -36,8 +36,9 @@ host_triplet = @host@
 TESTS = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
 	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
-	composed$(EXEEXT) rescinded$(EXEEXT) automaton_dne$(EXEEXT) \
-	not_owner$(EXEEXT) child_destroyed$(EXEEXT)
+	output_unavailable$(EXEEXT) composed$(EXEEXT) \
+	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	child_destroyed$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -52,8 +53,9 @@ CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
 	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
-	composed$(EXEEXT) rescinded$(EXEEXT) automaton_dne$(EXEEXT) \
-	not_owner$(EXEEXT) child_destroyed$(EXEEXT)
+	output_unavailable$(EXEEXT) composed$(EXEEXT) \
+	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	child_destroyed$(EXEEXT)
 am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
 automaton_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -84,6 +86,9 @@ not_owner_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_output_dne_OBJECTS = output_dne.$(OBJEXT)
 output_dne_OBJECTS = $(am_output_dne_OBJECTS)
 output_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_output_unavailable_OBJECTS = output_unavailable.$(OBJEXT)
+output_unavailable_OBJECTS = $(am_output_unavailable_OBJECTS)
+output_unavailable_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_rescinded_OBJECTS = rescinded.$(OBJEXT)
 rescinded_OBJECTS = $(am_rescinded_OBJECTS)
 rescinded_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -107,14 +112,14 @@ SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
 	$(child_destroyed_SOURCES) $(composed_SOURCES) \
 	$(declared_SOURCES) $(input_dne_SOURCES) $(not_owner_SOURCES) \
-	$(output_dne_SOURCES) $(rescinded_SOURCES) \
-	$(self_created_SOURCES)
+	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
+	$(rescinded_SOURCES) $(self_created_SOURCES)
 DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
 	$(child_destroyed_SOURCES) $(composed_SOURCES) \
 	$(declared_SOURCES) $(input_dne_SOURCES) $(not_owner_SOURCES) \
-	$(output_dne_SOURCES) $(rescinded_SOURCES) \
-	$(self_created_SOURCES)
+	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
+	$(rescinded_SOURCES) $(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -248,6 +253,8 @@ output_dne_SOURCES = output_dne.c
 output_dne_LDADD = $(top_builddir)/lib/libueioa.la
 input_dne_SOURCES = input_dne.c
 input_dne_LDADD = $(top_builddir)/lib/libueioa.la
+output_unavailable_SOURCES = output_unavailable.c
+output_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
 composed_SOURCES = composed.c
 composed_LDADD = $(top_builddir)/lib/libueioa.la
 rescinded_SOURCES = rescinded.c
@@ -331,6 +338,9 @@ not_owner$(EXEEXT): $(not_owner_OBJECTS) $(not_owner_DEPENDENCIES)
 output_dne$(EXEEXT): $(output_dne_OBJECTS) $(output_dne_DEPENDENCIES) 
 	@rm -f output_dne$(EXEEXT)
 	$(LINK) $(output_dne_OBJECTS) $(output_dne_LDADD) $(LIBS)
+output_unavailable$(EXEEXT): $(output_unavailable_OBJECTS) $(output_unavailable_DEPENDENCIES) 
+	@rm -f output_unavailable$(EXEEXT)
+	$(LINK) $(output_unavailable_OBJECTS) $(output_unavailable_LDADD) $(LIBS)
 rescinded$(EXEEXT): $(rescinded_OBJECTS) $(rescinded_DEPENDENCIES) 
 	@rm -f rescinded$(EXEEXT)
 	$(LINK) $(rescinded_OBJECTS) $(rescinded_LDADD) $(LIBS)
@@ -354,6 +364,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_owner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_dne.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_unavailable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rescinded.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
 
