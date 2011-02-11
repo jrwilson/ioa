@@ -1,7 +1,7 @@
 * Tests to write
   case NOT_COMPOSER:
   case NOT_COMPOSED:
-  case DECOMPOSED:
+
   case INPUT_DECOMPOSED:
   case OUTPUT_DECOMPOSED:
   void schedule_system_output (void);
