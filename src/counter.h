@@ -3,12 +3,12 @@
 
 #include <ueioa.h>
 
-void counter_input (void*, bid_t);
+void counter_input (void*, void*, bid_t);
 
 typedef struct {
   int count;
 } counter_output_t;
-bid_t counter_output (void*);
+bid_t counter_output (void*, void*);
 
 extern descriptor_t counter_descriptor;
 

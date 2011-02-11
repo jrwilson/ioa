@@ -21,6 +21,8 @@ struct automata_struct {
   index_t* output_index;
   table_t* internal_table;
   index_t* internal_index;
+  table_t* param_table;
+  index_t* param_index;
 
   table_t* composition_table;
   index_t* composition_index;
@@ -94,7 +96,6 @@ automaton_entry_for_parent (automata_t* automata, aid_t aid, iterator_t* ptr)
 typedef struct {
   aid_t aid;
   input_t input;
-  bool scheduled;
 } input_entry_t;
 
 static bool
@@ -136,7 +137,6 @@ input_entry_for_aid_input (automata_t* automata, aid_t aid, input_t input)
 typedef struct {
   aid_t aid;
   output_t output;
-  bool scheduled;
 } output_entry_t;
 
 static bool
@@ -178,7 +178,6 @@ output_entry_for_aid_output (automata_t* automata, aid_t aid, output_t output)
 typedef struct {
   aid_t aid;
   internal_t internal;
-  bool scheduled;
 } internal_entry_t;
 
 static bool
@@ -219,21 +218,68 @@ internal_entry_for_aid_internal (automata_t* automata, aid_t aid, internal_t int
 
 typedef struct {
   aid_t aid;
+  void* param;
+} param_entry_t;
+
+static bool
+param_entry_aid_equal (const void* x0, const void* y0)
+{
+  const param_entry_t* x = x0;
+  const param_entry_t* y = y0;
+
+  return x->aid == y->aid;
+}
+
+static bool
+param_entry_aid_param_equal (const void* x0, const void* y0)
+{
+  const param_entry_t* x = x0;
+  const param_entry_t* y = y0;
+
+  return
+    x->aid == y->aid &&
+    x->param == y->param;
+}
+
+static param_entry_t*
+param_entry_for_aid_param (automata_t* automata, aid_t aid, void* param)
+{
+  assert (automata != NULL);
+  
+  param_entry_t key = {
+    .aid = aid,
+    .param = param,
+  };
+  
+  return index_find_value (automata->param_index,
+			   index_begin (automata->param_index),
+			   index_end (automata->param_index),
+			   param_entry_aid_param_equal,
+			   &key,
+			   NULL);
+}
+
+
+typedef struct {
+  aid_t aid;
   aid_t out_aid;
   output_t output;
+  void* out_param;
   aid_t in_aid;
   input_t input;
+  void* in_param;
 } composition_entry_t;
 
 static bool
-composition_entry_in_aid_input_equal (const void* x0, const void* y0)
+composition_entry_in_aid_input_in_param_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;
 
   return
     x->in_aid == y->in_aid &&
-    x->input == y->input;
+    x->input == y->input &&
+    x->in_param == y->in_param;
 }
 
 static bool
@@ -251,25 +297,26 @@ composition_sorted (const void* x0, const void* y0)
 }
 
 static composition_entry_t*
-composition_entry_for_in_aid_input (automata_t* automata, aid_t in_aid, input_t input, iterator_t* ptr)
+composition_entry_for_in_aid_input_in_param (automata_t* automata, aid_t in_aid, input_t input, void* in_param, iterator_t* ptr)
 {
   assert (automata != NULL);
   
   composition_entry_t key = {
     .in_aid = in_aid,
     .input = input,
+    .in_param = in_param,
   };
   
   return index_find_value (automata->composition_index,
 			   index_begin (automata->composition_index),
 			   index_end (automata->composition_index),
-			   composition_entry_in_aid_input_equal,
+			   composition_entry_in_aid_input_in_param_equal,
 			   &key,
 			   ptr);
 }
 
 static bool
-composition_entry_out_aid_output_in_aid_equal (const void* x0, const void* y0)
+composition_entry_out_aid_output_out_param_in_aid_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;
@@ -277,24 +324,26 @@ composition_entry_out_aid_output_in_aid_equal (const void* x0, const void* y0)
   return
     x->out_aid == y->out_aid &&
     x->output == y->output &&
+    x->out_param == y->out_param &&
     x->in_aid == y->in_aid;
 }
 
 static composition_entry_t*
-composition_entry_for_out_aid_output_in_aid (automata_t* automata, aid_t out_aid, output_t output, aid_t in_aid)
+composition_entry_for_out_aid_output_out_param_in_aid (automata_t* automata, aid_t out_aid, output_t output, void* out_param, aid_t in_aid)
 {
   assert (automata != NULL);
   
   composition_entry_t key = {
     .out_aid = out_aid,
     .output = output,
+    .out_param = out_param,
     .in_aid = in_aid,
   };
   
   return index_find_value (automata->composition_index,
 			   index_begin (automata->composition_index),
 			   index_end (automata->composition_index),
-			   composition_entry_out_aid_output_in_aid_equal,
+			   composition_entry_out_aid_output_out_param_in_aid_equal,
 			   &key,
 			   NULL);
 }
@@ -347,7 +396,6 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       input_entry_t entry = {
 	.aid = aid,
 	.input = descriptor->inputs[idx],
-	.scheduled = false,
       };
       index_insert (automata->input_index, &entry);
     }
@@ -356,7 +404,6 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       output_entry_t entry = {
 	.aid = aid,
 	.output = descriptor->outputs[idx],
-	.scheduled = false,
       };
       index_insert (automata->output_index, &entry);
     }
@@ -365,9 +412,16 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       internal_entry_t entry = {
 	.aid = aid,
 	.internal = descriptor->internals[idx],
-	.scheduled = false,
       };
       index_insert (automata->internal_index, &entry);
+    }
+
+    {
+      param_entry_t entry = {
+	.aid = aid,
+	.param = NULL,
+      };
+      index_insert (automata->param_index, &entry);
     }
     
     automaton_entry_t* automaton_entry = automaton_entry_for_aid (automata, aid, NULL);
@@ -398,27 +452,29 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
 }
 
 static void
-compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
 
-  if (output_entry_for_aid_output (automata, out_aid, output) == NULL) {
+  if (output_entry_for_aid_output (automata, out_aid, output) == NULL ||
+      param_entry_for_aid_param (automata, out_aid, out_param) == NULL) {
     /* Output doesn't exist. */
     receipts_push_output_dne (receipts, aid);
     runq_insert_system_input (runq, aid);
   }
-  else if (input_entry_for_aid_input (automata, in_aid, input) == NULL) {
+  else if (input_entry_for_aid_input (automata, in_aid, input) == NULL ||
+	   param_entry_for_aid_param (automata, in_aid, in_param) == NULL) {
     /* Input doesn't exist. */
     receipts_push_input_dne (receipts, aid);
     runq_insert_system_input (runq, aid);
   }
-  else if (composition_entry_for_in_aid_input (automata, in_aid, input, NULL) != NULL) {
+  else if (composition_entry_for_in_aid_input_in_param (automata, in_aid, input, in_param, NULL) != NULL) {
     /* Input isn't available. */
     receipts_push_input_unavailable (receipts, aid);
-      runq_insert_system_input (runq, aid);
+    runq_insert_system_input (runq, aid);
   }
-  else if (composition_entry_for_out_aid_output_in_aid (automata, out_aid, output, in_aid) != NULL) {
+  else if (composition_entry_for_out_aid_output_out_param_in_aid (automata, out_aid, output, out_param, in_aid) != NULL) {
     /* Output isn't available. */
     receipts_push_output_unavailable (receipts, aid);
     runq_insert_system_input (runq, aid);
@@ -429,8 +485,10 @@ compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, ai
       .aid = aid,
       .out_aid = out_aid,
       .output = output,
+      .out_param = out_param,
       .in_aid = in_aid,
-      .input = input
+      .input = input,
+      .in_param = in_param,
     };
     index_insert (automata->composition_index, &entry);
     
@@ -443,7 +501,7 @@ compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, ai
 }
 
 static void
-decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
@@ -453,12 +511,15 @@ decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, 
      We only need to use the input since it must be unique.
   */
   iterator_t iterator;
-  composition_entry_t* entry = composition_entry_for_in_aid_input (automata, in_aid, input, &iterator);
-  if (entry != NULL) {
+  composition_entry_t* entry = composition_entry_for_in_aid_input_in_param (automata, in_aid, input, in_param, &iterator);
+  if (entry != NULL &&
+      entry->out_aid == out_aid &&
+      entry->output == output &&
+      entry->out_param == out_param) {
     if (entry->aid == aid) {
       index_erase (automata->composition_index, iterator);
       
-      receipts_push_decomposed (receipts, aid, out_aid, output, in_aid, input);
+      receipts_push_decomposed (receipts, aid, in_aid, input, in_param);
       runq_insert_system_input (runq, aid);
       
       receipts_push_output_decomposed (receipts, out_aid, output);
@@ -494,12 +555,12 @@ decomposer (const void* e, void* a)
   }
   else if (entry->out_aid == arg->aid) {
     /* Tell composer. */
-    receipts_push_decomposed (arg->receipts, entry->aid, entry->out_aid, entry->output, entry->in_aid, entry->input);
+    receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
     runq_insert_system_input (arg->runq, entry->aid);
   }
   else if (entry->in_aid == arg->aid) {
     /* Tell composer and output. */
-    receipts_push_decomposed (arg->receipts, entry->aid, entry->out_aid, entry->output, entry->in_aid, entry->input);
+    receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
     runq_insert_system_input (arg->runq, entry->aid);
 
     receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output);
@@ -553,6 +614,16 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
 		index_end (automata->internal_index),
 		internal_entry_aid_equal,
 		&internal_key);
+
+  /* Params. */
+  param_entry_t param_key = {
+    .aid = aid
+  };
+  index_remove (automata->param_index,
+		index_begin (automata->param_index),
+		index_end (automata->param_index),
+		param_entry_aid_equal,
+		&param_key);
 
   /* Compositions. */
   decomposer_arg_t arg = {
@@ -615,105 +686,6 @@ destroy (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* bu
   }
 }
 
-/* static void */
-/* destroy (aid_t destroyer, aid_t target) */
-/* { */
-/*   assert (0); */
-  /* if (automaton_exists (target)) { */
-  /*   if (destroyer == target || destroyer == automaton_parent (target)) { */
-  /*     /\* Recur on children. *\/ */
-  /*     while (!automaton_children_empty (target)) { */
-  /* 	aid_t child = automaton_children_front (target); */
-  /* 	automaton_children_remove (target, child); */
-  /* 	destroy (target, child); */
-  /*     } */
-
-  /*     /\* Purge the runq. *\/ */
-  /*     runq_purge (runq, target); */
-
-  /*     size_t idx; */
-
-  /*     /\* Decompose inputs. *\/ */
-  /*     for (idx = automaton_inputs_first (target); */
-  /* 	   idx != automaton_inputs_last (target); */
-  /* 	   idx = automaton_inputs_next (target,idx)) { */
-  /* 	input_t input = automaton_inputs_input (target, idx); */
-  /* 	if (automaton_input_composed (target, input)) { */
-  /* 	  aid_t out_automaton; */
-  /* 	  output_t output; */
-  /* 	  aid_t automaton; */
-  /* 	  automaton_input_output (target, input, &out_automaton, &output, &automaton); */
-  /* 	  /\* Decompose. *\/ */
-  /* 	  automaton_composition_decompose (automaton, out_automaton, output, target, input); */
-  /* 	  automaton_output_decompose (out_automaton, output, target); */
-  /* 	  /\* Tell the composer and output. *\/ */
-  /* 	  decomposed (automaton); */
-  /* 	  output_decomposed (out_automaton, output); */
-  /* 	} */
-  /*     } */
-
-  /*     /\* Decompose outputs. *\/ */
-  /*     for (idx = automaton_outputs_first (target); */
-  /* 	   idx != automaton_outputs_last (target); */
-  /* 	   idx = automaton_outputs_next (target, idx)) { */
-  /* 	output_t output = automaton_outputs_output (target, idx); */
-  /* 	size_t idx2; */
-  /* 	for (idx2 = automaton_output_first (target, output); */
-  /* 	     idx2 != automaton_output_last (target, output); */
-  /* 	     idx2 = automaton_output_next (target, output, idx2)) { */
-  /* 	  aid_t in_automaton; */
-  /* 	  input_t input; */
-  /* 	  aid_t automaton; */
-  /* 	  automaton_output_input (target, output, idx2, &in_automaton, &input, &automaton); */
-  /* 	  /\* Decompose. *\/ */
-  /* 	  automaton_composition_decompose (automaton, target, output, in_automaton, input); */
-  /* 	  automaton_input_decompose (in_automaton, input); */
-  /* 	  /\* Tell the composer. *\/ */
-  /* 	  decomposed (automaton); */
-  /* 	} */
-  /*     } */
-
-  /*     /\* Decompose. *\/ */
-  /*     for (idx = automaton_compositions_first (target); */
-  /* 	   idx != automaton_compositions_last (target); */
-  /* 	   idx = automaton_compositions_next (target, idx)) { */
-  /* 	aid_t out_automaton; */
-  /* 	output_t output; */
-  /* 	aid_t in_automaton; */
-  /* 	input_t input; */
-  /* 	automaton_compositions_composition (target, idx, &out_automaton, &output, &in_automaton, &input); */
-  /* 	/\* Decompose. *\/ */
-  /* 	automaton_output_decompose (out_automaton, output, target); */
-  /* 	automaton_input_decompose (in_automaton, input); */
-  /* 	/\* Tell the composer and output. *\/ */
-  /* 	output_decomposed (out_automaton, output); */
-  /*     } */
-
-  /*     aid_t parent = automaton_parent (target); */
-  /*     if (parent != NULL) { */
-  /* 	/\* Remove from parent. *\/ */
-  /* 	automaton_children_remove (parent, target); */
-	
-  /* 	/\* Tell parent. *\/ */
-  /* 	child_destroyed (parent, target); */
-  /*     } */
-
-  /*     /\* Destroy. *\/ */
-  /*     automaton_destroy (target); */
-  /*   } */
-  /*   else { */
-  /*     /\* Not the parent. *\/ */
-  /*     not_owner (destroyer); */
-  /*   } */
-  /* } */
-  /* else { */
-  /*   /\* Target doesn't exist. *\/ */
-  /*   automaton_dne (destroyer); */
-  /* } */
-/* } */
-
-
-
 void
 automata_create_automaton (automata_t* automata, receipts_t* receipts, runq_t* runq, descriptor_t* descriptor)
 {
@@ -757,7 +729,7 @@ automata_system_input_exec (automata_t* automata, receipts_t* receipts, runq_t* 
       buffers_incref (buffers, aid, bid);
       set_current_aid (automata, aid);
       pthread_mutex_lock (entry->lock);
-      entry->system_input (entry->state, bid);
+      entry->system_input (entry->state, NULL, bid);
       pthread_mutex_unlock (entry->lock);
       set_current_aid (automata, -1);
       /* Decrement to destroy. */
@@ -793,7 +765,7 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
     /* Execute. */
     set_current_aid (automata, aid);
     pthread_mutex_lock (entry->lock);
-    bid_t bid = entry->system_output (entry->state);
+    bid_t bid = entry->system_output (entry->state, NULL);
     pthread_mutex_unlock (entry->lock);
     set_current_aid (automata, -1);
     
@@ -808,10 +780,10 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 	  create (automata, receipts, runq, aid, order.create.descriptor);
 	  break;
 	case COMPOSE:
-	  compose (automata, receipts, runq, aid, order.compose.out_aid, order.compose.output, order.compose.in_aid, order.compose.input);
+	  compose (automata, receipts, runq, aid, order.compose.out_aid, order.compose.output, order.compose.out_param, order.compose.in_aid, order.compose.input, order.compose.in_param);
 	  break;
 	case DECOMPOSE:
-	  decompose (automata, receipts, runq, aid, order.decompose.out_aid, order.decompose.output, order.decompose.in_aid, order.decompose.input);
+	  decompose (automata, receipts, runq, aid, order.decompose.out_aid, order.decompose.output, order.decompose.out_param, order.decompose.in_aid, order.decompose.input, order.decompose.in_param);
 	  break;
 	case DESTROY:
 	  destroy (automata, receipts, runq, buffers, aid, order.destroy.aid);
@@ -869,7 +841,7 @@ output_exec (const void* e, void* a)
     automaton_entry_t* in_entry = automaton_entry_for_aid (arg->automata, composition_entry->in_aid, NULL);
     set_current_aid (arg->automata, composition_entry->in_aid);
     buffers_change_owner (arg->buffers, composition_entry->in_aid, arg->bid);
-    composition_entry->input (in_entry->state, arg->bid);
+    composition_entry->input (in_entry->state, composition_entry->in_param, arg->bid);
   }
 }
 
@@ -890,7 +862,7 @@ output_unlock (const void* e, void* a)
 }
 
 void
-automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, output_t output)
+automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, output_t output, void* out_param)
 {
   assert (automata != NULL);
   assert (buffers != NULL);
@@ -899,9 +871,11 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
   pthread_rwlock_rdlock (&automata->lock);
 
   automaton_entry_t* out_entry = automaton_entry_for_aid (automata, out_aid, NULL);
+  param_entry_t* param_entry = param_entry_for_aid_param (automata, out_aid, out_param);
 
-  /* Automaton must exist. */
-  if (out_entry != NULL) {
+  /* Automaton and param must exist. */
+  if (out_entry != NULL &&
+      param_entry != NULL) {
 
     output_arg_t arg = {
       .automata = automata,
@@ -921,7 +895,7 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
     
     /* Execute the output. */
     set_current_aid (automata, out_aid);
-    bid_t bid = output (out_entry->state);
+    bid_t bid = output (out_entry->state, out_param);
     if (bid != -1) {
       /* Increment the reference count so the following decref will destroy the buffer if no
        * input references the buffer.
@@ -957,18 +931,20 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
 }
 
 void
-automata_internal_exec (automata_t* automata, aid_t aid, internal_t internal)
+automata_internal_exec (automata_t* automata, aid_t aid, internal_t internal, void* param)
 {
   assert (automata != NULL);
 
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
 
-  /* Look up the automaton. */
+  /* Look up the automaton and param. */
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  param_entry_t* param_entry = param_entry_for_aid_param (automata, aid, param);
 
-  /* Automaton must exist. */
-  if (entry != NULL) {
+  /* Automaton and param must exist. */
+  if (entry != NULL &&
+      param_entry != NULL) {
     
     /* Set the current automaton. */
     set_current_aid (automata, aid);
@@ -977,7 +953,7 @@ automata_internal_exec (automata_t* automata, aid_t aid, internal_t internal)
     pthread_mutex_lock (entry->lock);
     
     /* Execute. */
-    internal (entry->state);
+    internal (entry->state, param);
     
     /* Unlock the automaton. */
     pthread_mutex_unlock (entry->lock);
@@ -999,19 +975,23 @@ automata_get_current_aid (automata_t* automata)
 }
 
 bool
-automata_output_exists (automata_t* automata, aid_t aid, output_t output)
+automata_output_exists (automata_t* automata, aid_t aid, output_t output, void* param)
 {
   assert (automata != NULL);
 
-  return output_entry_for_aid_output (automata, aid, output) != NULL;
+  return
+    (output_entry_for_aid_output (automata, aid, output) != NULL) &&
+    (param_entry_for_aid_param (automata, aid, param) != NULL);
 }
 
 bool
-automata_internal_exists (automata_t* automata, aid_t aid, internal_t internal)
+automata_internal_exists (automata_t* automata, aid_t aid, internal_t internal, void* param)
 {
   assert (automata != NULL);
-  
-  return internal_entry_for_aid_internal (automata, aid, internal) != NULL;
+
+  return
+    (internal_entry_for_aid_internal (automata, aid, internal) != NULL) &&
+    (param_entry_for_aid_param (automata, aid, param) != NULL);
 }
 
 automata_t*
@@ -1031,6 +1011,8 @@ automata_create (void)
   automata->output_index = index_create_list (automata->output_table);
   automata->internal_table = table_create (sizeof (internal_entry_t));
   automata->internal_index = index_create_list (automata->internal_table);
+  automata->param_table = table_create (sizeof (param_entry_t));
+  automata->param_index = index_create_list (automata->param_table);
 
   automata->composition_table = table_create (sizeof (composition_entry_t));
   automata->composition_index = index_create_ordered_list (automata->composition_table, composition_sorted);
@@ -1055,6 +1037,7 @@ automata_destroy (automata_t* automata)
 
   table_destroy (automata->composition_table);
 
+  table_destroy (automata->param_table);
   table_destroy (automata->internal_table);
   table_destroy (automata->output_table);
   table_destroy (automata->input_table);

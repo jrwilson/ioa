@@ -3,8 +3,8 @@
 
 #include <ueioa.h>
 
-void composer_input1 (void*, bid_t);
-void composer_input2 (void*, bid_t);
+void composer_input1 (void*, void*, bid_t);
+void composer_input2 (void*, void*, bid_t);
 
 extern descriptor_t composer_descriptor;
 

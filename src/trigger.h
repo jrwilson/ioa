@@ -3,7 +3,7 @@
 
 #include <ueioa.h>
 
-bid_t trigger_output (void*);
+bid_t trigger_output (void*, void*);
 
 extern descriptor_t trigger_descriptor;
 

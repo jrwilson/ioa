@@ -16,9 +16,11 @@ typedef struct {
   union {
     struct {
       output_t output;
+      void* param;
     } output;
     struct {
       internal_t internal;
+      void* param;
     } internal;
   };
 } runnable_t;
@@ -33,8 +35,8 @@ bool runq_empty (runq_t*);
 
 void runq_insert_system_input (runq_t*, aid_t);
 void runq_insert_system_output (runq_t*, aid_t);
-void runq_insert_output (runq_t*, aid_t, output_t);
-void runq_insert_internal (runq_t*, aid_t, internal_t);
+void runq_insert_output (runq_t*, aid_t, output_t, void*);
+void runq_insert_internal (runq_t*, aid_t, internal_t, void*);
 
 void runq_pop (runq_t*, runnable_t*);
 void runq_purge_aid (runq_t*, aid_t);

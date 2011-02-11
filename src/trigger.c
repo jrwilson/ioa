@@ -20,7 +20,7 @@ trigger_create (void)
 }
 
 static void
-trigger_system_input (void* state, bid_t bid)
+trigger_system_input (void* state, void* param, bid_t bid)
 {
   printf ("trigger_system_input\n");
   assert (state != NULL);
@@ -33,7 +33,7 @@ trigger_system_input (void* state, bid_t bid)
   if (receipt->type == OUTPUT_COMPOSED &&
       receipt->output_composed.output == trigger_output) {
     trigger->composed = true;
-    assert (schedule_output (trigger_output) == 0);
+    assert (schedule_output (trigger_output, NULL) == 0);
   }
   else if (receipt->type == OUTPUT_DECOMPOSED &&
 	   receipt->output_decomposed.output == trigger_output) {
@@ -43,21 +43,21 @@ trigger_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-trigger_system_output (void* state)
+trigger_system_output (void* state, void* param)
 {
   printf ("trigger_system_output\n");
   return -1;
 }
 
 bid_t
-trigger_output (void* state)
+trigger_output (void* state, void* param)
 {
   printf ("trigger_output\n");
   assert (state != NULL);
 
   trigger_t* trigger = state;
   if (trigger->composed) {
-    assert (schedule_output (trigger_output) == 0);
+    assert (schedule_output (trigger_output, NULL) == 0);
     return buffer_alloc (0);
   }
   else {

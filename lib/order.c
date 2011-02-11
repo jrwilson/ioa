@@ -12,27 +12,31 @@ order_create_init (order_t* order, descriptor_t* descriptor)
 }
 
 void
-order_compose_init (order_t* order, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+order_compose_init (order_t* order, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   assert (order != NULL);
 
   order->type = COMPOSE;
   order->compose.out_aid = out_aid;
   order->compose.output = output;
+  order->compose.out_param = out_param;
   order->compose.in_aid = in_aid;
   order->compose.input = input;
+  order->compose.in_param = in_param;
 }
 
 void
-order_decompose_init (order_t* order, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+order_decompose_init (order_t* order, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   assert (order != NULL);
 
   order->type = DECOMPOSE;
   order->decompose.out_aid = out_aid;
   order->decompose.output = output;
+  order->decompose.out_param = out_param;
   order->decompose.in_aid = in_aid;
   order->decompose.input = input;
+  order->decompose.in_param = in_param;
 }
 
 void

@@ -9,7 +9,7 @@ self_created_create (void)
 }
 
 static void
-self_created_system_input (void* state, bid_t bid)
+self_created_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
@@ -40,7 +40,7 @@ self_created_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-self_created_system_output (void* state)
+self_created_system_output (void* state, void* param)
 {
   return -1;
 }

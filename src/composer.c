@@ -32,18 +32,18 @@ composer_create (void)
   manager_automaton_add (composer->manager, &composer->trigger, &trigger_descriptor);
   manager_automaton_add (composer->manager, &composer->counter1, &counter_descriptor);
   manager_automaton_add (composer->manager, &composer->counter2, &counter_descriptor);
-  manager_composition_add (composer->manager, &composer->trigger, trigger_output, &composer->counter1, counter_input);
-  manager_composition_add (composer->manager, &composer->counter1, counter_output, &composer->self, composer_input1);
-  manager_composition_add (composer->manager, &composer->trigger, trigger_output, &composer->counter2, counter_input);
-  manager_composition_add (composer->manager, &composer->counter2, counter_output, &composer->self, composer_input2);
+  manager_composition_add (composer->manager, &composer->trigger, trigger_output, NULL, &composer->counter1, counter_input, NULL);
+  manager_composition_add (composer->manager, &composer->counter1, counter_output, NULL, &composer->self, composer_input1, NULL);
+  manager_composition_add (composer->manager, &composer->trigger, trigger_output, NULL, &composer->counter2, counter_input, NULL);
+  manager_composition_add (composer->manager, &composer->counter2, counter_output, NULL, &composer->self, composer_input2, NULL);
 
   return composer;
 }
 
-static bid_t composer_system_output (void* state);
+static bid_t composer_system_output (void* state, void* param);
 
 static void
-composer_system_input (void* state, bid_t bid)
+composer_system_input (void* state, void* param, bid_t bid)
 {
   printf ("composer_system_input\n");
   assert (state != NULL);
@@ -59,7 +59,7 @@ composer_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-composer_system_output (void* state)
+composer_system_output (void* state, void* param)
 {
   printf ("composer_system_output\n");
   assert (state != NULL);
@@ -69,7 +69,7 @@ composer_system_output (void* state)
 }
 
 void
-composer_input1 (void* state, bid_t bid)
+composer_input1 (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (counter_output_t));
@@ -79,7 +79,7 @@ composer_input1 (void* state, bid_t bid)
 }
 
 void
-composer_input2 (void* state, bid_t bid)
+composer_input2 (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (counter_output_t));

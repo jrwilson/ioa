@@ -26,8 +26,10 @@ typedef struct {
 typedef struct {
   aid_t* out_automaton;
   output_t output;
+  void* out_param;
   aid_t* in_automaton;
   input_t input;
+  void* in_param;
 } compositions_key_t;
 
 static bool
@@ -105,7 +107,7 @@ manager_automaton_add (manager_t* manager, aid_t* automaton, descriptor_t* descr
 }
 
 void
-manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t output, aid_t* in_automaton, input_t input)
+manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t output, void* out_param, aid_t* in_automaton, input_t input, void* in_param)
 {
   assert (manager != NULL);
   assert (out_automaton != NULL);
@@ -113,7 +115,7 @@ manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t outp
   assert (in_automaton != NULL);
   assert (input != NULL);
 
-  compositions_key_t key = { out_automaton, output, in_automaton, input }; 
+  compositions_key_t key = { out_automaton, output, out_param, in_automaton, input, in_param };
   compositions_value_t value = { false };
   assert (!hashtable_contains_key (manager->compositions, &key));
   hashtable_insert (manager->compositions, &key, &value);
@@ -248,7 +250,7 @@ fire (manager_t* manager)
 	*key->in_automaton != -1 &&
 	!value->composed) {
       /* We need to compose. */
-      order_compose_init (&manager->last_order, *key->out_automaton, key->output, *key->in_automaton, key->input);
+      order_compose_init (&manager->last_order, *key->out_automaton, key->output, key->out_param, *key->in_automaton, key->input, key->in_param);
       manager->last_composition = *key;
       return true;
     }

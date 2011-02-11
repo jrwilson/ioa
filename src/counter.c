@@ -11,7 +11,7 @@ typedef struct {
   bool flag;
 } counter_t;
 
-static void counter_internal (void* state);
+static void counter_internal (void* state, void* param);
 
 static void*
 counter_create (void)
@@ -24,7 +24,7 @@ counter_create (void)
 }
 
 static void
-counter_system_input (void* state, bid_t bid)
+counter_system_input (void* state, void* param, bid_t bid)
 {
   printf ("counter_system_input\n");
   assert (state != NULL);
@@ -33,39 +33,39 @@ counter_system_input (void* state, bid_t bid)
 
   const receipt_t* receipt = buffer_read_ptr (bid);
   if (receipt->type == SELF_CREATED) {
-    assert (schedule_internal (counter_internal) == 0);
+    assert (schedule_internal (counter_internal, NULL) == 0);
   }
 }
 
 static bid_t
-counter_system_output (void* state)
+counter_system_output (void* state, void* param)
 {
   printf ("counter_system_output\n");
   return -1;
 }
 
 void
-counter_input (void* state, bid_t bid)
+counter_input (void* state, void* param, bid_t bid)
 {
   printf ("counter_input\n");
   assert (state != NULL);
   counter_t* counter = state;
   counter->flag = true;
-  assert (schedule_output (counter_output) == 0);
+  assert (schedule_output (counter_output, NULL) == 0);
 }
 
 static void
-counter_internal (void* state)
+counter_internal (void* state, void* param)
 {
   printf ("counter_internal\n");
   assert (state != NULL);
   counter_t* counter = state;
   ++counter->count;
-  assert (schedule_internal (counter_internal) == 0);
+  assert (schedule_internal (counter_internal, NULL) == 0);
 }
 
 bid_t
-counter_output (void* state)
+counter_output (void* state, void* param)
 {
   printf ("counter_output\n");
   assert (state != NULL);

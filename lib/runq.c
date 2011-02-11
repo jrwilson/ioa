@@ -134,7 +134,7 @@ runq_insert_system_output (runq_t* runq, aid_t aid)
 }
 
 void
-runq_insert_output (runq_t* runq, aid_t aid, output_t output)
+runq_insert_output (runq_t* runq, aid_t aid, output_t output, void* param)
 {
   assert (runq != NULL);
   assert (aid != -1);
@@ -145,11 +145,12 @@ runq_insert_output (runq_t* runq, aid_t aid, output_t output)
     .aid = aid,
   };
   runnable.output.output = output;
+  runnable.output.param = param;
   push (runq, &runnable);
 }
 
 void
-runq_insert_internal (runq_t* runq, aid_t aid, internal_t internal)
+runq_insert_internal (runq_t* runq, aid_t aid, internal_t internal, void* param)
 {
   assert (runq != NULL);
   assert (aid != -1);
@@ -160,6 +161,7 @@ runq_insert_internal (runq_t* runq, aid_t aid, internal_t internal)
     .aid = aid,
   };
   runnable.internal.internal = internal;
+  runnable.internal.param = param;
   push (runq, &runnable);
 }
 

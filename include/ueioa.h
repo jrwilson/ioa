@@ -8,9 +8,9 @@ typedef int aid_t;
 typedef int bid_t;
 
 typedef void* (*constructor_t) (void);
-typedef void (*input_t) (void*, bid_t);
-typedef bid_t (*output_t) (void*);
-typedef void (*internal_t) (void*);
+typedef void (*input_t) (void*, void*, bid_t);
+typedef bid_t (*output_t) (void*, void*);
+typedef void (*internal_t) (void*, void*);
 
 typedef struct {
   constructor_t constructor;
@@ -37,14 +37,18 @@ typedef struct {
     struct {
       aid_t out_aid;
       output_t output;
+      void* out_param;
       aid_t in_aid;
       input_t input;
+      void* in_param;
     } compose;
     struct {
       aid_t out_aid;
       output_t output;
+      void* out_param;
       aid_t in_aid;
       input_t input;
+      void* in_param;
     } decompose;
     struct {
       aid_t aid;
@@ -88,15 +92,16 @@ typedef struct {
     } child_created;
     struct {
       output_t output;
+      void* out_param;
     } output_composed;
     struct {
-      aid_t out_aid;
-      output_t output;
       aid_t in_aid;
       input_t input;
+      void* in_param;
     } decomposed;
     struct {
       output_t output;
+      void* out_param;
     } output_decomposed;
     struct {
       aid_t child;
@@ -107,15 +112,15 @@ typedef struct {
 bool descriptor_check (descriptor_t*);
 
 void order_create_init (order_t*, descriptor_t*);
-void order_compose_init (order_t*, aid_t, output_t, aid_t, input_t);
-void order_decompose_init (order_t*, aid_t, output_t, aid_t, input_t);
+void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
+void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_destroy_init (order_t*, aid_t);
 
 void ueioa_run (descriptor_t*);
 
 void schedule_system_output (void);
-int schedule_output (output_t);
-int schedule_internal (internal_t);
+int schedule_output (output_t, void*);
+int schedule_internal (internal_t, void*);
 
 bid_t buffer_alloc (size_t);
 void* buffer_write_ptr (bid_t);

@@ -9,7 +9,7 @@ child_create (void)
 }
 
 static void
-child_system_input (void* state, bid_t bid)
+child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
@@ -40,7 +40,7 @@ child_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-child_system_output (void* state)
+child_system_output (void* state, void* param)
 {
   return -1;
 }
@@ -78,7 +78,7 @@ child_created_create (void)
 }
 
 static void
-child_created_system_input (void* state, bid_t bid)
+child_created_system_input (void* state, void* param, bid_t bid)
 {
   child_created_t* child_created = state;
   assert (child_created != NULL);
@@ -139,7 +139,7 @@ child_created_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-child_created_system_output (void* state)
+child_created_system_output (void* state, void* param)
 {
   child_created_t* child_created = state;
   assert (child_created != NULL);

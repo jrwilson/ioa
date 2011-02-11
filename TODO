@@ -12,6 +12,9 @@
   case AUTOMATON_DNE:
   case NOT_OWNER:
   case CHILD_DESTROYED:
+* null or null
+* input composed
+* input decomposed
 * Implement parameterized actions
 * Implement multithreading
 * Implement I/O

@@ -21,7 +21,7 @@ bad_order_create (void)
 }
 
 static void
-bad_order_system_input (void* state, bid_t bid)
+bad_order_system_input (void* state, void* param, bid_t bid)
 {
   bad_order_t* bad_order = state;
   assert (bad_order != NULL);
@@ -83,7 +83,7 @@ bad_order_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-bad_order_system_output (void* state)
+bad_order_system_output (void* state, void* param)
 {
   bad_order_t* bad_order = state;
   assert (bad_order != NULL);

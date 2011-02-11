@@ -21,7 +21,7 @@ bad_descriptor_create (void)
 }
 
 static void
-bad_descriptor_system_input (void* state, bid_t bid)
+bad_descriptor_system_input (void* state, void* param, bid_t bid)
 {
   bad_descriptor_t* bad_descriptor = state;
   assert (bad_descriptor != NULL);
@@ -82,7 +82,7 @@ bad_descriptor_system_input (void* state, bid_t bid)
 }
 
 static bid_t
-bad_descriptor_system_output (void* state)
+bad_descriptor_system_output (void* state, void* param)
 {
   bad_descriptor_t* bad_descriptor = state;
   assert (bad_descriptor != NULL);

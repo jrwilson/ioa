@@ -220,17 +220,16 @@ receipts_push_not_composed (receipts_t* receipts, aid_t to)
 }
 
 void
-receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t out_aid, output_t output, aid_t in_aid, input_t input)
+receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t in_aid, input_t input, void*  in_param)
 { 
   assert (receipts != NULL);
 
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = DECOMPOSED;
-  receipt.receipt.decomposed.out_aid = out_aid;
-  receipt.receipt.decomposed.output = output;
   receipt.receipt.decomposed.in_aid = in_aid;
   receipt.receipt.decomposed.input = input;
+  receipt.receipt.decomposed.in_param = in_param;
 
   push (receipts, &receipt);
 }

@@ -36,10 +36,10 @@ ueioa_run (descriptor_t* descriptor)
       automata_system_output_exec (automata, receipts, runq, buffers, runnable.aid);
       break;
     case OUTPUT:
-      automata_output_exec (automata, buffers, runnable.aid, runnable.output.output);
+      automata_output_exec (automata, buffers, runnable.aid, runnable.output.output, runnable.output.param);
       break;
     case INTERNAL:
-      automata_internal_exec (automata, runnable.aid, runnable.internal.internal);
+      automata_internal_exec (automata, runnable.aid, runnable.internal.internal, runnable.internal.param);
       break;
     }
   }
@@ -57,11 +57,11 @@ schedule_system_output (void)
 }
 
 int
-schedule_output (output_t output)
+schedule_output (output_t output, void* param)
 {
   aid_t aid = automata_get_current_aid (automata);
-  if (automata_output_exists (automata, aid, output)) {
-    runq_insert_output (runq, aid, output);
+  if (automata_output_exists (automata, aid, output, param)) {
+    runq_insert_output (runq, aid, output, param);
     return 0;
   }
   else {
@@ -70,11 +70,11 @@ schedule_output (output_t output)
 }
 
 int
-schedule_internal (internal_t internal)
+schedule_internal (internal_t internal, void* param)
 {
   aid_t aid = automata_get_current_aid (automata);
-  if (automata_internal_exists (automata, aid, internal)) {
-    runq_insert_internal (runq, aid, internal);
+  if (automata_internal_exists (automata, aid, internal, param)) {
+    runq_insert_internal (runq, aid, internal, param);
     return 0;
   }
   else {
