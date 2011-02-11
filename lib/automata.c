@@ -533,6 +533,9 @@ decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, 
       
       receipts_push_decomposed (receipts, aid, in_aid, input, in_param);
       runq_insert_system_input (runq, aid);
+
+      receipts_push_input_decomposed (receipts, in_aid, input, in_param);
+      runq_insert_system_input (runq, in_aid);
       
       receipts_push_output_decomposed (receipts, out_aid, output, out_param);
       runq_insert_system_input (runq, out_aid);
@@ -555,29 +558,22 @@ typedef struct {
 } decomposer_arg_t;
 
 static void
-decomposer (const void* e, void* a)
+destroy_decompose (const void* e, void* a)
 {
   const composition_entry_t* entry = e;
   decomposer_arg_t* arg = a;
 
-  if (entry->aid == arg->aid) {
-    /* Tell output. */
-    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
-    runq_insert_system_input (arg->runq, entry->out_aid);
-  }
-  else if (entry->out_aid == arg->aid) {
-    /* Tell composer. */
-    receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
-    runq_insert_system_input (arg->runq, entry->aid);
-  }
-  else if (entry->in_aid == arg->aid) {
-    /* Tell composer and output. */
-    receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
-    runq_insert_system_input (arg->runq, entry->aid);
+  /* Composer. */
+  receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
+  runq_insert_system_input (arg->runq, entry->aid);
 
-    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
-    runq_insert_system_input (arg->runq, entry->out_aid);
-  }
+  /* Input. */
+  receipts_push_input_decomposed (arg->receipts, entry->in_aid, entry->input, entry->in_param);
+  runq_insert_system_input (arg->runq, entry->in_aid);
+
+  /* Output. */
+  receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
+  runq_insert_system_input (arg->runq, entry->out_aid);
 }
 
 static void
@@ -646,7 +642,7 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
   index_for_each (automata->composition_index,
 		  index_begin (automata->composition_index),
 		  index_end (automata->composition_index),
-		  decomposer,
+		  destroy_decompose,
 		  &arg);
 
   composition_entry_t composition_key = {

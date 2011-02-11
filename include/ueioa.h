@@ -68,12 +68,13 @@ typedef enum {
   OUTPUT_UNAVAILABLE,
   INPUT_UNAVAILABLE,
   COMPOSED,
-  OUTPUT_COMPOSED,
   INPUT_COMPOSED,
+  OUTPUT_COMPOSED,
 
   NOT_COMPOSER,
   NOT_COMPOSED,
   DECOMPOSED,
+  INPUT_DECOMPOSED,
   OUTPUT_DECOMPOSED,
 
   AUTOMATON_DNE,
@@ -104,6 +105,10 @@ typedef struct {
       input_t input;
       void* in_param;
     } decomposed;
+    struct {
+      input_t input;
+      void* in_param;
+    } input_decomposed;
     struct {
       output_t output;
       void* out_param;

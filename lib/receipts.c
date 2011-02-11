@@ -250,6 +250,20 @@ receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t in_aid, input_t 
 }
 
 void
+receipts_push_input_decomposed (receipts_t* receipts, aid_t to, input_t input, void* in_param)
+{ 
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = INPUT_DECOMPOSED;
+  receipt.receipt.input_decomposed.input = input;
+  receipt.receipt.input_decomposed.in_param = in_param;
+
+  push (receipts, &receipt);
+}
+
+void
 receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output, void* out_param)
 { 
   assert (receipts != NULL);

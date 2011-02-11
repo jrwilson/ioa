@@ -202,6 +202,10 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     /* TODO */
     assert (0);
     break;
+  case INPUT_DECOMPOSED:
+    /* TODO */
+    assert (0);
+    break;
   case OUTPUT_DECOMPOSED:
     /* TODO */
     assert (0);

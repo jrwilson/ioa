@@ -49,6 +49,7 @@ bad_order_system_input (void* state, void* param, bid_t bid)
     case NOT_COMPOSER:
     case NOT_COMPOSED:
     case DECOMPOSED:
+    case INPUT_DECOMPOSED:
     case OUTPUT_DECOMPOSED:
     case AUTOMATON_DNE:
     case NOT_OWNER:
@@ -74,6 +75,7 @@ bad_order_system_input (void* state, void* param, bid_t bid)
     case NOT_COMPOSER:
     case NOT_COMPOSED:
     case DECOMPOSED:
+    case INPUT_DECOMPOSED:
     case OUTPUT_DECOMPOSED:
     case AUTOMATON_DNE:
     case NOT_OWNER:
