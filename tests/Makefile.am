@@ -6,6 +6,7 @@ self_created \
 child_created \
 bad_descriptor \
 declared \
+output_dne \
 composed \
 rescinded \
 automaton_dne \
@@ -28,6 +29,9 @@ bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
 
 declared_SOURCES = declared.c
 declared_LDADD = $(top_builddir)/lib/libueioa.la
+
+output_dne_SOURCES = output_dne.c
+output_dne_LDADD = $(top_builddir)/lib/libueioa.la
 
 composed_SOURCES = composed.c
 composed_LDADD = $(top_builddir)/lib/libueioa.la
