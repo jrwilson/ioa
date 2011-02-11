@@ -157,6 +157,10 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     /* TODO */
     assert (0);
     break;
+  case DECLARED:
+    /* TODO */
+    assert (0);
+    break;
   case OUTPUT_DNE:
     /* TODO */
     assert (0);

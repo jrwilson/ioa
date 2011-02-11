@@ -416,6 +416,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       index_insert (automata->internal_index, &entry);
     }
 
+    /* Delcare the NULL paramter. */
     {
       param_entry_t entry = {
 	.aid = aid,
@@ -452,10 +453,28 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
 }
 
 static void
+declare (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, void* param)
+{
+  assert (automata != NULL);
+  assert (receipts != NULL);
+  assert (runq != NULL);
+
+  param_entry_t entry = {
+    .aid = aid,
+    .param = NULL,
+  };
+  index_insert_unique (automata->param_index, param_entry_aid_param_equal, &entry);
+
+  receipts_push_declared (receipts, aid);
+  runq_insert_system_input (runq, aid);
+}
+
+static void
 compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
+  assert (runq != NULL);
 
   if (output_entry_for_aid_output (automata, out_aid, output) == NULL ||
       param_entry_for_aid_param (automata, out_aid, out_param) == NULL) {
@@ -786,6 +805,9 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 	switch (order.type) {
 	case CREATE:
 	  create (automata, receipts, runq, aid, order.create.descriptor);
+	  break;
+	case DECLARE:
+	  declare (automata, receipts, runq, aid, order.declare.param);
 	  break;
 	case COMPOSE:
 	  compose (automata, receipts, runq, aid, order.compose.out_aid, order.compose.output, order.compose.out_param, order.compose.in_aid, order.compose.input, order.compose.in_param);

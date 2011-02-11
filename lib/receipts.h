@@ -14,6 +14,8 @@ void receipts_push_self_created (receipts_t*, aid_t, aid_t, aid_t);
 void receipts_push_child_created (receipts_t*, aid_t, aid_t);
 void receipts_push_bad_descriptor (receipts_t*, aid_t);
 
+void receipts_push_declared (receipts_t*, aid_t);
+
 void receipts_push_output_dne (receipts_t*, aid_t);
 void receipts_push_input_dne (receipts_t*, aid_t);
 void receipts_push_output_unavailable (receipts_t*, aid_t);

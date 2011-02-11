@@ -123,6 +123,18 @@ receipts_push_bad_descriptor (receipts_t* receipts, aid_t to)
 }
 
 void
+receipts_push_declared (receipts_t* receipts, aid_t to)
+{
+ assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = DECLARED;
+
+  push (receipts, &receipt);
+}
+
+void
 receipts_push_output_dne (receipts_t* receipts, aid_t to)
 { 
   assert (receipts != NULL);

@@ -5,32 +5,32 @@
 typedef enum {
   UNSENT,
   SENT
-} automaton_dne_state_t;
+} declared_state_t;
 
 typedef struct {
-  automaton_dne_state_t state;
-} automaton_dne_t;
+  declared_state_t state;
+} declared_t;
 
 static void*
-automaton_dne_create (void)
+declared_create (void)
 {
-  automaton_dne_t* automaton_dne = malloc (sizeof (automaton_dne_t));
-  automaton_dne->state = UNSENT;
+  declared_t* declared = malloc (sizeof (declared_t));
+  declared->state = UNSENT;
 
-  return automaton_dne;
+  return declared;
 }
 
 static void
-automaton_dne_system_input (void* state, void* param, bid_t bid)
+declared_system_input (void* state, void* param, bid_t bid)
 {
-  automaton_dne_t* automaton_dne = state;
-  assert (automaton_dne != NULL);
+  declared_t* declared = state;
+  assert (declared != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  switch (automaton_dne->state) {
+  switch (declared->state) {
   case UNSENT:
     switch (receipt->type) {
     case SELF_CREATED:
@@ -60,14 +60,13 @@ automaton_dne_system_input (void* state, void* param, bid_t bid)
     break;
   case SENT:
     switch (receipt->type) {
-    case AUTOMATON_DNE:
+    case DECLARED:
       exit (EXIT_SUCCESS);
       break;
     case BAD_ORDER:
     case SELF_CREATED:
     case CHILD_CREATED:
     case BAD_DESCRIPTOR:
-    case DECLARED:
     case OUTPUT_DNE:
     case INPUT_DNE:
     case OUTPUT_UNAVAILABLE:
@@ -80,6 +79,7 @@ automaton_dne_system_input (void* state, void* param, bid_t bid)
     case DECOMPOSED:
     case INPUT_DECOMPOSED:
     case OUTPUT_DECOMPOSED:
+    case AUTOMATON_DNE:
     case NOT_OWNER:
     case CHILD_DESTROYED:
       assert (0);
@@ -89,36 +89,36 @@ automaton_dne_system_input (void* state, void* param, bid_t bid)
 }
 
 static bid_t
-automaton_dne_system_output (void* state, void* param)
+declared_system_output (void* state, void* param)
 {
-  automaton_dne_t* automaton_dne = state;
-  assert (automaton_dne != NULL);
+  declared_t* declared = state;
+  assert (declared != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
   order_t* order = buffer_write_ptr (bid);
-  /* Try to destroy an automaton that doesn't exist. */
-  order_destroy_init (order, -1);
-  automaton_dne->state = SENT;
+  /* Declare a paramter. */
+  order_declare_init (order, (void*)567);
+  declared->state = SENT;
 
   return bid;
 }
 
-static input_t automaton_dne_inputs[] = { NULL };
-static output_t automaton_dne_outputs[] = { NULL };
-static internal_t automaton_dne_internals[] = { NULL };
+static input_t declared_inputs[] = { NULL };
+static output_t declared_outputs[] = { NULL };
+static internal_t declared_internals[] = { NULL };
 
-descriptor_t automaton_dne_descriptor = {
-  .constructor = automaton_dne_create,
-  .system_input = automaton_dne_system_input,
-  .system_output = automaton_dne_system_output,
-  .inputs = automaton_dne_inputs,
-  .outputs = automaton_dne_outputs,
-  .internals = automaton_dne_internals,
+descriptor_t declared_descriptor = {
+  .constructor = declared_create,
+  .system_input = declared_system_input,
+  .system_output = declared_system_output,
+  .inputs = declared_inputs,
+  .outputs = declared_outputs,
+  .internals = declared_internals,
 };
 
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&automaton_dne_descriptor);
+  ueioa_run (&declared_descriptor);
   exit (EXIT_SUCCESS);
 }

@@ -23,6 +23,7 @@ typedef struct {
 
 typedef enum {
   CREATE,
+  DECLARE,
   COMPOSE,
   DECOMPOSE,
   DESTROY
@@ -34,6 +35,9 @@ typedef struct {
     struct {
       descriptor_t* descriptor;
     } create;
+    struct {
+      void* param;
+    } declare;
     struct {
       aid_t out_aid;
       output_t output;
@@ -62,6 +66,8 @@ typedef enum {
   SELF_CREATED,
   CHILD_CREATED,
   BAD_DESCRIPTOR,
+
+  DECLARED,
 
   OUTPUT_DNE,
   INPUT_DNE,
@@ -122,6 +128,7 @@ typedef struct {
 bool descriptor_check (descriptor_t*);
 
 void order_create_init (order_t*, descriptor_t*);
+void order_declare_init (order_t*, void*);
 void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_destroy_init (order_t*, aid_t);

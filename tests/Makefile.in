@@ -35,7 +35,7 @@ build_triplet = @build@
 host_triplet = @host@
 TESTS = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	declared$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
@@ -50,7 +50,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	declared$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT)
 am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
@@ -67,6 +67,9 @@ child_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_child_destroyed_OBJECTS = child_destroyed.$(OBJEXT)
 child_destroyed_OBJECTS = $(am_child_destroyed_OBJECTS)
 child_destroyed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_declared_OBJECTS = declared.$(OBJEXT)
+declared_OBJECTS = $(am_declared_OBJECTS)
+declared_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_not_owner_OBJECTS = not_owner.$(OBJEXT)
 not_owner_OBJECTS = $(am_not_owner_OBJECTS)
 not_owner_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -88,12 +91,12 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(not_owner_SOURCES) \
-	$(self_created_SOURCES)
+	$(child_destroyed_SOURCES) $(declared_SOURCES) \
+	$(not_owner_SOURCES) $(self_created_SOURCES)
 DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(not_owner_SOURCES) \
-	$(self_created_SOURCES)
+	$(child_destroyed_SOURCES) $(declared_SOURCES) \
+	$(not_owner_SOURCES) $(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -221,6 +224,8 @@ child_created_SOURCES = child_created.c
 child_created_LDADD = $(top_builddir)/lib/libueioa.la
 bad_descriptor_SOURCES = bad_descriptor.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
+declared_SOURCES = declared.c
+declared_LDADD = $(top_builddir)/lib/libueioa.la
 automaton_dne_SOURCES = automaton_dne.c
 automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la
 not_owner_SOURCES = not_owner.c
@@ -285,6 +290,9 @@ child_created$(EXEEXT): $(child_created_OBJECTS) $(child_created_DEPENDENCIES)
 child_destroyed$(EXEEXT): $(child_destroyed_OBJECTS) $(child_destroyed_DEPENDENCIES) 
 	@rm -f child_destroyed$(EXEEXT)
 	$(LINK) $(child_destroyed_OBJECTS) $(child_destroyed_LDADD) $(LIBS)
+declared$(EXEEXT): $(declared_OBJECTS) $(declared_DEPENDENCIES) 
+	@rm -f declared$(EXEEXT)
+	$(LINK) $(declared_OBJECTS) $(declared_LDADD) $(LIBS)
 not_owner$(EXEEXT): $(not_owner_OBJECTS) $(not_owner_DEPENDENCIES) 
 	@rm -f not_owner$(EXEEXT)
 	$(LINK) $(not_owner_OBJECTS) $(not_owner_LDADD) $(LIBS)
@@ -303,6 +311,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_created.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_destroyed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/declared.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_owner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
 

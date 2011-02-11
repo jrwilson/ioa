@@ -18,3 +18,14 @@
 ** Timers
 ** File descriptors
 * Test for memory leaks
+* Manager
+* Unit tests
+** automata.c
+** buffers.c
+** descriptor.c
+** order.c
+** receipts.c
+** runq.c
+** table.c
+** ueioa.c
+

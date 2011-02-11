@@ -5,6 +5,7 @@ bad_order \
 self_created \
 child_created \
 bad_descriptor \
+declared \
 automaton_dne \
 not_owner \
 child_destroyed
@@ -22,6 +23,9 @@ child_created_LDADD = $(top_builddir)/lib/libueioa.la
 
 bad_descriptor_SOURCES = bad_descriptor.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
+
+declared_SOURCES = declared.c
+declared_LDADD = $(top_builddir)/lib/libueioa.la
 
 automaton_dne_SOURCES = automaton_dne.c
 automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la

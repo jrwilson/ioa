@@ -12,6 +12,14 @@ order_create_init (order_t* order, descriptor_t* descriptor)
 }
 
 void
+order_declare_init (order_t* order, void* param)
+{
+  assert (order != NULL);
+  order->type = DECLARE;
+  order->declare.param = param;
+}
+
+void
 order_compose_init (order_t* order, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   assert (order != NULL);

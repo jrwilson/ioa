@@ -39,6 +39,7 @@ bad_descriptor_system_input (void* state, void* param, bid_t bid)
     case BAD_ORDER:
     case CHILD_CREATED:
     case BAD_DESCRIPTOR:
+    case DECLARED:
     case OUTPUT_DNE:
     case INPUT_DNE:
     case OUTPUT_UNAVAILABLE:
@@ -64,6 +65,7 @@ bad_descriptor_system_input (void* state, void* param, bid_t bid)
     case BAD_ORDER:
     case SELF_CREATED:
     case CHILD_CREATED:
+    case DECLARED:
     case OUTPUT_DNE:
     case INPUT_DNE:
     case OUTPUT_UNAVAILABLE:
