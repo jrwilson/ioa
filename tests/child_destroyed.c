@@ -61,37 +61,42 @@ descriptor_t child_descriptor = {
 
 
 typedef enum {
-  UNSENT,
-  SENT
-} child_created_state_t;
+  START,
+  CREATE_UNSENT,
+  CREATE_SENT,
+  DESTROY_UNSENT,
+  DESTROY_SENT
+} child_destroyed_state_t;
 
 typedef struct {
-  child_created_state_t state;
-} child_created_t;
+  child_destroyed_state_t state;
+  aid_t child_aid;
+} child_destroyed_t;
 
 static void*
-child_created_create (void)
+child_destroyed_create (void)
 {
-  child_created_t* child_created = malloc (sizeof (child_created_t));
-  child_created->state = UNSENT;
+  child_destroyed_t* child_destroyed = malloc (sizeof (child_destroyed_t));
+  child_destroyed->state = START;
 
-  return child_created;
+  return child_destroyed;
 }
 
 static void
-child_created_system_input (void* state, void* param, bid_t bid)
+child_destroyed_system_input (void* state, void* param, bid_t bid)
 {
-  child_created_t* child_created = state;
-  assert (child_created != NULL);
+  child_destroyed_t* child_destroyed = state;
+  assert (child_destroyed != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  switch (child_created->state) {
-  case UNSENT:
+  switch (child_destroyed->state) {
+  case START:
     switch (receipt->type) {
     case SELF_CREATED:
+      child_destroyed->state = CREATE_UNSENT;
       schedule_system_output ();
       break;
     case BAD_ORDER:
@@ -114,10 +119,16 @@ child_created_system_input (void* state, void* param, bid_t bid)
       assert (0);
     }
     break;
-  case SENT:
+  case CREATE_UNSENT:
+    assert (0);
+    break;
+  case CREATE_SENT:
     switch (receipt->type) {
     case CHILD_CREATED:
-      exit (EXIT_SUCCESS);
+      child_destroyed->child_aid = receipt->child_created.child;
+      child_destroyed->state = DESTROY_UNSENT;
+      schedule_system_output ();
+      break;
     case BAD_ORDER:
     case SELF_CREATED:
     case BAD_DESCRIPTOR:
@@ -138,40 +149,86 @@ child_created_system_input (void* state, void* param, bid_t bid)
       assert (0);
     }
     break;
+  case DESTROY_UNSENT:
+    assert (0);
+    break;
+  case DESTROY_SENT:
+    switch (receipt->type) {
+    case CHILD_DESTROYED:
+      exit (EXIT_SUCCESS);
+    case CHILD_CREATED:
+    case BAD_ORDER:
+    case SELF_CREATED:
+    case BAD_DESCRIPTOR:
+    case OUTPUT_DNE:
+    case INPUT_DNE:
+    case OUTPUT_UNAVAILABLE:
+    case INPUT_UNAVAILABLE:
+    case COMPOSED:
+    case INPUT_COMPOSED:
+    case OUTPUT_COMPOSED:
+    case NOT_COMPOSER:
+    case NOT_COMPOSED:
+    case DECOMPOSED:
+    case OUTPUT_DECOMPOSED:
+    case AUTOMATON_DNE:
+    case NOT_OWNER:
+      assert (0);
+    }
+    break;
   }
 }
 
 static bid_t
-child_created_system_output (void* state, void* param)
+child_destroyed_system_output (void* state, void* param)
 {
-  child_created_t* child_created = state;
-  assert (child_created != NULL);
+  child_destroyed_t* child_destroyed = state;
+  assert (child_destroyed != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
   order_t* order = buffer_write_ptr (bid);
-  /* Send a create order. */
-  order_create_init (order, &child_descriptor);
-  child_created->state = SENT;
+
+  switch (child_destroyed->state) {
+  case START:
+    assert (0);
+    break;
+  case CREATE_UNSENT:
+    /* Send a create order. */
+    order_create_init (order, &child_descriptor);
+    child_destroyed->state = CREATE_SENT;
+    break;
+  case CREATE_SENT:
+    assert (0);
+    break;
+  case DESTROY_UNSENT:
+    /* Send a destroy order. */
+    order_destroy_init (order, child_destroyed->child_aid);
+    child_destroyed->state = DESTROY_SENT;
+    break;
+  case DESTROY_SENT:
+    assert (0);
+    break;
+  }
 
   return bid;
 }
 
-static input_t child_created_inputs[] = { NULL };
-static output_t child_created_outputs[] = { NULL };
-static internal_t child_created_internals[] = { NULL };
+static input_t child_destroyed_inputs[] = { NULL };
+static output_t child_destroyed_outputs[] = { NULL };
+static internal_t child_destroyed_internals[] = { NULL };
 
-descriptor_t child_created_descriptor = {
-  .constructor = child_created_create,
-  .system_input = child_created_system_input,
-  .system_output = child_created_system_output,
-  .inputs = child_created_inputs,
-  .outputs = child_created_outputs,
-  .internals = child_created_internals,
+descriptor_t child_destroyed_descriptor = {
+  .constructor = child_destroyed_create,
+  .system_input = child_destroyed_system_input,
+  .system_output = child_destroyed_system_output,
+  .inputs = child_destroyed_inputs,
+  .outputs = child_destroyed_outputs,
+  .internals = child_destroyed_internals,
 };
 
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&child_created_descriptor);
+  ueioa_run (&child_destroyed_descriptor);
   exit (EXIT_SUCCESS);
 }

@@ -182,6 +182,10 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
       manager->status = NORMAL;
     }
     break;
+  case INPUT_COMPOSED:
+    /* TODO */
+    assert (0);
+    break;
   case OUTPUT_COMPOSED:
     /* TODO */
     assert (0);

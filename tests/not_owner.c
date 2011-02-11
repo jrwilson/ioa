@@ -46,6 +46,7 @@ child_system_input (void* state, void* param, bid_t bid)
     case OUTPUT_UNAVAILABLE:
     case INPUT_UNAVAILABLE:
     case COMPOSED:
+    case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
     case NOT_COMPOSER:
     case NOT_COMPOSED:
@@ -70,6 +71,7 @@ child_system_input (void* state, void* param, bid_t bid)
     case OUTPUT_UNAVAILABLE:
     case INPUT_UNAVAILABLE:
     case COMPOSED:
+    case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
     case NOT_COMPOSER:
     case NOT_COMPOSED:
@@ -155,6 +157,7 @@ not_owner_system_input (void* state, void* param, bid_t bid)
     case OUTPUT_UNAVAILABLE:
     case INPUT_UNAVAILABLE:
     case COMPOSED:
+    case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
     case NOT_COMPOSER:
     case NOT_COMPOSED:
@@ -178,6 +181,7 @@ not_owner_system_input (void* state, void* param, bid_t bid)
     case OUTPUT_UNAVAILABLE:
     case INPUT_UNAVAILABLE:
     case COMPOSED:
+    case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
     case NOT_COMPOSER:
     case NOT_COMPOSED:
