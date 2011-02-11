@@ -35,8 +35,9 @@ build_triplet = @build@
 host_triplet = @host@
 TESTS = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	declared$(EXEEXT) rescinded$(EXEEXT) automaton_dne$(EXEEXT) \
-	not_owner$(EXEEXT) child_destroyed$(EXEEXT)
+	declared$(EXEEXT) composed$(EXEEXT) rescinded$(EXEEXT) \
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	child_destroyed$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -50,8 +51,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	declared$(EXEEXT) rescinded$(EXEEXT) automaton_dne$(EXEEXT) \
-	not_owner$(EXEEXT) child_destroyed$(EXEEXT)
+	declared$(EXEEXT) composed$(EXEEXT) rescinded$(EXEEXT) \
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	child_destroyed$(EXEEXT)
 am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
 automaton_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -67,6 +69,9 @@ child_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_child_destroyed_OBJECTS = child_destroyed.$(OBJEXT)
 child_destroyed_OBJECTS = $(am_child_destroyed_OBJECTS)
 child_destroyed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_composed_OBJECTS = composed.$(OBJEXT)
+composed_OBJECTS = $(am_composed_OBJECTS)
+composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_declared_OBJECTS = declared.$(OBJEXT)
 declared_OBJECTS = $(am_declared_OBJECTS)
 declared_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -94,13 +99,13 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(declared_SOURCES) \
-	$(not_owner_SOURCES) $(rescinded_SOURCES) \
+	$(child_destroyed_SOURCES) $(composed_SOURCES) \
+	$(declared_SOURCES) $(not_owner_SOURCES) $(rescinded_SOURCES) \
 	$(self_created_SOURCES)
 DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(declared_SOURCES) \
-	$(not_owner_SOURCES) $(rescinded_SOURCES) \
+	$(child_destroyed_SOURCES) $(composed_SOURCES) \
+	$(declared_SOURCES) $(not_owner_SOURCES) $(rescinded_SOURCES) \
 	$(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -231,6 +236,8 @@ bad_descriptor_SOURCES = bad_descriptor.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
 declared_SOURCES = declared.c
 declared_LDADD = $(top_builddir)/lib/libueioa.la
+composed_SOURCES = composed.c
+composed_LDADD = $(top_builddir)/lib/libueioa.la
 rescinded_SOURCES = rescinded.c
 rescinded_LDADD = $(top_builddir)/lib/libueioa.la
 automaton_dne_SOURCES = automaton_dne.c
@@ -297,6 +304,9 @@ child_created$(EXEEXT): $(child_created_OBJECTS) $(child_created_DEPENDENCIES)
 child_destroyed$(EXEEXT): $(child_destroyed_OBJECTS) $(child_destroyed_DEPENDENCIES) 
 	@rm -f child_destroyed$(EXEEXT)
 	$(LINK) $(child_destroyed_OBJECTS) $(child_destroyed_LDADD) $(LIBS)
+composed$(EXEEXT): $(composed_OBJECTS) $(composed_DEPENDENCIES) 
+	@rm -f composed$(EXEEXT)
+	$(LINK) $(composed_OBJECTS) $(composed_LDADD) $(LIBS)
 declared$(EXEEXT): $(declared_OBJECTS) $(declared_DEPENDENCIES) 
 	@rm -f declared$(EXEEXT)
 	$(LINK) $(declared_OBJECTS) $(declared_LDADD) $(LIBS)
@@ -321,6 +331,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_created.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_destroyed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/declared.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_owner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rescinded.Po@am__quote@
