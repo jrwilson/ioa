@@ -469,13 +469,22 @@ compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, ai
     receipts_push_input_dne (receipts, aid);
     runq_insert_system_input (runq, aid);
   }
-  else if (composition_entry_for_in_aid_input_in_param (automata, in_aid, input, in_param, NULL) != NULL) {
-    /* Input isn't available. */
+  else if (composition_entry_for_in_aid_input_in_param (automata, in_aid, input, in_param, NULL) != NULL ||
+	   (in_param != NULL && aid != in_aid)) {
+    /* Input isn't available.
+       The (in_param != NULL && aid != in_aid) deserves some explaining.
+       Parameters are private in the sense that they are controlled by the automaton that declares them.
+       Any composition involving an action with a non-NULL parameter must be performed by the automaton owning the action.
+       Thus, a composition will succeed with two null parameters or one or two non-null parameter so long at the composing automaton owns the non-null paramter(s).
+       While strange, we do not prevent an automaton from composing with itself.
+     */
     receipts_push_input_unavailable (receipts, aid);
     runq_insert_system_input (runq, aid);
   }
-  else if (composition_entry_for_out_aid_output_out_param_in_aid (automata, out_aid, output, out_param, in_aid) != NULL) {
-    /* Output isn't available. */
+  else if (composition_entry_for_out_aid_output_out_param_in_aid (automata, out_aid, output, out_param, in_aid) != NULL ||
+	   (out_param != NULL && aid != out_aid)) {
+    /* Output isn't available.
+     */
     receipts_push_output_unavailable (receipts, aid);
     runq_insert_system_input (runq, aid);
   }

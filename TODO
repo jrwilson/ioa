@@ -9,12 +9,11 @@
   case NOT_COMPOSED:
   case DECOMPOSED:
   case OUTPUT_DECOMPOSED:
-  case AUTOMATON_DNE:
   case NOT_OWNER:
   case CHILD_DESTROYED:
 
-* automaton_dne test
 * null or null
+* not_owner test
 * input composed
 * input decomposed
 * Implement parameterized actions
