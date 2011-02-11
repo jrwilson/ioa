@@ -12,6 +12,7 @@ output_unavailable \
 input_unavailable \
 composed \
 input_composed \
+output_composed \
 rescinded \
 automaton_dne \
 not_owner \
@@ -51,6 +52,9 @@ composed_LDADD = $(top_builddir)/lib/libueioa.la
 
 input_composed_SOURCES = input_composed.c
 input_composed_LDADD = $(top_builddir)/lib/libueioa.la
+
+output_composed_SOURCES = output_composed.c
+output_composed_LDADD = $(top_builddir)/lib/libueioa.la
 
 rescinded_SOURCES = rescinded.c
 rescinded_LDADD = $(top_builddir)/lib/libueioa.la
