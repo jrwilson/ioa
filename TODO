@@ -1,5 +1,4 @@
 * Tests to write
-  case INPUT_DNE:
   case OUTPUT_UNAVAILABLE:
   case INPUT_UNAVAILABLE:
 
