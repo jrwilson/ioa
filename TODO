@@ -1,6 +1,4 @@
 * Tests to write
-  case INPUT_UNAVAILABLE:
-
   case INPUT_COMPOSED:
   case OUTPUT_COMPOSED:
   case NOT_COMPOSER:

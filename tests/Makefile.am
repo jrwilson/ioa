@@ -9,6 +9,7 @@ declared \
 output_dne \
 input_dne \
 output_unavailable \
+input_unavailable \
 composed \
 rescinded \
 automaton_dne \
@@ -40,6 +41,9 @@ input_dne_LDADD = $(top_builddir)/lib/libueioa.la
 
 output_unavailable_SOURCES = output_unavailable.c
 output_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
+
+input_unavailable_SOURCES = input_unavailable.c
+input_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
 
 composed_SOURCES = composed.c
 composed_LDADD = $(top_builddir)/lib/libueioa.la
