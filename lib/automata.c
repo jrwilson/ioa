@@ -503,8 +503,11 @@ compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, ai
     
     receipts_push_composed (receipts, aid);
     runq_insert_system_input (runq, aid);
+
+    receipts_push_input_composed (receipts, in_aid, input, in_param);
+    runq_insert_system_input (runq, in_aid);
     
-    receipts_push_output_composed (receipts, out_aid, output);
+    receipts_push_output_composed (receipts, out_aid, output, out_param);
     runq_insert_system_input (runq, out_aid);
   }
 }
@@ -531,7 +534,7 @@ decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, 
       receipts_push_decomposed (receipts, aid, in_aid, input, in_param);
       runq_insert_system_input (runq, aid);
       
-      receipts_push_output_decomposed (receipts, out_aid, output);
+      receipts_push_output_decomposed (receipts, out_aid, output, out_param);
       runq_insert_system_input (runq, out_aid);
     }
     else {
@@ -559,7 +562,7 @@ decomposer (const void* e, void* a)
 
   if (entry->aid == arg->aid) {
     /* Tell output. */
-    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output);
+    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
     runq_insert_system_input (arg->runq, entry->out_aid);
   }
   else if (entry->out_aid == arg->aid) {
@@ -572,7 +575,7 @@ decomposer (const void* e, void* a)
     receipts_push_decomposed (arg->receipts, entry->aid, entry->in_aid, entry->input, entry->in_param);
     runq_insert_system_input (arg->runq, entry->aid);
 
-    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output);
+    receipts_push_output_decomposed (arg->receipts, entry->out_aid, entry->output, entry->out_param);
     runq_insert_system_input (arg->runq, entry->out_aid);
   }
 }

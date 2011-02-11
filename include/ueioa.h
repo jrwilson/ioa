@@ -69,6 +69,7 @@ typedef enum {
   INPUT_UNAVAILABLE,
   COMPOSED,
   OUTPUT_COMPOSED,
+  INPUT_COMPOSED,
 
   NOT_COMPOSER,
   NOT_COMPOSED,
@@ -90,6 +91,10 @@ typedef struct {
     struct {
       aid_t child;
     } child_created;
+    struct {
+      input_t input;
+      void* in_param;
+    } input_composed;
     struct {
       output_t output;
       void* out_param;

@@ -183,7 +183,21 @@ receipts_push_composed (receipts_t* receipts, aid_t to)
 }
 
 void
-receipts_push_output_composed (receipts_t* receipts, aid_t to, output_t output)
+receipts_push_input_composed (receipts_t* receipts, aid_t to, input_t input, void* in_param)
+{ 
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = INPUT_COMPOSED;
+  receipt.receipt.input_composed.input = input;
+  receipt.receipt.input_composed.in_param = in_param;
+
+  push (receipts, &receipt);
+}
+
+void
+receipts_push_output_composed (receipts_t* receipts, aid_t to, output_t output, void* out_param)
 { 
   assert (receipts != NULL);
 
@@ -191,6 +205,7 @@ receipts_push_output_composed (receipts_t* receipts, aid_t to, output_t output)
   receipt.to = to;
   receipt.receipt.type = OUTPUT_COMPOSED;
   receipt.receipt.output_composed.output = output;
+  receipt.receipt.output_composed.out_param = out_param;
 
   push (receipts, &receipt);
 }
@@ -235,7 +250,7 @@ receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t in_aid, input_t 
 }
 
 void
-receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output)
+receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output, void* out_param)
 { 
   assert (receipts != NULL);
 
@@ -243,6 +258,7 @@ receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output
   receipt.to = to;
   receipt.receipt.type = OUTPUT_DECOMPOSED;
   receipt.receipt.output_decomposed.output = output;
+  receipt.receipt.output_decomposed.out_param = out_param;
 
   push (receipts, &receipt);
 }
