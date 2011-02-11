@@ -34,9 +34,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 TESTS = bad_order$(EXEEXT) self_created$(EXEEXT) \
-	child_created$(EXEEXT) bad_descriptor$(EXEEXT)
+	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
+	automaton_dne$(EXEEXT)
 check_PROGRAMS = bad_order$(EXEEXT) self_created$(EXEEXT) \
-	child_created$(EXEEXT) bad_descriptor$(EXEEXT)
+	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
+	automaton_dne$(EXEEXT)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -47,6 +49,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
+automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
+automaton_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_bad_descriptor_OBJECTS = bad_descriptor.$(OBJEXT)
 bad_descriptor_OBJECTS = $(am_bad_descriptor_OBJECTS)
 bad_descriptor_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -72,10 +77,12 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
-	$(child_created_SOURCES) $(self_created_SOURCES)
-DIST_SOURCES = $(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
-	$(child_created_SOURCES) $(self_created_SOURCES)
+SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
+	$(bad_order_SOURCES) $(child_created_SOURCES) \
+	$(self_created_SOURCES)
+DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
+	$(bad_order_SOURCES) $(child_created_SOURCES) \
+	$(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -203,6 +210,8 @@ child_created_SOURCES = child_created.c
 child_created_LDADD = $(top_builddir)/lib/libueioa.la
 bad_descriptor_SOURCES = bad_descriptor.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
+automaton_dne_SOURCES = automaton_dne.c
+automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:
@@ -246,6 +255,9 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+automaton_dne$(EXEEXT): $(automaton_dne_OBJECTS) $(automaton_dne_DEPENDENCIES) 
+	@rm -f automaton_dne$(EXEEXT)
+	$(LINK) $(automaton_dne_OBJECTS) $(automaton_dne_LDADD) $(LIBS)
 bad_descriptor$(EXEEXT): $(bad_descriptor_OBJECTS) $(bad_descriptor_DEPENDENCIES) 
 	@rm -f bad_descriptor$(EXEEXT)
 	$(LINK) $(bad_descriptor_OBJECTS) $(bad_descriptor_LDADD) $(LIBS)
@@ -265,6 +277,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automaton_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_descriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_created.Po@am__quote@

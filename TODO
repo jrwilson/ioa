@@ -1,4 +1,4 @@
-* Testing
+* Tests to write
   case OUTPUT_DNE:
   case INPUT_DNE:
   case OUTPUT_UNAVAILABLE:
@@ -12,6 +12,8 @@
   case AUTOMATON_DNE:
   case NOT_OWNER:
   case CHILD_DESTROYED:
+
+* automaton_dne test
 * null or null
 * input composed
 * input decomposed

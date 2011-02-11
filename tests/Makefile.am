@@ -1,8 +1,8 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
-TESTS = bad_order self_created child_created bad_descriptor
+TESTS = bad_order self_created child_created bad_descriptor automaton_dne
 
-check_PROGRAMS = bad_order self_created child_created bad_descriptor
+check_PROGRAMS = bad_order self_created child_created bad_descriptor automaton_dne
 
 bad_order_SOURCES = bad_order.c
 bad_order_LDADD = $(top_builddir)/lib/libueioa.la
@@ -15,3 +15,6 @@ child_created_LDADD = $(top_builddir)/lib/libueioa.la
 
 bad_descriptor_SOURCES = bad_descriptor.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
+
+automaton_dne_SOURCES = automaton_dne.c
+automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la
