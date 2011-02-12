@@ -2,6 +2,7 @@ AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
 TESTS = \
 schedule_system_output \
+schedule_output \
 bad_order \
 self_created \
 child_created \
@@ -27,6 +28,9 @@ check_PROGRAMS = $(TESTS)
 
 schedule_system_output_SOURCES = schedule_system_output.c
 schedule_system_output_LDADD = $(top_builddir)/lib/libueioa.la
+
+schedule_output_SOURCES = schedule_output.c
+schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
 
 bad_order_SOURCES = bad_order.c
 bad_order_LDADD = $(top_builddir)/lib/libueioa.la
