@@ -53,7 +53,6 @@ schedule_output_system_input (void* state, void* param, bid_t bid)
 static bid_t
 schedule_output_system_output (void* state, void* param)
 {
-  exit (EXIT_SUCCESS);
   return -1;
 }
 
