@@ -13,6 +13,7 @@ input_unavailable \
 composed \
 input_composed \
 output_composed \
+not_composed \
 decomposed \
 input_decomposed \
 output_decomposed \
@@ -58,6 +59,9 @@ input_composed_LDADD = $(top_builddir)/lib/libueioa.la
 
 output_composed_SOURCES = output_composed.c
 output_composed_LDADD = $(top_builddir)/lib/libueioa.la
+
+not_composed_SOURCES = not_composed.c
+not_composed_LDADD = $(top_builddir)/lib/libueioa.la
 
 decomposed_SOURCES = decomposed.c
 decomposed_LDADD = $(top_builddir)/lib/libueioa.la

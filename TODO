@@ -1,6 +1,5 @@
 * Tests to write
   case NOT_COMPOSER:
-  case NOT_COMPOSED:
 
   void schedule_system_output (void);
   int schedule_output (output_t, void*);

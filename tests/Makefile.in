@@ -38,9 +38,10 @@ TESTS = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
 	output_unavailable$(EXEEXT) input_unavailable$(EXEEXT) \
 	composed$(EXEEXT) input_composed$(EXEEXT) \
-	output_composed$(EXEEXT) decomposed$(EXEEXT) \
-	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
-	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	output_composed$(EXEEXT) not_composed$(EXEEXT) \
+	decomposed$(EXEEXT) input_decomposed$(EXEEXT) \
+	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
@@ -58,9 +59,10 @@ am__EXEEXT_1 = bad_order$(EXEEXT) self_created$(EXEEXT) \
 	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
 	output_unavailable$(EXEEXT) input_unavailable$(EXEEXT) \
 	composed$(EXEEXT) input_composed$(EXEEXT) \
-	output_composed$(EXEEXT) decomposed$(EXEEXT) \
-	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
-	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	output_composed$(EXEEXT) not_composed$(EXEEXT) \
+	decomposed$(EXEEXT) input_decomposed$(EXEEXT) \
+	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT)
 am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
@@ -98,6 +100,9 @@ input_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_input_unavailable_OBJECTS = input_unavailable.$(OBJEXT)
 input_unavailable_OBJECTS = $(am_input_unavailable_OBJECTS)
 input_unavailable_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_not_composed_OBJECTS = not_composed.$(OBJEXT)
+not_composed_OBJECTS = $(am_not_composed_OBJECTS)
+not_composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_not_owner_OBJECTS = not_owner.$(OBJEXT)
 not_owner_OBJECTS = $(am_not_owner_OBJECTS)
 not_owner_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -138,20 +143,20 @@ SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
-	$(not_owner_SOURCES) $(output_composed_SOURCES) \
-	$(output_decomposed_SOURCES) $(output_dne_SOURCES) \
-	$(output_unavailable_SOURCES) $(rescinded_SOURCES) \
-	$(self_created_SOURCES)
+	$(not_composed_SOURCES) $(not_owner_SOURCES) \
+	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
+	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
+	$(rescinded_SOURCES) $(self_created_SOURCES)
 DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
 	$(child_destroyed_SOURCES) $(composed_SOURCES) \
 	$(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
-	$(not_owner_SOURCES) $(output_composed_SOURCES) \
-	$(output_decomposed_SOURCES) $(output_dne_SOURCES) \
-	$(output_unavailable_SOURCES) $(rescinded_SOURCES) \
-	$(self_created_SOURCES)
+	$(not_composed_SOURCES) $(not_owner_SOURCES) \
+	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
+	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
+	$(rescinded_SOURCES) $(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -295,6 +300,8 @@ input_composed_SOURCES = input_composed.c
 input_composed_LDADD = $(top_builddir)/lib/libueioa.la
 output_composed_SOURCES = output_composed.c
 output_composed_LDADD = $(top_builddir)/lib/libueioa.la
+not_composed_SOURCES = not_composed.c
+not_composed_LDADD = $(top_builddir)/lib/libueioa.la
 decomposed_SOURCES = decomposed.c
 decomposed_LDADD = $(top_builddir)/lib/libueioa.la
 input_decomposed_SOURCES = input_decomposed.c
@@ -388,6 +395,9 @@ input_dne$(EXEEXT): $(input_dne_OBJECTS) $(input_dne_DEPENDENCIES)
 input_unavailable$(EXEEXT): $(input_unavailable_OBJECTS) $(input_unavailable_DEPENDENCIES) 
 	@rm -f input_unavailable$(EXEEXT)
 	$(LINK) $(input_unavailable_OBJECTS) $(input_unavailable_LDADD) $(LIBS)
+not_composed$(EXEEXT): $(not_composed_OBJECTS) $(not_composed_DEPENDENCIES) 
+	@rm -f not_composed$(EXEEXT)
+	$(LINK) $(not_composed_OBJECTS) $(not_composed_LDADD) $(LIBS)
 not_owner$(EXEEXT): $(not_owner_OBJECTS) $(not_owner_DEPENDENCIES) 
 	@rm -f not_owner$(EXEEXT)
 	$(LINK) $(not_owner_OBJECTS) $(not_owner_LDADD) $(LIBS)
@@ -428,6 +438,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_decomposed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_unavailable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_composed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_owner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_composed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_decomposed.Po@am__quote@
