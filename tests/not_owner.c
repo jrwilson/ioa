@@ -49,7 +49,6 @@ child_system_input (void* state, void* param, bid_t bid)
     case COMPOSED:
     case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
-    case NOT_COMPOSER:
     case NOT_COMPOSED:
     case DECOMPOSED:
     case INPUT_DECOMPOSED:
@@ -77,7 +76,6 @@ child_system_input (void* state, void* param, bid_t bid)
     case COMPOSED:
     case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
-    case NOT_COMPOSER:
     case NOT_COMPOSED:
     case DECOMPOSED:
     case INPUT_DECOMPOSED:
@@ -166,7 +164,6 @@ not_owner_system_input (void* state, void* param, bid_t bid)
     case COMPOSED:
     case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
-    case NOT_COMPOSER:
     case NOT_COMPOSED:
     case DECOMPOSED:
     case INPUT_DECOMPOSED:
@@ -193,7 +190,6 @@ not_owner_system_input (void* state, void* param, bid_t bid)
     case COMPOSED:
     case INPUT_COMPOSED:
     case OUTPUT_COMPOSED:
-    case NOT_COMPOSER:
     case NOT_COMPOSED:
     case DECOMPOSED:
     case INPUT_DECOMPOSED:

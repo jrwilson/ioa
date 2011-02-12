@@ -1,9 +1,8 @@
 * Tests to write
-  case NOT_COMPOSER:
-
   void schedule_system_output (void);
   int schedule_output (output_t, void*);
   int schedule_internal (internal_t, void*);
+
   bid_t buffer_alloc (size_t);
   void* buffer_write_ptr (bid_t);
   const void* buffer_read_ptr (bid_t);

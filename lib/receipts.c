@@ -223,18 +223,6 @@ receipts_push_output_composed (receipts_t* receipts, aid_t to, output_t output, 
 }
 
 void
-receipts_push_not_composer (receipts_t* receipts, aid_t to)
-{ 
-  assert (receipts != NULL);
-
-  receipt_entry_t receipt;
-  receipt.to = to;
-  receipt.receipt.type = NOT_COMPOSER;
-
-  push (receipts, &receipt);
-}
-
-void
 receipts_push_not_composed (receipts_t* receipts, aid_t to)
 { 
   assert (receipts != NULL);

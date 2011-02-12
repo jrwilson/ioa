@@ -194,10 +194,6 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     /* TODO */
     assert (0);
     break;
-  case NOT_COMPOSER:
-    /* TODO */
-    assert (0);
-    break;
   case NOT_COMPOSED:
     /* TODO */
     assert (0);

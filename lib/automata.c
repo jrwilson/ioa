@@ -557,23 +557,18 @@ decompose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, 
   if (entry != NULL &&
       entry->out_aid == out_aid &&
       entry->output == output &&
-      entry->out_param == out_param) {
-    if (entry->aid == aid) {
-      index_erase (automata->composition_index, iterator);
-      
-      receipts_push_decomposed (receipts, aid, in_aid, input, in_param);
-      runq_insert_system_input (runq, aid);
-
-      receipts_push_input_decomposed (receipts, in_aid, input, in_param);
-      runq_insert_system_input (runq, in_aid);
-      
-      receipts_push_output_decomposed (receipts, out_aid, output, out_param);
-      runq_insert_system_input (runq, out_aid);
-    }
-    else {
-      receipts_push_not_composer (receipts, aid);
-      runq_insert_system_input (runq, aid);
-    }
+      entry->out_param == out_param &&
+      entry->aid == aid) {
+    index_erase (automata->composition_index, iterator);
+    
+    receipts_push_decomposed (receipts, aid, in_aid, input, in_param);
+    runq_insert_system_input (runq, aid);
+    
+    receipts_push_input_decomposed (receipts, in_aid, input, in_param);
+    runq_insert_system_input (runq, in_aid);
+    
+    receipts_push_output_decomposed (receipts, out_aid, output, out_param);
+    runq_insert_system_input (runq, out_aid);
   }
   else {
     receipts_push_not_composed (receipts, aid);
