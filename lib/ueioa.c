@@ -7,24 +7,19 @@
 #include "automata.h"
 #include "receipts.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_THREADS 128
+
 static runq_t* runq;
 static automata_t* automata;
 static buffers_t* buffers;
 static receipts_t* receipts;
 
-void
-ueioa_run (descriptor_t* descriptor)
+static void*
+thread_func (void* arg)
 {
-  assert (descriptor != NULL);
-  assert (descriptor_check (descriptor));
-
-  runq = runq_create ();
-  automata = automata_create ();
-  buffers = buffers_create ();
-  receipts = receipts_create ();
-  
-  automata_create_automaton (automata, receipts, runq, descriptor);
-
   for (;;) {
     runnable_t runnable;
     runq_pop (runq, &runnable);
@@ -42,6 +37,37 @@ ueioa_run (descriptor_t* descriptor)
       automata_internal_exec (automata, runnable.aid, runnable.internal.internal, runnable.param);
       break;
     }
+  }
+
+  pthread_exit (NULL);
+}
+
+void
+ueioa_run (descriptor_t* descriptor, int thread_count)
+{
+  assert (descriptor != NULL);
+  assert (descriptor_check (descriptor));
+  assert (thread_count > 0 && thread_count <= MAX_THREADS);
+
+  pthread_t a_thread[MAX_THREADS];
+
+  runq = runq_create ();
+  automata = automata_create ();
+  buffers = buffers_create ();
+  receipts = receipts_create ();
+  
+  automata_create_automaton (automata, receipts, runq, descriptor);
+
+  int idx;
+  for (idx = 0; idx < thread_count; ++idx) {
+    if (pthread_create (&a_thread[idx], NULL, thread_func, NULL) != 0) {
+      perror ("pthread_create");
+      exit (EXIT_FAILURE);
+    }
+  }
+
+  for (idx = 0; idx < thread_count; ++idx) {
+    pthread_join (a_thread[idx], NULL);
   }
 
   receipts_destroy (receipts);

@@ -292,6 +292,6 @@ descriptor_t output_dne_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&output_dne_descriptor);
+  ueioa_run (&output_dne_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

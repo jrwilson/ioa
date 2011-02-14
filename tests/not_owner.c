@@ -235,6 +235,6 @@ descriptor_t not_owner_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&not_owner_descriptor);
+  ueioa_run (&not_owner_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

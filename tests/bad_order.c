@@ -119,6 +119,6 @@ descriptor_t bad_order_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&bad_order_descriptor);
+  ueioa_run (&bad_order_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

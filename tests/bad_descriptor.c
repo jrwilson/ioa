@@ -118,6 +118,6 @@ descriptor_t bad_descriptor_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&bad_descriptor_descriptor);
+  ueioa_run (&bad_descriptor_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

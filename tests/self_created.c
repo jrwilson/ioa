@@ -64,6 +64,6 @@ descriptor_t self_created_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&self_created_descriptor);
+  ueioa_run (&self_created_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

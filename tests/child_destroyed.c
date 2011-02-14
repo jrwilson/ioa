@@ -237,6 +237,6 @@ descriptor_t child_destroyed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&child_destroyed_descriptor);
+  ueioa_run (&child_destroyed_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

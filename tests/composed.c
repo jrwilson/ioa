@@ -292,6 +292,6 @@ descriptor_t composed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&composed_descriptor);
+  ueioa_run (&composed_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

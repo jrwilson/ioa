@@ -178,6 +178,6 @@ descriptor_t child_created_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&child_created_descriptor);
+  ueioa_run (&child_created_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

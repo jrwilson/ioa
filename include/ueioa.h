@@ -139,7 +139,7 @@ void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, voi
 void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
-void ueioa_run (descriptor_t*);
+void ueioa_run (descriptor_t*, int);
 
 void schedule_system_output (void);
 int schedule_output (output_t, void*);

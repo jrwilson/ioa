@@ -176,6 +176,6 @@ descriptor_t rescinded_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&rescinded_descriptor);
+  ueioa_run (&rescinded_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

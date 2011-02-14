@@ -333,6 +333,6 @@ descriptor_t decomposed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&decomposed_descriptor);
+  ueioa_run (&decomposed_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

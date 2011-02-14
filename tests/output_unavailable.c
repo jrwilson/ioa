@@ -340,6 +340,6 @@ descriptor_t output_unavailable_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&output_unavailable_descriptor);
+  ueioa_run (&output_unavailable_descriptor, 1);
   exit (EXIT_SUCCESS);
 }

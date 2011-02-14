@@ -1,3 +1,9 @@
+* No same compose
+* Implement I/O
+** Timers
+** File descriptors
+* Manager
+
 * Tests to write
   bid_t buffer_alloc (size_t);
   void* buffer_write_ptr (bid_t);
@@ -8,13 +14,6 @@
   void buffer_add_child (bid_t, bid_t);
   void buffer_remove_child (bid_t, bid_t);
   bid_t buffer_dup (bid_t);
-
-* Implement multithreading
-* Implement I/O
-** Timers
-** File descriptors
-* Test for memory leaks
-* Manager
 * Unit tests
 ** automata.c
 ** buffers.c
@@ -24,4 +23,4 @@
 ** runq.c
 ** table.c
 ** ueioa.c
-
+* Test for memory leaks
