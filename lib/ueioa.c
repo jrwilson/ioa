@@ -54,7 +54,7 @@ typedef struct {
 } alarm_t;
 
 static bool
-alarm_aid_equal (const void* x0, const void* y0)
+alarm_aid_equal (const void* x0, void* y0)
 {
   const alarm_t* x = x0;
   const alarm_t* y = y0;
@@ -63,7 +63,7 @@ alarm_aid_equal (const void* x0, const void* y0)
 }
 
 static bool
-alarm_lt (const void* x0, const void* y0)
+alarm_lt (const void* x0, void* y0)
 {
   const alarm_t* x = x0;
   const alarm_t* y = y0;
@@ -72,6 +72,50 @@ alarm_lt (const void* x0, const void* y0)
     return x->tv.tv_sec < y->tv.tv_sec;
   }
   return x->tv.tv_usec < y->tv.tv_usec;
+}
+
+typedef struct {
+  aid_t aid;
+  int fd;
+} fd_t;
+
+static bool
+fd_aid_equal (const void* x0, void* y0)
+{
+  const fd_t* x = x0;
+  const fd_t* y = y0;
+
+  return x->aid == y->aid;
+}
+
+typedef struct {
+  fd_set fds;
+} fdset_t;
+
+static void
+fdset_set (const void* e, void* a)
+{
+  const fd_t* fd = e;
+  fdset_t* fdset = a;
+
+  FD_SET (fd->fd, &fdset->fds);
+}
+
+static bool
+fdset_clear (const void* e, void* a)
+{
+  const fd_t* fd = e;
+  fdset_t* fdset = a;
+
+  if (FD_ISSET (fd->fd, &fdset->fds)) {
+    receipts_push_write_wakeup (receipts, fd->aid);
+    runq_insert_system_input (runq, fd->aid);
+    FD_CLR (fd->fd, &fdset->fds);
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 void
@@ -103,23 +147,34 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
   /* Start the I/O thread. */
   int interrupt = ioq_interrupt_fd (ioq);
   fd_set readfds;
+  fdset_t write_arg;
+  FD_ZERO (&write_arg.fds);
   struct timeval timeout;
   io_t io;
   table_t* alarm_table = table_create (sizeof (alarm_t));
   index_t* alarm_index = index_create_ordered_list (alarm_table, alarm_lt);
+  table_t* write_table = table_create (sizeof (fd_t));
+  index_t* write_index = index_create_list (write_table);
 
   for (;;) {
     /* Add the interrupt. */
     FD_ZERO (&readfds);
     FD_SET (interrupt, &readfds);
 
+    /* Initialize the writes. */
+    index_for_each (write_index,
+		    index_begin (write_index),
+		    index_end (write_index),
+		    fdset_set,
+		    &write_arg);
+
+    /* Initialize the timeout. */
     struct timeval* timeout_ptr;
     if (index_empty (alarm_index)) {
       /* Wait forever. */
       timeout_ptr = NULL;
     }
     else {
-      /* Initialize the timeout. */
       alarm_t* alarm = index_front (alarm_index);
       alarm_t now;
       gettimeofday (&now.tv, NULL);
@@ -144,7 +199,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
       timeout_ptr = &timeout;
     }
 
-    int res = select (FD_SETSIZE, &readfds, NULL, NULL, timeout_ptr);
+    int res = select (FD_SETSIZE, &readfds, &write_arg.fds, NULL, timeout_ptr);
     if (res < 0) {
       perror ("select");
       exit (EXIT_FAILURE);
@@ -167,6 +222,11 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 
       if (res > 0) {
 	/* Process the file descriptors. */
+	index_remove (write_index,
+		      index_begin (write_index),
+		      index_end (write_index),
+		      fdset_clear,
+		      &write_arg);
 	
 	if (FD_ISSET (interrupt, &readfds)) {
 	  char c;
@@ -192,6 +252,15 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 		.tv = tv,
 	      };
 	      index_insert_unique (alarm_index, alarm_aid_equal, &key);
+	    }
+	    break;
+	  case WRITE:
+	    {
+	      fd_t key = {
+		.aid = io.aid,
+		.fd = io.write.fd,
+	      };
+	      index_insert_unique (write_index, fd_aid_equal, &key);
 	    }
 	    break;
 	  }

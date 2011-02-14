@@ -9,7 +9,7 @@
 #include "table.h"
 
 static bool
-io_equal (const void* x0, const void* y0)
+io_equal (const void* x0, void* y0)
 {
   const io_t* x = x0;
   const io_t* y = y0;
@@ -21,6 +21,7 @@ io_equal (const void* x0, const void* y0)
   }
   switch (x->type) {
   case ALARM:
+  case WRITE:
     return true;
     break;
   }
@@ -133,6 +134,21 @@ ioq_insert_alarm (ioq_t* ioq, aid_t aid, time_t secs, suseconds_t usecs)
   };
   io.alarm.tv.tv_sec = secs;
   io.alarm.tv.tv_usec = usecs;
+
+  push (ioq, &io);
+}
+
+void
+ioq_insert_write (ioq_t* ioq, aid_t aid, int fd)
+{
+  assert (ioq != NULL);
+  assert (aid != -1);
+
+  io_t io = {
+    .type = WRITE,
+    .aid = aid
+  };
+  io.write.fd = fd;
 
   push (ioq, &io);
 }

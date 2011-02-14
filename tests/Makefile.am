@@ -25,7 +25,8 @@ automaton_dne \
 not_owner \
 child_destroyed \
 same_compose \
-timer
+alarm \
+write
 
 check_PROGRAMS = $(TESTS)
 
@@ -101,5 +102,8 @@ child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
 same_compose_SOURCES = same_compose.c
 same_compose_LDADD = $(top_builddir)/lib/libueioa.la
 
-timer_SOURCES = timer.c
-timer_LDADD = $(top_builddir)/lib/libueioa.la
+alarm_SOURCES = alarm.c
+alarm_LDADD = $(top_builddir)/lib/libueioa.la
+
+write_SOURCES = write.c
+write_LDADD = $(top_builddir)/lib/libueioa.la

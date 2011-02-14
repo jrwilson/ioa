@@ -32,58 +32,18 @@ automaton_dne_system_input (void* state, void* param, bid_t bid)
 
   switch (automaton_dne->state) {
   case UNSENT:
-    switch (receipt->type) {
-    case SELF_CREATED:
+    if (receipt->type == SELF_CREATED) {
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
   case SENT:
-    switch (receipt->type) {
-    case AUTOMATON_DNE:
+    if (receipt->type == AUTOMATON_DNE) {
       exit (EXIT_SUCCESS);
-      break;
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;

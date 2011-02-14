@@ -15,30 +15,10 @@ child_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  switch (receipt->type) {
-  case SELF_CREATED:
+  if (receipt->type == SELF_CREATED) {
     /* Good. */
-    break;
-  case BAD_ORDER:
-  case CHILD_CREATED:
-  case BAD_DESCRIPTOR:
-  case DECLARED:
-  case OUTPUT_DNE:
-  case INPUT_DNE:
-  case OUTPUT_UNAVAILABLE:
-  case INPUT_UNAVAILABLE:
-  case COMPOSED:
-  case OUTPUT_COMPOSED:
-  case INPUT_COMPOSED:
-  case NOT_COMPOSED:
-  case DECOMPOSED:
-  case INPUT_DECOMPOSED:
-  case OUTPUT_DECOMPOSED:
-  case RESCINDED:
-  case AUTOMATON_DNE:
-  case NOT_OWNER:
-  case CHILD_DESTROYED:
-  case WAKEUP:
+  }
+  else {
     assert (0);
   }
 }
@@ -97,31 +77,11 @@ child_destroyed_system_input (void* state, void* param, bid_t bid)
 
   switch (child_destroyed->state) {
   case START:
-    switch (receipt->type) {
-    case SELF_CREATED:
+    if (receipt->type == SELF_CREATED) {
       child_destroyed->state = CREATE_UNSENT;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -129,32 +89,12 @@ child_destroyed_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case CREATE_SENT:
-    switch (receipt->type) {
-    case CHILD_CREATED:
+    if (receipt->type == CHILD_CREATED) {
       child_destroyed->child_aid = receipt->child_created.child;
       child_destroyed->state = DESTROY_UNSENT;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -162,29 +102,10 @@ child_destroyed_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case DESTROY_SENT:
-    switch (receipt->type) {
-    case CHILD_DESTROYED:
+    if (receipt->type == CHILD_DESTROYED) {
       exit (EXIT_SUCCESS);
-    case CHILD_CREATED:
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;

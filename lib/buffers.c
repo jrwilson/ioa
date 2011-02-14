@@ -88,7 +88,7 @@ typedef struct {
 } buffer_entry_t;
 
 static bool
-buffer_entry_bid_equal (const void* x0, const void* y0)
+buffer_entry_bid_equal (const void* x0, void* y0)
 {
   const buffer_entry_t* x = x0;
   const buffer_entry_t* y = y0;
@@ -119,7 +119,7 @@ typedef struct {
 } buffer_ref_entry_t;
 
 static bool
-buffer_ref_entry_aid_bid_equal (const void* x0, const void* y0)
+buffer_ref_entry_aid_bid_equal (const void* x0, void* y0)
 {
   const buffer_ref_entry_t* x = x0;
   const buffer_ref_entry_t* y = y0;
@@ -127,7 +127,7 @@ buffer_ref_entry_aid_bid_equal (const void* x0, const void* y0)
 }
 
 static bool
-buffer_ref_entry_aid_equal (const void* x0, const void* y0)
+buffer_ref_entry_aid_equal (const void* x0, void* y0)
 {
   const buffer_ref_entry_t* x = x0;
   const buffer_ref_entry_t* y = y0;
@@ -158,7 +158,7 @@ typedef struct {
 } buffer_edge_entry_t;
 
 static bool
-buffer_edge_entry_parent_or_child_equal (const void* x0, const void* y0)
+buffer_edge_entry_parent_or_child_equal (const void* x0, void* y0)
 {
   const buffer_edge_entry_t* x = x0;
   const buffer_edge_entry_t* y = y0;
@@ -168,7 +168,7 @@ buffer_edge_entry_parent_or_child_equal (const void* x0, const void* y0)
 }
 
 static bool
-buffer_edge_entry_parent_child_equal (const void* x0, const void* y0)
+buffer_edge_entry_parent_child_equal (const void* x0, void* y0)
 {
   const buffer_edge_entry_t* x = x0;
   const buffer_edge_entry_t* y = y0;
@@ -196,7 +196,7 @@ buffer_edge_entry_for_parent_child (buffers_t* buffers, bid_t parent, bid_t chil
 }
 
 static bool
-bid_equal (const void* x0, const void* y0)
+bid_equal (const void* x0, void* y0)
 {
   const bid_t* x = x0;
   const bid_t* y = y0;
@@ -577,7 +577,7 @@ buffers_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
 }
 
 static bool
-in_parent (const void* value, const void* arg)
+in_parent (const void* value, void* arg)
 {
   bid_t bid = *(bid_t*)value;
   const buffers_t* buffers = arg;

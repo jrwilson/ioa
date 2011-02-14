@@ -18,7 +18,7 @@ typedef struct {
 } receipt_entry_t;
 
 static bool
-receipt_entry_to_equal (const void* x0, const void* y0)
+receipt_entry_to_equal (const void* x0, void* y0)
 {
   const receipt_entry_t* x = x0;
   const receipt_entry_t* y = y0;
@@ -334,6 +334,18 @@ receipts_push_wakeup (receipts_t* receipts, aid_t to)
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = WAKEUP;
+
+  push (receipts, &receipt);
+}
+
+void
+receipts_push_write_wakeup (receipts_t* receipts, aid_t to)
+{
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = WRITE_WAKEUP;
 
   push (receipts, &receipt);
 }

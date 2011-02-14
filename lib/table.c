@@ -918,7 +918,7 @@ index_for_each (index_t* index, iterator_t begin, iterator_t end, function_t fun
 }
 
 iterator_t
-index_find (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, const void* value)
+index_find (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, void* value)
 {
   assert (index != NULL);
   assert (predicate != NULL);
@@ -936,7 +936,7 @@ index_find (index_t* index, iterator_t begin, iterator_t end, predicate_t predic
 }
 
 void*
-index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, const void* arg, iterator_t* ptr)
+index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, void* arg, iterator_t* ptr)
 {
   assert (index != NULL);
 
@@ -957,7 +957,7 @@ index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t 
 }
 
 void
-index_remove (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, const void* value)
+index_remove (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, void* value)
 {
   assert (index != NULL);
   assert (predicate != NULL);
@@ -989,7 +989,7 @@ index_transform (index_t* index, iterator_t begin, iterator_t end, tfunction_t f
 }
 
 void
-index_insert_unique (index_t* index, predicate_t predicate, const void* value)
+index_insert_unique (index_t* index, predicate_t predicate, void* value)
 {
   assert (index != NULL);
   assert (predicate != NULL);

@@ -15,30 +15,10 @@ child_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  switch (receipt->type) {
-  case SELF_CREATED:
+  if (receipt->type == SELF_CREATED) {
     /* Good. */
-    break;
-  case BAD_ORDER:
-  case CHILD_CREATED:
-  case BAD_DESCRIPTOR:
-  case DECLARED:
-  case OUTPUT_DNE:
-  case INPUT_DNE:
-  case OUTPUT_UNAVAILABLE:
-  case INPUT_UNAVAILABLE:
-  case COMPOSED:
-  case OUTPUT_COMPOSED:
-  case INPUT_COMPOSED:
-  case NOT_COMPOSED:
-  case DECOMPOSED:
-  case INPUT_DECOMPOSED:
-  case OUTPUT_DECOMPOSED:
-  case RESCINDED:
-  case AUTOMATON_DNE:
-  case NOT_OWNER:
-  case CHILD_DESTROYED:
-  case WAKEUP:
+  }
+  else {
     assert (0);
   }
 }
@@ -112,31 +92,11 @@ output_dne_system_input (void* state, void* param, bid_t bid)
 
   switch (output_dne->state) {
   case START:
-    switch (receipt->type) {
-    case SELF_CREATED:
+    if (receipt->type == SELF_CREATED) {
       output_dne->state = CREATE1_UNSENT;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -144,32 +104,12 @@ output_dne_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case CREATE1_SENT:
-    switch (receipt->type) {
-    case CHILD_CREATED:
+    if (receipt->type == CHILD_CREATED) {
       output_dne->state = CREATE2_UNSENT;
       output_dne->child1 = receipt->child_created.child;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -177,32 +117,12 @@ output_dne_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case CREATE2_SENT:
-    switch (receipt->type) {
-    case CHILD_CREATED:
+    if (receipt->type == CHILD_CREATED) {
       output_dne->state = COMPOSE_UNSENT;
       output_dne->child2 = receipt->child_created.child;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -210,29 +130,10 @@ output_dne_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case COMPOSE_SENT:
-    switch (receipt->type) {
-    case OUTPUT_DNE:
+    if (receipt->type == OUTPUT_DNE) {
       exit (EXIT_SUCCESS);
-    case CHILD_CREATED:
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;

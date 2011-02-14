@@ -35,31 +35,11 @@ rescinded_system_input (void* state, void* param, bid_t bid)
 
   switch (rescinded->state) {
   case START:
-    switch (receipt->type) {
-    case SELF_CREATED:
+    if (receipt->type == SELF_CREATED) {
       rescinded->state = DECLARE_UNSENT;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -67,31 +47,11 @@ rescinded_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case DECLARE_SENT:
-    switch (receipt->type) {
-    case DECLARED:
+    if (receipt->type == DECLARED) {
       rescinded->state = RESCIND_UNSENT;
       schedule_system_output ();
-      break;
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case RESCINDED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;
@@ -99,30 +59,10 @@ rescinded_system_input (void* state, void* param, bid_t bid)
     assert (0);
     break;
   case RESCIND_SENT:
-    switch (receipt->type) {
-    case RESCINDED:
+    if (receipt->type == RESCINDED) {
       exit (EXIT_SUCCESS);
-      break;
-    case BAD_ORDER:
-    case SELF_CREATED:
-    case CHILD_CREATED:
-    case BAD_DESCRIPTOR:
-    case DECLARED:
-    case OUTPUT_DNE:
-    case INPUT_DNE:
-    case OUTPUT_UNAVAILABLE:
-    case INPUT_UNAVAILABLE:
-    case COMPOSED:
-    case INPUT_COMPOSED:
-    case OUTPUT_COMPOSED:
-    case NOT_COMPOSED:
-    case DECOMPOSED:
-    case INPUT_DECOMPOSED:
-    case OUTPUT_DECOMPOSED:
-    case AUTOMATON_DNE:
-    case NOT_OWNER:
-    case CHILD_DESTROYED:
-    case WAKEUP:
+    }
+    else {
       assert (0);
     }
     break;

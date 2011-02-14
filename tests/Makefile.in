@@ -43,7 +43,8 @@ TESTS = schedule_system_output$(EXEEXT) schedule_output$(EXEEXT) \
 	not_composed$(EXEEXT) decomposed$(EXEEXT) \
 	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
 	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) same_compose$(EXEEXT) timer$(EXEEXT)
+	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
+	write$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -66,7 +67,11 @@ am__EXEEXT_1 = schedule_system_output$(EXEEXT) \
 	decomposed$(EXEEXT) input_decomposed$(EXEEXT) \
 	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
 	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) same_compose$(EXEEXT) timer$(EXEEXT)
+	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
+	write$(EXEEXT)
+am_alarm_OBJECTS = alarm.$(OBJEXT)
+alarm_OBJECTS = $(am_alarm_OBJECTS)
+alarm_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
 automaton_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -139,9 +144,9 @@ schedule_system_output_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_self_created_OBJECTS = self_created.$(OBJEXT)
 self_created_OBJECTS = $(am_self_created_OBJECTS)
 self_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_timer_OBJECTS = timer.$(OBJEXT)
-timer_OBJECTS = $(am_timer_OBJECTS)
-timer_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_write_OBJECTS = write.$(OBJEXT)
+write_OBJECTS = $(am_write_OBJECTS)
+write_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -155,10 +160,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
-	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(composed_SOURCES) \
-	$(declared_SOURCES) $(decomposed_SOURCES) \
+SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
+	$(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
+	$(child_created_SOURCES) $(child_destroyed_SOURCES) \
+	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
@@ -167,11 +172,11 @@ SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(rescinded_SOURCES) $(same_compose_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
 	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
-	$(timer_SOURCES)
-DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
-	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(composed_SOURCES) \
-	$(declared_SOURCES) $(decomposed_SOURCES) \
+	$(write_SOURCES)
+DIST_SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
+	$(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
+	$(child_created_SOURCES) $(child_destroyed_SOURCES) \
+	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
@@ -180,7 +185,7 @@ DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(rescinded_SOURCES) $(same_compose_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
 	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
-	$(timer_SOURCES)
+	$(write_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -348,8 +353,10 @@ child_destroyed_SOURCES = child_destroyed.c
 child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
 same_compose_SOURCES = same_compose.c
 same_compose_LDADD = $(top_builddir)/lib/libueioa.la
-timer_SOURCES = timer.c
-timer_LDADD = $(top_builddir)/lib/libueioa.la
+alarm_SOURCES = alarm.c
+alarm_LDADD = $(top_builddir)/lib/libueioa.la
+write_SOURCES = write.c
+write_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:
@@ -393,6 +400,9 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+alarm$(EXEEXT): $(alarm_OBJECTS) $(alarm_DEPENDENCIES) 
+	@rm -f alarm$(EXEEXT)
+	$(LINK) $(alarm_OBJECTS) $(alarm_LDADD) $(LIBS)
 automaton_dne$(EXEEXT): $(automaton_dne_OBJECTS) $(automaton_dne_DEPENDENCIES) 
 	@rm -f automaton_dne$(EXEEXT)
 	$(LINK) $(automaton_dne_OBJECTS) $(automaton_dne_LDADD) $(LIBS)
@@ -465,9 +475,9 @@ schedule_system_output$(EXEEXT): $(schedule_system_output_OBJECTS) $(schedule_sy
 self_created$(EXEEXT): $(self_created_OBJECTS) $(self_created_DEPENDENCIES) 
 	@rm -f self_created$(EXEEXT)
 	$(LINK) $(self_created_OBJECTS) $(self_created_LDADD) $(LIBS)
-timer$(EXEEXT): $(timer_OBJECTS) $(timer_DEPENDENCIES) 
-	@rm -f timer$(EXEEXT)
-	$(LINK) $(timer_OBJECTS) $(timer_LDADD) $(LIBS)
+write$(EXEEXT): $(write_OBJECTS) $(write_DEPENDENCIES) 
+	@rm -f write$(EXEEXT)
+	$(LINK) $(write_OBJECTS) $(write_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -475,6 +485,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alarm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automaton_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_descriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
@@ -499,7 +510,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_system_output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

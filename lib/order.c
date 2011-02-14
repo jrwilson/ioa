@@ -70,6 +70,15 @@ order_set_alarm_init (order_t* order, time_t secs, long usecs)
   assert (order != NULL);
 
   order->type = SET_ALARM;
-  order->timer.secs = secs;
-  order->timer.usecs = usecs;
+  order->alarm.secs = secs;
+  order->alarm.usecs = usecs;
+}
+
+void
+order_set_write_alarm_init (order_t* order, int fd)
+{
+  assert (order != NULL);
+
+  order->type = SET_WRITE_ALARM;
+  order->write.fd = fd;
 }

@@ -29,7 +29,8 @@ typedef enum {
   DECOMPOSE,
   RESCIND,
   DESTROY,
-  SET_ALARM
+  SET_ALARM,
+  SET_WRITE_ALARM,
 } order_type_t;
 
 typedef struct {
@@ -66,7 +67,10 @@ typedef struct {
     struct {
       time_t secs;
       long usecs;
-    } timer;
+    } alarm;
+    struct {
+      int fd;
+    } write;
   };
 } order_t;
 
@@ -98,7 +102,8 @@ typedef enum {
   NOT_OWNER,
   CHILD_DESTROYED,
 
-  WAKEUP
+  WAKEUP,
+  WRITE_WAKEUP
 } receipt_type_t;
 
 typedef struct {
@@ -148,6 +153,7 @@ void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
 void order_set_alarm_init (order_t*, time_t, long);
+void order_set_write_alarm_init (order_t*, int);
 
 void ueioa_run (descriptor_t*, int);
 
