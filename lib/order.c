@@ -82,3 +82,12 @@ order_set_write_alarm_init (order_t* order, int fd)
   order->type = SET_WRITE_ALARM;
   order->write.fd = fd;
 }
+
+void
+order_set_read_alarm_init (order_t* order, int fd)
+{
+  assert (order != NULL);
+
+  order->type = SET_READ_ALARM;
+  order->read.fd = fd;
+}

@@ -350,6 +350,18 @@ receipts_push_write_wakeup (receipts_t* receipts, aid_t to)
   push (receipts, &receipt);
 }
 
+void
+receipts_push_read_wakeup (receipts_t* receipts, aid_t to)
+{
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = READ_WAKEUP;
+
+  push (receipts, &receipt);
+}
+
 int
 receipts_pop (receipts_t* receipts, aid_t to, receipt_t* receipt)
 {

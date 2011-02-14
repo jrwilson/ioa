@@ -31,6 +31,7 @@ typedef enum {
   DESTROY,
   SET_ALARM,
   SET_WRITE_ALARM,
+  SET_READ_ALARM,
 } order_type_t;
 
 typedef struct {
@@ -71,6 +72,9 @@ typedef struct {
     struct {
       int fd;
     } write;
+    struct {
+      int fd;
+    } read;
   };
 } order_t;
 
@@ -103,7 +107,8 @@ typedef enum {
   CHILD_DESTROYED,
 
   WAKEUP,
-  WRITE_WAKEUP
+  WRITE_WAKEUP,
+  READ_WAKEUP
 } receipt_type_t;
 
 typedef struct {
@@ -154,6 +159,7 @@ void order_destroy_init (order_t*, aid_t);
 
 void order_set_alarm_init (order_t*, time_t, long);
 void order_set_write_alarm_init (order_t*, int);
+void order_set_read_alarm_init (order_t*, int);
 
 void ueioa_run (descriptor_t*, int);
 

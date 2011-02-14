@@ -22,6 +22,7 @@ io_equal (const void* x0, void* y0)
   switch (x->type) {
   case ALARM:
   case WRITE:
+  case READ:
     return true;
     break;
   }
@@ -149,6 +150,21 @@ ioq_insert_write (ioq_t* ioq, aid_t aid, int fd)
     .aid = aid
   };
   io.write.fd = fd;
+
+  push (ioq, &io);
+}
+
+void
+ioq_insert_read (ioq_t* ioq, aid_t aid, int fd)
+{
+  assert (ioq != NULL);
+  assert (aid != -1);
+
+  io_t io = {
+    .type = READ,
+    .aid = aid
+  };
+  io.read.fd = fd;
 
   push (ioq, &io);
 }

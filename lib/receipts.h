@@ -37,6 +37,7 @@ void receipts_push_child_destroyed (receipts_t*, aid_t, aid_t);
 
 void receipts_push_wakeup (receipts_t*, aid_t);
 void receipts_push_write_wakeup (receipts_t*, aid_t);
+void receipts_push_read_wakeup (receipts_t*, aid_t);
 
 int receipts_pop (receipts_t*, aid_t, receipt_t*);
 bool receipts_empty (receipts_t*, aid_t);

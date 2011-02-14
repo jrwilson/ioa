@@ -44,7 +44,7 @@ TESTS = schedule_system_output$(EXEEXT) schedule_output$(EXEEXT) \
 	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
 	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
-	write$(EXEEXT)
+	write$(EXEEXT) read$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -68,7 +68,7 @@ am__EXEEXT_1 = schedule_system_output$(EXEEXT) \
 	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
 	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
-	write$(EXEEXT)
+	write$(EXEEXT) read$(EXEEXT)
 am_alarm_OBJECTS = alarm.$(OBJEXT)
 alarm_OBJECTS = $(am_alarm_OBJECTS)
 alarm_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -126,6 +126,9 @@ output_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_output_unavailable_OBJECTS = output_unavailable.$(OBJEXT)
 output_unavailable_OBJECTS = $(am_output_unavailable_OBJECTS)
 output_unavailable_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_read_OBJECTS = read.$(OBJEXT)
+read_OBJECTS = $(am_read_OBJECTS)
+read_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_rescinded_OBJECTS = rescinded.$(OBJEXT)
 rescinded_OBJECTS = $(am_rescinded_OBJECTS)
 rescinded_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -169,7 +172,7 @@ SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
 	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
 	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
-	$(rescinded_SOURCES) $(same_compose_SOURCES) \
+	$(read_SOURCES) $(rescinded_SOURCES) $(same_compose_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
 	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
 	$(write_SOURCES)
@@ -182,7 +185,7 @@ DIST_SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
 	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
 	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
-	$(rescinded_SOURCES) $(same_compose_SOURCES) \
+	$(read_SOURCES) $(rescinded_SOURCES) $(same_compose_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
 	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
 	$(write_SOURCES)
@@ -357,6 +360,8 @@ alarm_SOURCES = alarm.c
 alarm_LDADD = $(top_builddir)/lib/libueioa.la
 write_SOURCES = write.c
 write_LDADD = $(top_builddir)/lib/libueioa.la
+read_SOURCES = read.c
+read_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:
@@ -457,6 +462,9 @@ output_dne$(EXEEXT): $(output_dne_OBJECTS) $(output_dne_DEPENDENCIES)
 output_unavailable$(EXEEXT): $(output_unavailable_OBJECTS) $(output_unavailable_DEPENDENCIES) 
 	@rm -f output_unavailable$(EXEEXT)
 	$(LINK) $(output_unavailable_OBJECTS) $(output_unavailable_LDADD) $(LIBS)
+read$(EXEEXT): $(read_OBJECTS) $(read_DEPENDENCIES) 
+	@rm -f read$(EXEEXT)
+	$(LINK) $(read_OBJECTS) $(read_LDADD) $(LIBS)
 rescinded$(EXEEXT): $(rescinded_OBJECTS) $(rescinded_DEPENDENCIES) 
 	@rm -f rescinded$(EXEEXT)
 	$(LINK) $(rescinded_OBJECTS) $(rescinded_LDADD) $(LIBS)
@@ -504,6 +512,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_decomposed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_unavailable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rescinded.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/same_compose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_internal.Po@am__quote@

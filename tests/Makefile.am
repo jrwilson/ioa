@@ -26,7 +26,8 @@ not_owner \
 child_destroyed \
 same_compose \
 alarm \
-write
+write \
+read
 
 check_PROGRAMS = $(TESTS)
 
@@ -107,3 +108,6 @@ alarm_LDADD = $(top_builddir)/lib/libueioa.la
 
 write_SOURCES = write.c
 write_LDADD = $(top_builddir)/lib/libueioa.la
+
+read_SOURCES = read.c
+read_LDADD = $(top_builddir)/lib/libueioa.la

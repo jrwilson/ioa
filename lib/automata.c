@@ -921,6 +921,9 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 	case SET_WRITE_ALARM:
 	  ioq_insert_write (ioq, aid, order.write.fd);
 	  break;
+	case SET_READ_ALARM:
+	  ioq_insert_read (ioq, aid, order.read.fd);
+	  break;
 	default:
 	  receipts_push_bad_order (receipts, aid);
 	  runq_insert_system_input (runq, aid);

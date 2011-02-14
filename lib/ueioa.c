@@ -102,7 +102,24 @@ fdset_set (const void* e, void* a)
 }
 
 static bool
-fdset_clear (const void* e, void* a)
+fdset_clear_read (const void* e, void* a)
+{
+  const fd_t* fd = e;
+  fdset_t* fdset = a;
+
+  if (FD_ISSET (fd->fd, &fdset->fds)) {
+    receipts_push_read_wakeup (receipts, fd->aid);
+    runq_insert_system_input (runq, fd->aid);
+    FD_CLR (fd->fd, &fdset->fds);
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+static bool
+fdset_clear_write (const void* e, void* a)
 {
   const fd_t* fd = e;
   fdset_t* fdset = a;
@@ -146,7 +163,8 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 
   /* Start the I/O thread. */
   int interrupt = ioq_interrupt_fd (ioq);
-  fd_set readfds;
+  fdset_t read_arg;
+  FD_ZERO (&read_arg.fds);
   fdset_t write_arg;
   FD_ZERO (&write_arg.fds);
   struct timeval timeout;
@@ -155,11 +173,19 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
   index_t* alarm_index = index_create_ordered_list (alarm_table, alarm_lt);
   table_t* write_table = table_create (sizeof (fd_t));
   index_t* write_index = index_create_list (write_table);
+  table_t* read_table = table_create (sizeof (fd_t));
+  index_t* read_index = index_create_list (read_table);
 
   for (;;) {
     /* Add the interrupt. */
-    FD_ZERO (&readfds);
-    FD_SET (interrupt, &readfds);
+    FD_SET (interrupt, &read_arg.fds);
+
+    /* Initialize the reads. */
+    index_for_each (read_index,
+		    index_begin (read_index),
+		    index_end (read_index),
+		    fdset_set,
+		    &read_arg);
 
     /* Initialize the writes. */
     index_for_each (write_index,
@@ -199,7 +225,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
       timeout_ptr = &timeout;
     }
 
-    int res = select (FD_SETSIZE, &readfds, &write_arg.fds, NULL, timeout_ptr);
+    int res = select (FD_SETSIZE, &read_arg.fds, &write_arg.fds, NULL, timeout_ptr);
     if (res < 0) {
       perror ("select");
       exit (EXIT_FAILURE);
@@ -222,13 +248,19 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 
       if (res > 0) {
 	/* Process the file descriptors. */
+	index_remove (read_index,
+		      index_begin (read_index),
+		      index_end (read_index),
+		      fdset_clear_read,
+		      &read_arg);
+
 	index_remove (write_index,
 		      index_begin (write_index),
 		      index_end (write_index),
-		      fdset_clear,
+		      fdset_clear_write,
 		      &write_arg);
 	
-	if (FD_ISSET (interrupt, &readfds)) {
+	if (FD_ISSET (interrupt, &read_arg.fds)) {
 	  char c;
 	  read (interrupt, &c, 1);
 	  ioq_pop (ioq, &io);
@@ -261,6 +293,15 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 		.fd = io.write.fd,
 	      };
 	      index_insert_unique (write_index, fd_aid_equal, &key);
+	    }
+	    break;
+	  case READ:
+	    {
+	      fd_t key = {
+		.aid = io.aid,
+		.fd = io.read.fd,
+	      };
+	      index_insert_unique (read_index, fd_aid_equal, &key);
 	    }
 	    break;
 	  }

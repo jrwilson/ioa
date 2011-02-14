@@ -6,7 +6,8 @@
 
 typedef enum {
   ALARM,
-  WRITE
+  WRITE,
+  READ
 } io_type_t;
 
 typedef struct {
@@ -19,6 +20,9 @@ typedef struct {
     struct {
       int fd;
     } write;
+    struct {
+      int fd;
+    } read;
   };
 } io_t;
 
@@ -33,6 +37,7 @@ int ioq_interrupt_fd (ioq_t*);
 
 void ioq_insert_alarm (ioq_t*, aid_t, time_t, suseconds_t);
 void ioq_insert_write (ioq_t*, aid_t, int);
+void ioq_insert_read (ioq_t*, aid_t, int);
 
 void ioq_pop (ioq_t*, io_t*);
 /* void ioq_purge_aid (ioq_t*, aid_t); */
