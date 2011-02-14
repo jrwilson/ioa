@@ -868,11 +868,12 @@ automata_system_input_exec (automata_t* automata, receipts_t* receipts, runq_t* 
 }
 
 void
-automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* buffers, aid_t aid)
+automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t* runq, ioq_t* ioq, buffers_t* buffers, aid_t aid)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
   assert (runq != NULL);
+  assert (ioq != NULL);
   assert (buffers != NULL);
 
   /* Acquire the write lock. */
@@ -913,6 +914,9 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 	  break;
 	case DESTROY:
 	  destroy (automata, receipts, runq, buffers, aid, order.destroy.aid);
+	  break;
+	case SET_ALARM:
+	  ioq_insert_alarm (ioq, aid, order.timer.secs, order.timer.usecs);
 	  break;
 	default:
 	  receipts_push_bad_order (receipts, aid);

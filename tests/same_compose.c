@@ -38,6 +38,7 @@ child_system_input (void* state, void* param, bid_t bid)
   case AUTOMATON_DNE:
   case NOT_OWNER:
   case CHILD_DESTROYED:
+  case WAKEUP:
     assert (0);
   }
 }
@@ -132,6 +133,7 @@ same_compose_system_input (void* state, void* param, bid_t bid)
     case AUTOMATON_DNE:
     case NOT_OWNER:
     case CHILD_DESTROYED:
+    case WAKEUP:
       assert (0);
     }
     break;
@@ -164,6 +166,7 @@ same_compose_system_input (void* state, void* param, bid_t bid)
     case AUTOMATON_DNE:
     case NOT_OWNER:
     case CHILD_DESTROYED:
+    case WAKEUP:
       assert (0);
     }
     break;
@@ -193,6 +196,7 @@ same_compose_system_input (void* state, void* param, bid_t bid)
     case AUTOMATON_DNE:
     case NOT_OWNER:
     case CHILD_DESTROYED:
+    case WAKEUP:
       assert (0);
     }
     break;

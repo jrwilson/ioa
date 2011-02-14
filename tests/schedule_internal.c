@@ -44,6 +44,7 @@ schedule_internal_system_input (void* state, void* param, bid_t bid)
   case AUTOMATON_DNE:
   case NOT_OWNER:
   case CHILD_DESTROYED:
+  case WAKEUP:
     assert (0);
   }
 

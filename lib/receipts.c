@@ -326,6 +326,18 @@ receipts_push_child_destroyed (receipts_t* receipts, aid_t to, aid_t child)
   push (receipts, &receipt);
 }
 
+void
+receipts_push_wakeup (receipts_t* receipts, aid_t to)
+{
+  assert (receipts != NULL);
+
+  receipt_entry_t receipt;
+  receipt.to = to;
+  receipt.receipt.type = WAKEUP;
+
+  push (receipts, &receipt);
+}
+
 int
 receipts_pop (receipts_t* receipts, aid_t to, receipt_t* receipt)
 {

@@ -226,6 +226,11 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     /* TODO */
     assert (0);
     break;
+  case WAKEUP:
+    /* TODO */
+    assert (0);
+    break;
+
   }
 
   return (manager->status == NORMAL) && something_changed;

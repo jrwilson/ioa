@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <time.h>
 
 typedef int aid_t;
 typedef int bid_t;
@@ -27,7 +28,8 @@ typedef enum {
   COMPOSE,
   DECOMPOSE,
   RESCIND,
-  DESTROY
+  DESTROY,
+  SET_ALARM
 } order_type_t;
 
 typedef struct {
@@ -61,6 +63,10 @@ typedef struct {
     struct {
       aid_t aid;
     } destroy;
+    struct {
+      time_t secs;
+      long usecs;
+    } timer;
   };
 } order_t;
 
@@ -90,7 +96,9 @@ typedef enum {
 
   AUTOMATON_DNE,
   NOT_OWNER,
-  CHILD_DESTROYED
+  CHILD_DESTROYED,
+
+  WAKEUP
 } receipt_type_t;
 
 typedef struct {
@@ -138,6 +146,8 @@ void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*
 void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
+
+void order_set_alarm_init (order_t*, time_t, long);
 
 void ueioa_run (descriptor_t*, int);
 

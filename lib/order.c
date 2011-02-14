@@ -63,3 +63,13 @@ order_destroy_init (order_t* order, aid_t aid)
   order->type = DESTROY;
   order->destroy.aid = aid;
 }
+
+void
+order_set_alarm_init (order_t* order, time_t secs, long usecs)
+{
+  assert (order != NULL);
+
+  order->type = SET_ALARM;
+  order->timer.secs = secs;
+  order->timer.usecs = usecs;
+}

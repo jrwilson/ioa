@@ -24,7 +24,8 @@ rescinded \
 automaton_dne \
 not_owner \
 child_destroyed \
-same_compose
+same_compose \
+timer
 
 check_PROGRAMS = $(TESTS)
 
@@ -99,3 +100,6 @@ child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
 
 same_compose_SOURCES = same_compose.c
 same_compose_LDADD = $(top_builddir)/lib/libueioa.la
+
+timer_SOURCES = timer.c
+timer_LDADD = $(top_builddir)/lib/libueioa.la

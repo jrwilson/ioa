@@ -5,6 +5,7 @@ libueioa_la_SOURCES = \
 automata.c \
 descriptor.c \
 buffers.c \
+ioq.c \
 order.c \
 receipts.c \
 runq.c \

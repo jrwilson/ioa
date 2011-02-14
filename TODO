@@ -1,5 +1,4 @@
 * Implement I/O
-** Timers
 ** File descriptors
 * Manager
 
@@ -23,3 +22,9 @@
 ** table.c
 ** ueioa.c
 * Test for memory leaks
+
+
+Probably need to move to separate runqs for each thread.
+Purging the runq should be unnecessary if we check the runnable before executing.
+This is predicated on aid's not be reused too fast.
+As an alternative, one could destroy an automaton by 1) inhibiting the automaton so all existence checks fail, 2) inserting a flush token in all runqs, 3) destroy the automaton when the final flush token has been processed.
