@@ -23,7 +23,8 @@ output_decomposed \
 rescinded \
 automaton_dne \
 not_owner \
-child_destroyed
+child_destroyed \
+same_compose
 
 check_PROGRAMS = $(TESTS)
 
@@ -95,3 +96,6 @@ not_owner_LDADD = $(top_builddir)/lib/libueioa.la
 
 child_destroyed_SOURCES = child_destroyed.c
 child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
+
+same_compose_SOURCES = same_compose.c
+same_compose_LDADD = $(top_builddir)/lib/libueioa.la
