@@ -108,7 +108,7 @@ fdset_clear_read (const void* e, void* a)
   fdset_t* fdset = a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
-    receipts_push_read_wakeup (receipts, fd->aid);
+    receipts_push_read_ready (receipts, fd->aid);
     runq_insert_system_input (runq, fd->aid);
     FD_CLR (fd->fd, &fdset->fds);
     return true;
@@ -125,7 +125,7 @@ fdset_clear_write (const void* e, void* a)
   fdset_t* fdset = a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
-    receipts_push_write_wakeup (receipts, fd->aid);
+    receipts_push_write_ready (receipts, fd->aid);
     runq_insert_system_input (runq, fd->aid);
     FD_CLR (fd->fd, &fdset->fds);
     return true;
@@ -237,7 +237,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 	alarm_t now;
 	gettimeofday (&now.tv, NULL);
 	if (alarm_lt (alarm, &now)) {
-	  receipts_push_wakeup (receipts, alarm->aid);
+	  receipts_push_alarm (receipts, alarm->aid);
 	  runq_insert_system_input (runq, alarm->aid);
 	  index_pop_front (alarm_index);
 	}
@@ -266,7 +266,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 	  ioq_pop (ioq, &io);
 	  
 	  switch (io.type) {
-	  case ALARM:
+	  case IO_ALARM:
 	    {
 	      /* Get the current time. */
 	      struct timeval tv;
@@ -286,7 +286,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 	      index_insert_unique (alarm_index, alarm_aid_equal, &key);
 	    }
 	    break;
-	  case WRITE:
+	  case IO_WRITE:
 	    {
 	      fd_t key = {
 		.aid = io.aid,
@@ -295,7 +295,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 	      index_insert_unique (write_index, fd_aid_equal, &key);
 	    }
 	    break;
-	  case READ:
+	  case IO_READ:
 	    {
 	      fd_t key = {
 		.aid = io.aid,
@@ -352,6 +352,24 @@ schedule_internal (internal_t internal, void* param)
   else {
     return -1;
   }
+}
+
+void
+schedule_alarm (time_t secs, long usecs)
+{
+  ioq_insert_alarm (ioq, automata_get_current_aid (automata), secs, usecs);
+}
+
+void
+schedule_write_ready (int fd)
+{
+  ioq_insert_write (ioq, automata_get_current_aid (automata), fd);
+}
+
+void
+schedule_read_ready (int fd)
+{
+  ioq_insert_read (ioq, automata_get_current_aid (automata), fd);
 }
 
 bid_t

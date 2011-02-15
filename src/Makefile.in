@@ -48,11 +48,10 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) trigger.$(OBJEXT) \
-	counter.$(OBJEXT) manager.$(OBJEXT) hashtable.$(OBJEXT)
+	counter.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
 main_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_thread_test_OBJECTS = thread_test.$(OBJEXT) manager.$(OBJEXT) \
-	hashtable.$(OBJEXT)
+am_thread_test_OBJECTS = thread_test.$(OBJEXT)
 thread_test_OBJECTS = $(am_thread_test_OBJECTS)
 thread_test_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -187,9 +186,9 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
-main_SOURCES = main.c composer.c trigger.c counter.c manager.c hashtable.c
+main_SOURCES = main.c composer.c trigger.c counter.c
 main_LDADD = $(top_builddir)/lib/libueioa.la
-thread_test_SOURCES = thread_test.c manager.c hashtable.c
+thread_test_SOURCES = thread_test.c
 thread_test_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
@@ -283,9 +282,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/counter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trigger.Po@am__quote@
 

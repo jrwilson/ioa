@@ -19,9 +19,9 @@ alarm_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
-    schedule_system_output ();
+    schedule_alarm (1, 0);
   }
-  else if (receipt->type == WAKEUP) {
+  else if (receipt->type == ALARM) {
     exit (EXIT_SUCCESS);
   }
   else {
@@ -32,10 +32,7 @@ alarm_system_input (void* state, void* param, bid_t bid)
 static bid_t
 alarm_system_output (void* state, void* param)
 {
-  bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
-  order_set_alarm_init (order, 1, 0);
-  return bid;
+  return -1;
 }
 
 static input_t alarm_inputs[] = { NULL };

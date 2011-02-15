@@ -1,5 +1,3 @@
-#include "manager.h"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -226,11 +224,18 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     /* TODO */
     assert (0);
     break;
-  case WAKEUP:
+  case ALARM:
     /* TODO */
     assert (0);
     break;
-
+  case WRITE_READY:
+    /* TODO */
+    assert (0);
+    break;
+  case READ_READY:
+    /* TODO */
+    assert (0);
+    break;
   }
 
   return (manager->status == NORMAL) && something_changed;

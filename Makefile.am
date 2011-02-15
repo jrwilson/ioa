@@ -1,1 +1,1 @@
-SUBDIRS = lib src . tests
+SUBDIRS = lib mftp src . tests

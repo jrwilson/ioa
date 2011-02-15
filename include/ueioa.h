@@ -29,9 +29,6 @@ typedef enum {
   DECOMPOSE,
   RESCIND,
   DESTROY,
-  SET_ALARM,
-  SET_WRITE_ALARM,
-  SET_READ_ALARM,
 } order_type_t;
 
 typedef struct {
@@ -65,16 +62,6 @@ typedef struct {
     struct {
       aid_t aid;
     } destroy;
-    struct {
-      time_t secs;
-      long usecs;
-    } alarm;
-    struct {
-      int fd;
-    } write;
-    struct {
-      int fd;
-    } read;
   };
 } order_t;
 
@@ -106,9 +93,9 @@ typedef enum {
   NOT_OWNER,
   CHILD_DESTROYED,
 
-  WAKEUP,
-  WRITE_WAKEUP,
-  READ_WAKEUP
+  ALARM,
+  WRITE_READY,
+  READ_READY
 } receipt_type_t;
 
 typedef struct {
@@ -157,15 +144,15 @@ void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, voi
 void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
-void order_set_alarm_init (order_t*, time_t, long);
-void order_set_write_alarm_init (order_t*, int);
-void order_set_read_alarm_init (order_t*, int);
-
 void ueioa_run (descriptor_t*, int);
 
 void schedule_system_output (void);
 int schedule_output (output_t, void*);
 int schedule_internal (internal_t, void*);
+
+void schedule_alarm (time_t, long);
+void schedule_write_ready (int);
+void schedule_read_ready (int);
 
 bid_t buffer_alloc (size_t);
 void* buffer_write_ptr (bid_t);
@@ -176,5 +163,17 @@ void buffer_decref (bid_t);
 void buffer_add_child (bid_t, bid_t);
 void buffer_remove_child (bid_t, bid_t);
 bid_t buffer_dup (bid_t);
+
+typedef struct manager_struct manager_t;
+
+manager_t* manager_create (void);
+
+void manager_self_set (manager_t*, aid_t*);
+void manager_parent_set (manager_t*, aid_t*);
+void manager_automaton_add (manager_t*, aid_t*, descriptor_t*);
+void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
+
+bool manager_apply (manager_t*, const receipt_t*);
+bid_t manager_action (manager_t*);
 
 #endif /* __ueioa_h__ */

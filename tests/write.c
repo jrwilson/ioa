@@ -21,14 +21,16 @@ static bid_t write_system_output (void* state, void* param);
 static void
 write_system_input (void* state, void* param, bid_t bid)
 {
+  write_t* write = state;
+  assert (write != NULL);
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
-    schedule_system_output ();
+    schedule_write_ready (write->pipes[1]);
   }
-  else if (receipt->type == WRITE_WAKEUP) {
+  else if (receipt->type == WRITE_READY) {
     exit (EXIT_SUCCESS);
   }
   else {
@@ -39,13 +41,7 @@ write_system_input (void* state, void* param, bid_t bid)
 static bid_t
 write_system_output (void* state, void* param)
 {
-  write_t* write = state;
-  assert (write != NULL);
-
-  bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
-  order_set_write_alarm_init (order, write->pipes[1]);
-  return bid;
+  return -1;
 }
 
 static input_t write_inputs[] = { NULL };

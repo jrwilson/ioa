@@ -5,9 +5,9 @@
 #include <sys/time.h>
 
 typedef enum {
-  ALARM,
-  WRITE,
-  READ
+  IO_ALARM,
+  IO_WRITE,
+  IO_READ
 } io_type_t;
 
 typedef struct {

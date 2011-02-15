@@ -63,31 +63,3 @@ order_destroy_init (order_t* order, aid_t aid)
   order->type = DESTROY;
   order->destroy.aid = aid;
 }
-
-void
-order_set_alarm_init (order_t* order, time_t secs, long usecs)
-{
-  assert (order != NULL);
-
-  order->type = SET_ALARM;
-  order->alarm.secs = secs;
-  order->alarm.usecs = usecs;
-}
-
-void
-order_set_write_alarm_init (order_t* order, int fd)
-{
-  assert (order != NULL);
-
-  order->type = SET_WRITE_ALARM;
-  order->write.fd = fd;
-}
-
-void
-order_set_read_alarm_init (order_t* order, int fd)
-{
-  assert (order != NULL);
-
-  order->type = SET_READ_ALARM;
-  order->read.fd = fd;
-}

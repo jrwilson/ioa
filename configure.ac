@@ -21,6 +21,7 @@ AC_PROG_CC
 
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
+		 mftp/Makefile
                  src/Makefile
 		 tests/Makefile])
 AC_OUTPUT

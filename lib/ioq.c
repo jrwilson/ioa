@@ -20,9 +20,9 @@ io_equal (const void* x0, void* y0)
     return false;
   }
   switch (x->type) {
-  case ALARM:
-  case WRITE:
-  case READ:
+  case IO_ALARM:
+  case IO_WRITE:
+  case IO_READ:
     return true;
     break;
   }
@@ -130,7 +130,7 @@ ioq_insert_alarm (ioq_t* ioq, aid_t aid, time_t secs, suseconds_t usecs)
   assert (usecs >= 0 && usecs <= 999999);
 
   io_t io = {
-    .type = ALARM,
+    .type = IO_ALARM,
     .aid = aid
   };
   io.alarm.tv.tv_sec = secs;
@@ -146,7 +146,7 @@ ioq_insert_write (ioq_t* ioq, aid_t aid, int fd)
   assert (aid != -1);
 
   io_t io = {
-    .type = WRITE,
+    .type = IO_WRITE,
     .aid = aid
   };
   io.write.fd = fd;
@@ -161,7 +161,7 @@ ioq_insert_read (ioq_t* ioq, aid_t aid, int fd)
   assert (aid != -1);
 
   io_t io = {
-    .type = READ,
+    .type = IO_READ,
     .aid = aid
   };
   io.read.fd = fd;

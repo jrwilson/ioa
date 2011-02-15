@@ -6,9 +6,7 @@
 
 typedef enum {
   START,
-  WRITE_UNSENT,
   WRITE_SENT,
-  READ_UNSENT,
   READ_SENT
 } read_state_t;
 
@@ -40,32 +38,26 @@ read_system_input (void* state, void* param, bid_t bid)
   switch (rd->state) {
   case START:
     if (receipt->type == SELF_CREATED) {
-      rd->state = WRITE_UNSENT;
-      schedule_system_output ();
+      schedule_write_ready (rd->pipes[1]);
+      rd->state = WRITE_SENT;
     }
     else {
       assert (0);
     }
-    break;
-  case WRITE_UNSENT:
-    assert (0);
     break;
   case WRITE_SENT:
-    if (receipt->type == WRITE_WAKEUP) {
+    if (receipt->type == WRITE_READY) {
       char c = 'A';
       write (rd->pipes[1], &c, 1);
-      rd->state = READ_UNSENT;
-      schedule_system_output ();
+      schedule_read_ready (rd->pipes[0]);
+      rd->state = READ_SENT;
     }
     else {
       assert (0);
     }
     break;
-  case READ_UNSENT:
-    assert (0);
-    break;
   case READ_SENT:
-    if (receipt->type == READ_WAKEUP) {
+    if (receipt->type == READ_READY) {
       char c;
       read (rd->pipes[0], &c, 1);
       assert (c == 'A');
@@ -82,33 +74,7 @@ read_system_input (void* state, void* param, bid_t bid)
 static bid_t
 read_system_output (void* state, void* param)
 {
-  read_t* read = state;
-  assert (read != NULL);
-
-  bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
-
-  switch (read->state) {
-  case START:
-    assert (0);
-    break;
-  case WRITE_UNSENT:
-    order_set_write_alarm_init (order, read->pipes[1]);
-    read->state = WRITE_SENT;
-    break;
-  case WRITE_SENT:
-    assert (0);
-    break;
-  case READ_UNSENT:
-    order_set_read_alarm_init (order, read->pipes[0]);
-    read->state = READ_SENT;
-    break;
-  case READ_SENT:
-    assert (0);
-    break;
-  }
-
-  return bid;
+  return -1;
 }
 
 static input_t read_inputs[] = { NULL };

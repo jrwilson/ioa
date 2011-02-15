@@ -6,7 +6,6 @@
 
 #include <ueioa.h>
 
-#include "manager.h"
 #include "trigger.h"
 #include "counter.h"
 

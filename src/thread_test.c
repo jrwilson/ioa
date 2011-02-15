@@ -4,8 +4,6 @@
 
 #include <ueioa.h>
 
-#include "manager.h"
-
 typedef struct {
   int count;
 } counter_t;
