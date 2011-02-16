@@ -1,10 +1,7 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
 TESTS = \
-send_message \
 schedule_system_output \
-schedule_output \
-schedule_internal \
 bad_order \
 self_created \
 child_created \
@@ -26,92 +23,95 @@ automaton_dne \
 not_owner \
 child_destroyed \
 same_compose \
-alarm \
-write \
-read
+schedule_alarm_input \
+schedule_read_input \
+schedule_write_input \
+schedule_free_input \
+schedule_output \
+schedule_internal
 
 check_PROGRAMS = $(TESTS)
 
-send_message_SOURCES = send_message.c
-send_message_LDADD = $(top_builddir)/lib/libueioa.la
-
-schedule_system_output_SOURCES = schedule_system_output.c
+schedule_system_output_SOURCES = schedule_system_output.c test.c
 schedule_system_output_LDADD = $(top_builddir)/lib/libueioa.la
 
-schedule_output_SOURCES = schedule_output.c
-schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
-
-schedule_internal_SOURCES = schedule_internal.c
-schedule_internal_LDADD = $(top_builddir)/lib/libueioa.la
-
-bad_order_SOURCES = bad_order.c
+bad_order_SOURCES = bad_order.c test.c
 bad_order_LDADD = $(top_builddir)/lib/libueioa.la
 
-self_created_SOURCES = self_created.c
+self_created_SOURCES = self_created.c test.c
 self_created_LDADD = $(top_builddir)/lib/libueioa.la
 
-child_created_SOURCES = child_created.c
+child_created_SOURCES = child_created.c test.c
 child_created_LDADD = $(top_builddir)/lib/libueioa.la
 
-bad_descriptor_SOURCES = bad_descriptor.c
+bad_descriptor_SOURCES = bad_descriptor.c test.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
 
-declared_SOURCES = declared.c
+declared_SOURCES = declared.c test.c
 declared_LDADD = $(top_builddir)/lib/libueioa.la
 
-output_dne_SOURCES = output_dne.c
+output_dne_SOURCES = output_dne.c test.c
 output_dne_LDADD = $(top_builddir)/lib/libueioa.la
 
-input_dne_SOURCES = input_dne.c
+input_dne_SOURCES = input_dne.c test.c
 input_dne_LDADD = $(top_builddir)/lib/libueioa.la
 
-output_unavailable_SOURCES = output_unavailable.c
+output_unavailable_SOURCES = output_unavailable.c test.c
 output_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
 
-input_unavailable_SOURCES = input_unavailable.c
+input_unavailable_SOURCES = input_unavailable.c test.c
 input_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
 
-composed_SOURCES = composed.c
+composed_SOURCES = composed.c test.c
 composed_LDADD = $(top_builddir)/lib/libueioa.la
 
-input_composed_SOURCES = input_composed.c
+input_composed_SOURCES = input_composed.c test.c
 input_composed_LDADD = $(top_builddir)/lib/libueioa.la
 
-output_composed_SOURCES = output_composed.c
+output_composed_SOURCES = output_composed.c test.c
 output_composed_LDADD = $(top_builddir)/lib/libueioa.la
 
-not_composed_SOURCES = not_composed.c
+not_composed_SOURCES = not_composed.c test.c
 not_composed_LDADD = $(top_builddir)/lib/libueioa.la
 
-decomposed_SOURCES = decomposed.c
+decomposed_SOURCES = decomposed.c test.c
 decomposed_LDADD = $(top_builddir)/lib/libueioa.la
 
-input_decomposed_SOURCES = input_decomposed.c
+input_decomposed_SOURCES = input_decomposed.c test.c
 input_decomposed_LDADD = $(top_builddir)/lib/libueioa.la
 
-output_decomposed_SOURCES = output_decomposed.c
+output_decomposed_SOURCES = output_decomposed.c test.c
 output_decomposed_LDADD = $(top_builddir)/lib/libueioa.la
 
-rescinded_SOURCES = rescinded.c
+rescinded_SOURCES = rescinded.c test.c
 rescinded_LDADD = $(top_builddir)/lib/libueioa.la
 
-automaton_dne_SOURCES = automaton_dne.c
+automaton_dne_SOURCES = automaton_dne.c test.c
 automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la
 
-not_owner_SOURCES = not_owner.c
+not_owner_SOURCES = not_owner.c test.c
 not_owner_LDADD = $(top_builddir)/lib/libueioa.la
 
-child_destroyed_SOURCES = child_destroyed.c
+child_destroyed_SOURCES = child_destroyed.c test.c
 child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
 
-same_compose_SOURCES = same_compose.c
+same_compose_SOURCES = same_compose.c test.c
 same_compose_LDADD = $(top_builddir)/lib/libueioa.la
 
-alarm_SOURCES = alarm.c
-alarm_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_alarm_input_SOURCES = schedule_alarm_input.c test.c
+schedule_alarm_input_LDADD = $(top_builddir)/lib/libueioa.la
 
-write_SOURCES = write.c
-write_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_read_input_SOURCES = schedule_read_input.c test.c
+schedule_read_input_LDADD = $(top_builddir)/lib/libueioa.la
 
-read_SOURCES = read.c
-read_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_write_input_SOURCES = schedule_write_input.c test.c
+schedule_write_input_LDADD = $(top_builddir)/lib/libueioa.la
+
+schedule_free_input_SOURCES = schedule_free_input.c test.c
+schedule_free_input_LDADD = $(top_builddir)/lib/libueioa.la
+
+schedule_output_SOURCES = schedule_output.c test.c
+schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
+
+schedule_internal_SOURCES = schedule_internal.c test.c
+schedule_internal_LDADD = $(top_builddir)/lib/libueioa.la

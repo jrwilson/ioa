@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 static void*
 send_message_create (void)
 {
@@ -27,7 +29,7 @@ send_message_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
-    assert (send_message (receipt->self_created.self, free_input, buffer_alloc (0)) == 0);
+    assert (schedule_free_input (receipt->self_created.self, free_input, buffer_alloc (0)) == 0);
   }
   else {
     assert (0);
@@ -49,6 +51,9 @@ descriptor_t send_message_descriptor = {
   .constructor = send_message_create,
   .system_input = send_message_system_input,
   .system_output = send_message_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = send_message_free_inputs,
   .inputs = send_message_inputs,
   .outputs = send_message_outputs,

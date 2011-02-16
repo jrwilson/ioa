@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 static void*
 self_created_create (void)
 {
@@ -38,6 +40,9 @@ descriptor_t self_created_descriptor = {
   .constructor = self_created_create,
   .system_input = self_created_system_input,
   .system_output = self_created_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = self_created_free_inputs,
   .inputs = self_created_inputs,
   .outputs = self_created_outputs,

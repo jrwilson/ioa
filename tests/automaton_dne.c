@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 typedef enum {
   UNSENT,
   SENT
@@ -74,6 +76,9 @@ descriptor_t automaton_dne_descriptor = {
   .constructor = automaton_dne_create,
   .system_input = automaton_dne_system_input,
   .system_output = automaton_dne_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = automaton_dne_free_inputs,
   .inputs = automaton_dne_inputs,
   .outputs = automaton_dne_outputs,

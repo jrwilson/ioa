@@ -17,9 +17,16 @@ runnable_equal (const void* x0, void* y0)
   if (x->aid != y->aid) {
     return false;
   }
+  if (x->param != y->param) {
+    return false;
+  }
+
   switch (x->type) {
   case SYSTEM_INPUT:
   case SYSTEM_OUTPUT:
+  case ALARM_INPUT:
+  case READ_INPUT:
+  case WRITE_INPUT:
     return true;
     break;
   case FREE_INPUT:
@@ -121,22 +128,6 @@ push (runq_t* runq, runnable_t* runnable)
 }
 
 void
-runq_insert_free_input (runq_t* runq, aid_t aid, input_t free_input, bid_t bid)
-{
-  assert (runq != NULL);
-  assert (aid != -1);
-
-  runnable_t runnable = {
-    .type = FREE_INPUT,
-    .aid = aid,
-    .param = NULL,
-  };
-  runnable.free_input.free_input = free_input;
-  runnable.free_input.bid = bid;
-  push (runq, &runnable);
-}
-
-void
 runq_insert_system_input (runq_t* runq, aid_t aid)
 {
   assert (runq != NULL);
@@ -161,6 +152,64 @@ runq_insert_system_output (runq_t* runq, aid_t aid)
     .aid = aid,
     .param = NULL,
   };
+  push (runq, &runnable);
+}
+
+void
+runq_insert_alarm_input (runq_t* runq, aid_t aid)
+{
+  assert (runq != NULL);
+  assert (aid != -1);
+
+  runnable_t runnable = {
+    .type = ALARM_INPUT,
+    .aid = aid,
+    .param = NULL,
+  };
+  push (runq, &runnable);
+}
+
+void
+runq_insert_read_input (runq_t* runq, aid_t aid)
+{
+  assert (runq != NULL);
+  assert (aid != -1);
+
+  runnable_t runnable = {
+    .type = READ_INPUT,
+    .aid = aid,
+    .param = NULL,
+  };
+  push (runq, &runnable);
+}
+
+void
+runq_insert_write_input (runq_t* runq, aid_t aid)
+{
+  assert (runq != NULL);
+  assert (aid != -1);
+
+  runnable_t runnable = {
+    .type = WRITE_INPUT,
+    .aid = aid,
+    .param = NULL,
+  };
+  push (runq, &runnable);
+}
+
+void
+runq_insert_free_input (runq_t* runq, aid_t aid, input_t free_input, bid_t bid)
+{
+  assert (runq != NULL);
+  assert (aid != -1);
+
+  runnable_t runnable = {
+    .type = FREE_INPUT,
+    .aid = aid,
+    .param = NULL,
+  };
+  runnable.free_input.free_input = free_input;
+  runnable.free_input.bid = bid;
   push (runq, &runnable);
 }
 

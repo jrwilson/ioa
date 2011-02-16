@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 static void*
 schedule_output_create (void)
 {
@@ -46,6 +48,9 @@ descriptor_t schedule_output_descriptor = {
   .constructor = schedule_output_create,
   .system_input = schedule_output_system_input,
   .system_output = schedule_output_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = schedule_output_free_inputs,
   .inputs = schedule_output_inputs,
   .outputs = schedule_output_outputs,

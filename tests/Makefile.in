@@ -33,19 +33,19 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = send_message$(EXEEXT) schedule_system_output$(EXEEXT) \
-	schedule_output$(EXEEXT) schedule_internal$(EXEEXT) \
-	bad_order$(EXEEXT) self_created$(EXEEXT) \
-	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
-	output_unavailable$(EXEEXT) input_unavailable$(EXEEXT) \
-	composed$(EXEEXT) input_composed$(EXEEXT) \
-	output_composed$(EXEEXT) not_composed$(EXEEXT) \
-	decomposed$(EXEEXT) input_decomposed$(EXEEXT) \
-	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
-	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
-	write$(EXEEXT) read$(EXEEXT)
+TESTS = schedule_system_output$(EXEEXT) bad_order$(EXEEXT) \
+	self_created$(EXEEXT) child_created$(EXEEXT) \
+	bad_descriptor$(EXEEXT) declared$(EXEEXT) output_dne$(EXEEXT) \
+	input_dne$(EXEEXT) output_unavailable$(EXEEXT) \
+	input_unavailable$(EXEEXT) composed$(EXEEXT) \
+	input_composed$(EXEEXT) output_composed$(EXEEXT) \
+	not_composed$(EXEEXT) decomposed$(EXEEXT) \
+	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
+	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	child_destroyed$(EXEEXT) same_compose$(EXEEXT) \
+	schedule_alarm_input$(EXEEXT) schedule_read_input$(EXEEXT) \
+	schedule_write_input$(EXEEXT) schedule_free_input$(EXEEXT) \
+	schedule_output$(EXEEXT) schedule_internal$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -57,103 +57,113 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = send_message$(EXEEXT) schedule_system_output$(EXEEXT) \
-	schedule_output$(EXEEXT) schedule_internal$(EXEEXT) \
-	bad_order$(EXEEXT) self_created$(EXEEXT) \
-	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
-	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
-	output_unavailable$(EXEEXT) input_unavailable$(EXEEXT) \
-	composed$(EXEEXT) input_composed$(EXEEXT) \
-	output_composed$(EXEEXT) not_composed$(EXEEXT) \
-	decomposed$(EXEEXT) input_decomposed$(EXEEXT) \
-	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
-	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
-	write$(EXEEXT) read$(EXEEXT)
-am_alarm_OBJECTS = alarm.$(OBJEXT)
-alarm_OBJECTS = $(am_alarm_OBJECTS)
-alarm_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
+am__EXEEXT_1 = schedule_system_output$(EXEEXT) bad_order$(EXEEXT) \
+	self_created$(EXEEXT) child_created$(EXEEXT) \
+	bad_descriptor$(EXEEXT) declared$(EXEEXT) output_dne$(EXEEXT) \
+	input_dne$(EXEEXT) output_unavailable$(EXEEXT) \
+	input_unavailable$(EXEEXT) composed$(EXEEXT) \
+	input_composed$(EXEEXT) output_composed$(EXEEXT) \
+	not_composed$(EXEEXT) decomposed$(EXEEXT) \
+	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
+	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+	child_destroyed$(EXEEXT) same_compose$(EXEEXT) \
+	schedule_alarm_input$(EXEEXT) schedule_read_input$(EXEEXT) \
+	schedule_write_input$(EXEEXT) schedule_free_input$(EXEEXT) \
+	schedule_output$(EXEEXT) schedule_internal$(EXEEXT)
+am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT) test.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
 automaton_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_bad_descriptor_OBJECTS = bad_descriptor.$(OBJEXT)
+am_bad_descriptor_OBJECTS = bad_descriptor.$(OBJEXT) test.$(OBJEXT)
 bad_descriptor_OBJECTS = $(am_bad_descriptor_OBJECTS)
 bad_descriptor_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_bad_order_OBJECTS = bad_order.$(OBJEXT)
+am_bad_order_OBJECTS = bad_order.$(OBJEXT) test.$(OBJEXT)
 bad_order_OBJECTS = $(am_bad_order_OBJECTS)
 bad_order_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_child_created_OBJECTS = child_created.$(OBJEXT)
+am_child_created_OBJECTS = child_created.$(OBJEXT) test.$(OBJEXT)
 child_created_OBJECTS = $(am_child_created_OBJECTS)
 child_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_child_destroyed_OBJECTS = child_destroyed.$(OBJEXT)
+am_child_destroyed_OBJECTS = child_destroyed.$(OBJEXT) test.$(OBJEXT)
 child_destroyed_OBJECTS = $(am_child_destroyed_OBJECTS)
 child_destroyed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_composed_OBJECTS = composed.$(OBJEXT)
+am_composed_OBJECTS = composed.$(OBJEXT) test.$(OBJEXT)
 composed_OBJECTS = $(am_composed_OBJECTS)
 composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_declared_OBJECTS = declared.$(OBJEXT)
+am_declared_OBJECTS = declared.$(OBJEXT) test.$(OBJEXT)
 declared_OBJECTS = $(am_declared_OBJECTS)
 declared_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_decomposed_OBJECTS = decomposed.$(OBJEXT)
+am_decomposed_OBJECTS = decomposed.$(OBJEXT) test.$(OBJEXT)
 decomposed_OBJECTS = $(am_decomposed_OBJECTS)
 decomposed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_input_composed_OBJECTS = input_composed.$(OBJEXT)
+am_input_composed_OBJECTS = input_composed.$(OBJEXT) test.$(OBJEXT)
 input_composed_OBJECTS = $(am_input_composed_OBJECTS)
 input_composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_input_decomposed_OBJECTS = input_decomposed.$(OBJEXT)
+am_input_decomposed_OBJECTS = input_decomposed.$(OBJEXT) \
+	test.$(OBJEXT)
 input_decomposed_OBJECTS = $(am_input_decomposed_OBJECTS)
 input_decomposed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_input_dne_OBJECTS = input_dne.$(OBJEXT)
+am_input_dne_OBJECTS = input_dne.$(OBJEXT) test.$(OBJEXT)
 input_dne_OBJECTS = $(am_input_dne_OBJECTS)
 input_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_input_unavailable_OBJECTS = input_unavailable.$(OBJEXT)
+am_input_unavailable_OBJECTS = input_unavailable.$(OBJEXT) \
+	test.$(OBJEXT)
 input_unavailable_OBJECTS = $(am_input_unavailable_OBJECTS)
 input_unavailable_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_not_composed_OBJECTS = not_composed.$(OBJEXT)
+am_not_composed_OBJECTS = not_composed.$(OBJEXT) test.$(OBJEXT)
 not_composed_OBJECTS = $(am_not_composed_OBJECTS)
 not_composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_not_owner_OBJECTS = not_owner.$(OBJEXT)
+am_not_owner_OBJECTS = not_owner.$(OBJEXT) test.$(OBJEXT)
 not_owner_OBJECTS = $(am_not_owner_OBJECTS)
 not_owner_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_output_composed_OBJECTS = output_composed.$(OBJEXT)
+am_output_composed_OBJECTS = output_composed.$(OBJEXT) test.$(OBJEXT)
 output_composed_OBJECTS = $(am_output_composed_OBJECTS)
 output_composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_output_decomposed_OBJECTS = output_decomposed.$(OBJEXT)
+am_output_decomposed_OBJECTS = output_decomposed.$(OBJEXT) \
+	test.$(OBJEXT)
 output_decomposed_OBJECTS = $(am_output_decomposed_OBJECTS)
 output_decomposed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_output_dne_OBJECTS = output_dne.$(OBJEXT)
+am_output_dne_OBJECTS = output_dne.$(OBJEXT) test.$(OBJEXT)
 output_dne_OBJECTS = $(am_output_dne_OBJECTS)
 output_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_output_unavailable_OBJECTS = output_unavailable.$(OBJEXT)
+am_output_unavailable_OBJECTS = output_unavailable.$(OBJEXT) \
+	test.$(OBJEXT)
 output_unavailable_OBJECTS = $(am_output_unavailable_OBJECTS)
 output_unavailable_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_read_OBJECTS = read.$(OBJEXT)
-read_OBJECTS = $(am_read_OBJECTS)
-read_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_rescinded_OBJECTS = rescinded.$(OBJEXT)
+am_rescinded_OBJECTS = rescinded.$(OBJEXT) test.$(OBJEXT)
 rescinded_OBJECTS = $(am_rescinded_OBJECTS)
 rescinded_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_same_compose_OBJECTS = same_compose.$(OBJEXT)
+am_same_compose_OBJECTS = same_compose.$(OBJEXT) test.$(OBJEXT)
 same_compose_OBJECTS = $(am_same_compose_OBJECTS)
 same_compose_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_schedule_internal_OBJECTS = schedule_internal.$(OBJEXT)
+am_schedule_alarm_input_OBJECTS = schedule_alarm_input.$(OBJEXT) \
+	test.$(OBJEXT)
+schedule_alarm_input_OBJECTS = $(am_schedule_alarm_input_OBJECTS)
+schedule_alarm_input_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_schedule_free_input_OBJECTS = schedule_free_input.$(OBJEXT) \
+	test.$(OBJEXT)
+schedule_free_input_OBJECTS = $(am_schedule_free_input_OBJECTS)
+schedule_free_input_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_schedule_internal_OBJECTS = schedule_internal.$(OBJEXT) \
+	test.$(OBJEXT)
 schedule_internal_OBJECTS = $(am_schedule_internal_OBJECTS)
 schedule_internal_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_schedule_output_OBJECTS = schedule_output.$(OBJEXT)
+am_schedule_output_OBJECTS = schedule_output.$(OBJEXT) test.$(OBJEXT)
 schedule_output_OBJECTS = $(am_schedule_output_OBJECTS)
 schedule_output_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_schedule_system_output_OBJECTS = schedule_system_output.$(OBJEXT)
+am_schedule_read_input_OBJECTS = schedule_read_input.$(OBJEXT) \
+	test.$(OBJEXT)
+schedule_read_input_OBJECTS = $(am_schedule_read_input_OBJECTS)
+schedule_read_input_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_schedule_system_output_OBJECTS = schedule_system_output.$(OBJEXT) \
+	test.$(OBJEXT)
 schedule_system_output_OBJECTS = $(am_schedule_system_output_OBJECTS)
 schedule_system_output_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_self_created_OBJECTS = self_created.$(OBJEXT)
+am_schedule_write_input_OBJECTS = schedule_write_input.$(OBJEXT) \
+	test.$(OBJEXT)
+schedule_write_input_OBJECTS = $(am_schedule_write_input_OBJECTS)
+schedule_write_input_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_self_created_OBJECTS = self_created.$(OBJEXT) test.$(OBJEXT)
 self_created_OBJECTS = $(am_self_created_OBJECTS)
 self_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_send_message_OBJECTS = send_message.$(OBJEXT)
-send_message_OBJECTS = $(am_send_message_OBJECTS)
-send_message_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_write_OBJECTS = write.$(OBJEXT)
-write_OBJECTS = $(am_write_OBJECTS)
-write_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -167,32 +177,36 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
-	$(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
-	$(child_created_SOURCES) $(child_destroyed_SOURCES) \
-	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
+SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
+	$(bad_order_SOURCES) $(child_created_SOURCES) \
+	$(child_destroyed_SOURCES) $(composed_SOURCES) \
+	$(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
 	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
 	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
-	$(read_SOURCES) $(rescinded_SOURCES) $(same_compose_SOURCES) \
+	$(rescinded_SOURCES) $(same_compose_SOURCES) \
+	$(schedule_alarm_input_SOURCES) $(schedule_free_input_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
-	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
-	$(send_message_SOURCES) $(write_SOURCES)
-DIST_SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
-	$(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
-	$(child_created_SOURCES) $(child_destroyed_SOURCES) \
-	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
+	$(schedule_read_input_SOURCES) \
+	$(schedule_system_output_SOURCES) \
+	$(schedule_write_input_SOURCES) $(self_created_SOURCES)
+DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
+	$(bad_order_SOURCES) $(child_created_SOURCES) \
+	$(child_destroyed_SOURCES) $(composed_SOURCES) \
+	$(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
 	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
 	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
-	$(read_SOURCES) $(rescinded_SOURCES) $(same_compose_SOURCES) \
+	$(rescinded_SOURCES) $(same_compose_SOURCES) \
+	$(schedule_alarm_input_SOURCES) $(schedule_free_input_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
-	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
-	$(send_message_SOURCES) $(write_SOURCES)
+	$(schedule_read_input_SOURCES) \
+	$(schedule_system_output_SOURCES) \
+	$(schedule_write_input_SOURCES) $(self_created_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -312,62 +326,62 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
-send_message_SOURCES = send_message.c
-send_message_LDADD = $(top_builddir)/lib/libueioa.la
-schedule_system_output_SOURCES = schedule_system_output.c
+schedule_system_output_SOURCES = schedule_system_output.c test.c
 schedule_system_output_LDADD = $(top_builddir)/lib/libueioa.la
-schedule_output_SOURCES = schedule_output.c
-schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
-schedule_internal_SOURCES = schedule_internal.c
-schedule_internal_LDADD = $(top_builddir)/lib/libueioa.la
-bad_order_SOURCES = bad_order.c
+bad_order_SOURCES = bad_order.c test.c
 bad_order_LDADD = $(top_builddir)/lib/libueioa.la
-self_created_SOURCES = self_created.c
+self_created_SOURCES = self_created.c test.c
 self_created_LDADD = $(top_builddir)/lib/libueioa.la
-child_created_SOURCES = child_created.c
+child_created_SOURCES = child_created.c test.c
 child_created_LDADD = $(top_builddir)/lib/libueioa.la
-bad_descriptor_SOURCES = bad_descriptor.c
+bad_descriptor_SOURCES = bad_descriptor.c test.c
 bad_descriptor_LDADD = $(top_builddir)/lib/libueioa.la
-declared_SOURCES = declared.c
+declared_SOURCES = declared.c test.c
 declared_LDADD = $(top_builddir)/lib/libueioa.la
-output_dne_SOURCES = output_dne.c
+output_dne_SOURCES = output_dne.c test.c
 output_dne_LDADD = $(top_builddir)/lib/libueioa.la
-input_dne_SOURCES = input_dne.c
+input_dne_SOURCES = input_dne.c test.c
 input_dne_LDADD = $(top_builddir)/lib/libueioa.la
-output_unavailable_SOURCES = output_unavailable.c
+output_unavailable_SOURCES = output_unavailable.c test.c
 output_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
-input_unavailable_SOURCES = input_unavailable.c
+input_unavailable_SOURCES = input_unavailable.c test.c
 input_unavailable_LDADD = $(top_builddir)/lib/libueioa.la
-composed_SOURCES = composed.c
+composed_SOURCES = composed.c test.c
 composed_LDADD = $(top_builddir)/lib/libueioa.la
-input_composed_SOURCES = input_composed.c
+input_composed_SOURCES = input_composed.c test.c
 input_composed_LDADD = $(top_builddir)/lib/libueioa.la
-output_composed_SOURCES = output_composed.c
+output_composed_SOURCES = output_composed.c test.c
 output_composed_LDADD = $(top_builddir)/lib/libueioa.la
-not_composed_SOURCES = not_composed.c
+not_composed_SOURCES = not_composed.c test.c
 not_composed_LDADD = $(top_builddir)/lib/libueioa.la
-decomposed_SOURCES = decomposed.c
+decomposed_SOURCES = decomposed.c test.c
 decomposed_LDADD = $(top_builddir)/lib/libueioa.la
-input_decomposed_SOURCES = input_decomposed.c
+input_decomposed_SOURCES = input_decomposed.c test.c
 input_decomposed_LDADD = $(top_builddir)/lib/libueioa.la
-output_decomposed_SOURCES = output_decomposed.c
+output_decomposed_SOURCES = output_decomposed.c test.c
 output_decomposed_LDADD = $(top_builddir)/lib/libueioa.la
-rescinded_SOURCES = rescinded.c
+rescinded_SOURCES = rescinded.c test.c
 rescinded_LDADD = $(top_builddir)/lib/libueioa.la
-automaton_dne_SOURCES = automaton_dne.c
+automaton_dne_SOURCES = automaton_dne.c test.c
 automaton_dne_LDADD = $(top_builddir)/lib/libueioa.la
-not_owner_SOURCES = not_owner.c
+not_owner_SOURCES = not_owner.c test.c
 not_owner_LDADD = $(top_builddir)/lib/libueioa.la
-child_destroyed_SOURCES = child_destroyed.c
+child_destroyed_SOURCES = child_destroyed.c test.c
 child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
-same_compose_SOURCES = same_compose.c
+same_compose_SOURCES = same_compose.c test.c
 same_compose_LDADD = $(top_builddir)/lib/libueioa.la
-alarm_SOURCES = alarm.c
-alarm_LDADD = $(top_builddir)/lib/libueioa.la
-write_SOURCES = write.c
-write_LDADD = $(top_builddir)/lib/libueioa.la
-read_SOURCES = read.c
-read_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_alarm_input_SOURCES = schedule_alarm_input.c test.c
+schedule_alarm_input_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_read_input_SOURCES = schedule_read_input.c test.c
+schedule_read_input_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_write_input_SOURCES = schedule_write_input.c test.c
+schedule_write_input_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_free_input_SOURCES = schedule_free_input.c test.c
+schedule_free_input_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_output_SOURCES = schedule_output.c test.c
+schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
+schedule_internal_SOURCES = schedule_internal.c test.c
+schedule_internal_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:
@@ -411,9 +425,6 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-alarm$(EXEEXT): $(alarm_OBJECTS) $(alarm_DEPENDENCIES) 
-	@rm -f alarm$(EXEEXT)
-	$(LINK) $(alarm_OBJECTS) $(alarm_LDADD) $(LIBS)
 automaton_dne$(EXEEXT): $(automaton_dne_OBJECTS) $(automaton_dne_DEPENDENCIES) 
 	@rm -f automaton_dne$(EXEEXT)
 	$(LINK) $(automaton_dne_OBJECTS) $(automaton_dne_LDADD) $(LIBS)
@@ -468,33 +479,36 @@ output_dne$(EXEEXT): $(output_dne_OBJECTS) $(output_dne_DEPENDENCIES)
 output_unavailable$(EXEEXT): $(output_unavailable_OBJECTS) $(output_unavailable_DEPENDENCIES) 
 	@rm -f output_unavailable$(EXEEXT)
 	$(LINK) $(output_unavailable_OBJECTS) $(output_unavailable_LDADD) $(LIBS)
-read$(EXEEXT): $(read_OBJECTS) $(read_DEPENDENCIES) 
-	@rm -f read$(EXEEXT)
-	$(LINK) $(read_OBJECTS) $(read_LDADD) $(LIBS)
 rescinded$(EXEEXT): $(rescinded_OBJECTS) $(rescinded_DEPENDENCIES) 
 	@rm -f rescinded$(EXEEXT)
 	$(LINK) $(rescinded_OBJECTS) $(rescinded_LDADD) $(LIBS)
 same_compose$(EXEEXT): $(same_compose_OBJECTS) $(same_compose_DEPENDENCIES) 
 	@rm -f same_compose$(EXEEXT)
 	$(LINK) $(same_compose_OBJECTS) $(same_compose_LDADD) $(LIBS)
+schedule_alarm_input$(EXEEXT): $(schedule_alarm_input_OBJECTS) $(schedule_alarm_input_DEPENDENCIES) 
+	@rm -f schedule_alarm_input$(EXEEXT)
+	$(LINK) $(schedule_alarm_input_OBJECTS) $(schedule_alarm_input_LDADD) $(LIBS)
+schedule_free_input$(EXEEXT): $(schedule_free_input_OBJECTS) $(schedule_free_input_DEPENDENCIES) 
+	@rm -f schedule_free_input$(EXEEXT)
+	$(LINK) $(schedule_free_input_OBJECTS) $(schedule_free_input_LDADD) $(LIBS)
 schedule_internal$(EXEEXT): $(schedule_internal_OBJECTS) $(schedule_internal_DEPENDENCIES) 
 	@rm -f schedule_internal$(EXEEXT)
 	$(LINK) $(schedule_internal_OBJECTS) $(schedule_internal_LDADD) $(LIBS)
 schedule_output$(EXEEXT): $(schedule_output_OBJECTS) $(schedule_output_DEPENDENCIES) 
 	@rm -f schedule_output$(EXEEXT)
 	$(LINK) $(schedule_output_OBJECTS) $(schedule_output_LDADD) $(LIBS)
+schedule_read_input$(EXEEXT): $(schedule_read_input_OBJECTS) $(schedule_read_input_DEPENDENCIES) 
+	@rm -f schedule_read_input$(EXEEXT)
+	$(LINK) $(schedule_read_input_OBJECTS) $(schedule_read_input_LDADD) $(LIBS)
 schedule_system_output$(EXEEXT): $(schedule_system_output_OBJECTS) $(schedule_system_output_DEPENDENCIES) 
 	@rm -f schedule_system_output$(EXEEXT)
 	$(LINK) $(schedule_system_output_OBJECTS) $(schedule_system_output_LDADD) $(LIBS)
+schedule_write_input$(EXEEXT): $(schedule_write_input_OBJECTS) $(schedule_write_input_DEPENDENCIES) 
+	@rm -f schedule_write_input$(EXEEXT)
+	$(LINK) $(schedule_write_input_OBJECTS) $(schedule_write_input_LDADD) $(LIBS)
 self_created$(EXEEXT): $(self_created_OBJECTS) $(self_created_DEPENDENCIES) 
 	@rm -f self_created$(EXEEXT)
 	$(LINK) $(self_created_OBJECTS) $(self_created_LDADD) $(LIBS)
-send_message$(EXEEXT): $(send_message_OBJECTS) $(send_message_DEPENDENCIES) 
-	@rm -f send_message$(EXEEXT)
-	$(LINK) $(send_message_OBJECTS) $(send_message_LDADD) $(LIBS)
-write$(EXEEXT): $(write_OBJECTS) $(write_DEPENDENCIES) 
-	@rm -f write$(EXEEXT)
-	$(LINK) $(write_OBJECTS) $(write_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -502,7 +516,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alarm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automaton_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_descriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
@@ -521,15 +534,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_decomposed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_dne.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_unavailable.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rescinded.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/same_compose.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_alarm_input.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_free_input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_internal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_read_input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_system_output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_write_input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/send_message.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

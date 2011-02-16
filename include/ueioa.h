@@ -17,6 +17,9 @@ typedef struct {
   constructor_t constructor;
   input_t system_input;
   output_t system_output;
+  input_t alarm_input;
+  input_t read_input;
+  input_t write_input;
   input_t* free_inputs;
   input_t* inputs;
   output_t* outputs;
@@ -93,10 +96,6 @@ typedef enum {
   AUTOMATON_DNE,
   NOT_OWNER,
   CHILD_DESTROYED,
-
-  ALARM,
-  WRITE_READY,
-  READ_READY
 } receipt_type_t;
 
 typedef struct {
@@ -145,15 +144,13 @@ void order_destroy_init (order_t*, aid_t);
 
 void ueioa_run (descriptor_t*, int);
 
-int send_message (aid_t, input_t, bid_t);
-
 void schedule_system_output (void);
+void schedule_alarm_input (time_t, long);
+void schedule_read_input (int);
+void schedule_write_input (int);
+int schedule_free_input (aid_t, input_t, bid_t);
 int schedule_output (output_t, void*);
 int schedule_internal (internal_t, void*);
-
-void schedule_alarm (time_t, long);
-void schedule_write_ready (int);
-void schedule_read_ready (int);
 
 bid_t buffer_alloc (size_t);
 void* buffer_write_ptr (bid_t);

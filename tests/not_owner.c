@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 static aid_t parent_aid;
 
 typedef enum {
@@ -77,6 +79,9 @@ descriptor_t child_descriptor = {
   .constructor = child_create,
   .system_input = child_system_input,
   .system_output = child_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = child_free_inputs,
   .inputs = child_inputs,
   .outputs = child_outputs,
@@ -156,6 +161,9 @@ descriptor_t not_owner_descriptor = {
   .constructor = not_owner_create,
   .system_input = not_owner_system_input,
   .system_output = not_owner_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = not_owner_free_inputs,
   .inputs = not_owner_inputs,
   .outputs = not_owner_outputs,

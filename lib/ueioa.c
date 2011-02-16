@@ -36,6 +36,15 @@ thread_func (void* arg)
     case SYSTEM_OUTPUT:
       automata_system_output_exec (automata, receipts, runq, ioq, buffers, runnable.aid);
       break;
+    case ALARM_INPUT:
+      automata_alarm_input_exec (automata, buffers, runnable.aid);
+      break;
+    case READ_INPUT:
+      automata_read_input_exec (automata, buffers, runnable.aid);
+      break;
+    case WRITE_INPUT:
+      automata_write_input_exec (automata, buffers, runnable.aid);
+      break;
     case FREE_INPUT:
       automata_free_input_exec (automata, buffers, runnable.aid, runnable.free_input.free_input, runnable.free_input.bid);
       break;
@@ -111,8 +120,7 @@ fdset_clear_read (const void* e, void* a)
   fdset_t* fdset = a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
-    receipts_push_read_ready (receipts, fd->aid);
-    runq_insert_system_input (runq, fd->aid);
+    runq_insert_read_input (runq, fd->aid);
     FD_CLR (fd->fd, &fdset->fds);
     return true;
   }
@@ -128,8 +136,7 @@ fdset_clear_write (const void* e, void* a)
   fdset_t* fdset = a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
-    receipts_push_write_ready (receipts, fd->aid);
-    runq_insert_system_input (runq, fd->aid);
+    runq_insert_write_input (runq, fd->aid);
     FD_CLR (fd->fd, &fdset->fds);
     return true;
   }
@@ -239,8 +246,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 	alarm_t now;
 	gettimeofday (&now.tv, NULL);
 	if (alarm_lt (alarm, &now)) {
-	  receipts_push_alarm (receipts, alarm->aid);
-	  runq_insert_system_input (runq, alarm->aid);
+	  runq_insert_alarm_input (runq, alarm->aid);
 	  index_pop_front (alarm_index);
 	}
 	else {
@@ -324,8 +330,32 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
   ioq_destroy (ioq);
 }
 
+void
+schedule_system_output (void)
+{
+  runq_insert_system_output (runq, automata_get_current_aid (automata));
+}
+
+void
+schedule_alarm_input (time_t secs, long usecs)
+{
+  ioq_insert_alarm (ioq, automata_get_current_aid (automata), secs, usecs);
+}
+
+void
+schedule_write_input (int fd)
+{
+  ioq_insert_write (ioq, automata_get_current_aid (automata), fd);
+}
+
+void
+schedule_read_input (int fd)
+{
+  ioq_insert_read (ioq, automata_get_current_aid (automata), fd);
+}
+
 int
-send_message (aid_t aid, input_t free_input, bid_t bid)
+schedule_free_input (aid_t aid, input_t free_input, bid_t bid)
 {
   if (automata_free_input_exists (automata, aid, free_input)) {
     runq_insert_free_input (runq, aid, free_input, bid);
@@ -334,12 +364,6 @@ send_message (aid_t aid, input_t free_input, bid_t bid)
   else {
     return -1;
   }
-}
-
-void
-schedule_system_output (void)
-{
-  runq_insert_system_output (runq, automata_get_current_aid (automata));
 }
 
 int
@@ -366,24 +390,6 @@ schedule_internal (internal_t internal, void* param)
   else {
     return -1;
   }
-}
-
-void
-schedule_alarm (time_t secs, long usecs)
-{
-  ioq_insert_alarm (ioq, automata_get_current_aid (automata), secs, usecs);
-}
-
-void
-schedule_write_ready (int fd)
-{
-  ioq_insert_write (ioq, automata_get_current_aid (automata), fd);
-}
-
-void
-schedule_read_ready (int fd)
-{
-  ioq_insert_read (ioq, automata_get_current_aid (automata), fd);
 }
 
 bid_t

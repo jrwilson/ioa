@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 static void*
 child_create (void)
 {
@@ -52,6 +54,9 @@ descriptor_t child_descriptor = {
   .constructor = child_create,
   .system_input = child_system_input,
   .system_output = child_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = child_free_inputs,
   .inputs = child_inputs,
   .outputs = child_outputs,
@@ -195,6 +200,9 @@ descriptor_t composed_descriptor = {
   .constructor = composed_create,
   .system_input = composed_system_input,
   .system_output = composed_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = composed_free_inputs,
   .inputs = composed_inputs,
   .outputs = composed_outputs,

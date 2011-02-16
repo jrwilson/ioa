@@ -326,42 +326,6 @@ receipts_push_child_destroyed (receipts_t* receipts, aid_t to, aid_t child)
   push (receipts, &receipt);
 }
 
-void
-receipts_push_alarm (receipts_t* receipts, aid_t to)
-{
-  assert (receipts != NULL);
-
-  receipt_entry_t receipt;
-  receipt.to = to;
-  receipt.receipt.type = ALARM;
-
-  push (receipts, &receipt);
-}
-
-void
-receipts_push_write_ready (receipts_t* receipts, aid_t to)
-{
-  assert (receipts != NULL);
-
-  receipt_entry_t receipt;
-  receipt.to = to;
-  receipt.receipt.type = WRITE_READY;
-
-  push (receipts, &receipt);
-}
-
-void
-receipts_push_read_ready (receipts_t* receipts, aid_t to)
-{
-  assert (receipts != NULL);
-
-  receipt_entry_t receipt;
-  receipt.to = to;
-  receipt.receipt.type = READ_READY;
-
-  push (receipts, &receipt);
-}
-
 int
 receipts_pop (receipts_t* receipts, aid_t to, receipt_t* receipt)
 {

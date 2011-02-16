@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 typedef enum {
   UNSENT,
   SENT
@@ -74,6 +76,9 @@ descriptor_t declared_descriptor = {
   .constructor = declared_create,
   .system_input = declared_system_input,
   .system_output = declared_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = declared_free_inputs,
   .inputs = declared_inputs,
   .outputs = declared_outputs,

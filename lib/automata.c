@@ -44,6 +44,9 @@ typedef struct {
   pthread_mutex_t* lock;
   input_t system_input;
   output_t system_output;
+  input_t alarm_input;
+  input_t read_input;
+  input_t write_input;
 } automaton_entry_t;
 
 static bool
@@ -404,6 +407,9 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       descriptor->constructor != NULL &&
       descriptor->system_input != NULL &&
       descriptor->system_output != NULL &&
+      descriptor->alarm_input != NULL &&
+      descriptor->read_input != NULL &&
+      descriptor->write_input != NULL &&
       descriptor->free_inputs != NULL &&
       descriptor->inputs != NULL &&
       descriptor->outputs != NULL &&
@@ -418,15 +424,24 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     }
     
     aid_t aid = automata->next_aid;
+
+    set_current_aid (automata, aid);
+    void* state = descriptor->constructor ();
+    set_current_aid (automata, -1);
     
     /* Insert the automaton. */
     pthread_mutex_t* lock = malloc (sizeof (pthread_mutex_t));
     pthread_mutex_init (lock, NULL);
     automaton_entry_t entry = {
       .aid = aid,
-      .system_input = descriptor->system_input,
+      .parent = parent,
+      .state = state,
       .lock = lock,
-      .system_output = descriptor->system_output
+      .system_input = descriptor->system_input,
+      .system_output = descriptor->system_output,
+      .alarm_input = descriptor->alarm_input,
+      .read_input = descriptor->read_input,
+      .write_input = descriptor->write_input,
     };
     index_insert (automata->automaton_index, &entry);
 
@@ -476,14 +491,6 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       };
       index_insert (automata->param_index, &entry);
     }
-    
-    automaton_entry_t* automaton_entry = automaton_entry_for_aid (automata, aid, NULL);
-    
-    set_current_aid (automata, aid);
-    automaton_entry->state = descriptor->constructor ();
-    set_current_aid (automata, -1);
-
-    automaton_entry->parent = parent;
     
     /* Tell the automaton that it has been created. */
     receipts_push_self_created (receipts, aid, aid, parent);
@@ -985,6 +992,99 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 }
 
 void
+automata_alarm_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
+{
+  assert (automata != NULL);
+  assert (buffers != NULL);
+
+  /* Acquire the read lock. */
+  pthread_rwlock_rdlock (&automata->lock);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+
+  /* Automaton must exist. */
+  if (entry != NULL) {
+    
+    /* Prepare the buffer. */
+    bid_t bid = buffers_alloc (buffers, aid, 0);
+    /* Increment to make read-only. */
+    buffers_incref (buffers, aid, bid);
+    set_current_aid (automata, aid);
+    pthread_mutex_lock (entry->lock);
+    entry->alarm_input (entry->state, NULL, bid);
+    pthread_mutex_unlock (entry->lock);
+    set_current_aid (automata, -1);
+    /* Decrement to destroy. */
+    buffers_decref (buffers, aid, bid);
+  }  
+  
+  /* Release the read lock. */
+  pthread_rwlock_unlock (&automata->lock);
+}
+
+void
+automata_read_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
+{
+  assert (automata != NULL);
+  assert (buffers != NULL);
+
+  /* Acquire the read lock. */
+  pthread_rwlock_rdlock (&automata->lock);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+
+  /* Automaton must exist. */
+  if (entry != NULL) {
+    
+    /* Prepare the buffer. */
+    bid_t bid = buffers_alloc (buffers, aid, 0);
+    /* Increment to make read-only. */
+    buffers_incref (buffers, aid, bid);
+    set_current_aid (automata, aid);
+    pthread_mutex_lock (entry->lock);
+    entry->read_input (entry->state, NULL, bid);
+    pthread_mutex_unlock (entry->lock);
+    set_current_aid (automata, -1);
+    /* Decrement to destroy. */
+    buffers_decref (buffers, aid, bid);
+  }  
+  
+  /* Release the read lock. */
+  pthread_rwlock_unlock (&automata->lock);
+}
+
+void
+automata_write_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
+{
+  assert (automata != NULL);
+  assert (buffers != NULL);
+
+  /* Acquire the read lock. */
+  pthread_rwlock_rdlock (&automata->lock);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+
+  /* Automaton must exist. */
+  if (entry != NULL) {
+    
+    /* Prepare the buffer. */
+    bid_t bid = buffers_alloc (buffers, aid, 0);
+    /* Increment to make read-only. */
+    buffers_incref (buffers, aid, bid);
+    set_current_aid (automata, aid);
+    pthread_mutex_lock (entry->lock);
+    entry->write_input (entry->state, NULL, bid);
+    pthread_mutex_unlock (entry->lock);
+    set_current_aid (automata, -1);
+    /* Decrement to destroy. */
+    buffers_decref (buffers, aid, bid);
+  }  
+  
+  /* Release the read lock. */
+  pthread_rwlock_unlock (&automata->lock);
+}
+
+void
 automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, input_t free_input, bid_t bid)
 {
   assert (automata != NULL);
@@ -1013,8 +1113,6 @@ automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, i
   
   /* Release the read lock. */
   pthread_rwlock_unlock (&automata->lock);
-
-  assert (0);
 }
 
 typedef struct {

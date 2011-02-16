@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 typedef enum {
   START,
   DECLARE_UNSENT,
@@ -112,6 +114,9 @@ descriptor_t rescinded_descriptor = {
   .constructor = rescinded_create,
   .system_input = rescinded_system_input,
   .system_output = rescinded_system_output,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .free_inputs = rescinded_free_inputs,
   .inputs = rescinded_inputs,
   .outputs = rescinded_outputs,

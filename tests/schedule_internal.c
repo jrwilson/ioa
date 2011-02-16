@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <ueioa.h>
 
+#include "test.h"
+
 static void*
 schedule_internal_create (void)
 {
@@ -46,6 +48,9 @@ descriptor_t schedule_internal_descriptor = {
   .system_input = schedule_internal_system_input,
   .system_output = schedule_internal_system_output,
   .free_inputs = schedule_internal_free_inputs,
+  .alarm_input = test_alarm_input,
+  .read_input = test_read_input,
+  .write_input = test_write_input,
   .inputs = schedule_internal_inputs,
   .outputs = schedule_internal_outputs,
   .internals = schedule_internal_internals,
