@@ -21,9 +21,8 @@ struct node_struct {
 
 struct hashtable_struct {
   size_t key_size;
-  size_t value_size;
   hashtable_equal_t equal;
-  hashtable_sorted_t sorted;
+  hashtable_hashfunc_t hashfunc;
   size_t node_size;
   size_t node_capacity;
   void* node_data;
@@ -34,9 +33,8 @@ struct hashtable_struct {
   size_t* hash;
 };
 
-#define NODE(ht, idx) ((node_t *)((ht)->node_data + (idx) * (sizeof (node_t) + (ht)->key_size + (ht)->value_size)))
+#define NODE(ht, idx) ((node_t *)((ht)->node_data + (idx) * (sizeof (node_t) + (ht)->key_size)))
 #define KEY(ht, node) ((void*)((node)->data))
-#define VALUE(ht, node) ((void*)((node)->data + (ht)->key_size))
 
 static void
 free_insert (hashtable_t* hashtable, size_t idx)
@@ -61,31 +59,18 @@ free_remove (hashtable_t* hashtable)
 }
 
 static void
-used_insert (hashtable_t* hashtable, size_t idx, void* key, void* value)
+used_insert (hashtable_t* hashtable, size_t idx, const void* key)
 {
   assert (hashtable != NULL);
   assert (idx < hashtable->node_capacity);
   assert (key != NULL);
-  assert (hashtable->value_size == 0 || value != NULL);
   
   node_t* node = NODE(hashtable, idx);
 
   /* Copy the key and data. */
   memcpy (KEY(hashtable, node), key, hashtable->key_size);
-  memcpy (VALUE(hashtable, node), value, hashtable->value_size);
 
   size_t i = hashtable->node_head;
-
-  if (hashtable->sorted != NULL && i != -1) {
-    do {
-      node_t* n = NODE(hashtable, i);
-      void* k = KEY(hashtable, n);
-      if (hashtable->sorted (key, k)) {
-	break;
-      }
-      i = hashtable_next (hashtable, i);
-    } while (i != hashtable_last (hashtable));
-  }
 
   size_t x;
   
@@ -144,18 +129,18 @@ used_remove (hashtable_t* hashtable, size_t idx)
 }
 
 hashtable_t*
-hashtable_create (size_t key_size, size_t value_size, hashtable_equal_t equal, hashtable_sorted_t sorted)
+hashtable_create (size_t key_size, hashtable_equal_t equal, hashtable_hashfunc_t hashfunc)
 {
   assert (key_size > 0);
   assert (equal != NULL);
+  assert (hashfunc != NULL);
   hashtable_t* hashtable = malloc (sizeof (hashtable_t));
   hashtable->key_size = key_size;
-  hashtable->value_size = value_size;
   hashtable->equal = equal;
-  hashtable->sorted = sorted;
+  hashtable->hashfunc = hashfunc;
   hashtable->node_size = 0;
   hashtable->node_capacity = 1;
-  hashtable->node_data = malloc (hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size + hashtable->value_size));
+  hashtable->node_data = malloc (hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size));
   hashtable->node_head = -1;
   hashtable->node_tail = -1;
   hashtable->node_free = -1;
@@ -194,33 +179,17 @@ hashtable_empty (hashtable_t* hashtable)
   return hashtable->node_size == 0;
 }
 
-static size_t
-hash (hashtable_t* hashtable, void* key)
-{
-  assert (hashtable != NULL);
-  assert (key != NULL);
-
-  int* ptr = key;
-  int* limit = (int*)((unsigned char*)(key) + hashtable->key_size);
-  int code = 0;
-  for (; ptr < limit; ++ptr) {
-    code += *ptr;
-  }
-  return code;
-}
-
 void
-hashtable_insert (hashtable_t* hashtable, void* key, void* value)
+hashtable_insert (hashtable_t* hashtable, const void* key)
 {
   assert (hashtable != NULL);
   assert (key != NULL);
-  assert (hashtable->value_size == 0 || value != NULL);
 
   /* Resize. */
   if (hashtable->node_size == hashtable->node_capacity) {
     size_t oldcapacity = hashtable->node_capacity;
     hashtable->node_capacity <<= 1;
-    hashtable->node_data = realloc (hashtable->node_data, hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size + hashtable->value_size));
+    hashtable->node_data = realloc (hashtable->node_data, hashtable->node_capacity * (sizeof (node_t) + hashtable->key_size));
     for (; oldcapacity < hashtable->node_capacity; ++oldcapacity) {
       free_insert (hashtable, oldcapacity);
     }
@@ -252,12 +221,12 @@ hashtable_insert (hashtable_t* hashtable, void* key, void* value)
   /* Get a node from the free list. */
   size_t idx = free_remove (hashtable);
   /* Insert into the used list. */
-  used_insert (hashtable, idx, key, value);
+  used_insert (hashtable, idx, key);
   ++hashtable->node_size;
 
   /* Compute the hash code and index into the hash. */
   node_t* node = NODE(hashtable, idx);
-  node->code = hash (hashtable, key);
+  node->code = hashtable->hashfunc (key);
   size_t hash_idx = node->code & (hashtable->hash_size - 1);
   /* Insert into the list. */
   node->next_hash = hashtable->hash[hash_idx];
@@ -265,12 +234,12 @@ hashtable_insert (hashtable_t* hashtable, void* key, void* value)
 }
 
 static size_t*
-lookup (hashtable_t* hashtable, void* key)
+lookup (hashtable_t* hashtable, const void* key)
 {
   assert (hashtable != NULL);
   assert (key != NULL);
 
-  size_t code = hash (hashtable, key);
+  size_t code = hashtable->hashfunc (key);
   size_t hash_idx = code & (hashtable->hash_size - 1);
   size_t* idx = &hashtable->hash[hash_idx];
   while (*idx != -1) {
@@ -285,7 +254,7 @@ lookup (hashtable_t* hashtable, void* key)
 }
 
 bool
-hashtable_contains_key (hashtable_t* hashtable, void* key)
+hashtable_contains_key (hashtable_t* hashtable, const void* key)
 {
   return lookup (hashtable, key) != NULL;
 }
@@ -311,7 +280,7 @@ size_t hashtable_last (hashtable_t* hashtable)
   return -1;
 }
 
-const void*
+void*
 hashtable_key_at (hashtable_t* hashtable, size_t idx)
 {
   assert (hashtable != NULL);
@@ -322,33 +291,21 @@ hashtable_key_at (hashtable_t* hashtable, size_t idx)
 }
 
 void*
-hashtable_value_at (hashtable_t* hashtable, size_t idx)
+hashtable_lookup (hashtable_t* hashtable, const void* key)
 {
   assert (hashtable != NULL);
-  assert (hashtable->value_size > 0);
-  assert (idx < hashtable->node_capacity);
-
-  node_t* node = NODE(hashtable, idx);
-  return VALUE(hashtable, node);
-}
-
-void*
-hashtable_value (hashtable_t* hashtable, void* key)
-{
-  assert (hashtable != NULL);
-  assert (hashtable->value_size > 0);
   assert (key != NULL);
 
   size_t* idx = lookup (hashtable, key);
   if (idx != NULL) {
     node_t* node = NODE(hashtable, *idx);
-    return VALUE(hashtable, node);
+    return KEY(hashtable, node);
   }
   return NULL;
 }
 
 void
-hashtable_remove (hashtable_t* hashtable, void* key)
+hashtable_remove (hashtable_t* hashtable, const void* key)
 {
   assert (hashtable != NULL);
   assert (key != NULL);

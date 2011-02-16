@@ -7,6 +7,7 @@
 
 typedef struct {
   aid_t* automaton;
+  descriptor_t* descriptor;
 } automata_key_t;
 
 static bool
@@ -17,9 +18,13 @@ automata_key_equal (const void* x0, const void* y0)
   return x->automaton == y->automaton;
 }
 
-typedef struct {
-  descriptor_t* descriptor;
-} automata_value_t;
+static size_t
+automata_key_hash (const void* x0)
+{
+  const automata_key_t* x = x0;
+  
+  return (size_t)x->automaton;
+}
 
 typedef struct {
   aid_t* out_automaton;
@@ -28,6 +33,7 @@ typedef struct {
   aid_t* in_automaton;
   input_t input;
   void* in_param;
+  bool composed;
 } compositions_key_t;
 
 static bool
@@ -42,9 +48,43 @@ compositions_key_equal (const void* x0, const void* y0)
     x->input == y->input;
 }
 
+static size_t
+compositions_key_hash (const void* x0)
+{
+  const compositions_key_t* x = x0;
+
+  return
+    (size_t)x->out_automaton +
+    (size_t)x->output +
+    (size_t)x->in_automaton +
+    (size_t)x->input;
+}
+
 typedef struct {
-  bool composed;
-} compositions_value_t;
+  output_t output;
+  void* out_param;
+  bool* flag;
+} outputs_key_t;
+
+static bool
+outputs_key_equal (const void* x0, const void* y0)
+{
+  const outputs_key_t* x = x0;
+  const outputs_key_t* y = y0;
+  return
+    x->output == y->output &&
+    x->out_param == y->out_param;
+}
+
+static size_t
+outputs_key_hash (const void* x0)
+{
+  const outputs_key_t* x = x0;
+
+  return
+    (size_t)x->output +
+    (size_t)x->out_param;
+}
 
 typedef enum {
   NORMAL,
@@ -60,6 +100,7 @@ struct manager_struct {
   aid_t* parent;
   hashtable_t* automata;
   hashtable_t* compositions;
+  hashtable_t* outputs;
 };
 
 manager_t*
@@ -67,8 +108,9 @@ manager_create (void)
 {
   manager_t* manager = malloc (sizeof (manager_t));
   manager->status = NORMAL;
-  manager->automata = hashtable_create (sizeof (automata_key_t), sizeof (automata_value_t), automata_key_equal, NULL);
-  manager->compositions = hashtable_create (sizeof (compositions_key_t), sizeof (compositions_value_t), compositions_key_equal, NULL);
+  manager->automata = hashtable_create (sizeof (automata_key_t), automata_key_equal, automata_key_hash);
+  manager->compositions = hashtable_create (sizeof (compositions_key_t), compositions_key_equal, compositions_key_hash);
+  manager->outputs = hashtable_create (sizeof (outputs_key_t), outputs_key_equal, outputs_key_hash);
 
   return manager;
 }
@@ -98,10 +140,12 @@ manager_automaton_add (manager_t* manager, aid_t* automaton, descriptor_t* descr
   /* Clear the automaton. */
   *automaton = -1;
 
-  automata_key_t key = { automaton };
-  automata_value_t value = { descriptor };
+  automata_key_t key = {
+    .automaton = automaton,
+    .descriptor = descriptor,
+  };
   assert (!hashtable_contains_key (manager->automata, &key));
-  hashtable_insert (manager->automata, &key, &value);
+  hashtable_insert (manager->automata, &key);
 }
 
 void
@@ -113,10 +157,35 @@ manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t outp
   assert (in_automaton != NULL);
   assert (input != NULL);
 
-  compositions_key_t key = { out_automaton, output, out_param, in_automaton, input, in_param };
-  compositions_value_t value = { false };
+  compositions_key_t key = {
+    .out_automaton = out_automaton,
+    .output = output,
+    .out_param = out_param,
+    .in_automaton = in_automaton,
+    .input = input,
+    .in_param = in_param,
+    .composed = false,
+  };
   assert (!hashtable_contains_key (manager->compositions, &key));
-  hashtable_insert (manager->compositions, &key, &value);
+  hashtable_insert (manager->compositions, &key);
+}
+
+void
+manager_output_add (manager_t* manager, bool* flag, output_t output, void* out_param)
+{
+  assert (manager != NULL);
+  assert (flag != NULL);
+  assert (output != NULL);
+
+  *flag = false;
+
+  outputs_key_t key = {
+    .flag = flag,
+    .output = output,
+    .out_param = out_param,
+  };
+  assert (!hashtable_contains_key (manager->outputs, &key));
+  hashtable_insert (manager->outputs, &key);
 }
 
 bool
@@ -178,8 +247,8 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   case COMPOSED:
     {
       assert (manager->status == OUTSTANDING && manager->last_order.type == COMPOSE);
-      compositions_value_t* value = hashtable_value (manager->compositions, &manager->last_composition);
-      value->composed = true;
+      compositions_key_t* key = hashtable_lookup (manager->compositions, &manager->last_composition);
+      key->composed = true;
       something_changed = true;
       manager->status = NORMAL;
     }
@@ -189,8 +258,17 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     /* assert (0); */
     break;
   case OUTPUT_COMPOSED:
-    /* TODO */
-    assert (0);
+    {
+      const outputs_key_t key = {
+	.output = receipt->output_composed.output,
+	.out_param = receipt->output_composed.out_param,
+      };
+      outputs_key_t* value = hashtable_lookup (manager->outputs, &key);
+      if (value != NULL) {
+	*value->flag = true;
+	schedule_output (receipt->output_composed.output, receipt->output_composed.out_param);
+      }
+    }
     break;
   case NOT_COMPOSED:
     /* TODO */
@@ -255,8 +333,8 @@ fire (manager_t* manager)
     const automata_key_t* key = hashtable_key_at (manager->automata, idx);
     if (*key->automaton == -1) {
       /* We need to create an automaton. */
-      automata_value_t* value = hashtable_value_at (manager->automata, idx);
-      order_create_init (&manager->last_order, value->descriptor);
+      const automata_key_t* key = hashtable_key_at (manager->automata, idx);
+      order_create_init (&manager->last_order, key->descriptor);
       manager->last_automaton = *key;
       return true;
     }
@@ -267,10 +345,9 @@ fire (manager_t* manager)
        idx != hashtable_last (manager->compositions);
        idx = hashtable_next (manager->compositions, idx)) {
     const compositions_key_t* key = hashtable_key_at (manager->compositions, idx);
-    compositions_value_t* value = hashtable_value_at (manager->compositions, idx);
     if (*key->out_automaton != -1 &&
 	*key->in_automaton != -1 &&
-	!value->composed) {
+	!key->composed) {
       /* We need to compose. */
       order_compose_init (&manager->last_order, *key->out_automaton, key->output, key->out_param, *key->in_automaton, key->input, key->in_param);
       manager->last_composition = *key;

@@ -172,6 +172,7 @@ void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
 void manager_automaton_add (manager_t*, aid_t*, descriptor_t*);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
+void manager_output_add (manager_t*, bool*, output_t, void*);
 
 bool manager_apply (manager_t*, const receipt_t*);
 bid_t manager_action (manager_t*);
