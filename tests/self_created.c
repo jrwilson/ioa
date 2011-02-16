@@ -29,6 +29,7 @@ self_created_system_output (void* state, void* param)
   return -1;
 }
 
+static input_t self_created_free_inputs[] = { NULL };
 static input_t self_created_inputs[] = { NULL };
 static output_t self_created_outputs[] = { NULL };
 static internal_t self_created_internals[] = { NULL };
@@ -37,6 +38,7 @@ descriptor_t self_created_descriptor = {
   .constructor = self_created_create,
   .system_input = self_created_system_input,
   .system_output = self_created_system_output,
+  .free_inputs = self_created_free_inputs,
   .inputs = self_created_inputs,
   .outputs = self_created_outputs,
   .internals = self_created_internals,

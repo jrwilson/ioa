@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "table.h"
 
@@ -15,6 +16,8 @@ struct automata_struct {
   table_t* automaton_table;
   index_t* automaton_index;
 
+  table_t* free_input_table;
+  index_t* free_input_index;
   table_t* input_table;
   index_t* input_index;
   table_t* output_table;
@@ -114,6 +117,24 @@ input_entry_aid_equal (const void* x0, void* y0)
   const input_entry_t* y = y0;
 
   return x->aid == y->aid;
+}
+
+static input_entry_t*
+free_input_entry_for_aid_input (automata_t* automata, aid_t aid, input_t input)
+{
+  assert (automata != NULL);
+
+  input_entry_t key = {
+    .aid = aid,
+    .input = input
+  };
+  
+  return index_find_value (automata->free_input_index,
+			   index_begin (automata->free_input_index),
+			   index_end (automata->free_input_index),
+			   input_entry_aid_input_equal,
+			   &key,
+			   NULL);
 }
 
 static input_entry_t*
@@ -378,9 +399,16 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
   assert (receipts != NULL);
   assert (runq != NULL);
 
+  /* Check that various things are not NULL. */
   if (descriptor != NULL &&
-      descriptor_check (descriptor)) {
-    
+      descriptor->constructor != NULL &&
+      descriptor->system_input != NULL &&
+      descriptor->system_output != NULL &&
+      descriptor->free_inputs != NULL &&
+      descriptor->inputs != NULL &&
+      descriptor->outputs != NULL &&
+      descriptor->internals != NULL) {
+
     /* Find an aid. */
     while (automaton_entry_for_aid (automata, automata->next_aid, NULL) != NULL) {
       ++automata->next_aid;
@@ -391,7 +419,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     
     aid_t aid = automata->next_aid;
     
-    /* Insert. */
+    /* Insert the automaton. */
     pthread_mutex_t* lock = malloc (sizeof (pthread_mutex_t));
     pthread_mutex_init (lock, NULL);
     automaton_entry_t entry = {
@@ -401,33 +429,46 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
       .system_output = descriptor->system_output
     };
     index_insert (automata->automaton_index, &entry);
-    
+
     size_t idx;
+
+    /* Insert the free inputs. */
+    for (idx = 0; descriptor->free_inputs[idx] != NULL; ++idx) {
+      input_entry_t entry = {
+	.aid = aid,
+	.input = descriptor->free_inputs[idx],
+      };
+      index_insert_unique (automata->free_input_index, input_entry_aid_input_equal, &entry);
+    }
+    
+    /* Insert the inputs. */
     for (idx = 0; descriptor->inputs[idx] != NULL; ++idx) {
       input_entry_t entry = {
 	.aid = aid,
 	.input = descriptor->inputs[idx],
       };
-      index_insert (automata->input_index, &entry);
+      index_insert_unique (automata->input_index, input_entry_aid_input_equal, &entry);
     }
     
+    /* Insert the outputs. */
     for (idx = 0; descriptor->outputs[idx] != NULL; ++idx) {
       output_entry_t entry = {
 	.aid = aid,
 	.output = descriptor->outputs[idx],
       };
-      index_insert (automata->output_index, &entry);
+      index_insert_unique (automata->output_index, output_entry_aid_output_equal, &entry);
     }
     
+    /* Insert the internals. */
     for (idx = 0; descriptor->internals[idx] != NULL; ++idx) {
       internal_entry_t entry = {
 	.aid = aid,
 	.internal = descriptor->internals[idx],
       };
-      index_insert (automata->internal_index, &entry);
+      index_insert_unique (automata->internal_index, internal_entry_aid_internal_equal, &entry);
     }
 
-    /* Delcare the NULL paramter. */
+    /* Delcare the NULL parameter. */
     {
       param_entry_t entry = {
 	.aid = aid,
@@ -459,6 +500,10 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     if (parent != -1) {
       receipts_push_bad_descriptor (receipts, parent);
       runq_insert_system_input (runq, parent);
+    }
+    else {
+      fprintf (stderr, "Bad root descriptor\n");
+      exit (EXIT_FAILURE);
     }
   }
 }
@@ -705,10 +750,17 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
   aid_t parent = entry->parent;
   index_erase (automata->automaton_index, iterator);
 
-  /* Inputs. */
+  /* Free inputs. */
   input_entry_t input_key = {
     .aid = aid
   };
+  index_remove (automata->free_input_index,
+		index_begin (automata->free_input_index),
+		index_end (automata->free_input_index),
+		input_entry_aid_equal,
+		&input_key);
+
+  /* Inputs. */
   index_remove (automata->input_index,
 		index_begin (automata->input_index),
 		index_end (automata->input_index),
@@ -932,6 +984,39 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
   pthread_rwlock_unlock (&automata->lock);
 }
 
+void
+automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, input_t free_input, bid_t bid)
+{
+  assert (automata != NULL);
+  assert (buffers != NULL);
+
+  /* Acquire the read lock. */
+  pthread_rwlock_rdlock (&automata->lock);
+
+  /* Free input exists. */
+  input_entry_t* input_entry = free_input_entry_for_aid_input (automata, aid, free_input);
+
+  if (input_entry != NULL) {
+
+    automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+    
+    /* Increment to make read-only. */
+    buffers_incref (buffers, aid, bid);
+    set_current_aid (automata, aid);
+    pthread_mutex_lock (entry->lock);
+    free_input (entry->state, NULL, bid);
+    pthread_mutex_unlock (entry->lock);
+    set_current_aid (automata, -1);
+    /* Decrement to destroy. */
+    buffers_decref (buffers, aid, bid);
+  }
+  
+  /* Release the read lock. */
+  pthread_rwlock_unlock (&automata->lock);
+
+  assert (0);
+}
+
 typedef struct {
   automata_t* automata;
   buffers_t* buffers;
@@ -997,12 +1082,14 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
 
-  automaton_entry_t* out_entry = automaton_entry_for_aid (automata, out_aid, NULL);
+  output_entry_t* output_entry = output_entry_for_aid_output (automata, out_aid, output);
   param_entry_t* param_entry = param_entry_for_aid_param (automata, out_aid, out_param);
 
   /* Automaton and param must exist. */
-  if (out_entry != NULL &&
+  if (output_entry != NULL &&
       param_entry != NULL) {
+
+    automaton_entry_t* out_entry = automaton_entry_for_aid (automata, out_aid, NULL);
 
     output_arg_t arg = {
       .automata = automata,
@@ -1065,13 +1152,17 @@ automata_internal_exec (automata_t* automata, aid_t aid, internal_t internal, vo
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
 
-  /* Look up the automaton and param. */
-  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  /* Look up the internal.  Success implies the automaton exists. */
+  internal_entry_t* internal_entry = internal_entry_for_aid_internal (automata, aid, internal);
+  /* Look up the parameter. */
   param_entry_t* param_entry = param_entry_for_aid_param (automata, aid, param);
 
   /* Automaton and param must exist. */
-  if (entry != NULL &&
+  if (internal_entry != NULL &&
       param_entry != NULL) {
+
+    automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+    assert (entry != NULL);
     
     /* Set the current automaton. */
     set_current_aid (automata, aid);
@@ -1099,6 +1190,14 @@ automata_get_current_aid (automata_t* automata)
   assert (automata != NULL);
 
   return (aid_t)pthread_getspecific (automata->current_aid);
+}
+
+bool
+automata_free_input_exists (automata_t* automata, aid_t aid, input_t free_input)
+{
+  assert (automata != NULL);
+
+  return free_input_entry_for_aid_input (automata, aid, free_input) != NULL;
 }
 
 bool
@@ -1132,6 +1231,8 @@ automata_create (void)
 
   automata->automaton_table = table_create (sizeof (automaton_entry_t));
   automata->automaton_index = index_create_list (automata->automaton_table);
+  automata->free_input_table = table_create (sizeof (input_entry_t));
+  automata->free_input_index = index_create_list (automata->free_input_table);
   automata->input_table = table_create (sizeof (input_entry_t));
   automata->input_index = index_create_list (automata->input_table);
   automata->output_table = table_create (sizeof (output_entry_t));
@@ -1168,6 +1269,7 @@ automata_destroy (automata_t* automata)
   table_destroy (automata->internal_table);
   table_destroy (automata->output_table);
   table_destroy (automata->input_table);
+  table_destroy (automata->free_input_table);
   index_transform (automata->automaton_index,
 		   index_begin (automata->automaton_index),
 		   index_end (automata->automaton_index),

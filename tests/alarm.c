@@ -35,6 +35,7 @@ alarm_system_output (void* state, void* param)
   return -1;
 }
 
+static input_t alarm_free_inputs[] = { NULL };
 static input_t alarm_inputs[] = { NULL };
 static output_t alarm_outputs[] = { NULL };
 static internal_t alarm_internals[] = { NULL };
@@ -43,6 +44,7 @@ descriptor_t alarm_descriptor = {
   .constructor = alarm_create,
   .system_input = alarm_system_input,
   .system_output = alarm_system_output,
+  .free_inputs = alarm_free_inputs,
   .inputs = alarm_inputs,
   .outputs = alarm_outputs,
   .internals = alarm_internals,

@@ -65,6 +65,7 @@ trigger_output (void* state, void* param)
   }
 }
 
+static input_t trigger_free_inputs[] = { NULL };
 static input_t trigger_inputs[] = { NULL };
 static output_t trigger_outputs[] = { trigger_output, NULL };
 static internal_t trigger_internals[] = { NULL };
@@ -73,6 +74,7 @@ descriptor_t trigger_descriptor = {
   .constructor = trigger_create,
   .system_input = trigger_system_input,
   .system_output = trigger_system_output,
+  .free_inputs = trigger_free_inputs,
   .inputs = trigger_inputs,
   .outputs = trigger_outputs,
   .internals = trigger_internals,

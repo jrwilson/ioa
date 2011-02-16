@@ -103,6 +103,7 @@ rescinded_system_output (void* state, void* param)
   return bid;
 }
 
+static input_t rescinded_free_inputs[] = { NULL };
 static input_t rescinded_inputs[] = { NULL };
 static output_t rescinded_outputs[] = { NULL };
 static internal_t rescinded_internals[] = { NULL };
@@ -111,6 +112,7 @@ descriptor_t rescinded_descriptor = {
   .constructor = rescinded_create,
   .system_input = rescinded_system_input,
   .system_output = rescinded_system_output,
+  .free_inputs = rescinded_free_inputs,
   .inputs = rescinded_inputs,
   .outputs = rescinded_outputs,
   .internals = rescinded_internals,

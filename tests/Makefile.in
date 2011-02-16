@@ -33,16 +33,17 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = schedule_system_output$(EXEEXT) schedule_output$(EXEEXT) \
-	schedule_internal$(EXEEXT) bad_order$(EXEEXT) \
-	self_created$(EXEEXT) child_created$(EXEEXT) \
-	bad_descriptor$(EXEEXT) declared$(EXEEXT) output_dne$(EXEEXT) \
-	input_dne$(EXEEXT) output_unavailable$(EXEEXT) \
-	input_unavailable$(EXEEXT) composed$(EXEEXT) \
-	input_composed$(EXEEXT) output_composed$(EXEEXT) \
-	not_composed$(EXEEXT) decomposed$(EXEEXT) \
-	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
-	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
+TESTS = send_message$(EXEEXT) schedule_system_output$(EXEEXT) \
+	schedule_output$(EXEEXT) schedule_internal$(EXEEXT) \
+	bad_order$(EXEEXT) self_created$(EXEEXT) \
+	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
+	declared$(EXEEXT) output_dne$(EXEEXT) input_dne$(EXEEXT) \
+	output_unavailable$(EXEEXT) input_unavailable$(EXEEXT) \
+	composed$(EXEEXT) input_composed$(EXEEXT) \
+	output_composed$(EXEEXT) not_composed$(EXEEXT) \
+	decomposed$(EXEEXT) input_decomposed$(EXEEXT) \
+	output_decomposed$(EXEEXT) rescinded$(EXEEXT) \
+	automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
 	child_destroyed$(EXEEXT) same_compose$(EXEEXT) alarm$(EXEEXT) \
 	write$(EXEEXT) read$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
@@ -56,7 +57,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = schedule_system_output$(EXEEXT) \
+am__EXEEXT_1 = send_message$(EXEEXT) schedule_system_output$(EXEEXT) \
 	schedule_output$(EXEEXT) schedule_internal$(EXEEXT) \
 	bad_order$(EXEEXT) self_created$(EXEEXT) \
 	child_created$(EXEEXT) bad_descriptor$(EXEEXT) \
@@ -147,6 +148,9 @@ schedule_system_output_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_self_created_OBJECTS = self_created.$(OBJEXT)
 self_created_OBJECTS = $(am_self_created_OBJECTS)
 self_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_send_message_OBJECTS = send_message.$(OBJEXT)
+send_message_OBJECTS = $(am_send_message_OBJECTS)
+send_message_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_write_OBJECTS = write.$(OBJEXT)
 write_OBJECTS = $(am_write_OBJECTS)
 write_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -175,7 +179,7 @@ SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
 	$(read_SOURCES) $(rescinded_SOURCES) $(same_compose_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
 	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
-	$(write_SOURCES)
+	$(send_message_SOURCES) $(write_SOURCES)
 DIST_SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
 	$(bad_descriptor_SOURCES) $(bad_order_SOURCES) \
 	$(child_created_SOURCES) $(child_destroyed_SOURCES) \
@@ -188,7 +192,7 @@ DIST_SOURCES = $(alarm_SOURCES) $(automaton_dne_SOURCES) \
 	$(read_SOURCES) $(rescinded_SOURCES) $(same_compose_SOURCES) \
 	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
 	$(schedule_system_output_SOURCES) $(self_created_SOURCES) \
-	$(write_SOURCES)
+	$(send_message_SOURCES) $(write_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -308,6 +312,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
+send_message_SOURCES = send_message.c
+send_message_LDADD = $(top_builddir)/lib/libueioa.la
 schedule_system_output_SOURCES = schedule_system_output.c
 schedule_system_output_LDADD = $(top_builddir)/lib/libueioa.la
 schedule_output_SOURCES = schedule_output.c
@@ -483,6 +489,9 @@ schedule_system_output$(EXEEXT): $(schedule_system_output_OBJECTS) $(schedule_sy
 self_created$(EXEEXT): $(self_created_OBJECTS) $(self_created_DEPENDENCIES) 
 	@rm -f self_created$(EXEEXT)
 	$(LINK) $(self_created_OBJECTS) $(self_created_LDADD) $(LIBS)
+send_message$(EXEEXT): $(send_message_OBJECTS) $(send_message_DEPENDENCIES) 
+	@rm -f send_message$(EXEEXT)
+	$(LINK) $(send_message_OBJECTS) $(send_message_LDADD) $(LIBS)
 write$(EXEEXT): $(write_OBJECTS) $(write_DEPENDENCIES) 
 	@rm -f write$(EXEEXT)
 	$(LINK) $(write_OBJECTS) $(write_LDADD) $(LIBS)
@@ -519,6 +528,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_system_output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/send_message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write.Po@am__quote@
 
 .c.o:

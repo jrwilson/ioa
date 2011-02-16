@@ -6,6 +6,7 @@
 typedef enum {
   SYSTEM_INPUT,
   SYSTEM_OUTPUT,
+  FREE_INPUT,
   OUTPUT,
   INTERNAL,
 } runnable_type_t;
@@ -15,6 +16,10 @@ typedef struct {
   aid_t aid;
   void* param;
   union {
+    struct {
+      input_t free_input;
+      bid_t bid;
+    } free_input;
     struct {
       output_t output;
     } output;
@@ -34,6 +39,7 @@ bool runq_empty (runq_t*);
 
 void runq_insert_system_input (runq_t*, aid_t);
 void runq_insert_system_output (runq_t*, aid_t);
+void runq_insert_free_input (runq_t*, aid_t, input_t, bid_t);
 void runq_insert_output (runq_t*, aid_t, output_t, void*);
 void runq_insert_internal (runq_t*, aid_t, internal_t, void*);
 

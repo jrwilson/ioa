@@ -37,6 +37,7 @@ schedule_internal_system_output (void* state, void* param)
 }
 
 static input_t schedule_internal_inputs[] = { NULL };
+static input_t schedule_internal_free_inputs[] = { NULL };
 static output_t schedule_internal_outputs[] = { NULL };
 static internal_t schedule_internal_internals[] = { schedule_internal_internal, NULL };
 
@@ -44,6 +45,7 @@ descriptor_t schedule_internal_descriptor = {
   .constructor = schedule_internal_create,
   .system_input = schedule_internal_system_input,
   .system_output = schedule_internal_system_output,
+  .free_inputs = schedule_internal_free_inputs,
   .inputs = schedule_internal_inputs,
   .outputs = schedule_internal_outputs,
   .internals = schedule_internal_internals,

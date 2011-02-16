@@ -1,6 +1,7 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
 TESTS = \
+send_message \
 schedule_system_output \
 schedule_output \
 schedule_internal \
@@ -30,6 +31,9 @@ write \
 read
 
 check_PROGRAMS = $(TESTS)
+
+send_message_SOURCES = send_message.c
+send_message_LDADD = $(top_builddir)/lib/libueioa.la
 
 schedule_system_output_SOURCES = schedule_system_output.c
 schedule_system_output_LDADD = $(top_builddir)/lib/libueioa.la

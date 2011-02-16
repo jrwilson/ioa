@@ -77,6 +77,7 @@ read_system_output (void* state, void* param)
   return -1;
 }
 
+static input_t read_free_inputs[] = { NULL };
 static input_t read_inputs[] = { NULL };
 static output_t read_outputs[] = { NULL };
 static internal_t read_internals[] = { NULL };
@@ -85,6 +86,7 @@ descriptor_t read_descriptor = {
   .constructor = read_create,
   .system_input = read_system_input,
   .system_output = read_system_output,
+  .free_inputs = read_free_inputs,
   .inputs = read_inputs,
   .outputs = read_outputs,
   .internals = read_internals,

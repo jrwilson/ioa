@@ -36,6 +36,9 @@ thread_func (void* arg)
     case SYSTEM_OUTPUT:
       automata_system_output_exec (automata, receipts, runq, ioq, buffers, runnable.aid);
       break;
+    case FREE_INPUT:
+      automata_free_input_exec (automata, buffers, runnable.aid, runnable.free_input.free_input, runnable.free_input.bid);
+      break;
     case OUTPUT:
       automata_output_exec (automata, buffers, runnable.aid, runnable.output.output, runnable.param);
       break;
@@ -139,7 +142,6 @@ void
 ueioa_run (descriptor_t* descriptor, int thread_count)
 {
   assert (descriptor != NULL);
-  assert (descriptor_check (descriptor));
   assert (thread_count > 0 && thread_count <= MAX_THREADS);
 
   pthread_t a_thread[MAX_THREADS];
@@ -320,6 +322,18 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
   automata_destroy (automata);
   runq_destroy (runq);
   ioq_destroy (ioq);
+}
+
+int
+send_message (aid_t aid, input_t free_input, bid_t bid)
+{
+  if (automata_free_input_exists (automata, aid, free_input)) {
+    runq_insert_free_input (runq, aid, free_input, bid);
+    return 0;
+  }
+  else {
+    return -1;
+  }
 }
 
 void

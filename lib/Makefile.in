@@ -68,9 +68,8 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_LIBADD =
-am_libueioa_la_OBJECTS = automata.lo descriptor.lo buffers.lo \
-	hashtable.lo ioq.lo manager.lo order.lo receipts.lo runq.lo \
-	table.lo ueioa.lo
+am_libueioa_la_OBJECTS = automata.lo buffers.lo hashtable.lo ioq.lo \
+	manager.lo order.lo receipts.lo runq.lo table.lo ueioa.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -207,7 +206,6 @@ AM_CFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libueioa.la
 libueioa_la_SOURCES = \
 automata.c \
-descriptor.c \
 buffers.c \
 hashtable.c \
 ioq.c \
@@ -294,7 +292,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automata.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffers.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/descriptor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manager.Plo@am__quote@

@@ -65,6 +65,7 @@ bad_descriptor_system_output (void* state, void* param)
   return bid;
 }
 
+static input_t bad_descriptor_free_inputs[] = { NULL };
 static input_t bad_descriptor_inputs[] = { NULL };
 static output_t bad_descriptor_outputs[] = { NULL };
 static internal_t bad_descriptor_internals[] = { NULL };
@@ -73,6 +74,7 @@ descriptor_t bad_descriptor_descriptor = {
   .constructor = bad_descriptor_create,
   .system_input = bad_descriptor_system_input,
   .system_output = bad_descriptor_system_output,
+  .free_inputs = bad_descriptor_free_inputs,
   .inputs = bad_descriptor_inputs,
   .outputs = bad_descriptor_outputs,
   .internals = bad_descriptor_internals,

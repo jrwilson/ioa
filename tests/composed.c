@@ -43,6 +43,7 @@ child_output (void* state, void* param)
   return -1;
 }
 
+static input_t child_free_inputs[] = { NULL };
 static input_t child_inputs[] = { child_input, NULL };
 static output_t child_outputs[] = { child_output, NULL };
 static internal_t child_internals[] = { NULL };
@@ -51,6 +52,7 @@ descriptor_t child_descriptor = {
   .constructor = child_create,
   .system_input = child_system_input,
   .system_output = child_system_output,
+  .free_inputs = child_free_inputs,
   .inputs = child_inputs,
   .outputs = child_outputs,
   .internals = child_internals,
@@ -184,6 +186,7 @@ composed_system_output (void* state, void* param)
   return bid;
 }
 
+static input_t composed_free_inputs[] = { NULL };
 static input_t composed_inputs[] = { NULL };
 static output_t composed_outputs[] = { NULL };
 static internal_t composed_internals[] = { NULL };
@@ -192,6 +195,7 @@ descriptor_t composed_descriptor = {
   .constructor = composed_create,
   .system_input = composed_system_input,
   .system_output = composed_system_output,
+  .free_inputs = composed_free_inputs,
   .inputs = composed_inputs,
   .outputs = composed_outputs,
   .internals = composed_internals,

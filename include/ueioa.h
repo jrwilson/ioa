@@ -17,6 +17,7 @@ typedef struct {
   constructor_t constructor;
   input_t system_input;
   output_t system_output;
+  input_t* free_inputs;
   input_t* inputs;
   output_t* outputs;
   internal_t* internals;
@@ -135,8 +136,6 @@ typedef struct {
   };
 } receipt_t;
 
-bool descriptor_check (descriptor_t*);
-
 void order_create_init (order_t*, descriptor_t*);
 void order_declare_init (order_t*, void*);
 void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
@@ -145,6 +144,8 @@ void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
 void ueioa_run (descriptor_t*, int);
+
+int send_message (aid_t, input_t, bid_t);
 
 void schedule_system_output (void);
 int schedule_output (output_t, void*);

@@ -41,6 +41,7 @@ child_output (void* state, void* param)
   return -1;
 }
 
+static input_t child_free_inputs[] = { NULL };
 static input_t child_inputs[] = { NULL };
 static output_t child_outputs[] = { child_output, NULL };
 static internal_t child_internals[] = { NULL };
@@ -49,6 +50,7 @@ descriptor_t child_descriptor = {
   .constructor = child_create,
   .system_input = child_system_input,
   .system_output = child_system_output,
+  .free_inputs = child_free_inputs,
   .inputs = child_inputs,
   .outputs = child_outputs,
   .internals = child_internals,
@@ -182,6 +184,7 @@ input_dne_system_output (void* state, void* param)
   return bid;
 }
 
+static input_t input_dne_free_inputs[] = { NULL };
 static input_t input_dne_inputs[] = { NULL };
 static output_t input_dne_outputs[] = { NULL };
 static internal_t input_dne_internals[] = { NULL };
@@ -190,6 +193,7 @@ descriptor_t input_dne_descriptor = {
   .constructor = input_dne_create,
   .system_input = input_dne_system_input,
   .system_output = input_dne_system_output,
+  .free_inputs = input_dne_free_inputs,
   .inputs = input_dne_inputs,
   .outputs = input_dne_outputs,
   .internals = input_dne_internals,

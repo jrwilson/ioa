@@ -135,7 +135,6 @@ manager_automaton_add (manager_t* manager, aid_t* automaton, descriptor_t* descr
   assert (manager != NULL);
   assert (automaton != NULL);
   assert (descriptor != NULL);
-  assert (descriptor_check (descriptor));
 
   /* Clear the automaton. */
   *automaton = -1;

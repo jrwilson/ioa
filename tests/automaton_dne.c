@@ -65,6 +65,7 @@ automaton_dne_system_output (void* state, void* param)
   return bid;
 }
 
+static input_t automaton_dne_free_inputs[] = { NULL };
 static input_t automaton_dne_inputs[] = { NULL };
 static output_t automaton_dne_outputs[] = { NULL };
 static internal_t automaton_dne_internals[] = { NULL };
@@ -73,6 +74,7 @@ descriptor_t automaton_dne_descriptor = {
   .constructor = automaton_dne_create,
   .system_input = automaton_dne_system_input,
   .system_output = automaton_dne_system_output,
+  .free_inputs = automaton_dne_free_inputs,
   .inputs = automaton_dne_inputs,
   .outputs = automaton_dne_outputs,
   .internals = automaton_dne_internals,

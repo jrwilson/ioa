@@ -65,6 +65,7 @@ declared_system_output (void* state, void* param)
   return bid;
 }
 
+static input_t declared_free_inputs[] = { NULL };
 static input_t declared_inputs[] = { NULL };
 static output_t declared_outputs[] = { NULL };
 static internal_t declared_internals[] = { NULL };
@@ -73,6 +74,7 @@ descriptor_t declared_descriptor = {
   .constructor = declared_create,
   .system_input = declared_system_input,
   .system_output = declared_system_output,
+  .free_inputs = declared_free_inputs,
   .inputs = declared_inputs,
   .outputs = declared_outputs,
   .internals = declared_internals,

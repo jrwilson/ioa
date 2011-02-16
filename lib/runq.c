@@ -22,6 +22,11 @@ runnable_equal (const void* x0, void* y0)
   case SYSTEM_OUTPUT:
     return true;
     break;
+  case FREE_INPUT:
+    return
+      x->free_input.free_input == y->free_input.free_input &&
+      x->free_input.bid == y->free_input.bid;
+    break;
   case OUTPUT:
     return x->output.output == y->output.output;
     break;
@@ -113,6 +118,22 @@ push (runq_t* runq, runnable_t* runnable)
   index_insert_unique (runq->index, runnable_equal, runnable);
   pthread_cond_broadcast (&runq->cond);
   pthread_mutex_unlock (&runq->mutex);
+}
+
+void
+runq_insert_free_input (runq_t* runq, aid_t aid, input_t free_input, bid_t bid)
+{
+  assert (runq != NULL);
+  assert (aid != -1);
+
+  runnable_t runnable = {
+    .type = FREE_INPUT,
+    .aid = aid,
+    .param = NULL,
+  };
+  runnable.free_input.free_input = free_input;
+  runnable.free_input.bid = bid;
+  push (runq, &runnable);
 }
 
 void

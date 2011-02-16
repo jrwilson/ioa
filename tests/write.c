@@ -44,6 +44,7 @@ write_system_output (void* state, void* param)
   return -1;
 }
 
+static input_t write_free_inputs[] = { NULL };
 static input_t write_inputs[] = { NULL };
 static output_t write_outputs[] = { NULL };
 static internal_t write_internals[] = { NULL };
@@ -52,6 +53,7 @@ descriptor_t write_descriptor = {
   .constructor = write_create,
   .system_input = write_system_input,
   .system_output = write_system_output,
+  .free_inputs = write_free_inputs,
   .inputs = write_inputs,
   .outputs = write_outputs,
   .internals = write_internals,
