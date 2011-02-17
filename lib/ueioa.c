@@ -330,28 +330,56 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
   ioq_destroy (ioq);
 }
 
-void
+int
 schedule_system_output (void)
 {
-  runq_insert_system_output (runq, automata_get_current_aid (automata));
+  aid_t aid = automata_get_current_aid (automata);
+  if (automata_system_output_exists (automata, aid)) {
+    runq_insert_system_output (runq, automata_get_current_aid (automata));
+    return 0;
+  }
+  else {
+    return -1;
+  }
 }
 
-void
+int
 schedule_alarm_input (time_t secs, long usecs)
 {
-  ioq_insert_alarm (ioq, automata_get_current_aid (automata), secs, usecs);
+  aid_t aid = automata_get_current_aid (automata);
+  if (automata_alarm_input_exists (automata, aid)) {
+    ioq_insert_alarm (ioq, automata_get_current_aid (automata), secs, usecs);
+    return 0;
+  }
+  else {
+    return -1;
+  }
 }
 
-void
-schedule_write_input (int fd)
-{
-  ioq_insert_write (ioq, automata_get_current_aid (automata), fd);
-}
-
-void
+int
 schedule_read_input (int fd)
 {
-  ioq_insert_read (ioq, automata_get_current_aid (automata), fd);
+  aid_t aid = automata_get_current_aid (automata);
+  if (automata_read_input_exists (automata, aid)) {
+    ioq_insert_read (ioq, automata_get_current_aid (automata), fd);
+    return 0;
+  }
+  else {
+    return -1;
+  }
+}
+
+int
+schedule_write_input (int fd)
+{
+  aid_t aid = automata_get_current_aid (automata);
+  if (automata_write_input_exists (automata, aid)) {
+    ioq_insert_write (ioq, automata_get_current_aid (automata), fd);
+    return 0;
+  }
+  else {
+    return -1;
+  }
 }
 
 int

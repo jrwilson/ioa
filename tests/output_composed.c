@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-child_create (void)
-{
-  return NULL;
-}
-
 static void
 child_system_input (void* state, void* param, bid_t bid)
 {
@@ -29,12 +21,6 @@ child_system_input (void* state, void* param, bid_t bid)
   }
 }
 
-static bid_t
-child_system_output (void* state, void* param)
-{
-  return -1;
-}
-
 static void
 child_input (void* state, void* param, bid_t bid)
 {
@@ -47,22 +33,13 @@ child_output (void* state, void* param)
   return -1;
 }
 
-static input_t child_free_inputs[] = { NULL };
 static input_t child_inputs[] = { child_input, NULL };
 static output_t child_outputs[] = { child_output, NULL };
-static internal_t child_internals[] = { NULL };
 
 descriptor_t child_descriptor = {
-  .constructor = child_create,
   .system_input = child_system_input,
-  .system_output = child_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_free_inputs,
   .inputs = child_inputs,
   .outputs = child_outputs,
-  .internals = child_internals,
 };
 
 
@@ -105,7 +82,7 @@ input_composed_system_input (void* state, void* param, bid_t bid)
   case START:
     if (receipt->type == SELF_CREATED) {
       input_composed->state = CREATE1_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -118,7 +95,7 @@ input_composed_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       input_composed->state = CREATE2_UNSENT;
       input_composed->child1 = receipt->child_created.child;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -131,7 +108,7 @@ input_composed_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       input_composed->state = COMPOSE_UNSENT;
       input_composed->child2 = receipt->child_created.child;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -193,22 +170,10 @@ input_composed_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t input_composed_free_inputs[] = { NULL };
-static input_t input_composed_inputs[] = { NULL };
-static output_t input_composed_outputs[] = { NULL };
-static internal_t input_composed_internals[] = { NULL };
-
 descriptor_t input_composed_descriptor = {
   .constructor = input_composed_create,
   .system_input = input_composed_system_input,
   .system_output = input_composed_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = input_composed_free_inputs,
-  .inputs = input_composed_inputs,
-  .outputs = input_composed_outputs,
-  .internals = input_composed_internals,
 };
 
 int

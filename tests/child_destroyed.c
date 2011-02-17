@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-child_create (void)
-{
-  return NULL;
-}
-
 static void
 child_system_input (void* state, void* param, bid_t bid)
 {
@@ -25,30 +17,9 @@ child_system_input (void* state, void* param, bid_t bid)
   }
 }
 
-static bid_t
-child_system_output (void* state, void* param)
-{
-  return -1;
-}
-
-static input_t child_free_inputs[] = { NULL };
-static input_t child_inputs[] = { NULL };
-static output_t child_outputs[] = { NULL };
-static internal_t child_internals[] = { NULL };
-
 descriptor_t child_descriptor = {
-  .constructor = child_create,
   .system_input = child_system_input,
-  .system_output = child_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_free_inputs,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
-  .internals = child_internals,
 };
-
 
 typedef enum {
   START,
@@ -86,7 +57,7 @@ child_destroyed_system_input (void* state, void* param, bid_t bid)
   case START:
     if (receipt->type == SELF_CREATED) {
       child_destroyed->state = CREATE_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -99,7 +70,7 @@ child_destroyed_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       child_destroyed->child_aid = receipt->child_created.child;
       child_destroyed->state = DESTROY_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -153,22 +124,10 @@ child_destroyed_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t child_destroyed_free_inputs[] = { NULL };
-static input_t child_destroyed_inputs[] = { NULL };
-static output_t child_destroyed_outputs[] = { NULL };
-static internal_t child_destroyed_internals[] = { NULL };
-
 descriptor_t child_destroyed_descriptor = {
   .constructor = child_destroyed_create,
   .system_input = child_destroyed_system_input,
   .system_output = child_destroyed_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_destroyed_free_inputs,
-  .inputs = child_destroyed_inputs,
-  .outputs = child_destroyed_outputs,
-  .internals = child_destroyed_internals,
 };
 
 int

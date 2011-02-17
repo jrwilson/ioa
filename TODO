@@ -1,6 +1,5 @@
-* Fix bug
-* bid on free input
 * make descriptor components optional
+* bid on free input
 * Code coverage tests ?
 * Manager
 

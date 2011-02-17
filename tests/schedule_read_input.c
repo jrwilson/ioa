@@ -4,8 +4,6 @@
 
 #include <ueioa.h>
 
-#include "test.h"
-
 typedef struct {
   int pipes[2];
 } read_t;
@@ -18,8 +16,6 @@ read_create (void)
   return read;
 }
 
-static bid_t read_system_output (void* state, void* param);
-
 static void
 read_system_input (void* state, void* param, bid_t bid)
 {
@@ -30,18 +26,12 @@ read_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
-    schedule_write_input (rd->pipes[1]);
+    assert (schedule_write_input (rd->pipes[1]) == 0);
   }
   else {
     assert (0);
   }
 
-}
-
-static bid_t
-read_system_output (void* state, void* param)
-{
-  return -1;
 }
 
 static void
@@ -52,7 +42,7 @@ read_write_input (void* state, void* param, bid_t bid)
 
   char c = 'A';
   write (rd->pipes[1], &c, 1);
-  schedule_read_input (rd->pipes[0]);
+  assert (schedule_read_input (rd->pipes[0]) == 0);
 }
 
 static void
@@ -67,22 +57,11 @@ read_read_input (void* state, void* param, bid_t bid)
   exit (EXIT_SUCCESS);
 }
 
-static input_t read_free_inputs[] = { NULL };
-static input_t read_inputs[] = { NULL };
-static output_t read_outputs[] = { NULL };
-static internal_t read_internals[] = { NULL };
-
 descriptor_t read_descriptor = {
   .constructor = read_create,
   .system_input = read_system_input,
-  .system_output = read_system_output,
-  .alarm_input = test_alarm_input,
   .read_input = read_read_input,
   .write_input = read_write_input,
-  .free_inputs = read_free_inputs,
-  .inputs = read_inputs,
-  .outputs = read_outputs,
-  .internals = read_internals,
 };
 
 

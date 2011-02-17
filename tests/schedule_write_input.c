@@ -4,8 +4,6 @@
 
 #include <ueioa.h>
 
-#include "test.h"
-
 typedef struct {
   int pipes[2];
 } write_t;
@@ -30,7 +28,7 @@ write_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
-    schedule_write_input (write->pipes[1]);
+    assert (schedule_write_input (write->pipes[1]) == 0);
   }
   else {
     assert (0);
@@ -49,22 +47,11 @@ write_write_input (void* state, void* param, bid_t bid)
   exit (EXIT_SUCCESS);
 }
 
-static input_t write_free_inputs[] = { NULL };
-static input_t write_inputs[] = { NULL };
-static output_t write_outputs[] = { NULL };
-static internal_t write_internals[] = { NULL };
-
 descriptor_t write_descriptor = {
   .constructor = write_create,
   .system_input = write_system_input,
   .system_output = write_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
   .write_input = write_write_input,
-  .free_inputs = write_free_inputs,
-  .inputs = write_inputs,
-  .outputs = write_outputs,
-  .internals = write_internals,
 };
 
 

@@ -12,14 +12,6 @@
 #include <stdio.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-child_create (void)
-{
-  return NULL;
-}
-
 static void
 child_system_input (void* state, void* param, bid_t bid)
 {
@@ -38,33 +30,16 @@ child_system_input (void* state, void* param, bid_t bid)
 }
 
 static bid_t
-child_system_output (void* state, void* param)
-{
-  return -1;
-}
-
-static bid_t
 child_output (void* state, void* param)
 {
   return -1;
 }
 
-static input_t child_free_inputs[] = { NULL };
-static input_t child_inputs[] = { NULL };
 static output_t child_outputs[] = { child_output, NULL };
-static internal_t child_internals[] = { NULL };
 
 descriptor_t child_descriptor = {
-  .constructor = child_create,
   .system_input = child_system_input,
-  .system_output = child_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_free_inputs,
-  .inputs = child_inputs,
   .outputs = child_outputs,
-  .internals = child_internals,
 };
 
 
@@ -128,7 +103,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == SELF_CREATED) {
       compose_param_input->state = CREATE1_UNSENT;
       compose_param_input->self = receipt->self_created.self;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -141,7 +116,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       compose_param_input->child1 = receipt->child_created.child;
       compose_param_input->state = CREATE2_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -154,7 +129,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       compose_param_input->child2 = receipt->child_created.child;
       compose_param_input->state = CREATE3_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -167,7 +142,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       compose_param_input->child3 = receipt->child_created.child;
       compose_param_input->state = DECLARE2_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -179,7 +154,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
   case DECLARE2_SENT:
     if (receipt->type == DECLARED) {
       compose_param_input->state = DECLARE3_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -191,7 +166,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
   case DECLARE3_SENT:
     if (receipt->type == DECLARED) {
       compose_param_input->state = COMPOSE1_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -203,7 +178,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
   case COMPOSE1_SENT:
     if (receipt->type == COMPOSED) {
       compose_param_input->state = COMPOSE2_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       printf ("Receipt Type: %d\n", receipt->type);
@@ -216,7 +191,7 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
   case COMPOSE2_SENT:
     if (receipt->type == COMPOSED) {
       compose_param_input->state = COMPOSE3_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else if (receipt->type == INPUT_COMPOSED) {
       /* Good. */
@@ -328,22 +303,13 @@ compose_param_input_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t compose_param_input_free_inputs[] = { NULL };
 static input_t compose_param_input_inputs[] = { compose_param_input_input, NULL };
-static output_t compose_param_input_outputs[] = { NULL };
-static internal_t compose_param_input_internals[] = { NULL };
 
 descriptor_t compose_param_input_descriptor = {
   .constructor = compose_param_input_create,
   .system_input = compose_param_input_system_input,
   .system_output = compose_param_input_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = compose_param_input_free_inputs,
   .inputs = compose_param_input_inputs,
-  .outputs = compose_param_input_outputs,
-  .internals = compose_param_input_internals,
 };
 
 int

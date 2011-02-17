@@ -2,8 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
 typedef enum {
   START,
   DECLARE_UNSENT,
@@ -39,7 +37,7 @@ rescinded_system_input (void* state, void* param, bid_t bid)
   case START:
     if (receipt->type == SELF_CREATED) {
       rescinded->state = DECLARE_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -51,7 +49,7 @@ rescinded_system_input (void* state, void* param, bid_t bid)
   case DECLARE_SENT:
     if (receipt->type == DECLARED) {
       rescinded->state = RESCIND_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -105,22 +103,10 @@ rescinded_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t rescinded_free_inputs[] = { NULL };
-static input_t rescinded_inputs[] = { NULL };
-static output_t rescinded_outputs[] = { NULL };
-static internal_t rescinded_internals[] = { NULL };
-
 descriptor_t rescinded_descriptor = {
   .constructor = rescinded_create,
   .system_input = rescinded_system_input,
   .system_output = rescinded_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = rescinded_free_inputs,
-  .inputs = rescinded_inputs,
-  .outputs = rescinded_outputs,
-  .internals = rescinded_internals,
 };
 
 int

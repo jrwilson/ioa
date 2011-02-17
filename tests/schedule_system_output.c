@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-schedule_system_output_create (void)
-{
-  return NULL;
-}
-
 static void
 schedule_system_output_system_input (void* state, void* param, bid_t bid)
 {
@@ -18,7 +10,7 @@ schedule_system_output_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
-    schedule_system_output ();
+    assert (schedule_system_output () == 0);
   }
   else {
     assert (0);
@@ -33,22 +25,17 @@ schedule_system_output_system_output (void* state, void* param)
   return -1;
 }
 
-static input_t schedule_system_output_inputs[] = { NULL };
-static input_t schedule_system_output_free_inputs[] = { NULL };
-static output_t schedule_system_output_outputs[] = { NULL };
-static internal_t schedule_system_output_internals[] = { NULL };
-
 descriptor_t schedule_system_output_descriptor = {
-  .constructor = schedule_system_output_create,
+  .constructor = NULL,
   .system_input = schedule_system_output_system_input,
   .system_output = schedule_system_output_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = schedule_system_output_free_inputs,
-  .inputs = schedule_system_output_inputs,
-  .outputs = schedule_system_output_outputs,
-  .internals = schedule_system_output_internals,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
+  .inputs = NULL,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 int

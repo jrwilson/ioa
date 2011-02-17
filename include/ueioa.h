@@ -144,13 +144,13 @@ void order_destroy_init (order_t*, aid_t);
 
 void ueioa_run (descriptor_t*, int);
 
-void schedule_system_output (void);
-void schedule_alarm_input (time_t, long);
-void schedule_read_input (int);
-void schedule_write_input (int);
-int schedule_free_input (aid_t, input_t, bid_t);
-int schedule_output (output_t, void*);
-int schedule_internal (internal_t, void*);
+int schedule_system_output (void) __attribute__ ((warn_unused_result));
+int schedule_alarm_input (time_t, long) __attribute__ ((warn_unused_result));
+int schedule_read_input (int) __attribute__ ((warn_unused_result));
+int schedule_write_input (int) __attribute__ ((warn_unused_result));
+int schedule_free_input (aid_t, input_t, bid_t) __attribute__ ((warn_unused_result));
+int schedule_output (output_t, void*) __attribute__ ((warn_unused_result));
+int schedule_internal (internal_t, void*) __attribute__ ((warn_unused_result));
 
 bid_t buffer_alloc (size_t);
 void* buffer_write_ptr (bid_t);
@@ -168,7 +168,7 @@ manager_t* manager_create (void);
 
 void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
-void manager_automaton_add (manager_t*, aid_t*, descriptor_t*);
+void manager_child_add (manager_t*, aid_t*, descriptor_t*);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
 void manager_output_add (manager_t*, bool*, output_t, void*);
 

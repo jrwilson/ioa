@@ -2,8 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
 typedef enum {
   UNSENT,
   SENT
@@ -35,7 +33,7 @@ bad_descriptor_system_input (void* state, void* param, bid_t bid)
   switch (bad_descriptor->state) {
   case UNSENT:
     if (receipt->type == SELF_CREATED) {
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -67,22 +65,17 @@ bad_descriptor_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t bad_descriptor_free_inputs[] = { NULL };
-static input_t bad_descriptor_inputs[] = { NULL };
-static output_t bad_descriptor_outputs[] = { NULL };
-static internal_t bad_descriptor_internals[] = { NULL };
-
 descriptor_t bad_descriptor_descriptor = {
   .constructor = bad_descriptor_create,
   .system_input = bad_descriptor_system_input,
   .system_output = bad_descriptor_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = bad_descriptor_free_inputs,
-  .inputs = bad_descriptor_inputs,
-  .outputs = bad_descriptor_outputs,
-  .internals = bad_descriptor_internals,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
+  .inputs = NULL,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 int

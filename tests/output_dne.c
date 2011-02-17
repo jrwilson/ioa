@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-child_create (void)
-{
-  return NULL;
-}
-
 static void
 child_system_input (void* state, void* param, bid_t bid)
 {
@@ -25,12 +17,6 @@ child_system_input (void* state, void* param, bid_t bid)
   }
 }
 
-static bid_t
-child_system_output (void* state, void* param)
-{
-  return -1;
-}
-
 static void
 child_input (void* state, void* param, bid_t bid)
 {
@@ -43,22 +29,19 @@ child_output (void* state, void* param)
   return -1;
 }
 
-static input_t child_free_inputs[] = { NULL };
 static input_t child_inputs[] = { child_input, NULL };
-static output_t child_outputs[] = { NULL };
-static internal_t child_internals[] = { NULL };
 
 descriptor_t child_descriptor = {
-  .constructor = child_create,
+  .constructor = NULL,
   .system_input = child_system_input,
-  .system_output = child_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_free_inputs,
+  .system_output = NULL,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
   .inputs = child_inputs,
-  .outputs = child_outputs,
-  .internals = child_internals,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 
@@ -101,7 +84,7 @@ output_dne_system_input (void* state, void* param, bid_t bid)
   case START:
     if (receipt->type == SELF_CREATED) {
       output_dne->state = CREATE1_UNSENT;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -114,7 +97,7 @@ output_dne_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       output_dne->state = CREATE2_UNSENT;
       output_dne->child1 = receipt->child_created.child;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -127,7 +110,7 @@ output_dne_system_input (void* state, void* param, bid_t bid)
     if (receipt->type == CHILD_CREATED) {
       output_dne->state = COMPOSE_UNSENT;
       output_dne->child2 = receipt->child_created.child;
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -189,22 +172,17 @@ output_dne_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t output_dne_free_inputs[] = { NULL };
-static input_t output_dne_inputs[] = { NULL };
-static output_t output_dne_outputs[] = { NULL };
-static internal_t output_dne_internals[] = { NULL };
-
 descriptor_t output_dne_descriptor = {
   .constructor = output_dne_create,
   .system_input = output_dne_system_input,
   .system_output = output_dne_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = output_dne_free_inputs,
-  .inputs = output_dne_inputs,
-  .outputs = output_dne_outputs,
-  .internals = output_dne_internals,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
+  .inputs = NULL,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 int

@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-child_create (void)
-{
-  return NULL;
-}
-
 static void
 child_system_input (void* state, void* param, bid_t bid)
 {
@@ -25,28 +17,17 @@ child_system_input (void* state, void* param, bid_t bid)
   }
 }
 
-static bid_t
-child_system_output (void* state, void* param)
-{
-  return -1;
-}
-
-static input_t child_free_inputs[] = { NULL };
-static input_t child_inputs[] = { NULL };
-static output_t child_outputs[] = { NULL };
-static internal_t child_internals[] = { NULL };
-
 descriptor_t child_descriptor = {
-  .constructor = child_create,
+  .constructor = NULL,
   .system_input = child_system_input,
-  .system_output = child_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_free_inputs,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
-  .internals = child_internals,
+  .system_output = NULL,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
+  .inputs = NULL,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 
@@ -81,7 +62,7 @@ child_created_system_input (void* state, void* param, bid_t bid)
   switch (child_created->state) {
   case UNSENT:
     if (receipt->type == SELF_CREATED) {
-      schedule_system_output ();
+      assert (schedule_system_output () == 0);
     }
     else {
       assert (0);
@@ -113,22 +94,17 @@ child_created_system_output (void* state, void* param)
   return bid;
 }
 
-static input_t child_created_inputs[] = { NULL };
-static input_t child_created_free_inputs[] = { NULL };
-static output_t child_created_outputs[] = { NULL };
-static internal_t child_created_internals[] = { NULL };
-
 descriptor_t child_created_descriptor = {
   .constructor = child_created_create,
   .system_input = child_created_system_input,
   .system_output = child_created_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = child_created_free_inputs,
-  .inputs = child_created_inputs,
-  .outputs = child_created_outputs,
-  .internals = child_created_internals,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
+  .inputs = NULL,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 int

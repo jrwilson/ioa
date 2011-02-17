@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-self_created_create (void)
-{
-  return NULL;
-}
-
 static void
 self_created_system_input (void* state, void* param, bid_t bid)
 {
@@ -25,28 +17,17 @@ self_created_system_input (void* state, void* param, bid_t bid)
   }
 }
 
-static bid_t
-self_created_system_output (void* state, void* param)
-{
-  return -1;
-}
-
-static input_t self_created_free_inputs[] = { NULL };
-static input_t self_created_inputs[] = { NULL };
-static output_t self_created_outputs[] = { NULL };
-static internal_t self_created_internals[] = { NULL };
-
 descriptor_t self_created_descriptor = {
-  .constructor = self_created_create,
+  .constructor = NULL,
   .system_input = self_created_system_input,
-  .system_output = self_created_system_output,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .free_inputs = self_created_free_inputs,
-  .inputs = self_created_inputs,
-  .outputs = self_created_outputs,
-  .internals = self_created_internals,
+  .system_output = NULL,
+  .alarm_input = NULL,
+  .read_input = NULL,
+  .write_input = NULL,
+  .free_inputs = NULL,
+  .inputs = NULL,
+  .outputs = NULL,
+  .internals = NULL,
 };
 
 int

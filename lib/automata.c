@@ -402,18 +402,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
   assert (receipts != NULL);
   assert (runq != NULL);
 
-  /* Check that various things are not NULL. */
-  if (descriptor != NULL &&
-      descriptor->constructor != NULL &&
-      descriptor->system_input != NULL &&
-      descriptor->system_output != NULL &&
-      descriptor->alarm_input != NULL &&
-      descriptor->read_input != NULL &&
-      descriptor->write_input != NULL &&
-      descriptor->free_inputs != NULL &&
-      descriptor->inputs != NULL &&
-      descriptor->outputs != NULL &&
-      descriptor->internals != NULL) {
+  if (descriptor != NULL) {
 
     /* Find an aid. */
     while (automaton_entry_for_aid (automata, automata->next_aid, NULL) != NULL) {
@@ -426,7 +415,10 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     aid_t aid = automata->next_aid;
 
     set_current_aid (automata, aid);
-    void* state = descriptor->constructor ();
+    void* state = NULL;
+    if (descriptor->constructor != NULL) {
+      state = descriptor->constructor ();
+    }
     set_current_aid (automata, -1);
     
     /* Insert the automaton. */
@@ -448,39 +440,47 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     size_t idx;
 
     /* Insert the free inputs. */
-    for (idx = 0; descriptor->free_inputs[idx] != NULL; ++idx) {
-      input_entry_t entry = {
-	.aid = aid,
-	.input = descriptor->free_inputs[idx],
-      };
-      index_insert_unique (automata->free_input_index, input_entry_aid_input_equal, &entry);
+    if (descriptor->free_inputs != NULL) {
+      for (idx = 0; descriptor->free_inputs[idx] != NULL; ++idx) {
+	input_entry_t entry = {
+	  .aid = aid,
+	  .input = descriptor->free_inputs[idx],
+	};
+	index_insert_unique (automata->free_input_index, input_entry_aid_input_equal, &entry);
+      }
     }
-    
+   
     /* Insert the inputs. */
-    for (idx = 0; descriptor->inputs[idx] != NULL; ++idx) {
-      input_entry_t entry = {
-	.aid = aid,
-	.input = descriptor->inputs[idx],
-      };
-      index_insert_unique (automata->input_index, input_entry_aid_input_equal, &entry);
+    if (descriptor->inputs != NULL) {
+      for (idx = 0; descriptor->inputs[idx] != NULL; ++idx) {
+	input_entry_t entry = {
+	  .aid = aid,
+	  .input = descriptor->inputs[idx],
+	};
+	index_insert_unique (automata->input_index, input_entry_aid_input_equal, &entry);
+      }
     }
     
     /* Insert the outputs. */
-    for (idx = 0; descriptor->outputs[idx] != NULL; ++idx) {
-      output_entry_t entry = {
-	.aid = aid,
-	.output = descriptor->outputs[idx],
-      };
-      index_insert_unique (automata->output_index, output_entry_aid_output_equal, &entry);
+    if (descriptor->outputs != NULL) {
+      for (idx = 0; descriptor->outputs[idx] != NULL; ++idx) {
+	output_entry_t entry = {
+	  .aid = aid,
+	  .output = descriptor->outputs[idx],
+	};
+	index_insert_unique (automata->output_index, output_entry_aid_output_equal, &entry);
+      }
     }
     
     /* Insert the internals. */
-    for (idx = 0; descriptor->internals[idx] != NULL; ++idx) {
-      internal_entry_t entry = {
-	.aid = aid,
-	.internal = descriptor->internals[idx],
-      };
-      index_insert_unique (automata->internal_index, internal_entry_aid_internal_equal, &entry);
+    if (descriptor->internals != NULL) {
+      for (idx = 0; descriptor->internals[idx] != NULL; ++idx) {
+	internal_entry_t entry = {
+	  .aid = aid,
+	  .internal = descriptor->internals[idx],
+	};
+	index_insert_unique (automata->internal_index, internal_entry_aid_internal_equal, &entry);
+      }
     }
 
     /* Delcare the NULL parameter. */
@@ -908,7 +908,9 @@ automata_system_input_exec (automata_t* automata, receipts_t* receipts, runq_t* 
       buffers_incref (buffers, aid, bid);
       set_current_aid (automata, aid);
       pthread_mutex_lock (entry->lock);
-      entry->system_input (entry->state, NULL, bid);
+      if (entry->system_input != NULL) {
+	entry->system_input (entry->state, NULL, bid);
+      }
       pthread_mutex_unlock (entry->lock);
       set_current_aid (automata, -1);
       /* Decrement to destroy. */
@@ -940,7 +942,7 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
   /* Automaton must exist. */
-  if (entry != NULL) {
+  if (entry != NULL && entry->system_output != NULL) {
 
     /* Execute. */
     set_current_aid (automata, aid);
@@ -1003,7 +1005,7 @@ automata_alarm_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
 
   /* Automaton must exist. */
-  if (entry != NULL) {
+  if (entry != NULL && entry->alarm_input != NULL) {
     
     /* Prepare the buffer. */
     bid_t bid = buffers_alloc (buffers, aid, 0);
@@ -1034,7 +1036,7 @@ automata_read_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
 
   /* Automaton must exist. */
-  if (entry != NULL) {
+  if (entry != NULL && entry->read_input != NULL) {
     
     /* Prepare the buffer. */
     bid_t bid = buffers_alloc (buffers, aid, 0);
@@ -1065,7 +1067,7 @@ automata_write_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
   automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
 
   /* Automaton must exist. */
-  if (entry != NULL) {
+  if (entry != NULL && entry->write_input != NULL) {
     
     /* Prepare the buffer. */
     bid_t bid = buffers_alloc (buffers, aid, 0);
@@ -1289,6 +1291,42 @@ automata_get_current_aid (automata_t* automata)
   assert (automata != NULL);
 
   return (aid_t)pthread_getspecific (automata->current_aid);
+}
+
+bool
+automata_system_output_exists (automata_t* automata, aid_t aid)
+{
+  assert (automata != NULL);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  return entry->system_output != NULL;
+}
+
+bool
+automata_alarm_input_exists (automata_t* automata, aid_t aid)
+{
+  assert (automata != NULL);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  return entry->alarm_input != NULL;
+}
+
+bool
+automata_read_input_exists (automata_t* automata, aid_t aid)
+{
+  assert (automata != NULL);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  return entry->read_input != NULL;
+}
+
+bool
+automata_write_input_exists (automata_t* automata, aid_t aid)
+{
+  assert (automata != NULL);
+
+  automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
+  return entry->write_input != NULL;
 }
 
 bool

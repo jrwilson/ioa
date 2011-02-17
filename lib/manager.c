@@ -161,7 +161,7 @@ manager_parent_set (manager_t* manager, aid_t* parent)
 }
 
 void
-manager_automaton_add (manager_t* manager, aid_t* automaton, descriptor_t* descriptor)
+manager_child_add (manager_t* manager, aid_t* automaton, descriptor_t* descriptor)
 {
   assert (manager != NULL);
   assert (automaton != NULL);
@@ -335,7 +335,7 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
       outputs_key_t* value = hashtable_lookup (manager->outputs, &key);
       if (value != NULL) {
 	*value->flag = true;
-	schedule_output (receipt->output_composed.output, receipt->output_composed.out_param);
+	assert (schedule_output (receipt->output_composed.output, receipt->output_composed.out_param) == 0);
       }
     }
     break;
@@ -374,7 +374,7 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   }
 
   if ((manager->status == NORMAL) && something_changed) {
-    schedule_system_output ();
+    assert (schedule_system_output () == 0);
   }
 }
 
@@ -471,11 +471,15 @@ fire (manager_t* manager)
 	/* Pop. */
 	proxy_item_t* item = manager->proxy_front;
 	manager->proxy_front = item->next;
+	free (item);
+
 	if (manager->proxy_front == NULL) {
 	  manager->proxy_back = &manager->proxy_front;
 	}
-	free (item);
-	return true;
+	else {
+	  /* Go again because there are more proxies. */
+	  assert (schedule_system_output () == 0);
+	}
       }
       break;
     }
@@ -537,5 +541,5 @@ manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor,
   *manager->proxy_back = proxy_item;
   manager->proxy_back = &proxy_item->next;
 
-  schedule_system_output ();
+  assert (schedule_system_output () == 0);
 }

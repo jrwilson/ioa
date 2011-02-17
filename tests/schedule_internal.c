@@ -2,14 +2,6 @@
 #include <assert.h>
 #include <ueioa.h>
 
-#include "test.h"
-
-static void*
-schedule_internal_create (void)
-{
-  return NULL;
-}
-
 static void
 schedule_internal_internal (void* state, void* param)
 {
@@ -32,27 +24,10 @@ schedule_internal_system_input (void* state, void* param, bid_t bid)
 
 }
 
-static bid_t
-schedule_internal_system_output (void* state, void* param)
-{
-  return -1;
-}
-
-static input_t schedule_internal_inputs[] = { NULL };
-static input_t schedule_internal_free_inputs[] = { NULL };
-static output_t schedule_internal_outputs[] = { NULL };
 static internal_t schedule_internal_internals[] = { schedule_internal_internal, NULL };
 
 descriptor_t schedule_internal_descriptor = {
-  .constructor = schedule_internal_create,
   .system_input = schedule_internal_system_input,
-  .system_output = schedule_internal_system_output,
-  .free_inputs = schedule_internal_free_inputs,
-  .alarm_input = test_alarm_input,
-  .read_input = test_read_input,
-  .write_input = test_write_input,
-  .inputs = schedule_internal_inputs,
-  .outputs = schedule_internal_outputs,
   .internals = schedule_internal_internals,
 };
 
