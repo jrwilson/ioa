@@ -52,9 +52,7 @@ composer_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  if (manager_apply (composer->manager, receipt)) {
-    schedule_system_output ();
-  }
+  manager_apply (composer->manager, receipt);
 }
 
 static bid_t

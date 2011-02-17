@@ -1101,6 +1101,7 @@ automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, i
     automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
     
     /* Increment to make read-only. */
+    buffers_change_owner (buffers, aid, bid);
     buffers_incref (buffers, aid, bid);
     set_current_aid (automata, aid);
     pthread_mutex_lock (entry->lock);

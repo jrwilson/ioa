@@ -42,10 +42,11 @@ TESTS = schedule_system_output$(EXEEXT) bad_order$(EXEEXT) \
 	not_composed$(EXEEXT) decomposed$(EXEEXT) \
 	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
 	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) same_compose$(EXEEXT) \
-	schedule_alarm_input$(EXEEXT) schedule_read_input$(EXEEXT) \
-	schedule_write_input$(EXEEXT) schedule_free_input$(EXEEXT) \
-	schedule_output$(EXEEXT) schedule_internal$(EXEEXT)
+	child_destroyed$(EXEEXT) schedule_alarm_input$(EXEEXT) \
+	schedule_read_input$(EXEEXT) schedule_write_input$(EXEEXT) \
+	schedule_free_input$(EXEEXT) schedule_output$(EXEEXT) \
+	schedule_internal$(EXEEXT) same_compose$(EXEEXT) \
+	compose_param_input$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -66,10 +67,11 @@ am__EXEEXT_1 = schedule_system_output$(EXEEXT) bad_order$(EXEEXT) \
 	not_composed$(EXEEXT) decomposed$(EXEEXT) \
 	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
 	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) same_compose$(EXEEXT) \
-	schedule_alarm_input$(EXEEXT) schedule_read_input$(EXEEXT) \
-	schedule_write_input$(EXEEXT) schedule_free_input$(EXEEXT) \
-	schedule_output$(EXEEXT) schedule_internal$(EXEEXT)
+	child_destroyed$(EXEEXT) schedule_alarm_input$(EXEEXT) \
+	schedule_read_input$(EXEEXT) schedule_write_input$(EXEEXT) \
+	schedule_free_input$(EXEEXT) schedule_output$(EXEEXT) \
+	schedule_internal$(EXEEXT) same_compose$(EXEEXT) \
+	compose_param_input$(EXEEXT)
 am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT) test.$(OBJEXT)
 automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
 automaton_dne_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -85,6 +87,10 @@ child_created_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_child_destroyed_OBJECTS = child_destroyed.$(OBJEXT) test.$(OBJEXT)
 child_destroyed_OBJECTS = $(am_child_destroyed_OBJECTS)
 child_destroyed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_compose_param_input_OBJECTS = compose_param_input.$(OBJEXT) \
+	test.$(OBJEXT)
+compose_param_input_OBJECTS = $(am_compose_param_input_OBJECTS)
+compose_param_input_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_composed_OBJECTS = composed.$(OBJEXT) test.$(OBJEXT)
 composed_OBJECTS = $(am_composed_OBJECTS)
 composed_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -179,8 +185,8 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(composed_SOURCES) \
-	$(declared_SOURCES) $(decomposed_SOURCES) \
+	$(child_destroyed_SOURCES) $(compose_param_input_SOURCES) \
+	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
@@ -194,8 +200,8 @@ SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(schedule_write_input_SOURCES) $(self_created_SOURCES)
 DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
 	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(composed_SOURCES) \
-	$(declared_SOURCES) $(decomposed_SOURCES) \
+	$(child_destroyed_SOURCES) $(compose_param_input_SOURCES) \
+	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
 	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
 	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
 	$(not_composed_SOURCES) $(not_owner_SOURCES) \
@@ -368,8 +374,6 @@ not_owner_SOURCES = not_owner.c test.c
 not_owner_LDADD = $(top_builddir)/lib/libueioa.la
 child_destroyed_SOURCES = child_destroyed.c test.c
 child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
-same_compose_SOURCES = same_compose.c test.c
-same_compose_LDADD = $(top_builddir)/lib/libueioa.la
 schedule_alarm_input_SOURCES = schedule_alarm_input.c test.c
 schedule_alarm_input_LDADD = $(top_builddir)/lib/libueioa.la
 schedule_read_input_SOURCES = schedule_read_input.c test.c
@@ -382,6 +386,10 @@ schedule_output_SOURCES = schedule_output.c test.c
 schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
 schedule_internal_SOURCES = schedule_internal.c test.c
 schedule_internal_LDADD = $(top_builddir)/lib/libueioa.la
+same_compose_SOURCES = same_compose.c test.c
+same_compose_LDADD = $(top_builddir)/lib/libueioa.la
+compose_param_input_SOURCES = compose_param_input.c test.c
+compose_param_input_LDADD = $(top_builddir)/lib/libueioa.la
 all: all-am
 
 .SUFFIXES:
@@ -440,6 +448,9 @@ child_created$(EXEEXT): $(child_created_OBJECTS) $(child_created_DEPENDENCIES)
 child_destroyed$(EXEEXT): $(child_destroyed_OBJECTS) $(child_destroyed_DEPENDENCIES) 
 	@rm -f child_destroyed$(EXEEXT)
 	$(LINK) $(child_destroyed_OBJECTS) $(child_destroyed_LDADD) $(LIBS)
+compose_param_input$(EXEEXT): $(compose_param_input_OBJECTS) $(compose_param_input_DEPENDENCIES) 
+	@rm -f compose_param_input$(EXEEXT)
+	$(LINK) $(compose_param_input_OBJECTS) $(compose_param_input_LDADD) $(LIBS)
 composed$(EXEEXT): $(composed_OBJECTS) $(composed_DEPENDENCIES) 
 	@rm -f composed$(EXEEXT)
 	$(LINK) $(composed_OBJECTS) $(composed_LDADD) $(LIBS)
@@ -521,6 +532,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_created.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_destroyed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compose_param_input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/declared.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decomposed.Po@am__quote@

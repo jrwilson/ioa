@@ -172,7 +172,23 @@ void manager_automaton_add (manager_t*, aid_t*, descriptor_t*);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
 void manager_output_add (manager_t*, bool*, output_t, void*);
 
-bool manager_apply (manager_t*, const receipt_t*);
+void manager_apply (manager_t*, const receipt_t*);
 bid_t manager_action (manager_t*);
+
+typedef struct {
+  output_t output;
+  input_t input;
+} proxy_compose_pair_t;
+
+typedef struct {
+  proxy_compose_pair_t* proxy_out_parent_in;
+  proxy_compose_pair_t* parent_out_proxy_in;
+} proxy_compose_map_t;
+
+typedef struct {
+  aid_t proxy_aid;
+} proxy_receipt_t;
+
+void manager_proxy_create (manager_t*, void*, descriptor_t*, proxy_compose_map_t*, aid_t, input_t);
 
 #endif /* __ueioa_h__ */

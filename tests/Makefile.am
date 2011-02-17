@@ -22,13 +22,14 @@ rescinded \
 automaton_dne \
 not_owner \
 child_destroyed \
-same_compose \
 schedule_alarm_input \
 schedule_read_input \
 schedule_write_input \
 schedule_free_input \
 schedule_output \
-schedule_internal
+schedule_internal \
+same_compose \
+compose_param_input
 
 check_PROGRAMS = $(TESTS)
 
@@ -95,9 +96,6 @@ not_owner_LDADD = $(top_builddir)/lib/libueioa.la
 child_destroyed_SOURCES = child_destroyed.c test.c
 child_destroyed_LDADD = $(top_builddir)/lib/libueioa.la
 
-same_compose_SOURCES = same_compose.c test.c
-same_compose_LDADD = $(top_builddir)/lib/libueioa.la
-
 schedule_alarm_input_SOURCES = schedule_alarm_input.c test.c
 schedule_alarm_input_LDADD = $(top_builddir)/lib/libueioa.la
 
@@ -115,3 +113,9 @@ schedule_output_LDADD = $(top_builddir)/lib/libueioa.la
 
 schedule_internal_SOURCES = schedule_internal.c test.c
 schedule_internal_LDADD = $(top_builddir)/lib/libueioa.la
+
+same_compose_SOURCES = same_compose.c test.c
+same_compose_LDADD = $(top_builddir)/lib/libueioa.la
+
+compose_param_input_SOURCES = compose_param_input.c test.c
+compose_param_input_LDADD = $(top_builddir)/lib/libueioa.la

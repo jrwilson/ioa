@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <ueioa.h>
 
 #include "hashtable.h"
@@ -87,20 +86,50 @@ outputs_key_hash (const void* x0)
 }
 
 typedef enum {
+  UNDECLARED,
+  UNCREATED,
+  UNCOMPOSED,
+  UNDONE
+} proxy_state_t;
+
+typedef struct proxy_item_struct proxy_item_t;
+struct proxy_item_struct {
+  proxy_state_t state;
+  void* param;
+  descriptor_t* descriptor;
+  aid_t aid;
+  proxy_compose_map_t* compose_map;
+  size_t proxy_out_idx;
+  size_t parent_out_idx;
+  aid_t requester_aid;
+  input_t requester_free_input;
+  proxy_item_t* next;
+};
+
+typedef enum {
   NORMAL,
   OUTSTANDING
 } status_t;
 
+typedef enum {
+  SELF,
+  PROXY,
+} action_type_t;
+
 struct manager_struct {
   status_t status;
+  action_type_t action_type;
   order_t last_order;
   automata_key_t last_automaton;
   compositions_key_t last_composition;
-  aid_t* self;
-  aid_t* parent;
+  aid_t self;
+  aid_t* self_ptr;
+  aid_t* parent_ptr;
   hashtable_t* automata;
   hashtable_t* compositions;
   hashtable_t* outputs;
+  proxy_item_t* proxy_front;
+  proxy_item_t** proxy_back;
 };
 
 manager_t*
@@ -111,6 +140,8 @@ manager_create (void)
   manager->automata = hashtable_create (sizeof (automata_key_t), automata_key_equal, automata_key_hash);
   manager->compositions = hashtable_create (sizeof (compositions_key_t), compositions_key_equal, compositions_key_hash);
   manager->outputs = hashtable_create (sizeof (outputs_key_t), outputs_key_equal, outputs_key_hash);
+  manager->proxy_front = NULL;
+  manager->proxy_back = &manager->proxy_front;
 
   return manager;
 }
@@ -119,14 +150,14 @@ void
 manager_self_set (manager_t* manager, aid_t* self)
 {
   assert (manager != NULL);
-  manager->self = self;
+  manager->self_ptr = self;
 }
 
 void
 manager_parent_set (manager_t* manager, aid_t* parent)
 {
   assert (manager != NULL);
-  manager->parent = parent;
+  manager->parent_ptr = parent;
 }
 
 void
@@ -187,7 +218,7 @@ manager_output_add (manager_t* manager, bool* flag, output_t output, void* out_p
   hashtable_insert (manager->outputs, &key);
 }
 
-bool
+void
 manager_apply (manager_t* manager, const receipt_t* receipt)
 {
   assert (manager != NULL);
@@ -202,11 +233,12 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     break;
   case SELF_CREATED:
     {
-      if (manager->self != NULL) {
-	*manager->self = receipt->self_created.self;
+      manager->self = receipt->self_created.self;
+      if (manager->self_ptr != NULL) {
+	*manager->self_ptr = receipt->self_created.self;
       }
-      if (manager->parent != NULL) {
-	*manager->parent = receipt->self_created.parent;
+      if (manager->parent_ptr != NULL) {
+	*manager->parent_ptr = receipt->self_created.parent;
       }
       something_changed = true;
     }
@@ -214,9 +246,20 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   case CHILD_CREATED:
     {
       assert (manager->status == OUTSTANDING && manager->last_order.type == CREATE);
-      *manager->last_automaton.automaton = receipt->child_created.child;
-      something_changed = true;
-      manager->status = NORMAL;
+      switch (manager->action_type) {
+      case SELF:
+	*manager->last_automaton.automaton = receipt->child_created.child;
+	something_changed = true;
+	manager->status = NORMAL;
+	break;
+      case PROXY:
+	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNCREATED);
+	manager->proxy_front->aid = receipt->child_created.child;
+	manager->proxy_front->state = UNCOMPOSED;
+	something_changed = true;
+	manager->status = NORMAL;
+	break;
+      }
     }
     break;
   case BAD_DESCRIPTOR:
@@ -224,8 +267,12 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     assert (0);
     break;
   case DECLARED:
-    /* TODO */
-    assert (0);
+    {
+      assert (manager->proxy_front != NULL && manager->proxy_front->state == UNDECLARED);
+      manager->proxy_front->state = UNCREATED;
+      something_changed = true;
+      manager->status = NORMAL;
+    }
     break;
   case OUTPUT_DNE:
     /* TODO */
@@ -246,10 +293,33 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   case COMPOSED:
     {
       assert (manager->status == OUTSTANDING && manager->last_order.type == COMPOSE);
-      compositions_key_t* key = hashtable_lookup (manager->compositions, &manager->last_composition);
-      key->composed = true;
-      something_changed = true;
-      manager->status = NORMAL;
+      switch (manager->action_type) {
+      case SELF:
+	{
+	  compositions_key_t* key = hashtable_lookup (manager->compositions, &manager->last_composition);
+	  key->composed = true;
+	  something_changed = true;
+	  manager->status = NORMAL;
+	}
+	break;
+      case PROXY:
+	{
+	  if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) {
+	    ++manager->proxy_front->proxy_out_idx;
+	  }
+	  else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) {
+	    ++manager->proxy_front->parent_out_idx;
+	  }
+
+	  if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output == NULL) {
+	    manager->proxy_front->state = UNDONE;
+	  }
+
+	  something_changed = true;
+	  manager->status = NORMAL;
+	}
+	break;
+      }
     }
     break;
   case INPUT_COMPOSED:
@@ -303,7 +373,9 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     break;
   }
 
-  return (manager->status == NORMAL) && something_changed;
+  if ((manager->status == NORMAL) && something_changed) {
+    schedule_system_output ();
+  }
 }
 
 static bool
@@ -322,6 +394,7 @@ fire (manager_t* manager)
       /* We need to create an automaton. */
       const automata_key_t* key = hashtable_key_at (manager->automata, idx);
       order_create_init (&manager->last_order, key->descriptor);
+      manager->action_type = SELF;
       manager->last_automaton = *key;
       return true;
     }
@@ -339,6 +412,72 @@ fire (manager_t* manager)
       order_compose_init (&manager->last_order, *key->out_automaton, key->output, key->out_param, *key->in_automaton, key->input, key->in_param);
       manager->last_composition = *key;
       return true;
+    }
+  }
+
+  /* Are we making a proxy. */
+  if (manager->proxy_front != NULL) {
+    switch (manager->proxy_front->state) {
+    case UNDECLARED:
+      /* Declare the parameter. */
+      order_declare_init (&manager->last_order, manager->proxy_front->param);
+      return true;
+      break;
+    case UNCREATED:
+      /* Create the proxy. */
+      order_create_init (&manager->last_order, manager->proxy_front->descriptor);
+      manager->action_type = PROXY;
+      return true;
+      break;
+    case UNCOMPOSED:
+      {
+	if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) {
+	  /* Compose output from proxy with input of parent. */
+	  order_compose_init (&manager->last_order,
+			      manager->proxy_front->aid,
+			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output,
+			      NULL,
+			      manager->self,
+			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].input,
+			      manager->proxy_front->param);
+	  manager->action_type = PROXY;
+	  return true;
+	}
+	else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) {
+	  /* Compose output from parent with input of proxy. */
+	  order_compose_init (&manager->last_order,
+			      manager->self,
+			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output,
+			      manager->proxy_front->param,
+			      manager->proxy_front->aid,
+			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].input,
+			      NULL);
+	  manager->action_type = PROXY;
+	  return true;
+	}
+      }
+      break;
+    case UNDONE:
+      {
+	/* Call back. */
+	bid_t bid = buffer_alloc (sizeof (proxy_receipt_t));
+	proxy_receipt_t* receipt = buffer_write_ptr (bid);
+	receipt->proxy_aid = manager->proxy_front->aid;
+	if (schedule_free_input (manager->proxy_front->requester_aid, manager->proxy_front->requester_free_input, bid) != 0) {
+	  /* TODO: Couldn't call back.  Destroy the proxy. */
+	  assert (0);
+	}
+
+	/* Pop. */
+	proxy_item_t* item = manager->proxy_front;
+	manager->proxy_front = item->next;
+	if (manager->proxy_front == NULL) {
+	  manager->proxy_back = &manager->proxy_front;
+	}
+	free (item);
+	return true;
+      }
+      break;
     }
   }
 
@@ -373,4 +512,30 @@ manager_action (manager_t* manager)
   /* Not reached. */
   assert (0);
   return -1;
+}
+
+void
+manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor, proxy_compose_map_t* compose_map, aid_t requester_aid, input_t requester_free_input)
+{
+  assert (manager != NULL);
+  assert (param != NULL);
+  assert (descriptor != NULL);
+  assert (compose_map != NULL);
+  assert (compose_map->proxy_out_parent_in != NULL);
+  assert (compose_map->parent_out_proxy_in != NULL);
+
+  proxy_item_t* proxy_item = malloc (sizeof (proxy_item_t));
+  proxy_item->state = UNDECLARED;
+  proxy_item->param = param;
+  proxy_item->descriptor = descriptor;
+  proxy_item->compose_map = compose_map;
+  proxy_item->proxy_out_idx = 0;
+  proxy_item->parent_out_idx = 0;
+  proxy_item->requester_aid = requester_aid;
+  proxy_item->requester_free_input = requester_free_input;
+  proxy_item->next = NULL;
+  *manager->proxy_back = proxy_item;
+  manager->proxy_back = &proxy_item->next;
+
+  schedule_system_output ();
 }
