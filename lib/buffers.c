@@ -44,17 +44,31 @@ struct buffers_struct {
   Reference counting facilitates the common case when an input action queues a buffer for subsequent processing.
 
   The buffer lifecycle is as follows:
-  1.  The buffer is created.
-  2.  The creator acquires a pointer to the storage backing the buffer and initializes it.
-  3.  Any automaton (including the creator) can reference the buffer and acquire a pointer to the storage backing the buffer.
-      Referencing the buffer converts it from read-write to read-only.
-  4.  An automaton can decrement the reference count of a buffer.
+  1.  Allocation
+      After allocation, the allocating automaton 1) is owned by the creator, 2) is READWRITE, and 3) has a single reference from the creator.
+      Owning a buffer enables functions such as _size and _read_ptr.
+      When a buffer is READWRITE, functions such as _write_ptr and add/remove_child can be used.
+  2.  The creator acquires a pointer to the storage backing the buffer (_write_ptr) and initializes it.
+  3.  Any automaton that owns the buffer or already has a reference on the buffer can reference the buffer (_incref) and acquire a pointer to the storage backing the buffer (_read_ptr).
+      The _change_owner command can be used to change the owner of a buffer so that other automata can take refernces (_incref).
+      The _change_owner command also changes the mode from READWRITE to READONLY.
+      Referencing a buffer converts it from READWRITE to READONLY.
+  4.  An automaton can decrement the reference count of a buffer (_decref).
       When the reference count is zero, the buffer is destroyed.
 
-  Between the time a buffer is returned from an output action and fed to composed input actions, the system increments the reference count of a buffer.
-  Thus, the buffer is read-only for all input actions.
-  After all of the input actions have fired, the system decrements the reference count.
-  If the buffer has not been referenced, then the buffer will be destroyed as its reference count will be zero.
+  A buffer returned by an output action should have its reference count decremented after the final input has processed the buffer.
+  A system following this recommendation will evolve as follows.
+
+  Event              | Count     | Mode
+  -------------------------------------
+  Create             | 1         | READWRITE
+  Creator incref     | 1 + m     | READONLY or READWRITE if (m == 0)
+  Return from output |           |
+  Change owner       | 1 + m     | READONLY
+  Input increfs      | 1 + m + n | READONLY
+  System decref      | m + n     | READONLY
+
+  If the creator takes no additional references (m == 0) and the inputs don't reference the buffer (n == 0), then the buffer will be destroyed.
 
   Buffer Hiearchies
   -----------------
@@ -69,19 +83,28 @@ struct buffers_struct {
   The invariant maintained by the system is that every reachable buffer from a given parent buffer contains all of references of the parent buffer.
   (The child may contain more references from other parents.)
   Incrementing/decrementing the reference count increments/decrements the reference count for all reachable children.
+  In order to add or remove children, the parent buffer must be READWRITE.
 
   Duplicating Buffers
   -------------------
 
   Buffers can be duplicated.
   Duplicate buffers have the same semantics as new buffers except they have the same children as the original.
-  The system can elect to reuse the original if the original buffer has no references.
+  The automaton requesting a duplicate must have a reference to the buffer being duplicated.
+  The duplication process implicitly decrements the reference count by one.
+  This allows the system to reuse the original buffer if buffer has a single reference which necessary from the automaton requesting the duplicate.
 
  */
+
+typedef enum {
+  READWRITE,
+  READONLY,
+} buffer_mode_t;
 
 typedef struct {
   bid_t bid;
   aid_t owner;
+  buffer_mode_t mode;
   size_t size;
   void* data;
   size_t ref_count;
@@ -226,9 +249,20 @@ allocate (buffers_t* buffers, aid_t owner, size_t size)
   buffer_entry_t entry = { 
     .bid = bid,
     .owner = owner,
+    .mode = READWRITE,
     .size = size,
     .data = malloc (size),
-    .ref_count = 0 };
+    .ref_count = 1, /* Creator get's one reference. See next. */
+  };
+
+  /* Create new entry. */
+  buffer_ref_entry_t key = {
+    .bid = bid,
+    .aid = owner,
+    .count = 1,
+  };
+  index_insert (buffers->buffer_ref_index, &key);
+
   return index_value (buffers->buffer_index, index_insert (buffers->buffer_index, &entry));
 }
 
@@ -254,14 +288,19 @@ buffers_write_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
-  void* ptr = NULL;
+  void* ptr;
 
   pthread_rwlock_rdlock (&buffers->lock);
   /* Lookup. */
   buffer_entry_t* entry = buffer_entry_for_bid (buffers, bid, NULL);
-  /* Only for the owner and only if not referenced. */
-  if (entry != NULL && entry->owner == aid && entry->ref_count == 0) {
+  /* Only for the owner between creation and the first reference. */
+  if (entry != NULL && entry->owner == aid && entry->mode == READWRITE) {
+    /* READWRITE implies ref_count == 1. */
+    assert (entry->ref_count == 1);
     ptr = entry->data;
+  }
+  else {
+    ptr = NULL;
   }
   pthread_rwlock_unlock (&buffers->lock);
 
@@ -273,16 +312,19 @@ buffers_read_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
+  void* ptr;
 
-  void* ptr = NULL;
   pthread_rwlock_rdlock (&buffers->lock);
   /* Lookup. */
   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
   buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
   /* Only for the owner or if they have a reference. */
-  if ((buffer_entry != NULL && buffer_entry->owner == aid && buffer_entry->ref_count != 0) ||
+  if ((buffer_entry != NULL && buffer_entry->owner == aid) ||
       (buffer_ref_entry != NULL)) {
     ptr = buffer_entry->data;
+  }
+  else {
+    ptr = NULL;
   }
   pthread_rwlock_unlock (&buffers->lock);
 
@@ -294,7 +336,8 @@ buffers_size (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
-  size_t size = 0;
+  size_t size;
+
   pthread_rwlock_rdlock (&buffers->lock);
   /* Lookup. */
   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
@@ -304,36 +347,41 @@ buffers_size (buffers_t* buffers, aid_t aid, bid_t bid)
       (buffer_ref_entry != NULL)) {
     size = buffer_entry->size;
   }
+  else {
+    size = 0;
+  }
   pthread_rwlock_unlock (&buffers->lock);
 
   return size;
 }
 
-size_t
-buffers_ref_count (buffers_t* buffers, aid_t aid, bid_t bid)
-{
-  assert (buffers != NULL);
+/* size_t */
+/* buffers_ref_count (buffers_t* buffers, aid_t aid, bid_t bid) */
+/* { */
+/*   assert (buffers != NULL); */
 
-  /* Lookup. */
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
-  /* Owner or have a reference. */
-  if ((buffer_entry != NULL && buffer_entry->owner == aid) ||
-      (buffer_ref_entry != NULL)) {
-    return buffer_ref_entry->count;
-  }
-  else {
-    return 0;
-  }
-}
+/*   /\* Lookup. *\/ */
+/*   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL); */
+/*   buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL); */
+/*   /\* Owner or have a reference. *\/ */
+/*   if ((buffer_entry != NULL && buffer_entry->owner == aid) || */
+/*       (buffer_ref_entry != NULL)) { */
+/*     return buffer_ref_entry->count; */
+/*   } */
+/*   else { */
+/*     return 0; */
+/*   } */
+/* } */
 
 bool
-buffers_exists (buffers_t* buffers, bid_t bid)
+buffers_exists (buffers_t* buffers, aid_t aid, bid_t bid)
 {
   assert (buffers != NULL);
 
-  /* Lookup. */
-  return buffer_entry_for_bid (buffers, bid, NULL) != NULL;
+  pthread_rwlock_wrlock (&buffers->lock);
+  bool retval = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL) != NULL;
+  pthread_rwlock_unlock (&buffers->lock);
+  return retval;
 }
 
 void
@@ -346,9 +394,9 @@ buffers_change_owner (buffers_t* buffers, aid_t aid, bid_t bid)
    */
   pthread_rwlock_wrlock (&buffers->lock);
   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  if (buffer_entry != NULL) {
-    buffer_entry->owner = aid;
-  }
+  assert (buffer_entry != NULL);
+  buffer_entry->owner = aid;
+  buffer_entry->mode = READONLY;
   pthread_rwlock_unlock (&buffers->lock);
 }
 
@@ -432,6 +480,8 @@ incref (buffers_t* buffers, bid_t bid, aid_t aid, size_t count)
   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
   assert (buffer_entry != NULL);
   buffer_entry->ref_count += count;
+  /* Buffer becomes READONLY the first time (and any subsequent time) it is referenced. */
+  buffer_entry->mode = READONLY;
 }
 
 typedef struct {
@@ -541,17 +591,9 @@ decref_bid (const void* value, void* a)
   decref (arg->buffers, bid, arg->aid, arg->count);
 }
 
-void
-buffers_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
+static void
+decref_core (buffers_t* buffers, aid_t aid, bid_t root_bid)
 {
-  assert (buffers != NULL);
-
-  /*
-   * NO CHECK IF AID EXISTS.
-   */
-
-  pthread_rwlock_wrlock (&buffers->lock);
-
   buffer_ref_entry_t* root_buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, root_bid, NULL);
   /* Must have a reference. */
   if (root_buffer_ref_entry != NULL) {
@@ -572,7 +614,19 @@ buffers_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
 		    &arg);
 
   }
+}
 
+void
+buffers_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
+{
+  assert (buffers != NULL);
+
+  /*
+   * NO CHECK IF AID EXISTS.
+   */
+
+  pthread_rwlock_wrlock (&buffers->lock);
+  decref_core (buffers, aid, root_bid);
   pthread_rwlock_unlock (&buffers->lock);
 }
 
@@ -651,20 +705,18 @@ buffers_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 
   buffer_edge_entry_t* edge_entry = buffer_edge_entry_for_parent_child (buffers, parent, child, NULL);
   if (edge_entry == NULL) {
-    /* Edge doesnt' exist. */
+    /* Edge doesn't exist. */
 
     buffer_entry_t* parent_entry = buffer_entry_for_bid (buffers, parent, NULL);
-    buffer_ref_entry_t* parent_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, parent, NULL);
-    buffer_entry_t* child_entry = buffer_entry_for_bid (buffers, child, NULL);
     buffer_ref_entry_t* child_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, child, NULL);
     
-    /* Parent and child must exist and aid must be owner or have a reference. */
+    /* Parent and child must exist, parent must be READWRITE. */
     if ((parent != child) &&
-	((parent_entry != NULL && parent_entry->owner == aid) ||
-	 (parent_ref_entry != NULL)) &&
-	((child_entry != NULL && child_entry->owner == aid) ||
-	 (child_ref_entry != NULL))) {
-      
+	(parent_entry != NULL && parent_entry->owner == aid && parent_entry->mode == READWRITE) &&
+	(child_ref_entry != NULL)) {
+      /* READWRITE implies ref_count == 1. */
+      assert (parent_entry->ref_count == 1);
+
       /* Find buffers reachable from the child. */
       find_reachable_buffers (buffers, child, buffers->child_reach_index);
       
@@ -725,19 +777,15 @@ buffers_remove_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
   iterator_t edge_entry_idx;
   buffer_edge_entry_t* edge_entry = buffer_edge_entry_for_parent_child (buffers, parent, child, &edge_entry_idx);
   if (edge_entry != NULL) {
-    /* Edge doesnt' exist. */
-
-    buffer_entry_t* parent_entry = buffer_entry_for_bid (buffers, parent, NULL);
-    buffer_ref_entry_t* parent_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, parent, NULL);
-    buffer_entry_t* child_entry = buffer_entry_for_bid (buffers, child, NULL);
-    buffer_ref_entry_t* child_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, child, NULL);
+    /* Edge does exist. */
     
-    /* Parent and child must exist and aid must be owner or have a reference. */
-    if ((parent != child) &&
-  	((parent_entry != NULL && parent_entry->owner == aid) ||
-  	 (parent_ref_entry != NULL)) &&
-  	((child_entry != NULL && child_entry->owner == aid) ||
-  	 (child_ref_entry != NULL))) {
+    buffer_entry_t* parent_entry = buffer_entry_for_bid (buffers, parent, NULL);
+    assert (parent_entry != NULL);
+    
+    /* Parent must be READWRITE. */
+    if (parent_entry->owner == aid && parent_entry->mode == READWRITE) {
+      /* READWRITE implies ref_count == 1. */
+      assert (parent_entry->ref_count == 1);
 
       /* Remove the edge from the table. */
       index_erase (buffers->buffer_edge_index, edge_entry_idx);
@@ -881,32 +929,48 @@ buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid)
 
   pthread_rwlock_wrlock (&buffers->lock);
 
-  bid_t retval = -1;
+  bid_t retval;
 
   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
   buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
-  /* Only for the owner or if they have a reference. */
-  if ((buffer_entry != NULL && buffer_entry->owner == aid && buffer_entry->ref_count != 0) ||
-      (buffer_ref_entry != NULL)) {
+  /* Must have a reference. */
+  if (buffer_ref_entry != NULL) {
 
-    /* Allocate a new buffer with the same size. */
-    buffer_entry_t* new_entry = allocate (buffers, aid, buffer_entry->size);
-    retval = new_entry->bid;
-    
-    /* Copy the data. */
-    memcpy (new_entry->data, buffer_entry->data, new_entry->size);
-    
-    /* Copy parent child relationships. */
-    edge_arg_t arg = {
-      .buffers = buffers,
-      .old_parent = buffer_entry->bid,
-      .new_parent = new_entry->bid
-    };
-    index_for_each (buffers->buffer_edge_index,
-		    index_begin (buffers->buffer_edge_index),
-		    index_end (buffers->buffer_edge_index),
-		    dup_edge,
-		    &arg);
+    if (buffer_entry->ref_count == 1) {
+      /*
+	This aid holds the only reference.
+	Instead of allocating and copying, we can just change the owner and mode.
+      */
+      buffer_entry->owner = aid;
+      buffer_entry->mode = READWRITE;
+      retval = bid;
+    }
+    else {
+      /* Allocate a new buffer with the same size. */
+      buffer_entry_t* new_entry = allocate (buffers, aid, buffer_entry->size);
+      retval = new_entry->bid;
+      
+      /* Copy the data. */
+      memcpy (new_entry->data, buffer_entry->data, new_entry->size);
+      
+      /* Copy parent child relationships. */
+      edge_arg_t arg = {
+	.buffers = buffers,
+	.old_parent = buffer_entry->bid,
+	.new_parent = new_entry->bid
+      };
+      index_for_each (buffers->buffer_edge_index,
+		      index_begin (buffers->buffer_edge_index),
+		      index_end (buffers->buffer_edge_index),
+		      dup_edge,
+		      &arg);
+
+      /* Decrement the reference count. */
+      decref_core (buffers, aid, bid);
+    }
+  }
+  else {
+    retval = -1;
   }
 
   pthread_rwlock_unlock (&buffers->lock);

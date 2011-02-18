@@ -46,7 +46,7 @@ thread_func (void* arg)
       automata_write_input_exec (automata, buffers, runnable.aid);
       break;
     case FREE_INPUT:
-      automata_free_input_exec (automata, buffers, runnable.aid, runnable.free_input.free_input, runnable.free_input.bid);
+      automata_free_input_exec (automata, buffers, runnable.free_input.caller_aid, runnable.aid, runnable.free_input.free_input, runnable.free_input.bid);
       break;
     case OUTPUT:
       automata_output_exec (automata, buffers, runnable.aid, runnable.output.output, runnable.param);
@@ -385,8 +385,12 @@ schedule_write_input (int fd)
 int
 schedule_free_input (aid_t aid, input_t free_input, bid_t bid)
 {
-  if (automata_free_input_exists (automata, aid, free_input)) {
-    runq_insert_free_input (runq, aid, free_input, bid);
+  aid_t caller_aid = automata_get_current_aid (automata);
+  /*Check that free_input and bid exist. */
+  if (automata_free_input_exists (automata, aid, free_input) &&
+      buffers_exists (buffers, caller_aid, bid)) {
+    /* Increment the reference count on the buffer. */
+    runq_insert_free_input (runq, caller_aid, aid, free_input, bid);
     return 0;
   }
   else {

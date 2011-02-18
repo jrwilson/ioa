@@ -20,7 +20,7 @@ void automata_system_output_exec (automata_t*, receipts_t*, runq_t*, ioq_t*, buf
 void automata_alarm_input_exec (automata_t*, buffers_t*, aid_t);
 void automata_read_input_exec (automata_t*, buffers_t*, aid_t);
 void automata_write_input_exec (automata_t*, buffers_t*, aid_t);
-void automata_free_input_exec (automata_t*, buffers_t*, aid_t, input_t, bid_t);
+void automata_free_input_exec (automata_t*, buffers_t*, aid_t, aid_t, input_t, bid_t);
 void automata_output_exec (automata_t*, buffers_t*, aid_t, output_t, void*);
 void automata_internal_exec (automata_t*, aid_t, internal_t, void*);
 

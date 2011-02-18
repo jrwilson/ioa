@@ -20,6 +20,7 @@ typedef struct {
   void* param;
   union {
     struct {
+      aid_t caller_aid;
       input_t free_input;
       bid_t bid;
     } free_input;
@@ -45,7 +46,7 @@ void runq_insert_system_output (runq_t*, aid_t);
 void runq_insert_alarm_input (runq_t*, aid_t);
 void runq_insert_read_input (runq_t*, aid_t);
 void runq_insert_write_input (runq_t*, aid_t);
-void runq_insert_free_input (runq_t*, aid_t, input_t, bid_t);
+void runq_insert_free_input (runq_t*, aid_t, aid_t, input_t, bid_t);
 void runq_insert_output (runq_t*, aid_t, output_t, void*);
 void runq_insert_internal (runq_t*, aid_t, internal_t, void*);
 

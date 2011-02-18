@@ -31,6 +31,7 @@ runnable_equal (const void* x0, void* y0)
     break;
   case FREE_INPUT:
     return
+      x->free_input.caller_aid == y->free_input.caller_aid &&
       x->free_input.free_input == y->free_input.free_input &&
       x->free_input.bid == y->free_input.bid;
     break;
@@ -198,7 +199,7 @@ runq_insert_write_input (runq_t* runq, aid_t aid)
 }
 
 void
-runq_insert_free_input (runq_t* runq, aid_t aid, input_t free_input, bid_t bid)
+runq_insert_free_input (runq_t* runq, aid_t caller_aid, aid_t aid, input_t free_input, bid_t bid)
 {
   assert (runq != NULL);
   assert (aid != -1);
@@ -208,6 +209,7 @@ runq_insert_free_input (runq_t* runq, aid_t aid, input_t free_input, bid_t bid)
     .aid = aid,
     .param = NULL,
   };
+  runnable.free_input.caller_aid = caller_aid;
   runnable.free_input.free_input = free_input;
   runnable.free_input.bid = bid;
   push (runq, &runnable);

@@ -901,11 +901,11 @@ automata_system_input_exec (automata_t* automata, receipts_t* receipts, runq_t* 
     if (receipts_pop (receipts, aid, &receipt) == 0) {
 
       /* Prepare the buffer. */
-      bid_t bid = buffers_alloc (buffers, aid, sizeof (receipt_t));
-      receipt_t* r = buffers_write_ptr (buffers, aid, bid);
+      bid_t bid = buffers_alloc (buffers, -1, sizeof (receipt_t));
+      receipt_t* r = buffers_write_ptr (buffers, -1, bid);
       *r = receipt;
-      /* Increment to make read-only. */
-      buffers_incref (buffers, aid, bid);
+      /* Change owner to make read-only. */
+      buffers_change_owner (buffers, aid, bid);
       set_current_aid (automata, aid);
       pthread_mutex_lock (entry->lock);
       if (entry->system_input != NULL) {
@@ -913,8 +913,8 @@ automata_system_input_exec (automata_t* automata, receipts_t* receipts, runq_t* 
       }
       pthread_mutex_unlock (entry->lock);
       set_current_aid (automata, -1);
-      /* Decrement to destroy. */
-      buffers_decref (buffers, aid, bid);
+      /* Decrement to destroy if unused. */
+      buffers_decref (buffers, -1, bid);
       
       /* Schedule again. */
       if (!receipts_empty (receipts, aid)) {
@@ -951,9 +951,9 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
     pthread_mutex_unlock (entry->lock);
     set_current_aid (automata, -1);
     
-    if (bid != -1) {
+    /* Bid must exist. */
+    if (buffers_exists (buffers, aid, bid)) {
       if (buffers_size (buffers, aid, bid) == sizeof (order_t)) {
-	buffers_incref (buffers, aid, bid);
 	order_t order = *(order_t*)buffers_read_ptr (buffers, aid, bid);
 	buffers_decref (buffers, aid, bid);
 
@@ -1008,16 +1008,16 @@ automata_alarm_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
   if (entry != NULL && entry->alarm_input != NULL) {
     
     /* Prepare the buffer. */
-    bid_t bid = buffers_alloc (buffers, aid, 0);
-    /* Increment to make read-only. */
-    buffers_incref (buffers, aid, bid);
+    bid_t bid = buffers_alloc (buffers, -1, 0);
+    /* Change owner to make read-only. */
+    buffers_change_owner (buffers, aid, bid);
     set_current_aid (automata, aid);
     pthread_mutex_lock (entry->lock);
     entry->alarm_input (entry->state, NULL, bid);
     pthread_mutex_unlock (entry->lock);
     set_current_aid (automata, -1);
     /* Decrement to destroy. */
-    buffers_decref (buffers, aid, bid);
+    buffers_decref (buffers, -1, bid);
   }  
   
   /* Release the read lock. */
@@ -1039,16 +1039,16 @@ automata_read_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
   if (entry != NULL && entry->read_input != NULL) {
     
     /* Prepare the buffer. */
-    bid_t bid = buffers_alloc (buffers, aid, 0);
-    /* Increment to make read-only. */
-    buffers_incref (buffers, aid, bid);
+    bid_t bid = buffers_alloc (buffers, -1, 0);
+    /* Change owner to make read-only. */
+    buffers_change_owner (buffers, aid, bid);
     set_current_aid (automata, aid);
     pthread_mutex_lock (entry->lock);
     entry->read_input (entry->state, NULL, bid);
     pthread_mutex_unlock (entry->lock);
     set_current_aid (automata, -1);
     /* Decrement to destroy. */
-    buffers_decref (buffers, aid, bid);
+    buffers_decref (buffers, -1, bid);
   }  
   
   /* Release the read lock. */
@@ -1070,16 +1070,16 @@ automata_write_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
   if (entry != NULL && entry->write_input != NULL) {
     
     /* Prepare the buffer. */
-    bid_t bid = buffers_alloc (buffers, aid, 0);
-    /* Increment to make read-only. */
-    buffers_incref (buffers, aid, bid);
+    bid_t bid = buffers_alloc (buffers, -1, 0);
+    /* Change owner to make read-only. */
+    buffers_change_owner (buffers, aid, bid);
     set_current_aid (automata, aid);
     pthread_mutex_lock (entry->lock);
     entry->write_input (entry->state, NULL, bid);
     pthread_mutex_unlock (entry->lock);
     set_current_aid (automata, -1);
     /* Decrement to destroy. */
-    buffers_decref (buffers, aid, bid);
+    buffers_decref (buffers, -1, bid);
   }  
   
   /* Release the read lock. */
@@ -1087,7 +1087,7 @@ automata_write_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid)
 }
 
 void
-automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, input_t free_input, bid_t bid)
+automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t caller_aid, aid_t aid, input_t free_input, bid_t bid)
 {
   assert (automata != NULL);
   assert (buffers != NULL);
@@ -1095,23 +1095,18 @@ automata_free_input_exec (automata_t* automata, buffers_t* buffers, aid_t aid, i
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&automata->lock);
 
-  /* Free input exists. */
   input_entry_t* input_entry = free_input_entry_for_aid_input (automata, aid, free_input);
 
-  if (input_entry != NULL) {
-
+  /* Free input and buffer exist. */
+  if (input_entry != NULL && buffers_exists (buffers, caller_aid, bid)) {
     automaton_entry_t* entry = automaton_entry_for_aid (automata, aid, NULL);
-    
-    /* Increment to make read-only. */
     buffers_change_owner (buffers, aid, bid);
-    buffers_incref (buffers, aid, bid);
     set_current_aid (automata, aid);
     pthread_mutex_lock (entry->lock);
     free_input (entry->state, NULL, bid);
     pthread_mutex_unlock (entry->lock);
     set_current_aid (automata, -1);
-    /* Decrement to destroy. */
-    buffers_decref (buffers, aid, bid);
+    buffers_decref (buffers, caller_aid, bid);
   }
   
   /* Release the read lock. */
@@ -1155,6 +1150,8 @@ output_exec (const void* e, void* a)
     set_current_aid (arg->automata, composition_entry->in_aid);
     buffers_change_owner (arg->buffers, composition_entry->in_aid, arg->bid);
     composition_entry->input (in_entry->state, composition_entry->in_param, arg->bid);
+    buffers_change_owner (arg->buffers, -1, arg->bid);
+    set_current_aid (arg->automata, -1);
   }
 }
 
@@ -1211,12 +1208,10 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
     /* Execute the output. */
     set_current_aid (automata, out_aid);
     bid_t bid = output (out_entry->state, out_param);
-    if (bid != -1) {
-      /* Increment the reference count so the following decref will destroy the buffer if no
-       * input references the buffer.
-       */
-      buffers_incref (buffers, out_aid, bid);
-      
+    set_current_aid (automata, -1);
+
+    /* Check the bid. */
+    if (buffers_exists (buffers, out_aid, bid)) {
       arg.bid = bid;
       /* Execute the inputs. */
       index_for_each (automata->composition_index,
@@ -1225,13 +1220,10 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
 		      output_exec,
 		      &arg);
 
-      buffers_change_owner (buffers, -1, bid);
-            
+      /* Decrement to clean unused buffers. */
       buffers_decref (buffers, out_aid, bid);
     }
     
-    set_current_aid (automata, -1);
-
     arg.output_done = false;
     /* Unlock. */
     index_for_each (automata->composition_index,
