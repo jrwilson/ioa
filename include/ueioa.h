@@ -169,11 +169,18 @@ manager_t* manager_create (void);
 void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
 void manager_child_add (manager_t*, aid_t*, descriptor_t*);
+void manager_proxy_add (manager_t*, aid_t*, aid_t*, input_t, input_t);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
+void manager_input_add (manager_t*, bool*, input_t, void*);
 void manager_output_add (manager_t*, bool*, output_t, void*);
 
 void manager_apply (manager_t*, const receipt_t*);
 bid_t manager_action (manager_t*);
+
+typedef struct {
+  aid_t aid;
+  input_t free_input;
+} proxy_request_t;
 
 typedef struct {
   output_t output;
@@ -189,6 +196,7 @@ typedef struct {
   aid_t proxy_aid;
 } proxy_receipt_t;
 
-void manager_proxy_create (manager_t*, void*, descriptor_t*, proxy_compose_map_t*, aid_t, input_t);
+void manager_proxy_create (manager_t*, void*, descriptor_t*, proxy_compose_map_t*, const proxy_request_t*);
+void manager_proxy_receive (manager_t*, const proxy_receipt_t*);
 
 #endif /* __ueioa_h__ */
