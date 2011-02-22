@@ -74,7 +74,7 @@ typedef struct {
 } compose_param_input_t;
 
 static void*
-compose_param_input_create (void)
+compose_param_input_create (void* arg)
 {
   compose_param_input_t* compose_param_input = malloc (sizeof (compose_param_input_t));
   compose_param_input->state = START;
@@ -234,7 +234,7 @@ compose_param_input_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     compose_param_input->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -242,7 +242,7 @@ compose_param_input_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     compose_param_input->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -250,7 +250,7 @@ compose_param_input_system_output (void* state, void* param)
     break;
   case CREATE3_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     compose_param_input->state = CREATE3_SENT;
     break;
   case CREATE3_SENT:
@@ -315,6 +315,6 @@ descriptor_t compose_param_input_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&compose_param_input_descriptor, 1);
+  ueioa_run (&compose_param_input_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

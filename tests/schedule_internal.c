@@ -34,6 +34,6 @@ descriptor_t schedule_internal_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&schedule_internal_descriptor, 1);
+  ueioa_run (&schedule_internal_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

@@ -12,7 +12,7 @@ typedef struct {
 } bad_descriptor_t;
 
 static void*
-bad_descriptor_create (void)
+bad_descriptor_create (void* arg)
 {
   bad_descriptor_t* bad_descriptor = malloc (sizeof (bad_descriptor_t));
   bad_descriptor->state = UNSENT;
@@ -59,7 +59,7 @@ bad_descriptor_system_output (void* state, void* param)
   bid_t bid = buffer_alloc (sizeof (order_t));
   order_t* order = buffer_write_ptr (bid);
   /* Send a create order. */
-  order_create_init (order, NULL);
+  order_create_init (order, NULL, NULL);
   bad_descriptor->state = SENT;
 
   return bid;
@@ -81,6 +81,6 @@ descriptor_t bad_descriptor_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&bad_descriptor_descriptor, 1);
+  ueioa_run (&bad_descriptor_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

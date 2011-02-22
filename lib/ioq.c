@@ -86,27 +86,27 @@ ioq_interrupt_fd (ioq_t* ioq)
   return ioq->pipes[0];
 }
 
-/* size_t */
-/* ioq_size (ioq_t* ioq) */
-/* { */
-/*   assert (ioq != NULL); */
-/*   size_t retval; */
-/*   pthread_mutex_lock (&ioq->mutex); */
-/*   retval = index_size (ioq->index); */
-/*   pthread_mutex_unlock (&ioq->mutex); */
-/*   return retval; */
-/* } */
+size_t
+ioq_size (ioq_t* ioq)
+{
+  assert (ioq != NULL);
+  size_t retval;
+  pthread_mutex_lock (&ioq->mutex);
+  retval = index_size (ioq->index);
+  pthread_mutex_unlock (&ioq->mutex);
+  return retval;
+}
 
-/* bool */
-/* ioq_empty (ioq_t* ioq) */
-/* { */
-/*   assert (ioq != NULL); */
-/*   bool retval; */
-/*   pthread_mutex_lock (&ioq->mutex); */
-/*   retval = index_empty (ioq->index); */
-/*   pthread_mutex_unlock (&ioq->mutex); */
-/*   return retval; */
-/* } */
+bool
+ioq_empty (ioq_t* ioq)
+{
+  assert (ioq != NULL);
+  bool retval;
+  pthread_mutex_lock (&ioq->mutex);
+  retval = index_empty (ioq->index);
+  pthread_mutex_unlock (&ioq->mutex);
+  return retval;
+}
 
 
 

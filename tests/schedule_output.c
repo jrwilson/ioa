@@ -35,6 +35,6 @@ descriptor_t schedule_output_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&schedule_output_descriptor, 1);
+  ueioa_run (&schedule_output_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

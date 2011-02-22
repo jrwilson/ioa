@@ -11,7 +11,7 @@ typedef struct {
 static void counter_internal (void* state, void* param);
 
 static void*
-counter_create (void)
+counter_create (void* arg)
 {
   counter_t* counter = malloc (sizeof (counter_t));
   counter->count = 0;
@@ -80,7 +80,7 @@ typedef struct {
 } receiver_t;
 
 static void*
-receiver_create (void)
+receiver_create (void* arg)
 {
   receiver_t* receiver = malloc (sizeof (receiver_t));
   receiver->in1 = false;
@@ -148,14 +148,14 @@ typedef struct {
 } composer_t;
 
 static void*
-composer_create (void)
+composer_create (void* arg)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 
   composer->manager = manager_create ();
-  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor);
-  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor);
-  manager_child_add (composer->manager, &composer->receiver, &receiver_descriptor);
+  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL);
+  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL);
+  manager_child_add (composer->manager, &composer->receiver, &receiver_descriptor, NULL);
   manager_composition_add (composer->manager, &composer->counter1, counter_output, NULL, &composer->receiver, receiver_input1, NULL);
   manager_composition_add (composer->manager, &composer->counter2, counter_output, NULL, &composer->receiver, receiver_input2, NULL);
 
@@ -210,7 +210,7 @@ main (int argc, char** argv)
 
   int count = atoi (argv[1]);
 
-  ueioa_run (&composer_descriptor, count);
+  ueioa_run (&composer_descriptor, NULL, count);
 
   exit (EXIT_SUCCESS);
 }

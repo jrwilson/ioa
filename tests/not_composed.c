@@ -58,7 +58,7 @@ typedef struct {
 } not_composed_t;
 
 static void*
-not_composed_create (void)
+not_composed_create (void* arg)
 {
   not_composed_t* not_composed = malloc (sizeof (not_composed_t));
   not_composed->state = START;
@@ -141,7 +141,7 @@ not_composed_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     not_composed->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -149,7 +149,7 @@ not_composed_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     not_composed->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -177,6 +177,6 @@ descriptor_t not_composed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&not_composed_descriptor, 1);
+  ueioa_run (&not_composed_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

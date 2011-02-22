@@ -41,7 +41,7 @@ typedef struct {
 } child_created_t;
 
 static void*
-child_created_create (void)
+child_created_create (void* arg)
 {
   child_created_t* child_created = malloc (sizeof (child_created_t));
   child_created->state = UNSENT;
@@ -88,7 +88,7 @@ child_created_system_output (void* state, void* param)
   bid_t bid = buffer_alloc (sizeof (order_t));
   order_t* order = buffer_write_ptr (bid);
   /* Send a create order. */
-  order_create_init (order, &child_descriptor);
+  order_create_init (order, &child_descriptor, NULL);
   child_created->state = SENT;
 
   return bid;
@@ -110,6 +110,6 @@ descriptor_t child_created_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&child_created_descriptor, 1);
+  ueioa_run (&child_created_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

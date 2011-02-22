@@ -73,7 +73,7 @@ typedef struct {
 } input_unavailable_t;
 
 static void*
-input_unavailable_create (void)
+input_unavailable_create (void* arg)
 {
   input_unavailable_t* input_unavailable = malloc (sizeof (input_unavailable_t));
   input_unavailable->state = START;
@@ -168,7 +168,7 @@ input_unavailable_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     input_unavailable->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -176,7 +176,7 @@ input_unavailable_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     input_unavailable->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -219,6 +219,6 @@ descriptor_t input_unavailable_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&input_unavailable_descriptor, 1);
+  ueioa_run (&input_unavailable_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

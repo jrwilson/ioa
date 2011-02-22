@@ -3,12 +3,13 @@
 #include <assert.h>
 
 void
-order_create_init (order_t* order, descriptor_t* descriptor)
+order_create_init (order_t* order, descriptor_t* descriptor, void* arg)
 {
   assert (order != NULL);
 
   order->type = CREATE;
   order->create.descriptor = descriptor;
+  order->create.arg = arg;
 }
 
 void

@@ -146,7 +146,7 @@ fdset_clear_write (const void* e, void* a)
 }
 
 void
-ueioa_run (descriptor_t* descriptor, int thread_count)
+ueioa_run (descriptor_t* descriptor, void* arg, int thread_count)
 {
   assert (descriptor != NULL);
   assert (thread_count > 0 && thread_count <= MAX_THREADS);
@@ -159,7 +159,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
   buffers = buffers_create ();
   receipts = receipts_create ();
   
-  automata_create_automaton (automata, receipts, runq, descriptor);
+  automata_create_automaton (automata, receipts, runq, descriptor, arg);
 
   /* Spawn some threads. */
   int idx;
@@ -271,6 +271,7 @@ ueioa_run (descriptor_t* descriptor, int thread_count)
 	if (FD_ISSET (interrupt, &read_arg.fds)) {
 	  char c;
 	  read (interrupt, &c, 1);
+	  assert (!ioq_empty (ioq));
 	  ioq_pop (ioq, &io);
 	  
 	  switch (io.type) {
@@ -344,7 +345,7 @@ schedule_system_output (void)
 }
 
 int
-schedule_alarm_input (time_t secs, long usecs)
+schedule_alarm_input (time_t secs, suseconds_t usecs)
 {
   aid_t aid = automata_get_current_aid (automata);
   if (automata_alarm_input_exists (automata, aid)) {

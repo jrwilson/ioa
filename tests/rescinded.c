@@ -15,7 +15,7 @@ typedef struct {
 } rescinded_t;
 
 static void*
-rescinded_create (void)
+rescinded_create (void* arg)
 {
   rescinded_t* rescinded = malloc (sizeof (rescinded_t));
   rescinded->state = START;
@@ -112,6 +112,6 @@ descriptor_t rescinded_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&rescinded_descriptor, 1);
+  ueioa_run (&rescinded_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

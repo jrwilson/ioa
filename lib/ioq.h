@@ -32,8 +32,8 @@ ioq_t* ioq_create (void);
 void ioq_destroy (ioq_t*);
 
 int ioq_interrupt_fd (ioq_t*);
-/* size_t ioq_size (ioq_t*); */
-/* bool ioq_empty (ioq_t*); */
+size_t ioq_size (ioq_t*);
+bool ioq_empty (ioq_t*);
 
 void ioq_insert_alarm (ioq_t*, aid_t, time_t, suseconds_t);
 void ioq_insert_write (ioq_t*, aid_t, int);

@@ -60,7 +60,7 @@ typedef struct {
 } input_composed_t;
 
 static void*
-input_composed_create (void)
+input_composed_create (void* arg)
 {
   input_composed_t* input_composed = malloc (sizeof (input_composed_t));
   input_composed->state = START;
@@ -143,7 +143,7 @@ input_composed_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     input_composed->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -151,7 +151,7 @@ input_composed_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     input_composed->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -179,6 +179,6 @@ descriptor_t input_composed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&input_composed_descriptor, 1);
+  ueioa_run (&input_composed_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

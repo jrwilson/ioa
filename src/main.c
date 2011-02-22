@@ -6,6 +6,6 @@
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&composer_descriptor, 1);
+  ueioa_run (&composer_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

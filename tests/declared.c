@@ -12,7 +12,7 @@ typedef struct {
 } declared_t;
 
 static void*
-declared_create (void)
+declared_create (void* arg)
 {
   declared_t* declared = malloc (sizeof (declared_t));
   declared->state = UNSENT;
@@ -81,6 +81,6 @@ descriptor_t declared_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&declared_descriptor, 1);
+  ueioa_run (&declared_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

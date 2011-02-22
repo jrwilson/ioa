@@ -12,7 +12,7 @@ typedef struct {
 } automaton_dne_t;
 
 static void*
-automaton_dne_create (void)
+automaton_dne_create (void* arg)
 {
   automaton_dne_t* automaton_dne = malloc (sizeof (automaton_dne_t));
   automaton_dne->state = UNSENT;
@@ -74,6 +74,6 @@ descriptor_t automaton_dne_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&automaton_dne_descriptor, 1);
+  ueioa_run (&automaton_dne_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

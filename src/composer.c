@@ -20,7 +20,7 @@ typedef struct {
 } composer_t;
 
 static void*
-composer_create (void)
+composer_create (void* arg)
 {
   printf ("composer_create\n");
   composer_t* composer = malloc (sizeof (composer_t));
@@ -28,9 +28,9 @@ composer_create (void)
   composer->manager = manager_create ();
   manager_self_set (composer->manager, &composer->self);
   manager_parent_set (composer->manager, &composer->parent);
-  manager_child_add (composer->manager, &composer->trigger, &trigger_descriptor);
-  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor);
-  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor);
+  manager_child_add (composer->manager, &composer->trigger, &trigger_descriptor, NULL);
+  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL);
+  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL);
   manager_composition_add (composer->manager, &composer->trigger, trigger_output, NULL, &composer->counter1, counter_input, NULL);
   manager_composition_add (composer->manager, &composer->counter1, counter_output, NULL, &composer->self, composer_input1, NULL);
   manager_composition_add (composer->manager, &composer->trigger, trigger_output, NULL, &composer->counter2, counter_input, NULL);

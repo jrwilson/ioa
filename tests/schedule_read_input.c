@@ -9,7 +9,7 @@ typedef struct {
 } read_t;
 
 static void*
-read_create (void)
+read_create (void* arg)
 {
   read_t* read = malloc (sizeof (read_t));
   pipe (read->pipes);
@@ -68,7 +68,7 @@ descriptor_t read_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&read_descriptor, 1);
+  ueioa_run (&read_descriptor, NULL, 1);
 
   exit (EXIT_SUCCESS);
 }

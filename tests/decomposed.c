@@ -60,7 +60,7 @@ typedef struct {
 } decomposed_t;
 
 static void*
-decomposed_create (void)
+decomposed_create (void* arg)
 {
   decomposed_t* decomposed = malloc (sizeof (decomposed_t));
   decomposed->state = START;
@@ -155,7 +155,7 @@ decomposed_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     decomposed->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -163,7 +163,7 @@ decomposed_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     decomposed->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -199,6 +199,6 @@ descriptor_t decomposed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&decomposed_descriptor, 1);
+  ueioa_run (&decomposed_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

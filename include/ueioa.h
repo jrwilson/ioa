@@ -4,11 +4,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/time.h>
 
 typedef int aid_t;
 typedef int bid_t;
 
-typedef void* (*constructor_t) (void);
+typedef void* (*constructor_t) (void*);
 typedef void (*input_t) (void*, void*, bid_t);
 typedef bid_t (*output_t) (void*, void*);
 typedef void (*internal_t) (void*, void*);
@@ -40,6 +41,7 @@ typedef struct {
   union {
     struct {
       descriptor_t* descriptor;
+      void* arg;
     } create;
     struct {
       void* param;
@@ -135,17 +137,17 @@ typedef struct {
   };
 } receipt_t;
 
-void order_create_init (order_t*, descriptor_t*);
+void order_create_init (order_t*, descriptor_t*, void*);
 void order_declare_init (order_t*, void*);
 void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
-void ueioa_run (descriptor_t*, int);
+void ueioa_run (descriptor_t*, void*, int);
 
 int schedule_system_output (void) __attribute__ ((warn_unused_result));
-int schedule_alarm_input (time_t, long) __attribute__ ((warn_unused_result));
+int schedule_alarm_input (time_t, suseconds_t) __attribute__ ((warn_unused_result));
 int schedule_read_input (int) __attribute__ ((warn_unused_result));
 int schedule_write_input (int) __attribute__ ((warn_unused_result));
 int schedule_free_input (aid_t, input_t, bid_t) __attribute__ ((warn_unused_result));
@@ -168,7 +170,7 @@ manager_t* manager_create (void);
 
 void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
-void manager_child_add (manager_t*, aid_t*, descriptor_t*);
+void manager_child_add (manager_t*, aid_t*, descriptor_t*, void*);
 void manager_proxy_add (manager_t*, aid_t*, aid_t*, input_t, input_t);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
 void manager_input_add (manager_t*, bool*, input_t, void*);
@@ -196,7 +198,15 @@ typedef struct {
   aid_t proxy_aid;
 } proxy_receipt_t;
 
-void manager_proxy_create (manager_t*, void*, descriptor_t*, proxy_compose_map_t*, const proxy_request_t*);
+void manager_proxy_create (manager_t*, void*, descriptor_t*, void*, proxy_compose_map_t*, const proxy_request_t*);
 void manager_proxy_receive (manager_t*, const proxy_receipt_t*);
+
+typedef struct bidq_struct bidq_t;
+
+bidq_t* bidq_create (void);
+void bidq_push_back (bidq_t*, bid_t);
+bool bidq_empty (bidq_t*);
+bid_t bidq_front (bidq_t*);
+void bidq_pop_front (bidq_t*);
 
 #endif /* __ueioa_h__ */

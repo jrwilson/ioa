@@ -14,7 +14,7 @@ typedef struct {
 } child_t;
 
 static void*
-child_create (void)
+child_create (void* arg)
 {
   child_t* child = malloc (sizeof (child_t));
   child->state = CUNSENT;
@@ -84,7 +84,7 @@ typedef struct {
 } not_owner_t;
 
 static void*
-not_owner_create (void)
+not_owner_create (void* arg)
 {
   not_owner_t* not_owner = malloc (sizeof (not_owner_t));
   not_owner->state = UNSENT;
@@ -132,7 +132,7 @@ not_owner_system_output (void* state, void* param)
   bid_t bid = buffer_alloc (sizeof (order_t));
   order_t* order = buffer_write_ptr (bid);
   /* Send a create order. */
-  order_create_init (order, &child_descriptor);
+  order_create_init (order, &child_descriptor, NULL);
   not_owner->state = SENT;
 
   return bid;
@@ -147,6 +147,6 @@ descriptor_t not_owner_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&not_owner_descriptor, 1);
+  ueioa_run (&not_owner_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

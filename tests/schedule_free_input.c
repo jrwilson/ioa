@@ -38,6 +38,6 @@ descriptor_t send_message_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&send_message_descriptor, 1);
+  ueioa_run (&send_message_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

@@ -73,7 +73,7 @@ typedef struct {
 } output_unavailable_t;
 
 static void*
-output_unavailable_create (void)
+output_unavailable_create (void* arg)
 {
   output_unavailable_t* output_unavailable = malloc (sizeof (output_unavailable_t));
   output_unavailable->state = START;
@@ -168,7 +168,7 @@ output_unavailable_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     output_unavailable->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -176,7 +176,7 @@ output_unavailable_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     output_unavailable->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -219,6 +219,6 @@ descriptor_t output_unavailable_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&output_unavailable_descriptor, 1);
+  ueioa_run (&output_unavailable_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

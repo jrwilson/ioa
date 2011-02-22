@@ -7,6 +7,7 @@
 typedef struct {
   aid_t* child_aid_ptr;
   descriptor_t* descriptor;
+  void* arg;
 } children_key_t;
 
 static bool
@@ -146,6 +147,7 @@ struct proxy_item_struct {
   proxy_state_t state;
   void* param;
   descriptor_t* descriptor;
+  void* arg;
   aid_t aid;
   proxy_compose_map_t* compose_map;
   size_t proxy_out_idx;
@@ -191,6 +193,8 @@ manager_create (void)
   manager_t* manager = malloc (sizeof (manager_t));
   manager->syscall_status = NORMAL;
   manager->proxy_status = NORMAL;
+  manager->self_ptr = NULL;
+  manager->parent_ptr = NULL;
   manager->children = hashtable_create (sizeof (children_key_t), children_key_equal, children_key_hash);
   manager->proxies = hashtable_create (sizeof (proxies_key_t), proxies_key_equal, proxies_key_hash);
   manager->compositions = hashtable_create (sizeof (compositions_key_t), compositions_key_equal, compositions_key_hash);
@@ -217,7 +221,7 @@ manager_parent_set (manager_t* manager, aid_t* parent)
 }
 
 void
-manager_child_add (manager_t* manager, aid_t* child_aid_ptr, descriptor_t* descriptor)
+manager_child_add (manager_t* manager, aid_t* child_aid_ptr, descriptor_t* descriptor, void* arg)
 {
   assert (manager != NULL);
   assert (child_aid_ptr != NULL);
@@ -229,6 +233,7 @@ manager_child_add (manager_t* manager, aid_t* child_aid_ptr, descriptor_t* descr
   children_key_t key = {
     .child_aid_ptr = child_aid_ptr,
     .descriptor = descriptor,
+    .arg = arg,
   };
   assert (!hashtable_contains_key (manager->children, &key));
   hashtable_insert (manager->children, &key);
@@ -526,7 +531,7 @@ syscall_fire (manager_t* manager)
     if (*key->child_aid_ptr == -1) {
       /* We need to create an automaton. */
       const children_key_t* key = hashtable_key_at (manager->children, idx);
-      order_create_init (&manager->last_order, key->descriptor);
+      order_create_init (&manager->last_order, key->descriptor, key->arg);
       manager->action_type = SELF;
       manager->last_child = *key;
       return true;
@@ -558,7 +563,7 @@ syscall_fire (manager_t* manager)
       break;
     case UNCREATED:
       /* Create the proxy. */
-      order_create_init (&manager->last_order, manager->proxy_front->descriptor);
+      order_create_init (&manager->last_order, manager->proxy_front->descriptor, manager->proxy_front->arg);
       manager->action_type = PROXY_PRODUCE;
       return true;
       break;
@@ -652,7 +657,7 @@ manager_action (manager_t* manager)
 }
 
 void
-manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor, proxy_compose_map_t* compose_map, const proxy_request_t* request)
+manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor, void* arg, proxy_compose_map_t* compose_map, const proxy_request_t* request)
 {
   assert (manager != NULL);
   assert (param != NULL);
@@ -666,6 +671,7 @@ manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor,
   proxy_item->state = UNDECLARED;
   proxy_item->param = param;
   proxy_item->descriptor = descriptor;
+  proxy_item->arg = arg;
   proxy_item->compose_map = compose_map;
   proxy_item->proxy_out_idx = 0;
   proxy_item->parent_out_idx = 0;

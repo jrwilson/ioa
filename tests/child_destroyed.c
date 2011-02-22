@@ -35,7 +35,7 @@ typedef struct {
 } child_destroyed_t;
 
 static void*
-child_destroyed_create (void)
+child_destroyed_create (void* arg)
 {
   child_destroyed_t* child_destroyed = malloc (sizeof (child_destroyed_t));
   child_destroyed->state = START;
@@ -105,7 +105,7 @@ child_destroyed_system_output (void* state, void* param)
     break;
   case CREATE_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     child_destroyed->state = CREATE_SENT;
     break;
   case CREATE_SENT:
@@ -133,6 +133,6 @@ descriptor_t child_destroyed_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&child_destroyed_descriptor, 1);
+  ueioa_run (&child_destroyed_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

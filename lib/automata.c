@@ -396,7 +396,7 @@ composition_entry_any_aid_equal (const void* x0, void* y0)
 }
 
 static void
-create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, descriptor_t* descriptor)
+create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, descriptor_t* descriptor, void* arg)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
@@ -417,7 +417,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
     set_current_aid (automata, aid);
     void* state = NULL;
     if (descriptor->constructor != NULL) {
-      state = descriptor->constructor ();
+      state = descriptor->constructor (arg);
     }
     set_current_aid (automata, -1);
     
@@ -866,7 +866,7 @@ destroy (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* bu
 }
 
 void
-automata_create_automaton (automata_t* automata, receipts_t* receipts, runq_t* runq, descriptor_t* descriptor)
+automata_create_automaton (automata_t* automata, receipts_t* receipts, runq_t* runq, descriptor_t* descriptor, void* arg)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
@@ -875,7 +875,7 @@ automata_create_automaton (automata_t* automata, receipts_t* receipts, runq_t* r
   /* Acquire the write lock. */
   pthread_rwlock_wrlock (&automata->lock);
 
-  create (automata, receipts, runq, -1, descriptor);
+  create (automata, receipts, runq, -1, descriptor, arg);
   
   /* Release the write lock. */
   pthread_rwlock_unlock (&automata->lock);
@@ -959,7 +959,7 @@ automata_system_output_exec (automata_t* automata, receipts_t* receipts, runq_t*
 
 	switch (order.type) {
 	case CREATE:
-	  create (automata, receipts, runq, aid, order.create.descriptor);
+	  create (automata, receipts, runq, aid, order.create.descriptor, order.create.arg);
 	  break;
 	case DECLARE:
 	  declare (automata, receipts, runq, aid, order.declare.param);

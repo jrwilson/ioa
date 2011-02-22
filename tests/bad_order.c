@@ -12,7 +12,7 @@ typedef struct {
 } bad_order_t;
 
 static void*
-bad_order_create (void)
+bad_order_create (void* arg)
 {
   bad_order_t* bad_order = malloc (sizeof (bad_order_t));
   bad_order->state = UNSENT;
@@ -81,6 +81,6 @@ descriptor_t bad_order_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&bad_order_descriptor, 1);
+  ueioa_run (&bad_order_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

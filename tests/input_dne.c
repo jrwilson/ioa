@@ -62,7 +62,7 @@ typedef struct {
 } input_dne_t;
 
 static void*
-input_dne_create (void)
+input_dne_create (void* arg)
 {
   input_dne_t* input_dne = malloc (sizeof (input_dne_t));
   input_dne->state = START;
@@ -145,7 +145,7 @@ input_dne_system_output (void* state, void* param)
     break;
   case CREATE1_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     input_dne->state = CREATE1_SENT;
     break;
   case CREATE1_SENT:
@@ -153,7 +153,7 @@ input_dne_system_output (void* state, void* param)
     break;
   case CREATE2_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     input_dne->state = CREATE2_SENT;
     break;
   case CREATE2_SENT:
@@ -188,6 +188,6 @@ descriptor_t input_dne_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&input_dne_descriptor, 1);
+  ueioa_run (&input_dne_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }

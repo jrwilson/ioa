@@ -787,7 +787,7 @@ index_pop_front (index_t* index)
   assert (index != NULL);
 
   /* Remove the value from the table. */
-  iterator_t iterator = index->table->used_head;
+  iterator_t iterator = index_begin (index);
   erase (index->table, iterator);
 
   /* Tell the indices about it. */
@@ -819,7 +819,7 @@ index_pop_back (index_t* index)
   assert (index != NULL);
 
   /* Remove the value from the table. */
-  iterator_t iterator = index->table->used_tail;
+  iterator_t iterator = index_rbegin (index);
   erase (index->table, iterator);
 
   /* Tell the indices about it. */

@@ -9,7 +9,7 @@ typedef struct {
 } write_t;
 
 static void*
-write_create (void)
+write_create (void* arg)
 {
   write_t* write = malloc (sizeof (write_t));
   pipe (write->pipes);
@@ -58,7 +58,7 @@ descriptor_t write_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&write_descriptor, 1);
+  ueioa_run (&write_descriptor, NULL, 1);
 
   exit (EXIT_SUCCESS);
 }

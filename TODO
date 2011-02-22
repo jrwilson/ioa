@@ -1,6 +1,7 @@
 
 * Code coverage tests ?
 * Manager
+* Memory management
 
 * Tests to write
   bid_t buffer_alloc (size_t);

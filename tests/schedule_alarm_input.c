@@ -33,7 +33,7 @@ descriptor_t alarm_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&alarm_descriptor, 1);
+  ueioa_run (&alarm_descriptor, NULL, 1);
 
   exit (EXIT_SUCCESS);
 }

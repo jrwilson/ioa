@@ -55,7 +55,7 @@ typedef struct {
 } same_compose_t;
 
 static void*
-same_compose_create (void)
+same_compose_create (void* arg)
 {
   same_compose_t* same_compose = malloc (sizeof (same_compose_t));
   same_compose->state = START;
@@ -125,7 +125,7 @@ same_compose_system_output (void* state, void* param)
     break;
   case CREATE_UNSENT:
     /* Send a create order. */
-    order_create_init (order, &child_descriptor);
+    order_create_init (order, &child_descriptor, NULL);
     same_compose->state = CREATE_SENT;
     break;
   case CREATE_SENT:
@@ -153,6 +153,6 @@ descriptor_t same_compose_descriptor = {
 int
 main (int argc, char** argv)
 {
-  ueioa_run (&same_compose_descriptor, 1);
+  ueioa_run (&same_compose_descriptor, NULL, 1);
   exit (EXIT_SUCCESS);
 }
