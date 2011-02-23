@@ -4,8 +4,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "alarm.h"
 #include "bitset.h"
+
+static void file_server_callback (void* state, void* param, bid_t bid);
 
 static void file_server_announcement_alarm_in (void*, void*, bid_t);
 static bid_t file_server_announcement_alarm_out (void*, void*);
@@ -15,6 +16,11 @@ static bid_t file_server_request_alarm_out (void*, void*);
 
 static void file_server_fragment_alarm_in (void*, void*, bid_t);
 static bid_t file_server_fragment_alarm_out (void*, void*);
+
+static void file_server_announcement_in (void*, void*, bid_t);
+static void file_server_request_in (void*, void*, bid_t);
+static void file_server_fragment_in (void*, void*, bid_t);
+static bid_t file_server_message_out (void*, void*);
 
 #define OFFSET_TO_FRAGMENT(offset) ((offset) >> FRAGMENT_SIZE_LOG2)
 #define FRAGMENT_TO_OFFSET(fragment) ((fragment) << FRAGMENT_SIZE_LOG2)
@@ -29,6 +35,7 @@ static bid_t file_server_fragment_alarm_out (void*, void*);
 
 typedef struct {
   mftp_File_t* file;		/* The file we are working with. */
+  bool announce;		/* Are we announcing the file? */
   bool download;		/* Are we downloading the file? */
   bool downloaded_sent;		/* Have we performed the downloaded_out action? */
   time_t announcement_interval;	/* Announcement interval (seconds). */
@@ -48,6 +55,7 @@ typedef struct {
   aid_t fragment_alarm;
   bool fragment_alarm_composed;
   bool download_complete_composed;
+  aid_t msg_sender_proxy;
 } file_server_t;
 
 static void*
@@ -55,9 +63,13 @@ file_server_create (void* a)
 {
   file_server_create_arg_t* arg = a;
   assert (arg != NULL);
+  assert (arg->file != NULL);
+  assert (arg->msg_sender != NULL);
+  assert (arg->msg_receiver != NULL);
 
   file_server_t* file_server = malloc (sizeof (file_server_t));
   file_server->file = arg->file;
+  file_server->announce = arg->announce;
   file_server->download = arg->download;
   file_server->downloaded_sent = false;
   file_server->announcement_interval = INIT_ANNOUNCE_INTERVAL;
@@ -74,37 +86,44 @@ file_server_create (void* a)
 
   /*
 
-     +-------------------------------------------------------------------------------------------------------+
-     |  +-------------------------------------------------------------------------------------------------+  |
-     |  |  +-------------------------------------------------------------------------------------------+  |  |
-     |  |  |                                                                                           |  |  |
-     |  |  |   +--------------------------------------------------+         +----------------------+   |  |  |
-     |  |  |   |                   file_server                    |         |       alarm          |   |  |  |
-     |  |  |   +------------------------+-------------------------+         +---------+------------+   |  |  |
-     |  |  +-->| _announcement_alarm_in | _announcement_alarm_out |-------->| _set_in | _alarm_out |---+  |  |
-     |  |      |                        |                         |         +---------+------------+      |  |
-     |  |      |                        |                         |                                       |  |
-     |  |      |                        |                         |         +----------------------+      |  |
-     |  |      |                        |                         |         |       alarm          |      |  |
-     |  |      |                        |                         |         +---------+------------+      |  |
-     |  +----->| _request_alarm_in      | _request_alarm_out      |-------->| _set_in | _alarm_out |------+  |
-     |         |                        |                         |         +---------+------------+         |
-     |         |                        |                         |                                          |
-     |         |                        |                         |         +----------------------+         |
-     |         |                        |                         |         |       alarm          |         |
-     |         |                        |                         |         +---------+------------+         |
-     +-------->| _fragment_alarm_in     | _fragment_alarm_out     |-------->| _set_in | _alarm_out |---------+
-               +------------------------+-------------------------+         +---------+------------+
-               | _announcement_in       | _message_out            |
-               |                        |                         |
-               | _request_in            | _download_complete_out  |
-               |                        |                         |
-               | _fragment_in           |                         |
-               +------------------------+-------------------------+
+
+
+					  +-------------------------------------------------------------------------------------------------------+
+					  |  +-------------------------------------------------------------------------------------------------+  |
+					  |  |  +-------------------------------------------------------------------------------------------+  |  |
+					  |  |  |                                                                                           |  |  |
+					  |  |  |   +--------------------------------------------------+         +----------------------+   |  |  |
+					  |  |  |   |                   file_server                    |         |       alarm          |   |  |  |
+					  |  |  |   +------------------------+-------------------------+         +---------+------------+   |  |  |
+					  |  |  +-->| _announcement_alarm_in | _announcement_alarm_out |-------->| _set_in | _alarm_out |---+  |  |
+					  |  |      |                        |                         |         +---------+------------+      |  |
+					  |  |      |                        |                         |                                       |  |
+					  |  |      |                        |                         |         +----------------------+      |  |
+					  |  |      |                        |                         |         |       alarm          |      |  |
+					  |  |      |                        |                         |         +---------+------------+      |  |
+					  |  +----->| _request_alarm_in      | _request_alarm_out      |-------->| _set_in | _alarm_out |------+  |
+					  |         |                        |                         |         +---------+------------+         |
+					  |         |                        |                         |                                          |
+					  |         |                        |                         |         +----------------------+         |
+					  |         |                        |                         |         |       alarm          |         |
+					  |         |                        |                         |         +---------+------------+         |
+					  +-------->| _fragment_alarm_in     | _fragment_alarm_out     |-------->| _set_in | _alarm_out |---------+
+					            |                        |                         |         +---------+------------+
+					            |                        |                         |
+  +---------------------------------------+         |                        |                         |         +----------------------------+
+  |              msg_receiver             |         |                        |                         |         |      msg_sender_proxy      |
+  +------------------+--------------------+         |                        |                         |         +-------------+--------------+
+  |                  | _announcement_out  |-------->| _announcement_in       | _message_out            |-------->| _message_in |              |
+  |                  |                    |         |                        |                         |         +-------------+--------------+
+  |                  | _request_out       |-------->| _request_in            |                         |
+  |                  |                    |         |                        |                         |
+  |                  | _fragment_out      |-------->| _fragment_in           | _download_complete_out  |
+  +------------------+--------------------+         +------------------------+-------------------------+
 
    */
 
   file_server->manager = manager_create ();
+
   manager_self_set (file_server->manager, &file_server->self);
 
   manager_child_add (file_server->manager, &file_server->announcement_alarm, &alarm_descriptor, NULL);
@@ -123,6 +142,12 @@ file_server_create (void* a)
   manager_output_add (file_server->manager, &file_server->fragment_alarm_composed, file_server_fragment_alarm_out, NULL);
 
   manager_output_add (file_server->manager, &file_server->download_complete_composed, file_server_download_complete_out, NULL);
+
+  manager_proxy_add (file_server->manager, &file_server->msg_sender_proxy, arg->msg_sender, msg_sender_request_proxy, file_server_callback);
+  manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_announcement_out, NULL, &file_server->self, file_server_announcement_in, NULL);
+  manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_request_out, NULL, &file_server->self, file_server_request_in, NULL);
+  manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_fragment_out, NULL, &file_server->self, file_server_fragment_in, NULL);
+  manager_composition_add (file_server->manager, &file_server->self, file_server_message_out, NULL, &file_server->msg_sender_proxy, msg_sender_proxy_message_in, NULL);
 
   return file_server;
 }
@@ -150,22 +175,35 @@ file_server_system_output (void* state, void* param)
 }
 
 static void
+file_server_callback (void* state, void* param, bid_t bid)
+{
+  file_server_t* file_server = state;
+  assert (file_server != NULL);
+
+  assert (buffer_size (bid) == sizeof (proxy_receipt_t));
+  const proxy_receipt_t* receipt = buffer_read_ptr (bid);
+  manager_proxy_receive (file_server->manager, receipt);
+}
+
+static void
 file_server_announcement_alarm_in (void* state, void* param, bid_t bid)
 {
   file_server_t* file_server = state;
   assert (file_server != NULL);
 
-  if (file_server->next_announce < time (NULL) && bitset_full (file_server->fragments)) {
-    /* Time to announce and we have all of the fragments. */
-    bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-    mftp_Message_t* message = buffer_write_ptr (bid);
-    mftp_Announcement_init (message, &file_server->file->fileid);
-    bidq_push_back (file_server->bidq, bid);
-    assert (schedule_output (file_server_message_out, NULL) == 0);
-  }
+  if (file_server->announce) {
+    if (file_server->next_announce < time (NULL)) {
+      /* Time to announce and we have all of the fragments. */
+      bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
+      mftp_Message_t* message = buffer_write_ptr (bid);
+      mftp_Announcement_init (message, &file_server->file->fileid);
+      bidq_push_back (file_server->bidq, bid);
+      assert (schedule_output (file_server_message_out, NULL) == 0);
+    }
 
-  /* Set the alarm again. */
-  assert (schedule_output (file_server_announcement_alarm_out, NULL) == 0);
+    /* Set the alarm again. */
+    assert (schedule_output (file_server_announcement_alarm_out, NULL) == 0);
+  }
 }
 
 static bid_t
@@ -194,14 +232,13 @@ file_server_request_alarm_in (void* state, void* param, bid_t bid)
 
     /* Find a contiguous region to request. */
     uint32_t stop_fragment = bitset_capacity (file_server->fragments);
-    uint32_t start_fragment = bitset_next_clear (file_server->fragments, file_server->fragment_idx + 1);
+    uint32_t start_fragment = bitset_next_clear (file_server->fragments, file_server->fragment_idx);
     if (!bitset_empty (file_server->fragments)) {
       stop_fragment = bitset_next_set (file_server->fragments, start_fragment + 1);
       if (stop_fragment < start_fragment) {
   	stop_fragment = bitset_capacity (file_server->fragments);
       }
     }
-    file_server->fragment_idx = stop_fragment;
 
     /* Form the request. */
     bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
@@ -243,7 +280,7 @@ file_server_fragment_alarm_in (void* state, void* param, bid_t bid)
     /* Someone has requested a fragment. */
 
     /* Find a requested fragment. */
-    file_server->request_idx = bitset_next_set (file_server->requests, file_server->request_idx + 1);
+    file_server->request_idx = bitset_next_set (file_server->requests, file_server->request_idx);
     assert (bitset_test (file_server->fragments, file_server->request_idx));
 
     /* Form the fragment. */
@@ -371,6 +408,12 @@ file_server_message_out (void* state, void* param)
   }
 }
 
+void
+file_server_new_comm_in (void* state, void* param, bid_t bid)
+{
+  assert (schedule_system_output () == 0);
+}
+
 bid_t
 file_server_download_complete_out (void* state, void* param)
 {
@@ -393,6 +436,11 @@ file_server_download_complete_out (void* state, void* param)
   }
 }
 
+static input_t file_server_free_inputs[] = {
+  file_server_callback,
+  NULL
+};
+
 static input_t file_server_inputs[] = {
   file_server_announcement_alarm_in,
   file_server_request_alarm_in,
@@ -400,6 +448,7 @@ static input_t file_server_inputs[] = {
   file_server_announcement_in,
   file_server_request_in,
   file_server_fragment_in,
+  file_server_new_comm_in,
   NULL
 };
 static output_t file_server_outputs[] = {
@@ -415,6 +464,7 @@ descriptor_t file_server_descriptor = {
   .constructor = file_server_create,
   .system_input = file_server_system_input,
   .system_output = file_server_system_output,
+  .free_inputs = file_server_free_inputs,
   .inputs = file_server_inputs,
   .outputs = file_server_outputs,
 };

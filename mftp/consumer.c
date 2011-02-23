@@ -4,18 +4,26 @@
 #include <assert.h>
 #include "mftp.h"
 
+static void
+print_fileid (const mftp_FileID_t* fileid)
+{
+  int idx;
+  printf ("(");
+  for (idx = 0; idx < HASH_SIZE; ++idx) {
+    printf ("%02x", fileid->hash[idx]);
+  }
+  printf (",%lu,%lu)", fileid->type, fileid->size);
+}
+
 void
 consumer_announcement_in (void* state, void* param, bid_t bid)
 {
   const mftp_Message_t* message = buffer_read_ptr (bid);
   assert (message->header.type == ANNOUNCEMENT);
 
-  printf ("ANNOUNCEMENT\t");
-  int idx;
-  for (idx = 0; idx < HASH_SIZE; ++idx) {
-    printf ("%02x", message->announcement.fileid.hash[idx]);
-  }
-  printf (" size=%lu type=%lu\n", message->announcement.fileid.size, message->announcement.fileid.type);
+  printf ("A ");
+  print_fileid (&message->announcement.fileid);
+  printf ("\n");
 }
 
 void
@@ -24,7 +32,11 @@ consumer_match_in (void* state, void* param, bid_t bid)
   const mftp_Message_t* message = buffer_read_ptr (bid);
   assert (message->header.type == MATCH);
 
-  printf ("MATCH\n");
+  printf ("M ");
+  print_fileid (&message->match.fileid1);
+  printf (" ");
+  print_fileid (&message->match.fileid2);
+  printf ("\n");
 }
 
 void
@@ -33,11 +45,8 @@ consumer_request_in (void* state, void* param, bid_t bid)
   const mftp_Message_t* message = buffer_read_ptr (bid);
   assert (message->header.type == REQUEST);
 
-  printf ("REQUEST\t\t");
-  int idx;
-  for (idx = 0; idx < HASH_SIZE; ++idx) {
-    printf ("%02x", message->request.fileid.hash[idx]);
-  }
+  printf ("R ");
+  print_fileid (&message->request.fileid);
   printf (" offset=%lu size=%lu\n", message->request.offset, message->request.size);
 }
 
@@ -47,13 +56,9 @@ consumer_fragment_in (void* state, void* param, bid_t bid)
   const mftp_Message_t* message = buffer_read_ptr (bid);
   assert (message->header.type == FRAGMENT);
 
-  printf ("FRAGMENT\t");
-  int idx;
-  for (idx = 0; idx < HASH_SIZE; ++idx) {
-    printf ("%02x", message->fragment.fileid.hash[idx]);
-  }
-  printf (" offset=%lu size=%lu (%s)\n", message->fragment.offset, message->fragment.size, message->fragment.data);
-
+  printf ("F ");
+  print_fileid (&message->request.fileid);
+  printf (" offset=%lu size=%lu\n", message->request.offset, message->request.size);
 }
 
 static input_t consumer_inputs[] = { consumer_announcement_in, consumer_match_in, consumer_request_in, consumer_fragment_in, NULL };

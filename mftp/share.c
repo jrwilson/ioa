@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-static char message[] = "Hello, World!!";
+#include "ft.h"
+
+static bid_t composer_new_comm_out (void*, void*);
 
 typedef struct {
   manager_t* manager;
@@ -14,20 +19,26 @@ typedef struct {
   aid_t msg_sender;
   aid_t msg_receiver;
 
-  aid_t file_server_proxy;
-  file_server_create_arg_t file_server_arg;
-  aid_t file_server;
+  file_server_create_arg_t file_arg;
+  aid_t file;
 
-  /* aid_t file_client_proxy; */
-  /* file_server_create_arg_t file_client_arg; */
-  /* aid_t file_client; */
+  file_server_create_arg_t meta_arg;
+  aid_t meta;
 } composer_t;
 
-static void composer_callback (void* state, void* param, bid_t bid);
+typedef struct {
+  mftp_File_t* file;
+  mftp_File_t* meta;
+} composer_create_arg_t;
 
 static void*
-composer_create (void* arg)
+composer_create (void* a)
 {
+  composer_create_arg_t* arg = a;
+  assert (arg != NULL);
+  assert (arg->file != NULL);
+  assert (arg->file != NULL);
+
   composer_t* composer = malloc (sizeof (composer_t));
 
   composer->manager = manager_create ();
@@ -37,23 +48,21 @@ composer_create (void* arg)
   manager_child_add (composer->manager, &composer->msg_sender, &msg_sender_descriptor, NULL);
   manager_child_add (composer->manager, &composer->msg_receiver, &msg_receiver_descriptor, NULL);
 
-  manager_proxy_add (composer->manager, &composer->file_server_proxy, &composer->msg_sender, msg_sender_request_proxy, composer_callback);
-  composer->file_server_arg.file = mftp_File_create_buffer (message, strlen (message) + 1, 37);
-  composer->file_server_arg.download = false;
-  manager_child_add (composer->manager, &composer->file_server, &file_server_descriptor, &composer->file_server_arg);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_announcement_out, NULL, &composer->file_server, file_server_announcement_in, NULL);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_request_out, NULL, &composer->file_server, file_server_request_in, NULL);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_fragment_out, NULL, &composer->file_server, file_server_fragment_in, NULL);
-  manager_composition_add (composer->manager, &composer->file_server, file_server_message_out, NULL, &composer->file_server_proxy, msg_sender_proxy_message_in, NULL);
+  composer->file_arg.file = arg->file;
+  composer->file_arg.announce = true;
+  composer->file_arg.download = false;
+  composer->file_arg.msg_sender = &composer->msg_sender;
+  composer->file_arg.msg_receiver = &composer->msg_receiver;
+  manager_child_add (composer->manager, &composer->file, &file_server_descriptor, &composer->file_arg);
+  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->file, file_server_new_comm_in, NULL);
 
-  /* manager_proxy_add (composer->manager, &composer->file_client_proxy, &composer->msg_sender, msg_sender_request_proxy, composer_callback); */
-  /* composer->file_client_arg.file = mftp_File_create_empty (&composer->file_server_arg.file->fileid); */
-  /* composer->file_client_arg.download = true; */
-  /* manager_child_add (composer->manager, &composer->file_client, &file_server_descriptor, &composer->file_client_arg); */
-  /* manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_announcement_out, NULL, &composer->file_client, file_server_announcement_in, NULL); */
-  /* manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_request_out, NULL, &composer->file_client, file_server_request_in, NULL); */
-  /* manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_fragment_out, NULL, &composer->file_client, file_server_fragment_in, NULL); */
-  /* manager_composition_add (composer->manager, &composer->file_client, file_server_message_out, NULL, &composer->file_client_proxy, msg_sender_proxy_message_in, NULL); */
+  composer->meta_arg.file = arg->meta;
+  composer->meta_arg.announce = true;
+  composer->meta_arg.download = false;
+  composer->meta_arg.msg_sender = &composer->msg_sender;
+  composer->meta_arg.msg_receiver = &composer->msg_receiver;
+  manager_child_add (composer->manager, &composer->meta, &file_server_descriptor, &composer->meta_arg);
+  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->meta, file_server_new_comm_in, NULL);
 
   return composer;
 }
@@ -69,6 +78,11 @@ composer_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   manager_apply (composer->manager, receipt);
+
+  if (composer->msg_sender != -1 &&
+      composer->msg_receiver != -1) {
+    assert (schedule_output (composer_new_comm_out, NULL) == 0);
+  }
 }
 
 static bid_t
@@ -80,30 +94,88 @@ composer_system_output (void* state, void* param)
   return manager_action (composer->manager);
 }
 
-static void
-composer_callback (void* state, void* param, bid_t bid)
+static bid_t
+composer_new_comm_out (void* state, void* param)
 {
-  composer_t* composer = state;
-  assert (composer != NULL);
-
-  assert (buffer_size (bid) == sizeof (proxy_receipt_t));
-  const proxy_receipt_t* receipt = buffer_read_ptr (bid);
-  manager_proxy_receive (composer->manager, receipt);
+  return buffer_alloc (0);
 }
 
-static input_t composer_free_inputs[] = { composer_callback, NULL };
+static output_t composer_outputs[] = {
+  composer_new_comm_out,
+  NULL
+};
 
 descriptor_t composer_descriptor = {
   .constructor = composer_create,
   .system_input = composer_system_input,
   .system_output = composer_system_output,
-  .free_inputs = composer_free_inputs,
+  .outputs = composer_outputs,
 };
 
 
 int
 main (int argc, char* argv[])
 {
-  ueioa_run (&composer_descriptor, NULL, 1);
+  char* filename;
+  char* nicename;
+  struct stat stat_buf;
+  size_t length;
+  char* content;
+  mftp_FileID_t fileid;
+  composer_create_arg_t arg;
+
+  if (!(argc == 2 || argc == 3)) {
+    fprintf (stderr, "usage: %s FILE [NAME]\n", argv[0]);
+    exit (EXIT_FAILURE);
+  }
+
+  filename = argv[1];
+  nicename = filename;
+  if (argc == 3) {
+    nicename = argv[2];
+  }
+
+  int fd = open (filename, O_RDONLY);
+  if (fd == -1) {
+    perror ("open");
+    exit (EXIT_FAILURE);
+  }
+
+  if (fstat (fd, &stat_buf) == -1) {
+    perror ("fstat");
+    exit (EXIT_FAILURE);
+  }
+
+  length = stat_buf.st_size;
+  content = malloc (length);
+  if (content == NULL) {
+    perror ("malloc");
+    exit (EXIT_FAILURE);
+  }
+
+  if (read (fd, content, length) != length) {
+    perror ("read");
+    exit (EXIT_FAILURE);
+  }
+
+  arg.file = mftp_File_create_buffer (content, length, FILE);
+
+  content = realloc (content, sizeof (mftp_FileID_t) + strlen (nicename));
+  if (content == NULL) {
+    perror ("realloc");
+    exit (EXIT_FAILURE);
+  }
+
+  char* ptr = content;
+  mftp_FileID_hostToNet (&fileid, &arg.file->fileid);
+  memcpy (ptr, &fileid, sizeof (mftp_FileID_t));
+  ptr += sizeof (mftp_FileID_t);
+  memcpy (ptr, nicename, strlen (nicename));
+
+  arg.meta = mftp_File_create_buffer (content, sizeof (mftp_FileID_t) + strlen (nicename), META);
+
+  free (content);
+
+  ueioa_run (&composer_descriptor, &arg, 1);
   exit (EXIT_SUCCESS);
 }

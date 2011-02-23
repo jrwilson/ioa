@@ -271,48 +271,53 @@ ueioa_run (descriptor_t* descriptor, void* arg, int thread_count)
 	if (FD_ISSET (interrupt, &read_arg.fds)) {
 	  char c;
 	  read (interrupt, &c, 1);
-	  assert (!ioq_empty (ioq));
-	  ioq_pop (ioq, &io);
-	  
-	  switch (io.type) {
-	  case IO_ALARM:
-	    {
-	      /* Get the current time. */
-	      struct timeval tv;
-	      gettimeofday (&tv, NULL);
-	      /* Add the requested interval. */
-	      tv.tv_sec += io.alarm.tv.tv_sec;
-	      tv.tv_usec += io.alarm.tv.tv_usec;
-	      if (tv.tv_usec > 999999) {
-		++tv.tv_sec;
-		tv.tv_usec -= 1000000;
+	  if (!ioq_empty (ioq)) {
+	    /* Pushing an I/O operation writes to the file descriptor.
+	       However, the push might not actually do anything if it is a duplicate.
+	       Consequently, one must check that the queue is not empty.
+	    */
+	    ioq_pop (ioq, &io);
+	    
+	    switch (io.type) {
+	    case IO_ALARM:
+	      {
+		/* Get the current time. */
+		struct timeval tv;
+		gettimeofday (&tv, NULL);
+		/* Add the requested interval. */
+		tv.tv_sec += io.alarm.tv.tv_sec;
+		tv.tv_usec += io.alarm.tv.tv_usec;
+		if (tv.tv_usec > 999999) {
+		  ++tv.tv_sec;
+		  tv.tv_usec -= 1000000;
+		}
+		/* Insert alarm. */
+		alarm_t key = {
+		  .aid = io.aid,
+		  .tv = tv,
+		};
+		index_insert_unique (alarm_index, alarm_aid_equal, &key);
 	      }
-	      /* Insert alarm. */
-	      alarm_t key = {
-		.aid = io.aid,
-		.tv = tv,
-	      };
-	      index_insert_unique (alarm_index, alarm_aid_equal, &key);
+	      break;
+	    case IO_WRITE:
+	      {
+		fd_t key = {
+		  .aid = io.aid,
+		  .fd = io.write.fd,
+		};
+		index_insert_unique (write_index, fd_aid_equal, &key);
+	      }
+	      break;
+	    case IO_READ:
+	      {
+		fd_t key = {
+		  .aid = io.aid,
+		  .fd = io.read.fd,
+		};
+		index_insert_unique (read_index, fd_aid_equal, &key);
+	      }
+	      break;
 	    }
-	    break;
-	  case IO_WRITE:
-	    {
-	      fd_t key = {
-		.aid = io.aid,
-		.fd = io.write.fd,
-	      };
-	      index_insert_unique (write_index, fd_aid_equal, &key);
-	    }
-	    break;
-	  case IO_READ:
-	    {
-	      fd_t key = {
-		.aid = io.aid,
-		.fd = io.read.fd,
-	      };
-	      index_insert_unique (read_index, fd_aid_equal, &key);
-	    }
-	    break;
 	  }
 	}
       }

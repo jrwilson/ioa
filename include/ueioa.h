@@ -172,6 +172,7 @@ void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
 void manager_child_add (manager_t*, aid_t*, descriptor_t*, void*);
 void manager_proxy_add (manager_t*, aid_t*, aid_t*, input_t, input_t);
+void manager_param_add (manager_t*, void*);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
 void manager_input_add (manager_t*, bool*, input_t, void*);
 void manager_output_add (manager_t*, bool*, output_t, void*);

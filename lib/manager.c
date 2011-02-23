@@ -50,6 +50,27 @@ proxies_key_hash (const void* x0)
 }
 
 typedef struct {
+  void* param;
+  bool declared;
+} params_key_t;
+
+static bool
+params_key_equal (const void* x0, const void* y0)
+{
+  const params_key_t* x = x0;
+  const params_key_t* y = y0;
+  return x->param == y->param;
+}
+
+static size_t
+params_key_hash (const void* x0)
+{
+  const params_key_t* x = x0;
+  
+  return (size_t)x->param;
+}
+
+typedef struct {
   aid_t* out_automaton;
   output_t output;
   void* out_param;
@@ -173,6 +194,7 @@ struct manager_struct {
   action_type_t action_type;
   order_t last_order;
   children_key_t last_child;
+  params_key_t last_param;
   proxies_key_t last_proxy;
   compositions_key_t last_composition;
   aid_t self;
@@ -180,6 +202,7 @@ struct manager_struct {
   aid_t* parent_ptr;
   hashtable_t* children;
   hashtable_t* proxies;
+  hashtable_t* params;
   hashtable_t* compositions;
   hashtable_t* inputs;
   hashtable_t* outputs;
@@ -197,6 +220,7 @@ manager_create (void)
   manager->parent_ptr = NULL;
   manager->children = hashtable_create (sizeof (children_key_t), children_key_equal, children_key_hash);
   manager->proxies = hashtable_create (sizeof (proxies_key_t), proxies_key_equal, proxies_key_hash);
+  manager->params = hashtable_create (sizeof (params_key_t), params_key_equal, params_key_hash);
   manager->compositions = hashtable_create (sizeof (compositions_key_t), compositions_key_equal, compositions_key_hash);
   manager->inputs = hashtable_create (sizeof (inputs_key_t), inputs_key_equal, inputs_key_hash);
   manager->outputs = hashtable_create (sizeof (outputs_key_t), outputs_key_equal, outputs_key_hash);
@@ -259,6 +283,20 @@ manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_p
   };
   assert (!hashtable_contains_key (manager->proxies, &key));
   hashtable_insert (manager->proxies, &key);
+}
+
+void
+manager_param_add (manager_t* manager, void* param)
+{
+  assert (manager != NULL);
+  assert (param != NULL);
+
+  params_key_t key = {
+    .param = param,
+    .declared = false,
+  };
+  assert (!hashtable_contains_key (manager->params, &key));
+  hashtable_insert (manager->params, &key);
 }
 
 void
@@ -395,10 +433,24 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     break;
   case DECLARED:
     {
-      assert (manager->proxy_front != NULL && manager->proxy_front->state == UNDECLARED);
-      manager->proxy_front->state = UNCREATED;
-      something_changed = true;
-      manager->syscall_status = NORMAL;
+      assert (manager->syscall_status == OUTSTANDING && manager->last_order.type == DECLARE);
+      switch (manager->action_type) {
+      case SELF:
+	{
+	  params_key_t* key = hashtable_lookup (manager->params, &manager->last_param);
+	  assert (key->declared == false);
+	  key->declared = true;
+	  something_changed = true;
+	  manager->syscall_status = NORMAL;
+	}
+	break;
+      case PROXY_PRODUCE:
+	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNDECLARED);
+	manager->proxy_front->state = UNCREATED;
+	something_changed = true;
+	manager->syscall_status = NORMAL;
+	break;
+      }
     }
     break;
   case OUTPUT_DNE:
@@ -424,6 +476,7 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
       case SELF:
 	{
 	  compositions_key_t* key = hashtable_lookup (manager->compositions, &manager->last_composition);
+	  assert (key->composed == false);
 	  key->composed = true;
 	  something_changed = true;
 	  manager->syscall_status = NORMAL;
@@ -530,10 +583,23 @@ syscall_fire (manager_t* manager)
     const children_key_t* key = hashtable_key_at (manager->children, idx);
     if (*key->child_aid_ptr == -1) {
       /* We need to create an automaton. */
-      const children_key_t* key = hashtable_key_at (manager->children, idx);
       order_create_init (&manager->last_order, key->descriptor, key->arg);
       manager->action_type = SELF;
       manager->last_child = *key;
+      return true;
+    }
+  }
+
+  /* Go through the parameters. */
+  for (idx = hashtable_first (manager->params);
+       idx != hashtable_last (manager->params);
+       idx = hashtable_next (manager->params, idx)) {
+    const params_key_t* key = hashtable_key_at (manager->params, idx);
+    if (!key->declared) {
+      /* We need to declare a parameter. */
+      order_declare_init (&manager->last_order, key->param);
+      manager->action_type = SELF;
+      manager->last_param = *key;
       return true;
     }
   }
@@ -559,6 +625,7 @@ syscall_fire (manager_t* manager)
     case UNDECLARED:
       /* Declare the parameter. */
       order_declare_init (&manager->last_order, manager->proxy_front->param);
+      manager->action_type = PROXY_PRODUCE;
       return true;
       break;
     case UNCREATED:

@@ -24,6 +24,18 @@ udp_receiver_create (void* arg)
     exit (EXIT_FAILURE);
   }
 
+  /* Reuse the port. */
+  int v = 1;
+  if (setsockopt (udp_receiver->fd, SOL_SOCKET, SO_REUSEPORT, &v, sizeof (v)) == -1) {
+    perror ("setsockopt");
+    exit (EXIT_FAILURE);
+  }
+  /* Set non-blocking. */
+  if (fcntl (udp_receiver->fd, F_SETFL, O_NONBLOCK) == -1) {
+    perror ("fcntl");
+    exit (EXIT_FAILURE);
+  }
+
   /* Bind. */
   struct sockaddr_in dest;
   dest.sin_family = AF_INET;

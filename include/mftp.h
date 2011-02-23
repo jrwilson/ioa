@@ -91,15 +91,23 @@ bid_t msg_receiver_match_out (void*, void*);
 bid_t msg_receiver_request_out (void*, void*);
 bid_t msg_receiver_fragment_out (void*, void*);
 
+extern descriptor_t alarm_descriptor;
+typedef struct {
+  time_t secs;
+  suseconds_t usecs;
+} alarm_set_in_t;
+void alarm_set_in (void*, void*, bid_t);
+bid_t alarm_alarm_out (void*, void*);
+
 extern descriptor_t file_server_descriptor;
 typedef struct {
   mftp_File_t* file;
+  bool announce;
   bool download;
+  aid_t* msg_sender;
+  aid_t* msg_receiver;
 } file_server_create_arg_t;
-void file_server_announcement_in (void*, void*, bid_t);
-void file_server_request_in (void*, void*, bid_t);
-void file_server_fragment_in (void*, void*, bid_t);
-bid_t file_server_message_out (void*, void*);
+void file_server_new_comm_in (void*, void*, bid_t);
 bid_t file_server_download_complete_out (void*, void*);
 
 #endif /* __mftp_h__ */

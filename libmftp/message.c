@@ -20,6 +20,7 @@ mftp_Match_init (mftp_Message_t* m, const mftp_FileID_t* fileid1, const mftp_Fil
   assert (m != NULL);
   assert (fileid1 != NULL);
   assert (fileid2 != NULL);
+  assert (fileid1->type <= fileid2->type);
 
   m->header.type = MATCH;
   memcpy (&m->match.fileid1, fileid1, sizeof (mftp_FileID_t));
@@ -151,6 +152,10 @@ Match_netToHost (mftp_Match_t* dst, const mftp_Match_t* src, int bytesRemaining)
 
   mftp_FileID_netToHost (&dst->fileid1, &src->fileid1);
   mftp_FileID_netToHost (&dst->fileid2, &src->fileid2);
+
+  if (dst->fileid1.type > src->fileid2.type) {
+    return -1;
+  }
   return bytesRemaining - sizeof (mftp_Match_t);
 }
 

@@ -1,10 +1,8 @@
-#include "alarm.h"
+#include <mftp.h>
 
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-
-#include "mftp.h"
 
 typedef struct {
   bool set;
