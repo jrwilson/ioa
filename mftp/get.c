@@ -10,6 +10,9 @@
 
 #include "ft.h"
 
+#include "matcher.h"
+#include "match_getter.h"
+
 static bid_t composer_new_comm_out (void*, void*);
 
 typedef struct {
@@ -21,6 +24,12 @@ typedef struct {
 
   file_server_create_arg_t query_arg;
   aid_t query;
+
+  matcher_create_arg_t matcher_arg;
+  aid_t matcher;
+
+  match_getter_create_arg_t getter_arg;
+  aid_t getter;
 } composer_t;
 
 typedef struct {
@@ -50,6 +59,17 @@ composer_create (void* a)
   composer->query_arg.msg_receiver = &composer->msg_receiver;
   manager_child_add (composer->manager, &composer->query, &file_server_descriptor, &composer->query_arg);
   manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->query, file_server_new_comm_in, NULL);
+
+  composer->matcher_arg.msg_sender = &composer->msg_sender;
+  composer->matcher_arg.msg_receiver = &composer->msg_receiver;
+  manager_child_add (composer->manager, &composer->matcher, &matcher_descriptor, &composer->matcher_arg);
+  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->matcher, matcher_new_comm_in, NULL);
+
+  composer->getter_arg.query = arg->query;
+  composer->getter_arg.msg_sender = &composer->msg_sender;
+  composer->getter_arg.msg_receiver = &composer->msg_receiver;
+   manager_child_add (composer->manager, &composer->getter, &match_getter_descriptor, &composer->getter_arg);
+   manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->getter, match_getter_new_comm_in, NULL);
 
   return composer;
 }

@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "ft.h"
+#include "matcher.h"
 
 static bid_t composer_new_comm_out (void*, void*);
 
@@ -24,6 +25,9 @@ typedef struct {
 
   file_server_create_arg_t meta_arg;
   aid_t meta;
+
+  matcher_create_arg_t matcher_arg;
+  aid_t matcher;
 } composer_t;
 
 typedef struct {
@@ -63,6 +67,11 @@ composer_create (void* a)
   composer->meta_arg.msg_receiver = &composer->msg_receiver;
   manager_child_add (composer->manager, &composer->meta, &file_server_descriptor, &composer->meta_arg);
   manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->meta, file_server_new_comm_in, NULL);
+
+  composer->matcher_arg.msg_sender = &composer->msg_sender;
+  composer->matcher_arg.msg_receiver = &composer->msg_receiver;
+  manager_child_add (composer->manager, &composer->matcher, &matcher_descriptor, &composer->matcher_arg);
+  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->matcher, matcher_new_comm_in, NULL);
 
   return composer;
 }
@@ -158,7 +167,7 @@ main (int argc, char* argv[])
     exit (EXIT_FAILURE);
   }
 
-  arg.file = mftp_File_create_buffer (content, length, FILE);
+  arg.file = mftp_File_create_buffer (content, length, FILEC);
 
   content = realloc (content, sizeof (mftp_FileID_t) + strlen (nicename));
   if (content == NULL) {
