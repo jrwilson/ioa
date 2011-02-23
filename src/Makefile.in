@@ -34,7 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT)
+bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -47,6 +47,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_display_OBJECTS = display_driver.$(OBJEXT) display.$(OBJEXT)
+display_OBJECTS = $(am_display_OBJECTS)
+display_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+display_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(display_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) trigger.$(OBJEXT) \
 	counter.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
@@ -67,8 +73,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(main_SOURCES) $(thread_test_SOURCES)
-DIST_SOURCES = $(main_SOURCES) $(thread_test_SOURCES)
+SOURCES = $(display_SOURCES) $(main_SOURCES) $(thread_test_SOURCES)
+DIST_SOURCES = $(display_SOURCES) $(main_SOURCES) \
+	$(thread_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -190,6 +197,9 @@ main_SOURCES = main.c composer.c trigger.c counter.c
 main_LDADD = $(top_builddir)/lib/libueioa.la
 thread_test_SOURCES = thread_test.c
 thread_test_LDADD = $(top_builddir)/lib/libueioa.la
+display_SOURCES = display_driver.c display.c
+display_LDADD = $(top_builddir)/lib/libueioa.la
+display_LDFLAGS = -L/usr/X11R6/lib -lX11
 all: all-am
 
 .SUFFIXES:
@@ -267,6 +277,9 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+display$(EXEEXT): $(display_OBJECTS) $(display_DEPENDENCIES) 
+	@rm -f display$(EXEEXT)
+	$(display_LINK) $(display_OBJECTS) $(display_LDADD) $(LIBS)
 main$(EXEEXT): $(main_OBJECTS) $(main_DEPENDENCIES) 
 	@rm -f main$(EXEEXT)
 	$(LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
@@ -282,6 +295,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/counter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trigger.Po@am__quote@
