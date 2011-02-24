@@ -9,6 +9,7 @@ buffers_t* buffers_create (void);
 void buffers_destroy (buffers_t*);
 
 bid_t buffers_alloc (buffers_t*, aid_t, size_t);
+bid_t buffers_alloc_aligned (buffers_t*, aid_t, size_t, size_t);
 
 void* buffers_write_ptr (buffers_t*, aid_t, bid_t);
 const void* buffers_read_ptr (buffers_t*, aid_t, bid_t);

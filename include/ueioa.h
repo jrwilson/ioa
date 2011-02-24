@@ -155,6 +155,7 @@ int schedule_output (output_t, void*) __attribute__ ((warn_unused_result));
 int schedule_internal (internal_t, void*) __attribute__ ((warn_unused_result));
 
 bid_t buffer_alloc (size_t);
+bid_t buffer_alloc_aligned (size_t, size_t);
 void* buffer_write_ptr (bid_t);
 const void* buffer_read_ptr (bid_t);
 size_t buffer_size (bid_t);

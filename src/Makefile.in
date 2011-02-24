@@ -34,7 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT)
+bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT) \
+	camera$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -50,6 +51,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_camera_OBJECTS = camera_driver.$(OBJEXT) camera.$(OBJEXT)
+camera_OBJECTS = $(am_camera_OBJECTS)
+camera_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+camera_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(camera_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_display_OBJECTS = display_driver.$(OBJEXT) display.$(OBJEXT)
 display_OBJECTS = $(am_display_OBJECTS)
 display_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -82,8 +89,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(display_SOURCES) $(main_SOURCES) $(thread_test_SOURCES)
-DIST_SOURCES = $(display_SOURCES) $(main_SOURCES) \
+SOURCES = $(camera_SOURCES) $(display_SOURCES) $(main_SOURCES) \
+	$(thread_test_SOURCES)
+DIST_SOURCES = $(camera_SOURCES) $(display_SOURCES) $(main_SOURCES) \
 	$(thread_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -209,6 +217,9 @@ thread_test_LDFLAGS = -lpthread
 display_SOURCES = display_driver.c display.c
 display_LDADD = $(top_builddir)/lib/libueioa.la
 display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
+camera_SOURCES = camera_driver.c camera.c
+camera_LDADD = $(top_builddir)/lib/libueioa.la
+camera_LDFLAGS = -lpthread
 all: all-am
 
 .SUFFIXES:
@@ -286,6 +297,9 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+camera$(EXEEXT): $(camera_OBJECTS) $(camera_DEPENDENCIES) 
+	@rm -f camera$(EXEEXT)
+	$(camera_LINK) $(camera_OBJECTS) $(camera_LDADD) $(LIBS)
 display$(EXEEXT): $(display_OBJECTS) $(display_DEPENDENCIES) 
 	@rm -f display$(EXEEXT)
 	$(display_LINK) $(display_OBJECTS) $(display_LDADD) $(LIBS)
@@ -302,6 +316,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camera.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camera_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display.Po@am__quote@

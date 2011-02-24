@@ -184,19 +184,9 @@ display_read_input (void* state, void* param, bid_t bid)
 /*   return 0; */
 /* } */
 
-/* static input_t counter_free_inputs[] = { NULL }; */
-/* static input_t counter_inputs[] = { counter_input, NULL }; */
-/* static output_t counter_outputs[] = { counter_output, NULL }; */
-/* static internal_t counter_internals[] = { counter_internal, NULL }; */
-
 descriptor_t display_descriptor = {
   .constructor = display_create,
   .system_input = display_system_input,
-  /* .system_output = counter_system_output, */
   .alarm_input = display_alarm_input,
   .read_input = display_read_input,
-  /* .free_inputs = counter_free_inputs, */
-  /* .inputs = counter_inputs, */
-  /* .outputs = counter_outputs, */
-  /* .internals = counter_internals, */
 };

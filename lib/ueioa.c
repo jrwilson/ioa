@@ -436,6 +436,12 @@ buffer_alloc (size_t size)
   return buffers_alloc (buffers, automata_get_current_aid (automata), size);
 }
 
+bid_t
+buffer_alloc_aligned (size_t size, size_t alignment)
+{
+  return buffers_alloc_aligned (buffers, automata_get_current_aid (automata), size, alignment);
+}
+
 void*
 buffer_write_ptr (bid_t bid)
 {

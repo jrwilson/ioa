@@ -106,6 +106,7 @@ typedef struct {
   aid_t owner;
   buffer_mode_t mode;
   size_t size;
+  size_t alignment;
   void* data;
   size_t ref_count;
 } buffer_entry_t;
@@ -234,7 +235,7 @@ free_data (const void* e, void* ignored)
 }
 
 static buffer_entry_t*
-allocate (buffers_t* buffers, aid_t owner, size_t size)
+allocate (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
 {
   /* Find a bid. */
   while (buffer_entry_for_bid (buffers, buffers->next_bid, NULL) != NULL) {
@@ -247,7 +248,12 @@ allocate (buffers_t* buffers, aid_t owner, size_t size)
 
   void* data = NULL;
   if (size > 0) {
-    data = malloc (size);
+    if (alignment == 0) {
+      data = malloc (size);
+    }
+    else {
+      assert (posix_memalign (&data, alignment, size) == 0);
+    }
   }
 
   /* Insert. */
@@ -256,6 +262,7 @@ allocate (buffers_t* buffers, aid_t owner, size_t size)
     .owner = owner,
     .mode = READWRITE,
     .size = size,
+    .alignment = alignment,
     .data = data,
     .ref_count = 1, /* Creator get's one reference. See next. */
   };
@@ -282,7 +289,24 @@ buffers_alloc (buffers_t* buffers, aid_t owner, size_t size)
 
   buffer_entry_t* buffer_entry;
   pthread_rwlock_wrlock (&buffers->lock);
-  buffer_entry = allocate (buffers, owner, size);
+  buffer_entry = allocate (buffers, owner, size, 0);
+  pthread_rwlock_unlock (&buffers->lock);
+
+  return buffer_entry->bid;
+}
+
+bid_t
+buffers_alloc_aligned (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
+{
+  assert (buffers != NULL);
+
+  /*
+   * NO CHECK IF AID EXISTS.
+   */
+
+  buffer_entry_t* buffer_entry;
+  pthread_rwlock_wrlock (&buffers->lock);
+  buffer_entry = allocate (buffers, owner, size, alignment);
   pthread_rwlock_unlock (&buffers->lock);
 
   return buffer_entry->bid;
@@ -956,7 +980,7 @@ buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid, size_t size)
     }
     else {
       /* Allocate a new buffer with the new size. */
-      buffer_entry_t* new_entry = allocate (buffers, aid, size);
+      buffer_entry_t* new_entry = allocate (buffers, aid, size, buffer_entry->alignment);
       retval = new_entry->bid;
       
       /* Copy the data. */
