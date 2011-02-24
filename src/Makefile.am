@@ -1,6 +1,6 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
-bin_PROGRAMS = main thread_test display camera
+bin_PROGRAMS = main thread_test display camera camera_display
 
 main_SOURCES = main.c composer.c trigger.c counter.c
 main_LDADD = $(top_builddir)/lib/libueioa.la
@@ -17,3 +17,7 @@ display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
 camera_SOURCES = camera_driver.c camera.c
 camera_LDADD = $(top_builddir)/lib/libueioa.la
 camera_LDFLAGS = -lpthread
+
+camera_display_SOURCES = camera_display.c camera.c display.c
+camera_display_LDADD = $(top_builddir)/lib/libueioa.la
+camera_display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread

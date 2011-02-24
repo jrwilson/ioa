@@ -5,4 +5,6 @@
 
 extern descriptor_t display_descriptor;
 
+void display_frame_in (void*, void*, bid_t);
+
 #endif

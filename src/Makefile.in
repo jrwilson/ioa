@@ -35,7 +35,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT) \
-	camera$(EXEEXT)
+	camera$(EXEEXT) camera_display$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -57,6 +57,13 @@ camera_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 camera_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(camera_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_camera_display_OBJECTS = camera_display.$(OBJEXT) camera.$(OBJEXT) \
+	display.$(OBJEXT)
+camera_display_OBJECTS = $(am_camera_display_OBJECTS)
+camera_display_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+camera_display_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(camera_display_LDFLAGS) $(LDFLAGS) -o $@
 am_display_OBJECTS = display_driver.$(OBJEXT) display.$(OBJEXT)
 display_OBJECTS = $(am_display_OBJECTS)
 display_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -89,10 +96,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(camera_SOURCES) $(display_SOURCES) $(main_SOURCES) \
-	$(thread_test_SOURCES)
-DIST_SOURCES = $(camera_SOURCES) $(display_SOURCES) $(main_SOURCES) \
-	$(thread_test_SOURCES)
+SOURCES = $(camera_SOURCES) $(camera_display_SOURCES) \
+	$(display_SOURCES) $(main_SOURCES) $(thread_test_SOURCES)
+DIST_SOURCES = $(camera_SOURCES) $(camera_display_SOURCES) \
+	$(display_SOURCES) $(main_SOURCES) $(thread_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -220,6 +227,9 @@ display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
 camera_SOURCES = camera_driver.c camera.c
 camera_LDADD = $(top_builddir)/lib/libueioa.la
 camera_LDFLAGS = -lpthread
+camera_display_SOURCES = camera_display.c camera.c display.c
+camera_display_LDADD = $(top_builddir)/lib/libueioa.la
+camera_display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
 all: all-am
 
 .SUFFIXES:
@@ -300,6 +310,9 @@ clean-binPROGRAMS:
 camera$(EXEEXT): $(camera_OBJECTS) $(camera_DEPENDENCIES) 
 	@rm -f camera$(EXEEXT)
 	$(camera_LINK) $(camera_OBJECTS) $(camera_LDADD) $(LIBS)
+camera_display$(EXEEXT): $(camera_display_OBJECTS) $(camera_display_DEPENDENCIES) 
+	@rm -f camera_display$(EXEEXT)
+	$(camera_display_LINK) $(camera_display_OBJECTS) $(camera_display_LDADD) $(LIBS)
 display$(EXEEXT): $(display_OBJECTS) $(display_DEPENDENCIES) 
 	@rm -f display$(EXEEXT)
 	$(display_LINK) $(display_OBJECTS) $(display_LDADD) $(LIBS)
@@ -317,6 +330,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camera.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camera_display.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camera_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/counter.Po@am__quote@

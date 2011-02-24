@@ -405,12 +405,12 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
   if (descriptor != NULL) {
 
     /* Find an aid. */
-    while (automaton_entry_for_aid (automata, automata->next_aid, NULL) != NULL) {
+    do {
       ++automata->next_aid;
       if (automata->next_aid < 0) {
 	automata->next_aid = 0;
       }
-    }
+    } while (automaton_entry_for_aid (automata, automata->next_aid, NULL) != NULL);
     
     aid_t aid = automata->next_aid;
 

@@ -11,13 +11,14 @@ typedef struct {
   int screen;
   Window window;
   Atom del_window;
+  XImage* image;
 } display_t;
 
-#define X_OFFSET 10
-#define Y_OFFSET 10
-#define WIDTH 320
-#define HEIGHT 240
-#define BORDER_WIDTH 1
+#define X_OFFSET 0
+#define Y_OFFSET 0
+#define WIDTH 352
+#define HEIGHT 288
+#define BORDER_WIDTH 0
 
 static void*
 display_create (void* arg)
@@ -52,6 +53,18 @@ display_create (void* arg)
   /* map (show) the window */
   XMapWindow (display->display, display->window);
   XFlush (display->display);
+
+
+  /* display->image = XCreateImage (display->display, */
+  /* 				 CopyFromParent, */
+  /* 				 24, */
+  /* 				 ZPixmap, */
+  /* 				 0, */
+  /* 				 display->data, */
+  /* 				 WIDTH, */
+  /* 				 HEIGHT, */
+  /* 				 32, */
+  /* 				 0); */
   
   return display;
 }
@@ -68,26 +81,7 @@ display_system_input (void* state, void* param, bid_t bid)
 
   if (receipt->type == SELF_CREATED) {
     assert (schedule_read_input (display->fd) == 0);
-    assert (schedule_alarm_input (1, 0) == 0);
   }
-  else {
-    assert (0);
-  }
-}
-
-static void
-display_alarm_input (void* state, void* param, bid_t bid)
-{
-  display_t* display = state;
-  assert (display != NULL);
-
-  XDrawPoint (display->display,
-  	      display->window,
-  	      DefaultGC (display->display, display->screen),
-  	      rand () % WIDTH, rand () % HEIGHT);
-  XFlush (display->display);
-
-  assert (schedule_alarm_input (0, 1000) == 0);
 }
 
 static void
@@ -114,6 +108,15 @@ display_read_input (void* state, void* param, bid_t bid)
     if (event.type == ClientMessage)
       break;
   }
+}
+
+void
+display_frame_in (void* state, void* param, bid_t bid)
+{
+  display_t* display = state;
+  assert (display != NULL);
+
+  printf ("%u\n", buffer_size (bid));
 }
 
 /* /\* */
@@ -184,9 +187,14 @@ display_read_input (void* state, void* param, bid_t bid)
 /*   return 0; */
 /* } */
 
+static input_t display_inputs[] = {
+  display_frame_in,
+  NULL
+};
+
 descriptor_t display_descriptor = {
   .constructor = display_create,
   .system_input = display_system_input,
-  .alarm_input = display_alarm_input,
   .read_input = display_read_input,
+  .inputs = display_inputs,
 };

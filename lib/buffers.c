@@ -238,12 +238,13 @@ static buffer_entry_t*
 allocate (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
 {
   /* Find a bid. */
-  while (buffer_entry_for_bid (buffers, buffers->next_bid, NULL) != NULL) {
+  do {
     ++buffers->next_bid;
     if (buffers->next_bid < 0) {
       buffers->next_bid = 0;
     }
-  }
+  } while (buffer_entry_for_bid (buffers, buffers->next_bid, NULL) != NULL);
+
   bid_t bid = buffers->next_bid;
 
   void* data = NULL;
