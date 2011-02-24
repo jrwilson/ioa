@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 void
 mftp_FileID_init (mftp_FileID_t* f, uint8_t hash[HASH_SIZE], uint32_t size, uint32_t type)

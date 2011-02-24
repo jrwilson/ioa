@@ -632,7 +632,7 @@ index_create_ordered_list (table_t* table, predicate_t predicate)
   assert (table != NULL);
   assert (predicate != NULL);
 
-  ordered_list_t* ordered_list = malloc (sizeof (ordered_list));
+  ordered_list_t* ordered_list = malloc (sizeof (ordered_list_t));
   ordered_list->head = -1;
   ordered_list->tail = -1;
   ordered_list->entries = NULL;

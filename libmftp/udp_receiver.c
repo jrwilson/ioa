@@ -24,12 +24,25 @@ udp_receiver_create (void* arg)
     exit (EXIT_FAILURE);
   }
 
+#ifdef SO_REUSEPORT
   /* Reuse the port. */
-  int v = 1;
-  if (setsockopt (udp_receiver->fd, SOL_SOCKET, SO_REUSEPORT, &v, sizeof (v)) == -1) {
-    perror ("setsockopt");
-    exit (EXIT_FAILURE);
+  {
+    int v = 1;
+    if (setsockopt (udp_receiver->fd, SOL_SOCKET, SO_REUSEPORT, &v, sizeof (v)) == -1) {
+      perror ("setsockopt");
+      exit (EXIT_FAILURE);
+    }
   }
+#endif
+  /* Reuse the address. */
+  {
+    int v = 1;
+    if (setsockopt (udp_receiver->fd, SOL_SOCKET, SO_REUSEADDR, &v, sizeof (v)) == -1) {
+      perror ("setsockopt");
+      exit (EXIT_FAILURE);
+    }
+  }
+
   /* Set non-blocking. */
   if (fcntl (udp_receiver->fd, F_SETFL, O_NONBLOCK) == -1) {
     perror ("fcntl");
@@ -95,13 +108,20 @@ udp_receiver_read_input (void* state, void* param, bid_t b)
   /* Determine the number of bytes we can read. */
   int bytes_to_read;
   ioctl (udp_receiver->fd, FIONREAD, &bytes_to_read);
-  /* On Mac, this includes some UDP headers which makes it off by 16 bytes. */
-  bytes_to_read -= 16;
   /* Create a new buffer. */
   bid_t bid = buffer_alloc (bytes_to_read);
   /* Fill the buffer. */
   ssize_t bytes_read = recv (udp_receiver->fd, buffer_write_ptr (bid), bytes_to_read, 0);
-  assert (bytes_read != 0 && bytes_read <= bytes_to_read);
+  if (bytes_read == -1) {
+    perror ("recv");
+    exit (EXIT_FAILURE);
+  }
+  if (bytes_read < bytes_to_read) {
+    /* Shrink the buffer by duplicating it. */
+    buffer_incref (bid);
+    bid = buffer_dup (bid, bytes_read);
+    printf ("bytes_to_read = %d bytes_read = %d\n", bytes_to_read, bytes_read);
+  }
   /* Put it into the queue. */
   bidq_push_back (udp_receiver->bidq, bid);
 

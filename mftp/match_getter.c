@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static void match_getter_meta_download_complete (void* state, void* param, bid_t bid);
@@ -194,7 +196,7 @@ match_getter_file_download_complete (void* state, void* param, bid_t bid)
 
   printf ("%s %u\n", filename, meta->file_fileid.size);
 
-  int fd = open (filename, O_WRONLY|O_TRUNC|O_CREAT);
+  int fd = open (filename, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
   if (fd == -1) {
     perror ("open");
     exit (EXIT_FAILURE);

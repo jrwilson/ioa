@@ -162,7 +162,7 @@ void buffer_incref (bid_t);
 void buffer_decref (bid_t);
 void buffer_add_child (bid_t, bid_t);
 void buffer_remove_child (bid_t, bid_t);
-bid_t buffer_dup (bid_t);
+bid_t buffer_dup (bid_t, size_t);
 
 typedef struct manager_struct manager_t;
 

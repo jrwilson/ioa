@@ -270,7 +270,7 @@ ueioa_run (descriptor_t* descriptor, void* arg, int thread_count)
 	
 	if (FD_ISSET (interrupt, &read_arg.fds)) {
 	  char c;
-	  read (interrupt, &c, 1);
+	  assert (read (interrupt, &c, 1) == 1);
 	  if (!ioq_empty (ioq)) {
 	    /* Pushing an I/O operation writes to the file descriptor.
 	       However, the push might not actually do anything if it is a duplicate.
@@ -479,7 +479,7 @@ buffer_remove_child (bid_t parent, bid_t child)
 }
 
 bid_t
-buffer_dup (bid_t bid)
+buffer_dup (bid_t bid, size_t size)
 {
-  return buffers_dup (buffers, automata_get_current_aid (automata), bid);
+  return buffers_dup (buffers, automata_get_current_aid (automata), bid, size);
 }

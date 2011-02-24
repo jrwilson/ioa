@@ -60,9 +60,15 @@ am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) trigger.$(OBJEXT) \
 	counter.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
 main_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+main_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(main_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_thread_test_OBJECTS = thread_test.$(OBJEXT)
 thread_test_OBJECTS = $(am_thread_test_OBJECTS)
 thread_test_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+thread_test_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(thread_test_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -196,11 +202,13 @@ top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 main_SOURCES = main.c composer.c trigger.c counter.c
 main_LDADD = $(top_builddir)/lib/libueioa.la
+main_LDFLAGS = -lpthread
 thread_test_SOURCES = thread_test.c
 thread_test_LDADD = $(top_builddir)/lib/libueioa.la
+thread_test_LDFLAGS = -lpthread
 display_SOURCES = display_driver.c display.c
 display_LDADD = $(top_builddir)/lib/libueioa.la
-display_LDFLAGS = -L/usr/X11R6/lib -lX11
+display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
 all: all-am
 
 .SUFFIXES:
@@ -283,10 +291,10 @@ display$(EXEEXT): $(display_OBJECTS) $(display_DEPENDENCIES)
 	$(display_LINK) $(display_OBJECTS) $(display_LDADD) $(LIBS)
 main$(EXEEXT): $(main_OBJECTS) $(main_DEPENDENCIES) 
 	@rm -f main$(EXEEXT)
-	$(LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
+	$(main_LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
 thread_test$(EXEEXT): $(thread_test_OBJECTS) $(thread_test_DEPENDENCIES) 
 	@rm -f thread_test$(EXEEXT)
-	$(LINK) $(thread_test_OBJECTS) $(thread_test_LDADD) $(LIBS)
+	$(thread_test_LINK) $(thread_test_OBJECTS) $(thread_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

@@ -12,7 +12,7 @@ print_fileid (const mftp_FileID_t* fileid)
   for (idx = 0; idx < HASH_SIZE; ++idx) {
     printf ("%02x", fileid->hash[idx]);
   }
-  printf (",%lu,%lu)", fileid->type, fileid->size);
+  printf (",%u,%u)", fileid->type, fileid->size);
 }
 
 void
@@ -47,7 +47,7 @@ consumer_request_in (void* state, void* param, bid_t bid)
 
   printf ("R ");
   print_fileid (&message->request.fileid);
-  printf (" offset=%lu size=%lu\n", message->request.offset, message->request.size);
+  printf (" offset=%u size=%u\n", message->request.offset, message->request.size);
 }
 
 void
@@ -58,7 +58,7 @@ consumer_fragment_in (void* state, void* param, bid_t bid)
 
   printf ("F ");
   print_fileid (&message->request.fileid);
-  printf (" offset=%lu size=%lu\n", message->request.offset, message->request.size);
+  printf (" offset=%u size=%u\n", message->request.offset, message->request.size);
 }
 
 static input_t consumer_inputs[] = { consumer_announcement_in, consumer_match_in, consumer_request_in, consumer_fragment_in, NULL };

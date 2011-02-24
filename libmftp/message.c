@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 void
 mftp_Announcement_init (mftp_Message_t* m, const mftp_FileID_t* fileid)

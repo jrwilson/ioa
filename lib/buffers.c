@@ -245,13 +245,18 @@ allocate (buffers_t* buffers, aid_t owner, size_t size)
   }
   bid_t bid = buffers->next_bid;
 
+  void* data = NULL;
+  if (size > 0) {
+    data = malloc (size);
+  }
+
   /* Insert. */
   buffer_entry_t entry = { 
     .bid = bid,
     .owner = owner,
     .mode = READWRITE,
     .size = size,
-    .data = malloc (size),
+    .data = data,
     .ref_count = 1, /* Creator get's one reference. See next. */
   };
 
@@ -919,7 +924,7 @@ dup_edge (const void* e, void* a)
 }
 
 bid_t
-buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid)
+buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid, size_t size)
 {
   assert (buffers != NULL);
 
@@ -943,15 +948,21 @@ buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid)
       */
       buffer_entry->owner = aid;
       buffer_entry->mode = READWRITE;
+      if (size != buffer_entry->size) {
+	buffer_entry->size = size;
+	buffer_entry->data = realloc (buffer_entry->data, size);
+      }
       retval = bid;
     }
     else {
-      /* Allocate a new buffer with the same size. */
-      buffer_entry_t* new_entry = allocate (buffers, aid, buffer_entry->size);
+      /* Allocate a new buffer with the new size. */
+      buffer_entry_t* new_entry = allocate (buffers, aid, size);
       retval = new_entry->bid;
       
       /* Copy the data. */
-      memcpy (new_entry->data, buffer_entry->data, new_entry->size);
+      memcpy (new_entry->data,
+	      buffer_entry->data,
+	      (buffer_entry->size < new_entry->size) ? buffer_entry->size : new_entry->size);
       
       /* Copy parent child relationships. */
       edge_arg_t arg = {

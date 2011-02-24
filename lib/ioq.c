@@ -119,7 +119,7 @@ push (ioq_t* ioq, io_t* io)
   index_insert_unique (ioq->index, io_equal, io);
   pthread_mutex_unlock (&ioq->mutex);
   char c = 0;
-  write (ioq->pipes[1], &c, 1);
+  assert (write (ioq->pipes[1], &c, 1) == 1);
 }
 
 void

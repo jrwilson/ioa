@@ -25,6 +25,6 @@ void buffers_remove_child (buffers_t*, aid_t, bid_t, bid_t);
 
 void buffers_purge_aid (buffers_t*, aid_t);
 
-bid_t buffers_dup (buffers_t*, aid_t, bid_t);
+bid_t buffers_dup (buffers_t*, aid_t, bid_t, size_t);
 
 #endif /* __buffers_h__ */
