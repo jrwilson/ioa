@@ -12,7 +12,7 @@ thread_test_LDFLAGS = -lpthread
 
 display_SOURCES = display_driver.c display.c
 display_LDADD = $(top_builddir)/lib/libueioa.la
-display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
+display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread -ljpeg
 
 camera_SOURCES = camera_driver.c camera.c
 camera_LDADD = $(top_builddir)/lib/libueioa.la
@@ -20,4 +20,4 @@ camera_LDFLAGS = -lpthread
 
 camera_display_SOURCES = camera_display.c camera.c display.c
 camera_display_LDADD = $(top_builddir)/lib/libueioa.la
-camera_display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread
+camera_display_LDFLAGS = -L/usr/X11R6/lib -lX11 -lpthread -ljpeg

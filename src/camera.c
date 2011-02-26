@@ -171,7 +171,6 @@ camera_create (void* a)
   struct v4l2_cropcap cropcap;
   struct v4l2_crop crop;
   struct v4l2_format fmt;
-  unsigned int min;
 
   if (-1 == xioctl (camera->fd, VIDIOC_QUERYCAP, &cap)) {
     if (EINVAL == errno) {
@@ -224,21 +223,15 @@ camera_create (void* a)
   fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   fmt.fmt.pix.width       = 640;
   fmt.fmt.pix.height      = 480;
-  fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+  fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
   fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
   if (-1 == xioctl (camera->fd, VIDIOC_S_FMT, &fmt))
     errno_exit ("VIDIOC_S_FMT");
   
   /* Note VIDIOC_S_FMT may change width and height. */
-  
-  /* Buggy driver paranoia. */
-  min = fmt.fmt.pix.width * 2;
-  if (fmt.fmt.pix.bytesperline < min)
-    fmt.fmt.pix.bytesperline = min;
-  min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-  if (fmt.fmt.pix.sizeimage < min)
-    fmt.fmt.pix.sizeimage = min;
+
+  assert (fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG);
 
   struct v4l2_requestbuffers req;
 
@@ -362,6 +355,12 @@ camera_read_input (void* state, void* param, bid_t bid)
   }
   
   assert (i < BUFFER_COUNT);
+
+  /* Resize. */
+  buffer_incref (camera->buffers[i].bid);
+  camera->buffers[i].bid = buffer_dup (camera->buffers[i].bid, buf.bytesused);
+
+  /* printf ("index=%u type=%d bytesused=%u flags=%u field=%d timestamp=(%u,%u) timecode sequence=%u\n", buf.index, buf.type, buf.bytesused, buf.flags, buf.field, buf.timestamp.tv_sec, buf.timestamp.tv_usec, buf.sequence); */
 
   /* Put the frame on the outgoing queue. */
   bidq_push_back (camera->bidq, camera->buffers[i].bid);
