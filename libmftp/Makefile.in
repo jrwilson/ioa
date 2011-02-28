@@ -34,7 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = lib
+subdir = libmftp
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -70,11 +70,11 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libueioa_la_LIBADD =
-am_libueioa_la_OBJECTS = automata.lo bidq.lo buffers.lo hashtable.lo \
-	ioq.lo manager.lo order.lo receipts.lo runq.lo table.lo \
-	ueioa.lo
-libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
+libmftp_la_LIBADD =
+am_libmftp_la_OBJECTS = alarm.lo bitset.lo file.lo fileid.lo \
+	file_server.lo message.lo msg_receiver.lo msg_sender.lo \
+	udp_receiver.lo udp_sender.lo
+libmftp_la_OBJECTS = $(am_libmftp_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -88,8 +88,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libueioa_la_SOURCES)
-DIST_SOURCES = $(libueioa_la_SOURCES)
+SOURCES = $(libmftp_la_SOURCES)
+DIST_SOURCES = $(libmftp_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -207,19 +207,18 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
-lib_LTLIBRARIES = libueioa.la
-libueioa_la_SOURCES = \
-automata.c \
-bidq.c \
-buffers.c \
-hashtable.c \
-ioq.c \
-manager.c \
-order.c \
-receipts.c \
-runq.c \
-table.c \
-ueioa.c
+lib_LTLIBRARIES = libmftp.la
+libmftp_la_SOURCES = \
+alarm.c \
+bitset.c \
+file.c \
+fileid.c \
+file_server.c \
+message.c \
+msg_receiver.c \
+msg_sender.c \
+udp_receiver.c \
+udp_sender.c
 
 all: all-am
 
@@ -234,9 +233,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu lib/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu libmftp/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu lib/Makefile
+	  $(AUTOMAKE) --gnu libmftp/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -286,8 +285,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libueioa.la: $(libueioa_la_OBJECTS) $(libueioa_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libueioa_la_OBJECTS) $(libueioa_la_LIBADD) $(LIBS)
+libmftp.la: $(libmftp_la_OBJECTS) $(libmftp_la_DEPENDENCIES) 
+	$(LINK) -rpath $(libdir) $(libmftp_la_OBJECTS) $(libmftp_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -295,17 +294,16 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automata.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bidq.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffers.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtable.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioq.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manager.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/receipts.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runq.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/table.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ueioa.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alarm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bitset.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_server.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileid.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg_receiver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg_sender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp_receiver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp_sender.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
