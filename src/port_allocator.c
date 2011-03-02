@@ -65,7 +65,7 @@ port_allocator_create (port_descriptor_t* port_descriptors)
   return port_allocator;
 }
 
-size_t
+uint32_t
 port_allocator_port_set_count (port_allocator_t* port_allocator)
 {
   assert (port_allocator != NULL);
@@ -74,7 +74,7 @@ port_allocator_port_set_count (port_allocator_t* port_allocator)
 }
 
 bool
-port_allocator_contains_free_port (port_allocator_t* port_allocator, size_t idx)
+port_allocator_contains_free_port (port_allocator_t* port_allocator, uint32_t idx)
 {
   assert (port_allocator != NULL);
   assert (idx < port_allocator->port_set_count);
@@ -87,8 +87,8 @@ port_allocator_contains_free_port (port_allocator_t* port_allocator, size_t idx)
   }
 }
 
-size_t
-port_allocator_get_free_port (port_allocator_t* port_allocator, size_t idx)
+uint32_t
+port_allocator_get_free_port (port_allocator_t* port_allocator, uint32_t idx)
 {
   assert (port_allocator != NULL);
   assert (idx < port_allocator->port_set_count);
@@ -103,13 +103,13 @@ port_allocator_get_free_port (port_allocator_t* port_allocator, size_t idx)
   }
 
   /* Could improve by remembering the last cleared and/or set. */
-  size_t retval = bitset_next_clear (port_allocator->port_sets[idx].bitset, 0);
+  uint32_t retval = bitset_next_clear (port_allocator->port_sets[idx].bitset, 0);
   bitset_set (port_allocator->port_sets[idx].bitset, retval);
   return retval;
 }
 
-size_t
-port_allocator_input_count (port_allocator_t* port_allocator, size_t idx)
+uint32_t
+port_allocator_input_count (port_allocator_t* port_allocator, uint32_t idx)
 {
   assert (port_allocator != NULL);
   assert (idx < port_allocator->port_set_count);
@@ -117,8 +117,8 @@ port_allocator_input_count (port_allocator_t* port_allocator, size_t idx)
   return port_allocator->port_sets[idx].input_count;
 }
 
-size_t
-port_allocator_output_count (port_allocator_t* port_allocator, size_t idx)
+uint32_t
+port_allocator_output_count (port_allocator_t* port_allocator, uint32_t idx)
 {
   assert (port_allocator != NULL);
   assert (idx < port_allocator->port_set_count);

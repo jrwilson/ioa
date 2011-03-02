@@ -5,37 +5,37 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "port_manager.h"
+#include "component_manager.h"
 #include "port.h"
 #include "message.h"
 
 void
 channel_create_arg_init (channel_create_arg_t* arg,
-			 aid_t* a_port_manager,
-			 size_t a_component,
-			 size_t a_port_type,
-			 aid_t* b_port_manager,
-			 size_t b_component,
-			 size_t b_port_type,
-			 size_t a_to_b_map_size,
-			 size_t* a_to_b_map,
-			 size_t b_to_a_map_size,
-			 size_t* b_to_a_map)
+			 aid_t* a_component_manager,
+			 uuid_t a_component,
+			 uint32_t a_port_type,
+			 aid_t* b_component_manager,
+			 uuid_t b_component,
+			 uint32_t b_port_type,
+			 uint32_t a_to_b_map_size,
+			 uint32_t* a_to_b_map,
+			 uint32_t b_to_a_map_size,
+			 uint32_t* b_to_a_map)
 
 {
   assert (arg != NULL);
-  assert (a_port_manager != NULL);
-  assert (b_port_manager != NULL);
+  assert (a_component_manager != NULL);
+  assert (b_component_manager != NULL);
   assert (a_to_b_map != NULL);
   assert (b_to_a_map != NULL);
   assert (a_component != b_component);
 
-  arg->a_port_manager = a_port_manager;
-  arg->a_component = a_component;
+  arg->a_component_manager = a_component_manager;
+  uuid_copy (arg->a_component, a_component);
   arg->a_port_type = a_port_type;
 
-  arg->b_port_manager = b_port_manager;
-  arg->b_component = b_component;
+  arg->b_component_manager = b_component_manager;
+  uuid_copy (arg->b_component, b_component);
   arg->b_port_type = b_port_type;
 
   arg->a_to_b_map_size = a_to_b_map_size;
@@ -52,23 +52,23 @@ typedef struct channel_struct {
   bidq_t* a_to_b;
   bidq_t* b_to_a;
 
-  aid_t* a_port_manager;
-  size_t a_component;
-  size_t a_port_type;
-  size_t a_port;
+  aid_t* a_component_manager;
+  uuid_t a_component;
+  uint32_t a_port_type;
+  uint32_t a_port;
   aid_t a_port_aid;
 
-  aid_t* b_port_manager;
-  size_t b_component;
-  size_t b_port_type;
-  size_t b_port;
+  aid_t* b_component_manager;
+  uuid_t b_component;
+  uint32_t b_port_type;
+  uint32_t b_port;
   aid_t b_port_aid;
 
-  size_t a_to_b_map_size;
-  size_t* a_to_b_map;
+  uint32_t a_to_b_map_size;
+  uint32_t* a_to_b_map;
 
-  size_t b_to_a_map_size;
-  size_t* b_to_a_map;
+  uint32_t b_to_a_map_size;
+  uint32_t* b_to_a_map;
 
   manager_t* manager;
   aid_t self;
@@ -85,21 +85,21 @@ channel_create (void* a)
   channel->a_to_b = bidq_create ();
   channel->b_to_a = bidq_create ();
 
-  channel->a_port_manager = arg->a_port_manager;
-  channel->a_component = arg->a_component;
+  channel->a_component_manager = arg->a_component_manager;
+  uuid_copy (channel->a_component, arg->a_component);
   channel->a_port_type = arg->a_port_type;
 
-  channel->b_port_manager = arg->b_port_manager;
-  channel->b_component = arg->b_component;
+  channel->b_component_manager = arg->b_component_manager;
+  uuid_copy (channel->b_component, arg->b_component);
   channel->b_port_type = arg->b_port_type;
 
   channel->a_to_b_map_size = arg->a_to_b_map_size;
-  channel->a_to_b_map = malloc (sizeof (size_t) * channel->a_to_b_map_size);
-  memcpy (channel->a_to_b_map, arg->a_to_b_map, sizeof (size_t) * channel->a_to_b_map_size);
+  channel->a_to_b_map = malloc (sizeof (uint32_t) * channel->a_to_b_map_size);
+  memcpy (channel->a_to_b_map, arg->a_to_b_map, sizeof (uint32_t) * channel->a_to_b_map_size);
 
   channel->b_to_a_map_size = arg->b_to_a_map_size;
-  channel->b_to_a_map = malloc (sizeof (size_t) * channel->b_to_a_map_size);
-  memcpy (channel->b_to_a_map, arg->b_to_a_map, sizeof (size_t) * channel->b_to_a_map_size);
+  channel->b_to_a_map = malloc (sizeof (uint32_t) * channel->b_to_a_map_size);
+  memcpy (channel->b_to_a_map, arg->b_to_a_map, sizeof (uint32_t) * channel->b_to_a_map_size);
 
   channel->manager = manager_create ();
 
@@ -114,8 +114,8 @@ channel_create (void* a)
 		     channel->a_port_type);
   manager_proxy_add (channel->manager,
 		     &channel->a_port_aid,
-		     channel->a_port_manager,
-		     port_manager_request_port,
+		     channel->a_component_manager,
+		     component_manager_request_port,
 		     channel_a_callback,
 		     b);
   
@@ -125,8 +125,8 @@ channel_create (void* a)
 		     channel->b_port_type);
   manager_proxy_add (channel->manager,
 		     &channel->b_port_aid,
-		     channel->b_port_manager,
-		     port_manager_request_port,
+		     channel->b_component_manager,
+		     component_manager_request_port,
 		     channel_b_callback,
 		     b);
   
@@ -233,7 +233,7 @@ channel_a_in (void* state, void* param, bid_t bid)
 
   assert (buffer_size (bid) == sizeof (message_t));
   const message_t* m = buffer_read_ptr (bid);
-  assert (m->src_component == channel->a_component);
+  assert (uuid_compare (m->src_component, channel->a_component) == 0);
   assert (m->src_port_type == channel->a_port_type);
   assert (m->src_message < channel->a_to_b_map_size);
   assert (channel->a_to_b_map[m->src_message] != -1);
@@ -255,7 +255,7 @@ channel_a_out (void* state, void* param)
 
     bid_t b = buffer_dup (bid, buffer_size (bid));
     message_t* m = buffer_write_ptr (b);
-    m->dst_component = channel->a_component;
+    uuid_copy (m->dst_component, channel->a_component);
     m->dst_port_type = channel->a_port_type;
     m->dst_port = channel->a_port;
     m->dst_message = channel->b_to_a_map[m->src_message];
@@ -297,7 +297,7 @@ channel_b_out (void* state, void* param)
 
     bid_t b = buffer_dup (bid, buffer_size (bid));
     message_t* m = buffer_write_ptr (b);
-    m->dst_component = channel->b_component;
+    uuid_copy (m->dst_component, channel->b_component);
     m->dst_port_type = channel->b_port_type;
     m->dst_port = channel->b_port;
     m->dst_message = channel->a_to_b_map[m->src_message];

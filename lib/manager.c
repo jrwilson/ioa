@@ -11,7 +11,6 @@ proxy_request_create (bid_t bid, aid_t callback_aid, input_t callback_free_input
   proxy_request_t* proxy_request = buffer_write_ptr (b);
   proxy_request->bid = bid;
   if (bid != -1) {
-    printf ("%s bid=%d size=%zu parent=%d\n", __func__, bid, buffer_size (bid), b);
     buffer_add_child (b, bid);
   }
   proxy_request->callback_aid = callback_aid;
@@ -309,7 +308,6 @@ manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_p
 
   if (bid != -1) {
     buffer_incref (bid);
-    printf ("%s bid=%d size=%zu\n", __func__, bid, buffer_size (bid));
   }
 
   proxies_key_t key = {

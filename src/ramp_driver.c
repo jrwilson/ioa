@@ -1,4 +1,4 @@
-#include "port_manager.h"
+#include "component_manager.h"
 #include "ramp.h"
 #include "ramp_proxy.h"
 #include "integer_display.h"
@@ -50,24 +50,24 @@ static port_descriptor_t integer_display_port_descriptors[] = {
   },
 };
 
-static size_t ramp_to_display[] = {
+static uint32_t ramp_to_display[] = {
   0
 };
 
-static size_t display_to_ramp[] = {
+static uint32_t display_to_ramp[] = {
 };
 
 typedef struct {
   manager_t* manager;
 
-  size_t ramp_component;
-  size_t ramp_port_type;
-  port_manager_create_arg_t ramp_manager_arg;
+  uuid_t ramp_component;
+  uint32_t ramp_port_type;
+  component_manager_create_arg_t ramp_manager_arg;
   aid_t ramp_manager;
 
-  size_t display_component;
-  size_t display_port_type;
-  port_manager_create_arg_t display_manager_arg;
+  uuid_t display_component;
+  uint32_t display_port_type;
+  component_manager_create_arg_t display_manager_arg;
   aid_t display_manager;
 
   channel_create_arg_t channel_arg;
@@ -81,8 +81,8 @@ composer_create (void* arg)
 
   composer->manager = manager_create ();
 
-  composer->ramp_component = 25;
-  port_manager_create_arg_init (&composer->ramp_manager_arg,
+  uuid_generate (composer->ramp_component);
+  component_manager_create_arg_init (&composer->ramp_manager_arg,
   				&ramp_descriptor,
   				NULL,
   				ramp_request_proxy,
@@ -90,11 +90,11 @@ composer_create (void* arg)
   				ramp_port_descriptors);
   manager_child_add (composer->manager,
   		     &composer->ramp_manager,
-  		     &port_manager_descriptor,
+  		     &component_manager_descriptor,
   		     &composer->ramp_manager_arg);
 
-  composer->display_component = 87;
-  port_manager_create_arg_init (&composer->display_manager_arg,
+  uuid_generate (composer->display_component);
+  component_manager_create_arg_init (&composer->display_manager_arg,
   				&integer_display_descriptor,
   				NULL,
   				integer_display_request_proxy,
@@ -102,7 +102,7 @@ composer_create (void* arg)
   				integer_display_port_descriptors);
   manager_child_add (composer->manager,
   		     &composer->display_manager,
-  		     &port_manager_descriptor,
+  		     &component_manager_descriptor,
   		     &composer->display_manager_arg);
 
   composer->ramp_port_type = 0;

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "port_manager.h"
+#include "component_manager.h"
 
 typedef struct {
   aid_t aid;

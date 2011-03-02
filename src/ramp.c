@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "port_manager.h"
+#include "component_manager.h"
 #include "ramp_proxy.h"
 
 static bid_t ramp_integer_out (void*, void*);

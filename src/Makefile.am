@@ -14,7 +14,7 @@ display_SOURCES = display_driver.c display.c
 display_LDADD = $(top_builddir)/lib/libueioa.la
 display_LDFLAGS = -lX11 -lpthread -ljpeg
 
-ramp_SOURCES = ramp_driver.c ramp.c integer_display.c port_manager.c bitset.c port_allocator.c port.c channel.c ramp_proxy.c integer_display_proxy.c
+ramp_SOURCES = component_manager.c bitset.c port_allocator.c port.c channel.c ramp_driver.c ramp.c integer_display.c ramp_proxy.c integer_display_proxy.c
 ramp_LDADD = $(top_builddir)/lib/libueioa.la
 ramp_LDFLAGS = -lpthread
 

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "port_manager.h"
+#include "component_manager.h"
 
 typedef struct {
   aid_t aid;

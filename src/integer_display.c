@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include "integer_display_proxy.h"
-#include "port_manager.h"
+#include "component_manager.h"
 
 typedef struct {
   integer_display_proxy_create_arg_t integer_display_proxy_create_arg;
