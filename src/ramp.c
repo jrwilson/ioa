@@ -74,7 +74,8 @@ ramp_integer_out (void* state, void* param)
 
   bid_t bid = buffer_alloc (sizeof (int));
   int* ptr = buffer_write_ptr (bid);
-  *ptr = ramp->x;
+  *ptr = htonl (ramp->x);
+
   assert (schedule_output (ramp_integer_out, NULL) == 0);
   return bid;
 }
