@@ -27,7 +27,7 @@ static bid_t file_server_message_out (void*, void*);
 
 /* In seconds. */
 #define INIT_ANNOUNCE_INTERVAL 1
-#define MAX_ANNOUNCE_INTERVAL 4096
+#define MAX_ANNOUNCE_INTERVAL 16 /*4096*/
 #define REQUEST_INTERVAL 2
 
 /* In microseconds. */

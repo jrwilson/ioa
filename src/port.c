@@ -20,7 +20,7 @@ void
 port_create_arg_init (port_create_arg_t* arg,
 		      aid_t* component_aid,
 		      input_t request_proxy,
-		      port_descriptor_t* port_descriptors,
+		      port_type_descriptor_t* port_type_descriptors,
 		      uint32_t input_count,
 		      uint32_t output_count,
 		      uuid_t component,
@@ -32,13 +32,13 @@ port_create_arg_init (port_create_arg_t* arg,
   assert (arg != NULL);
   assert (component_aid != NULL);
   assert (request_proxy != NULL);
-  assert (port_descriptors != NULL);
+  assert (port_type_descriptors != NULL);
   assert (aid != -1);
   assert (free_input != NULL);
 
   arg->component_aid = component_aid;
   arg->request_proxy = request_proxy;
-  arg->port_descriptors = port_descriptors;
+  arg->port_type_descriptors = port_type_descriptors;
   arg->input_count = input_count;
   arg->output_count = output_count;
   uuid_copy (arg->component, component);
@@ -55,7 +55,7 @@ static bid_t port_component_out (void* state, void* param);
 typedef struct port_struct {
   aid_t* component_aid;
   input_t request_proxy;
-  port_descriptor_t* port_descriptors;
+  port_type_descriptor_t* port_type_descriptors;
   uuid_t component;
   uint32_t port_type;
   uint32_t port;
@@ -83,7 +83,7 @@ port_create (void* a)
 
   port->component_aid = arg->component_aid;
   port->request_proxy = arg->request_proxy;
-  port->port_descriptors = arg->port_descriptors;
+  port->port_type_descriptors = arg->port_type_descriptors;
   uuid_copy (port->component, arg->component);
   port->port_type = arg->port_type;
   port->port = arg->port;
@@ -114,7 +114,7 @@ port_create (void* a)
 			     port_component_out,
 			     port_to_component,
 			     &port->component_proxy,
-			     port->port_descriptors[port->port_type].input_messages[input_idx],
+			     port->port_type_descriptors[port->port_type].input_messages[input_idx].input,
 			     NULL);
     port_to_component->next = port->port_to_components;
     port->port_to_components = port_to_component;
@@ -130,7 +130,7 @@ port_create (void* a)
     manager_param_add (port->manager, component_to_port);
     manager_composition_add (port->manager,
 			     &port->component_proxy,
-			     port->port_descriptors[port->port_type].output_messages[output_idx],
+			     port->port_type_descriptors[port->port_type].output_messages[output_idx].output,
 			     NULL,
 			     &port->self,
 			     port_component_in,

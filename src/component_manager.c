@@ -7,6 +7,11 @@
 
 #include "port_allocator.h"
 #include "port.h"
+#include <json/json.h>
+#include <string.h>
+#include "mftp.h"
+
+#define COMPONENT_DESCRIPTION 0
 
 void
 component_manager_create_arg_init (component_manager_create_arg_t* arg,
@@ -14,18 +19,24 @@ component_manager_create_arg_init (component_manager_create_arg_t* arg,
 				   void* create_arg,
 				   input_t request_proxy,
 				   uuid_t component,
-				   port_descriptor_t* port_descriptors)
+				   port_type_descriptor_t* port_type_descriptors,
+				   aid_t* msg_sender,
+				   aid_t* msg_receiver)
 {
   assert (arg != NULL);
   assert (component_descriptor != NULL);
   assert (request_proxy != NULL);
-  assert (port_descriptors != NULL);
+  assert (port_type_descriptors != NULL);
+  assert (msg_sender != NULL);
+  assert (msg_receiver != NULL);
 
   arg->component_descriptor = component_descriptor;
   arg->create_arg = create_arg;
   arg->request_proxy = request_proxy;
   uuid_copy (arg->component, component);
-  arg->port_descriptors = port_descriptors;
+  arg->port_type_descriptors = port_type_descriptors;
+  arg->msg_sender = msg_sender;
+  arg->msg_receiver = msg_receiver;
 }
 
 typedef struct port_proxy_struct {
@@ -40,15 +51,95 @@ struct port_struct {
 };
 
 typedef struct {
-  port_descriptor_t* port_descriptors;
+  port_type_descriptor_t* port_type_descriptors;
   aid_t component_aid;
   input_t request_proxy;
   uuid_t component;
   port_allocator_t* port_allocator;
+
+  file_server_create_arg_t description_arg;
+  aid_t description;
+  
   port_t* ports;
   manager_t* manager;
   aid_t self;
 } component_manager_t;
+
+static json_object*
+encode_input_messages (component_manager_t* component_manager, uint32_t port_type)
+{
+  json_object* array = json_object_new_array ();
+
+  uint32_t input_message;
+  for (input_message = 0;
+       input_message < port_allocator_input_message_count (component_manager->port_allocator, port_type);
+       ++input_message) {
+    json_object* object = json_object_new_object ();
+    json_object_object_add (object, "name", json_object_new_string (component_manager->port_type_descriptors[port_type].input_messages[input_message].name));
+    json_object_object_add (object, "type", json_object_new_string (component_manager->port_type_descriptors[port_type].input_messages[input_message].type));
+    json_object_array_add (array, object);
+  }
+
+  return array;
+}
+
+static json_object*
+encode_output_messages (component_manager_t* component_manager, uint32_t port_type)
+{
+  json_object* array = json_object_new_array ();
+
+  uint32_t output_message;
+  for (output_message = 0;
+       output_message < port_allocator_output_message_count (component_manager->port_allocator, port_type);
+       ++output_message) {
+    json_object* object = json_object_new_object ();
+    json_object_object_add (object, "name", json_object_new_string (component_manager->port_type_descriptors[port_type].output_messages[output_message].name));
+    json_object_object_add (object, "type", json_object_new_string (component_manager->port_type_descriptors[port_type].output_messages[output_message].type));
+    json_object_array_add (array, object);
+  }
+
+  return array;
+}
+
+static json_object*
+encode_port_type (component_manager_t* component_manager, uint32_t port_type)
+{
+  json_object* object = json_object_new_object ();
+
+  json_object_object_add (object, "cardinality", json_object_new_int (port_allocator_cardinality (component_manager->port_allocator, port_type)));
+  json_object_object_add (object, "input messages", encode_input_messages (component_manager, port_type));
+  json_object_object_add (object, "output messages", encode_output_messages (component_manager, port_type));
+
+  return object;
+}
+
+static json_object*
+encode_port_types (component_manager_t* component_manager)
+{
+  json_object* array = json_object_new_array ();
+
+  uint32_t port_type;
+  for (port_type = 0;
+       port_type < port_allocator_port_type_count (component_manager->port_allocator);
+       ++port_type) {
+    json_object_array_add (array, encode_port_type (component_manager, port_type));
+  }
+
+  return array;
+}
+
+static json_object* 
+encode_descriptor (component_manager_t* component_manager)
+{
+  char u[37];
+  uuid_unparse (component_manager->component, u);
+
+  json_object* object = json_object_new_object ();
+  json_object_object_add (object, "component", json_object_new_string (u));
+  json_object_object_add (object, "port types", encode_port_types (component_manager));
+
+  return object;
+}
 
 static void*
 component_manager_create (void* a)
@@ -56,21 +147,41 @@ component_manager_create (void* a)
   component_manager_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->component_descriptor != NULL);
-  assert (arg->port_descriptors != NULL);
+  assert (arg->port_type_descriptors != NULL);
 
   component_manager_t* component_manager = malloc (sizeof (component_manager_t));
 
-  component_manager->port_descriptors = arg->port_descriptors;
+  component_manager->port_type_descriptors = arg->port_type_descriptors;
   component_manager->request_proxy = arg->request_proxy;
   uuid_copy (component_manager->component, arg->component);
-  component_manager->port_allocator = port_allocator_create (arg->port_descriptors);
+  component_manager->port_allocator = port_allocator_create (arg->port_type_descriptors);
   component_manager->ports = NULL;
+
+  json_object* description = encode_descriptor (component_manager);
+  component_manager->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description),
+							    strlen (json_object_to_json_string (description)) + 1,
+							    COMPONENT_DESCRIPTION);
+  component_manager->description_arg.announce = true;
+  component_manager->description_arg.download = false;
+  component_manager->description_arg.msg_sender = arg->msg_sender;
+  component_manager->description_arg.msg_receiver = arg->msg_receiver;
+  json_object_put (description);
+
+  printf ("%s\n", component_manager->description_arg.file->data);
 
   component_manager->manager = manager_create ();
 
-  manager_self_set (component_manager->manager, &component_manager->self);
-  manager_child_add (component_manager->manager, &component_manager->component_aid, arg->component_descriptor, arg->create_arg);
-  
+  manager_self_set (component_manager->manager,
+		    &component_manager->self);
+  manager_child_add (component_manager->manager,
+		     &component_manager->component_aid,
+		     arg->component_descriptor,
+		     arg->create_arg);
+  manager_child_add (component_manager->manager,
+		     &component_manager->description,
+		     &file_server_descriptor,
+		     &component_manager->description_arg);
+
   return component_manager;
 }
 
@@ -124,7 +235,7 @@ component_manager_request_port (void* state, void* param, bid_t bid)
 
   buffer_decref (bid);
 
-  if (request->port_type >= port_allocator_port_set_count (component_manager->port_allocator)) {
+  if (request->port_type >= port_allocator_port_type_count (component_manager->port_allocator)) {
     /* TODO: Out of bounds. */
     assert (0);
   }
@@ -143,9 +254,9 @@ component_manager_request_port (void* state, void* param, bid_t bid)
   port_create_arg_init (&port->port_create_arg,
 			&component_manager->component_aid,
 			component_manager->request_proxy,
-			component_manager->port_descriptors,
-			port_allocator_input_count (component_manager->port_allocator, request->port_type),
-			port_allocator_output_count (component_manager->port_allocator, request->port_type),
+			component_manager->port_type_descriptors,
+			port_allocator_input_message_count (component_manager->port_allocator, request->port_type),
+			port_allocator_output_message_count (component_manager->port_allocator, request->port_type),
 			component_manager->component,
 			port_type,
 			port_idx,
@@ -159,8 +270,22 @@ component_manager_request_port (void* state, void* param, bid_t bid)
   assert (schedule_system_output () == 0);
 }
 
+void
+component_manager_strobe (void* state, void* param, bid_t bid)
+{
+  assert (state != NULL);
+  component_manager_t* component_manager = state;
+
+  assert (schedule_system_output () == 0);
+
+  if (component_manager->description != -1) {
+    assert (schedule_free_input (component_manager->description, file_server_strobe, buffer_alloc (0)) == 0);
+  }
+}
+
 static input_t component_manager_free_inputs[] = {
   component_manager_request_port,
+  component_manager_strobe,
   NULL
 };
 

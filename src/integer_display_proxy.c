@@ -45,7 +45,7 @@ integer_display_proxy_integer_in (void* state, void* param, bid_t bid)
 {
   assert (buffer_size (bid) == sizeof (int));
   const int* ptr = buffer_read_ptr (bid);
-  printf (" in: %d\n", ntohl(*ptr));
+  /* printf ("in: %d\n", ntohl(*ptr)); */
 }
 
 static input_t integer_display_proxy_inputs[] = {

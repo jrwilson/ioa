@@ -1,2 +1,2 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = lib src libmftp mftp . tests
+SUBDIRS = lib libmftp src mftp . tests

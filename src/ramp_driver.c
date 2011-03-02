@@ -5,21 +5,27 @@
 #include "integer_display_proxy.h"
 #include "port.h"
 #include "channel.h"
-
+#include <mftp.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 
-static input_t ramp_inputs[] = {
-  NULL
+static input_message_t ramp_inputs[] = {
+  {
+    NULL, NULL, NULL
+  }
 };
 
-static output_t ramp_outputs[] = {
-  ramp_proxy_integer_out,
-  NULL
+static output_message_t ramp_outputs[] = {
+  {
+    "display_integer", "integer", ramp_proxy_integer_out
+  },
+  {
+    NULL, NULL, NULL
+  }
 };
 
-static port_descriptor_t ramp_port_descriptors[] = {
+static port_type_descriptor_t ramp_port_descriptors[] = {
   {
     .cardinality = 0,
     .input_messages = ramp_inputs,
@@ -30,16 +36,22 @@ static port_descriptor_t ramp_port_descriptors[] = {
   },
 };
 
-static input_t integer_display_inputs[] = {
-  integer_display_proxy_integer_in,
-  NULL
+static input_message_t integer_display_inputs[] = {
+  {
+    "display_integer", "integer", integer_display_proxy_integer_in
+  },
+  {
+    NULL, NULL, NULL
+  }
 };
 
-static output_t integer_display_outputs[] = {
-  NULL
+static output_message_t integer_display_outputs[] = {
+  {
+    NULL, NULL, NULL
+  }
 };
 
-static port_descriptor_t integer_display_port_descriptors[] = {
+static port_type_descriptor_t integer_display_port_descriptors[] = {
   {
     .cardinality = 1,
     .input_messages = integer_display_inputs,
@@ -59,6 +71,11 @@ static uint32_t display_to_ramp[] = {
 
 typedef struct {
   manager_t* manager;
+
+  aid_t self;
+
+  aid_t msg_sender;
+  aid_t msg_receiver;
 
   uuid_t ramp_component;
   uint32_t ramp_port_type;
@@ -81,13 +98,20 @@ composer_create (void* arg)
 
   composer->manager = manager_create ();
 
+  manager_self_set (composer->manager, &composer->self);
+
+  manager_child_add (composer->manager, &composer->msg_sender, &msg_sender_descriptor, NULL);
+  manager_child_add (composer->manager, &composer->msg_receiver, &msg_receiver_descriptor, NULL);
+
   uuid_generate (composer->ramp_component);
   component_manager_create_arg_init (&composer->ramp_manager_arg,
-  				&ramp_descriptor,
-  				NULL,
-  				ramp_request_proxy,
-  				composer->ramp_component,
-  				ramp_port_descriptors);
+				     &ramp_descriptor,
+				     NULL,
+				     ramp_request_proxy,
+				     composer->ramp_component,
+				     ramp_port_descriptors,
+				     &composer->msg_sender,
+				     &composer->msg_receiver);
   manager_child_add (composer->manager,
   		     &composer->ramp_manager,
   		     &component_manager_descriptor,
@@ -95,11 +119,13 @@ composer_create (void* arg)
 
   uuid_generate (composer->display_component);
   component_manager_create_arg_init (&composer->display_manager_arg,
-  				&integer_display_descriptor,
-  				NULL,
-  				integer_display_request_proxy,
-  				composer->display_component,
-  				integer_display_port_descriptors);
+				     &integer_display_descriptor,
+				     NULL,
+				     integer_display_request_proxy,
+				     composer->display_component,
+				     integer_display_port_descriptors,
+				     &composer->msg_sender,
+				     &composer->msg_receiver);
   manager_child_add (composer->manager,
   		     &composer->display_manager,
   		     &component_manager_descriptor,
@@ -138,6 +164,12 @@ composer_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   manager_apply (composer->manager, receipt);
+  if (composer->ramp_manager != -1) {
+    assert (schedule_free_input (composer->ramp_manager, component_manager_strobe, buffer_alloc (0)) == 0);
+  }
+  if (composer->display_manager != -1) {
+    assert (schedule_free_input (composer->display_manager, component_manager_strobe, buffer_alloc (0)) == 0);
+  }
   if (composer->channel != -1) {
     assert (schedule_free_input (composer->channel, channel_strobe, buffer_alloc (0)) == 0);
   }

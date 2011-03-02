@@ -15,8 +15,8 @@ display_LDADD = $(top_builddir)/lib/libueioa.la
 display_LDFLAGS = -lX11 -lpthread -ljpeg
 
 ramp_SOURCES = component_manager.c bitset.c port_allocator.c port.c channel.c ramp_driver.c ramp.c integer_display.c ramp_proxy.c integer_display_proxy.c
-ramp_LDADD = $(top_builddir)/lib/libueioa.la
-ramp_LDFLAGS = -lpthread
+ramp_LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/libmftp/libmftp.la
+ramp_LDFLAGS = -lpthread -ljson -lcrypto
 
 if WANT_CAMERA
 	bin_PROGRAMS += camera camera_display

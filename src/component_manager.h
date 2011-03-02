@@ -3,20 +3,16 @@
 
 #include <ueioa.h>
 #include <uuid/uuid.h>
-#include <stdint.h>
-
-typedef struct {
-  uint32_t cardinality; /* 0 means infinity. */
-  input_t* input_messages;
-  output_t* output_messages;
-} port_descriptor_t;
+#include "port_type_descriptor.h"
 
 typedef struct {
   descriptor_t* component_descriptor;
   void* create_arg;
   input_t request_proxy;
   uuid_t component;
-  port_descriptor_t* port_descriptors;
+  port_type_descriptor_t* port_type_descriptors;
+  aid_t* msg_sender;
+  aid_t* msg_receiver;
 } component_manager_create_arg_t;
 
 void component_manager_create_arg_init (component_manager_create_arg_t*,
@@ -24,7 +20,9 @@ void component_manager_create_arg_init (component_manager_create_arg_t*,
 					void*,
 					input_t,
 					uuid_t,
-					port_descriptor_t*);
+					port_type_descriptor_t*,
+					aid_t*,
+					aid_t*);
 typedef struct {
   uint32_t port_type;
 } port_request_t;
@@ -38,6 +36,7 @@ typedef struct {
 void port_receipt_init (port_receipt_t*, uint32_t);
 
 void component_manager_request_port (void*, void*, bid_t);
+void component_manager_strobe (void*, void*, bid_t);
 
 extern descriptor_t component_manager_descriptor;
 
