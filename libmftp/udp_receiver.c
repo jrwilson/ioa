@@ -120,7 +120,6 @@ udp_receiver_read_input (void* state, void* param, bid_t b)
     /* Shrink the buffer by duplicating it. */
     buffer_incref (bid);
     bid = buffer_dup (bid, bytes_read);
-    printf ("bytes_to_read = %d bytes_read = %d\n", bytes_to_read, bytes_read);
   }
   /* Put it into the queue. */
   bidq_push_back (udp_receiver->bidq, bid);

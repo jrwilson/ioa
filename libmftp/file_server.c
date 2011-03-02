@@ -143,7 +143,7 @@ file_server_create (void* a)
 
   manager_output_add (file_server->manager, &file_server->download_complete_composed, file_server_download_complete_out, NULL);
 
-  manager_proxy_add (file_server->manager, &file_server->msg_sender_proxy, arg->msg_sender, msg_sender_request_proxy, file_server_callback);
+  manager_proxy_add (file_server->manager, &file_server->msg_sender_proxy, arg->msg_sender, msg_sender_request_proxy, file_server_callback, -1);
   manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_announcement_out, NULL, &file_server->self, file_server_announcement_in, NULL);
   manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_request_out, NULL, &file_server->self, file_server_request_in, NULL);
   manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_fragment_out, NULL, &file_server->self, file_server_fragment_in, NULL);

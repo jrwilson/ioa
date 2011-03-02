@@ -87,7 +87,7 @@ matcher_create (void* a)
   manager_composition_add (matcher->manager, matcher->msg_receiver, msg_receiver_announcement_out, NULL, &matcher->self, matcher_announcement_in, NULL);
   manager_composition_add (matcher->manager, matcher->msg_receiver, msg_receiver_match_out, NULL, &matcher->self, matcher_match_in, NULL);
 
-  manager_proxy_add (matcher->manager, &matcher->msg_sender_proxy, matcher->msg_sender, msg_sender_request_proxy, matcher_callback);
+  manager_proxy_add (matcher->manager, &matcher->msg_sender_proxy, matcher->msg_sender, msg_sender_request_proxy, matcher_callback, -1);
   manager_composition_add (matcher->manager, &matcher->self, matcher_message_out, NULL, &matcher->msg_sender_proxy, msg_sender_proxy_message_in, NULL);
 
   return matcher;

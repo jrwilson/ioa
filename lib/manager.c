@@ -4,6 +4,36 @@
 
 #include "hashtable.h"
 
+static bid_t
+proxy_request_create (bid_t bid, aid_t callback_aid, input_t callback_free_input)
+{
+  bid_t b = buffer_alloc (sizeof (proxy_request_t));
+  proxy_request_t* proxy_request = buffer_write_ptr (b);
+  proxy_request->bid = bid;
+  if (bid != -1) {
+    printf ("%s bid=%d size=%zu parent=%d\n", __func__, bid, buffer_size (bid), b);
+    buffer_add_child (b, bid);
+  }
+  proxy_request->callback_aid = callback_aid;
+  proxy_request->callback_free_input = callback_free_input;
+  return b;
+}
+
+bid_t
+proxy_receipt_create (aid_t proxy_aid, bid_t bid)
+{
+  assert (proxy_aid != -1);
+
+  bid_t b = buffer_alloc (sizeof (proxy_receipt_t));
+  proxy_receipt_t* proxy_receipt = buffer_write_ptr (b);
+  proxy_receipt->proxy_aid = proxy_aid;
+  proxy_receipt->bid = bid;
+  if (bid != -1) {
+    buffer_add_child (b, bid);
+  }
+  return b;
+}
+
 typedef struct {
   aid_t* child_aid_ptr;
   descriptor_t* descriptor;
@@ -30,6 +60,7 @@ typedef struct proxies_key_struct {
   aid_t* proxy_aid_ptr;
   aid_t* source_aid_ptr;
   input_t source_free_input;
+  input_t callback;
   bid_t bid;
 } proxies_key_t;
 
@@ -198,7 +229,6 @@ struct manager_struct {
   proxies_key_t last_proxy;
   compositions_key_t last_composition;
   aid_t self;
-  void* state;
   aid_t* self_ptr;
   aid_t* parent_ptr;
   hashtable_t* children;
@@ -217,6 +247,7 @@ manager_create (void)
   manager_t* manager = malloc (sizeof (manager_t));
   manager->syscall_status = NORMAL;
   manager->proxy_status = NORMAL;
+  manager->self = -1;
   manager->self_ptr = NULL;
   manager->parent_ptr = NULL;
   manager->children = hashtable_create (sizeof (children_key_t), children_key_equal, children_key_hash);
@@ -265,23 +296,27 @@ manager_child_add (manager_t* manager, aid_t* child_aid_ptr, descriptor_t* descr
 }
 
 void
-manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, bid_t bid)
+manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback, bid_t bid)
 {
   assert (manager != NULL);
   assert (proxy_aid_ptr != NULL);
   assert (source_aid_ptr != NULL);
   assert (source_free_input != NULL);
-  assert (bid != -1);
+  assert (callback != NULL);
   
   /* Clear the automaton. */
   *proxy_aid_ptr = -1;
 
-  buffer_incref (bid);
+  if (bid != -1) {
+    buffer_incref (bid);
+    printf ("%s bid=%d size=%zu\n", __func__, bid, buffer_size (bid));
+  }
 
   proxies_key_t key = {
     .proxy_aid_ptr = proxy_aid_ptr,
     .source_aid_ptr = source_aid_ptr,
     .source_free_input = source_free_input,
+    .callback = callback,
     .bid = bid,
   };
   assert (!hashtable_contains_key (manager->proxies, &key));
@@ -379,6 +414,7 @@ manager_output_add (manager_t* manager, bool* flag, output_t output, void* out_p
 static void
 proxy_fire (manager_t* manager)
 {
+  assert (manager->self != -1);
   if (manager->proxy_status == NORMAL) {
     size_t idx;
     /* Go through the proxies. */
@@ -388,7 +424,8 @@ proxy_fire (manager_t* manager)
       const proxies_key_t* key = hashtable_key_at (manager->proxies, idx);
       if (*key->proxy_aid_ptr == -1 && *key->source_aid_ptr != -1) {
         /* Request a proxy. */
-	assert (schedule_free_input (*key->source_aid_ptr, *key->source_free_input, key->bid) == 0);
+	bid_t bid = proxy_request_create (key->bid, manager->self, key->callback);
+	assert (schedule_free_input (*key->source_aid_ptr, *key->source_free_input, bid) == 0);
 	manager->last_proxy = *key;
 	manager->proxy_status = OUTSTANDING;
 	break;
@@ -769,13 +806,14 @@ manager_action (manager_t* manager)
 /* } */
 
 void
-manager_proxy_receive (manager_t* manager, aid_t proxy_aid)
+manager_proxy_receive (manager_t* manager, const proxy_receipt_t* proxy_receipt)
 {
   assert (manager != NULL);
+  assert (proxy_receipt != NULL);
 
   assert (manager->proxy_status == OUTSTANDING);
 
-  *manager->last_proxy.proxy_aid_ptr = proxy_aid;
+  *manager->last_proxy.proxy_aid_ptr = proxy_receipt->proxy_aid;
   manager->proxy_status = NORMAL;
 
   proxy_fire (manager);

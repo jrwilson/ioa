@@ -34,7 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT)
+bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT) \
+	ramp$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -63,6 +64,16 @@ main_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 main_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(main_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_ramp_OBJECTS = ramp_driver.$(OBJEXT) ramp.$(OBJEXT) \
+	integer_display.$(OBJEXT) port_manager.$(OBJEXT) \
+	bitset.$(OBJEXT) port_allocator.$(OBJEXT) port.$(OBJEXT) \
+	channel.$(OBJEXT) ramp_proxy.$(OBJEXT) \
+	integer_display_proxy.$(OBJEXT)
+ramp_OBJECTS = $(am_ramp_OBJECTS)
+ramp_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+ramp_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ramp_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_thread_test_OBJECTS = thread_test.$(OBJEXT)
 thread_test_OBJECTS = $(am_thread_test_OBJECTS)
 thread_test_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
@@ -82,8 +93,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(display_SOURCES) $(main_SOURCES) $(thread_test_SOURCES)
-DIST_SOURCES = $(display_SOURCES) $(main_SOURCES) \
+SOURCES = $(display_SOURCES) $(main_SOURCES) $(ramp_SOURCES) \
+	$(thread_test_SOURCES)
+DIST_SOURCES = $(display_SOURCES) $(main_SOURCES) $(ramp_SOURCES) \
 	$(thread_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -212,6 +224,9 @@ thread_test_LDFLAGS = -lpthread
 display_SOURCES = display_driver.c display.c
 display_LDADD = $(top_builddir)/lib/libueioa.la
 display_LDFLAGS = -lX11 -lpthread -ljpeg
+ramp_SOURCES = ramp_driver.c ramp.c integer_display.c port_manager.c bitset.c port_allocator.c port.c channel.c ramp_proxy.c integer_display_proxy.c
+ramp_LDADD = $(top_builddir)/lib/libueioa.la
+ramp_LDFLAGS = -lpthread
 all: all-am
 
 .SUFFIXES:
@@ -295,6 +310,9 @@ display$(EXEEXT): $(display_OBJECTS) $(display_DEPENDENCIES)
 main$(EXEEXT): $(main_OBJECTS) $(main_DEPENDENCIES) 
 	@rm -f main$(EXEEXT)
 	$(main_LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
+ramp$(EXEEXT): $(ramp_OBJECTS) $(ramp_DEPENDENCIES) 
+	@rm -f ramp$(EXEEXT)
+	$(ramp_LINK) $(ramp_OBJECTS) $(ramp_LDADD) $(LIBS)
 thread_test$(EXEEXT): $(thread_test_OBJECTS) $(thread_test_DEPENDENCIES) 
 	@rm -f thread_test$(EXEEXT)
 	$(thread_test_LINK) $(thread_test_OBJECTS) $(thread_test_LDADD) $(LIBS)
@@ -305,11 +323,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bitset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/channel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/integer_display.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/integer_display_proxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port_allocator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port_manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ramp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ramp_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ramp_proxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trigger.Po@am__quote@
 

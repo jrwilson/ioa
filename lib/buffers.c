@@ -738,12 +738,14 @@ buffers_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
     /* Edge doesn't exist. */
 
     buffer_entry_t* parent_entry = buffer_entry_for_bid (buffers, parent, NULL);
+    buffer_entry_t* child_entry = buffer_entry_for_bid (buffers, child, NULL);
     buffer_ref_entry_t* child_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, child, NULL);
-    
+  
     /* Parent and child must exist, parent must be READWRITE. */
     if ((parent != child) &&
 	(parent_entry != NULL && parent_entry->owner == aid && parent_entry->mode == READWRITE) &&
-	(child_ref_entry != NULL)) {
+	(child_entry != NULL) &&
+	(child_entry->owner == aid || child_ref_entry != NULL)) {
       /* READWRITE implies ref_count == 1. */
       assert (parent_entry->ref_count == 1);
 

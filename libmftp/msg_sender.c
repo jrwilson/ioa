@@ -6,17 +6,44 @@
 #include "udp_sender.h"
 
 typedef struct {
+  aid_t callback_aid;
+  input_t callback_free_input;
+} msg_sender_proxy_create_arg_t;
+
+typedef struct {
+  aid_t callback_aid;
+  input_t callback_free_input;
   bidq_t* bidq;
 } msg_sender_proxy_t;
 
 static void*
-msg_sender_proxy_create (void* arg)
+msg_sender_proxy_create (void* a)
 {
+  msg_sender_proxy_create_arg_t* arg = a;
+  assert (arg != NULL);
+
   msg_sender_proxy_t* msg_sender_proxy = malloc (sizeof (msg_sender_proxy_t));
 
+  msg_sender_proxy->callback_aid = arg->callback_aid;
+  msg_sender_proxy->callback_free_input = arg->callback_free_input;
   /* Initialize the queue. */
   msg_sender_proxy->bidq = bidq_create ();
   return msg_sender_proxy;
+}
+
+static void
+msg_sender_proxy_system_input (void* state, void* param, bid_t bid)
+{
+  msg_sender_proxy_t* msg_sender_proxy = state;
+  assert (msg_sender_proxy != NULL);
+  assert (bid != -1);
+  assert (buffer_size (bid) == sizeof (receipt_t));
+  const receipt_t* receipt = buffer_read_ptr (bid);
+
+  if (receipt->type == SELF_CREATED) {
+    bid_t bid = proxy_receipt_create (receipt->self_created.self, -1);
+    assert (schedule_free_input (msg_sender_proxy->callback_aid, msg_sender_proxy->callback_free_input, bid) == 0);
+  }
 }
 
 static bid_t msg_sender_proxy_message_out (void* state, void* param);
@@ -59,13 +86,17 @@ static output_t msg_sender_proxy_outputs[] = { msg_sender_proxy_message_out, NUL
 
 static descriptor_t msg_sender_proxy_descriptor = {
   .constructor = msg_sender_proxy_create,
+  .system_input = msg_sender_proxy_system_input,
   .inputs = msg_sender_proxy_inputs,
   .outputs = msg_sender_proxy_outputs,
 };
 
 
 
-
+typedef struct {
+  aid_t aid;
+  msg_sender_proxy_create_arg_t create_arg;
+} proxy_t;
 
 typedef struct {
   manager_t* manager;
@@ -113,19 +144,6 @@ msg_sender_system_output (void* state, void* param)
   return manager_action (msg_sender->manager);
 }
 
-static proxy_compose_pair_t proxy_out_parent_in[] = {
-  { msg_sender_proxy_message_out, msg_sender_message_in },
-  { NULL, NULL }
-};
-static proxy_compose_pair_t parent_out_proxy_in[] = {
-  { NULL, NULL }
-};
-
-static proxy_compose_map_t compose_map = {
-  .proxy_out_parent_in = proxy_out_parent_in,
-  .parent_out_proxy_in = parent_out_proxy_in
-};
-
 void
 msg_sender_request_proxy (void* state, void* param, bid_t bid)
 {
@@ -135,8 +153,23 @@ msg_sender_request_proxy (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (proxy_request_t));
 
   const proxy_request_t* request = buffer_read_ptr (bid);
-  int* p = malloc (sizeof (int));
-  manager_proxy_create (msg_sender->manager, p, &msg_sender_proxy_descriptor, NULL, &compose_map, request);
+  proxy_t* proxy = malloc (sizeof (proxy_t));
+  proxy->create_arg.callback_aid = request->callback_aid;
+  proxy->create_arg.callback_free_input = request->callback_free_input;
+  manager_param_add (msg_sender->manager,
+		     proxy);
+  manager_child_add (msg_sender->manager,
+		     &proxy->aid,
+		     &msg_sender_proxy_descriptor,
+		     &proxy->create_arg);
+  manager_composition_add (msg_sender->manager,
+			   &proxy->aid,
+			   msg_sender_proxy_message_out,
+			   NULL,
+			   &msg_sender->self,
+			   msg_sender_message_in,
+			   proxy);
+  assert (schedule_system_output () == 0);
 }
 
 static void

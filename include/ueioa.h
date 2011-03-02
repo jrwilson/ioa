@@ -172,7 +172,18 @@ manager_t* manager_create (void);
 void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
 void manager_child_add (manager_t*, aid_t*, descriptor_t*, void*);
-void manager_proxy_add (manager_t*, aid_t*, aid_t*, input_t, input_t);
+void manager_proxy_add (manager_t*, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback, bid_t);
+typedef struct proxy_request_struct {
+  bid_t bid;
+  aid_t callback_aid;
+  input_t callback_free_input;
+} proxy_request_t;
+typedef struct proxy_receipt_struct {
+  aid_t proxy_aid;
+  bid_t bid;
+} proxy_receipt_t;
+bid_t proxy_receipt_create (aid_t, bid_t);
+void manager_proxy_receive (manager_t*, const proxy_receipt_t*);
 void manager_param_add (manager_t*, void*);
 void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
 void manager_input_add (manager_t*, bool*, input_t, void*);
@@ -180,28 +191,6 @@ void manager_output_add (manager_t*, bool*, output_t, void*);
 
 void manager_apply (manager_t*, const receipt_t*);
 bid_t manager_action (manager_t*);
-
-typedef struct {
-  aid_t aid;
-  input_t free_input;
-} proxy_request_t;
-
-typedef struct {
-  output_t output;
-  input_t input;
-} proxy_compose_pair_t;
-
-typedef struct {
-  proxy_compose_pair_t* proxy_out_parent_in;
-  proxy_compose_pair_t* parent_out_proxy_in;
-} proxy_compose_map_t;
-
-typedef struct {
-  aid_t proxy_aid;
-} proxy_receipt_t;
-
-void manager_proxy_create (manager_t*, void*, descriptor_t*, void*, proxy_compose_map_t*, const proxy_request_t*);
-void manager_proxy_receive (manager_t*, const proxy_receipt_t*);
 
 typedef struct bidq_struct bidq_t;
 

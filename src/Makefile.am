@@ -1,6 +1,6 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
-bin_PROGRAMS = main thread_test display
+bin_PROGRAMS = main thread_test display ramp
 
 main_SOURCES = main.c composer.c trigger.c counter.c
 main_LDADD = $(top_builddir)/lib/libueioa.la
@@ -13,6 +13,10 @@ thread_test_LDFLAGS = -lpthread
 display_SOURCES = display_driver.c display.c
 display_LDADD = $(top_builddir)/lib/libueioa.la
 display_LDFLAGS = -lX11 -lpthread -ljpeg
+
+ramp_SOURCES = ramp_driver.c ramp.c integer_display.c port_manager.c bitset.c port_allocator.c port.c channel.c ramp_proxy.c integer_display_proxy.c
+ramp_LDADD = $(top_builddir)/lib/libueioa.la
+ramp_LDFLAGS = -lpthread
 
 if WANT_CAMERA
 	bin_PROGRAMS += camera camera_display
