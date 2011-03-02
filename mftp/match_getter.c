@@ -16,8 +16,6 @@ static void match_getter_file_download_complete (void* state, void* param, bid_t
 
 static void match_getter_match_in (void*, void*, bid_t);
 
-static bid_t match_getter_new_comm_out (void*, void*);
-
 typedef struct meta_item_struct meta_item_t;
 struct meta_item_struct {
   mftp_FileID_t meta_fileid;
@@ -113,6 +111,9 @@ match_getter_match_in (void* state, void* param, bid_t bid)
 	/* Add it to the list. */
 	meta = malloc (sizeof (meta_item_t));
 	
+	meta->meta_aid = -1;
+	meta->file_aid = -1;
+
 	manager_param_add (match_getter->manager, meta);
 	
 	memcpy (&meta->meta_fileid, &message->announcement.fileid, sizeof (mftp_FileID_t));
@@ -123,7 +124,6 @@ match_getter_match_in (void* state, void* param, bid_t bid)
 	meta->meta_arg.msg_receiver = match_getter->msg_receiver;
 	manager_child_add (match_getter->manager, &meta->meta_aid, &file_server_descriptor, &meta->meta_arg);
 	
-	manager_composition_add (match_getter->manager, &match_getter->self, match_getter_new_comm_out, NULL, &meta->meta_aid, file_server_new_comm_in, NULL);
 	
 	manager_composition_add (match_getter->manager, &meta->meta_aid, file_server_download_complete_out, NULL, &match_getter->self, match_getter_meta_download_complete, meta);
 	
@@ -161,7 +161,7 @@ match_getter_meta_download_complete (void* state, void* param, bid_t bid)
       meta->file_arg.msg_receiver = match_getter->msg_receiver;
       manager_child_add (match_getter->manager, &meta->file_aid, &file_server_descriptor, &meta->file_arg);
       
-      manager_composition_add (match_getter->manager, &match_getter->self, match_getter_new_comm_out, NULL, &meta->file_aid, file_server_new_comm_in, NULL);
+      /* manager_composition_add (match_getter->manager, &match_getter->self, match_getter_new_comm_out, NULL, &meta->file_aid, file_server_new_comm_in, NULL); */
       
       manager_composition_add (match_getter->manager, &meta->file_aid, file_server_download_complete_out, NULL, &match_getter->self, match_getter_file_download_complete, meta);
     
@@ -216,10 +216,24 @@ match_getter_file_download_complete (void* state, void* param, bid_t bid)
 }
 
 void
-match_getter_new_comm_in (void* state, void* param, bid_t bid)
+match_getter_strobe (void* state, void* param, bid_t bid)
 {
+  match_getter_t* match_getter = state;
+  assert (match_getter != NULL);
+
   assert (schedule_system_output () == 0);
-  assert (schedule_output (match_getter_new_comm_out, NULL) == 0);
+
+  meta_item_t* meta;
+  for (meta = match_getter->metas;
+       meta != NULL;
+       meta = meta->next) {
+    if (meta->meta_aid != -1) {
+      assert (schedule_free_input (meta->meta_aid, file_server_strobe, buffer_alloc (0)) == 0);
+    }
+    if (meta->file_aid != -1) {
+      assert (schedule_free_input (meta->file_aid, file_server_strobe, buffer_alloc (0)) == 0);
+    }
+  }
 }
 
 static bid_t
@@ -228,11 +242,15 @@ match_getter_new_comm_out (void* state, void* param)
   return buffer_alloc (0);
 }
 
+static input_t match_getter_free_inputs[] = {
+  match_getter_strobe,
+  NULL
+};
+
 static input_t match_getter_inputs[] = {
   match_getter_match_in,
   match_getter_meta_download_complete,
   match_getter_file_download_complete,
-  match_getter_new_comm_in,
   NULL
 };
 
@@ -245,6 +263,7 @@ descriptor_t match_getter_descriptor = {
   .constructor = match_getter_create,
   .system_input = match_getter_system_input,
   .system_output = match_getter_system_output,
+  .free_inputs = match_getter_free_inputs,
   .inputs = match_getter_inputs,
   .outputs = match_getter_outputs,
 };

@@ -409,7 +409,7 @@ file_server_message_out (void* state, void* param)
 }
 
 void
-file_server_new_comm_in (void* state, void* param, bid_t bid)
+file_server_strobe (void* state, void* param, bid_t bid)
 {
   assert (schedule_system_output () == 0);
 }
@@ -438,6 +438,7 @@ file_server_download_complete_out (void* state, void* param)
 
 static input_t file_server_free_inputs[] = {
   file_server_callback,
+  file_server_strobe,
   NULL
 };
 
@@ -448,7 +449,6 @@ static input_t file_server_inputs[] = {
   file_server_announcement_in,
   file_server_request_in,
   file_server_fragment_in,
-  file_server_new_comm_in,
   NULL
 };
 static output_t file_server_outputs[] = {

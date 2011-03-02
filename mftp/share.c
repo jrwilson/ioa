@@ -58,7 +58,6 @@ composer_create (void* a)
   composer->file_arg.msg_sender = &composer->msg_sender;
   composer->file_arg.msg_receiver = &composer->msg_receiver;
   manager_child_add (composer->manager, &composer->file, &file_server_descriptor, &composer->file_arg);
-  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->file, file_server_new_comm_in, NULL);
 
   composer->meta_arg.file = arg->meta;
   composer->meta_arg.announce = true;
@@ -66,12 +65,10 @@ composer_create (void* a)
   composer->meta_arg.msg_sender = &composer->msg_sender;
   composer->meta_arg.msg_receiver = &composer->msg_receiver;
   manager_child_add (composer->manager, &composer->meta, &file_server_descriptor, &composer->meta_arg);
-  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->meta, file_server_new_comm_in, NULL);
 
   composer->matcher_arg.msg_sender = &composer->msg_sender;
   composer->matcher_arg.msg_receiver = &composer->msg_receiver;
   manager_child_add (composer->manager, &composer->matcher, &matcher_descriptor, &composer->matcher_arg);
-  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->matcher, matcher_new_comm_in, NULL);
 
   return composer;
 }
@@ -88,9 +85,14 @@ composer_system_input (void* state, void* param, bid_t bid)
 
   manager_apply (composer->manager, receipt);
 
-  if (composer->msg_sender != -1 &&
-      composer->msg_receiver != -1) {
-    assert (schedule_output (composer_new_comm_out, NULL) == 0);
+  if (composer->file != -1) {
+    assert (schedule_free_input (composer->file, file_server_strobe, buffer_alloc (0)) == 0);
+  }
+  if (composer->meta != -1) {
+    assert (schedule_free_input (composer->meta, file_server_strobe, buffer_alloc (0)) == 0);
+  }
+  if (composer->matcher != -1) {
+    assert (schedule_free_input (composer->matcher, matcher_strobe, buffer_alloc (0)) == 0);
   }
 }
 

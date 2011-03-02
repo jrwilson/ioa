@@ -12,8 +12,6 @@
 
 #include "matcher.h"
 
-static bid_t composer_new_comm_out (void*, void*);
-
 typedef struct {
   manager_t* manager;
   aid_t self;
@@ -40,7 +38,6 @@ composer_create (void* a)
   composer->matcher_arg.msg_sender = &composer->msg_sender;
   composer->matcher_arg.msg_receiver = &composer->msg_receiver;
   manager_child_add (composer->manager, &composer->matcher, &matcher_descriptor, &composer->matcher_arg);
-  manager_composition_add (composer->manager, &composer->self, composer_new_comm_out, NULL, &composer->matcher, matcher_new_comm_in, NULL);
 
   return composer;
 }
@@ -57,9 +54,8 @@ composer_system_input (void* state, void* param, bid_t bid)
 
   manager_apply (composer->manager, receipt);
 
-  if (composer->msg_sender != -1 &&
-      composer->msg_receiver != -1) {
-    assert (schedule_output (composer_new_comm_out, NULL) == 0);
+  if (composer->matcher != -1) {
+    assert (schedule_free_input (composer->matcher, matcher_strobe, buffer_alloc (0)) == 0);
   }
 }
 

@@ -9,6 +9,6 @@ typedef struct {
   aid_t* msg_receiver;
 } matcher_create_arg_t;
 
-void matcher_new_comm_in (void*, void*, bid_t);
+void matcher_strobe (void*, void*, bid_t);
 
 #endif

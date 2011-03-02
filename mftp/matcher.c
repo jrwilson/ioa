@@ -18,8 +18,6 @@ static void matcher_announcement_in (void*, void*, bid_t);
 static void matcher_match_in (void*, void*, bid_t);
 static bid_t matcher_message_out (void*, void*);
 
-static bid_t matcher_new_comm_out (void*, void*);
-
 /* In seconds. */
 #define INIT_MATCH_INTERVAL 1
 #define MAX_MATCH_INTERVAL 4096
@@ -196,7 +194,7 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       meta->meta_arg.msg_receiver = matcher->msg_receiver;
       manager_child_add (matcher->manager, &meta->meta_aid, &file_server_descriptor, &meta->meta_arg);
 
-      manager_composition_add (matcher->manager, &matcher->self, matcher_new_comm_out, NULL, &meta->meta_aid, file_server_new_comm_in, NULL);
+
       
       manager_composition_add (matcher->manager, &meta->meta_aid, file_server_download_complete_out, NULL, &matcher->self, matcher_meta_download_complete, meta);
       
@@ -225,8 +223,6 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       query->query_arg.msg_sender = matcher->msg_sender;
       query->query_arg.msg_receiver = matcher->msg_receiver;
       manager_child_add (matcher->manager, &query->query_aid, &file_server_descriptor, &query->query_arg);
-
-      manager_composition_add (matcher->manager, &matcher->self, matcher_new_comm_out, NULL, &query->query_aid, file_server_new_comm_in, NULL);      
 
       manager_composition_add (matcher->manager, &query->query_aid, file_server_download_complete_out, NULL, &matcher->self, matcher_query_download_complete, query);
       
@@ -356,20 +352,36 @@ matcher_message_out (void* state, void* param)
 }
 
 void
-matcher_new_comm_in (void* state, void* param, bid_t bid)
+matcher_strobe (void* state, void* param, bid_t bid)
 {
-  assert (schedule_system_output () == 0);
-  assert (schedule_output (matcher_new_comm_out, NULL) == 0);
-}
+  matcher_t* matcher = state;
+  assert (matcher != NULL);
 
-static bid_t
-matcher_new_comm_out (void* state, void* param)
-{
-  return buffer_alloc (0);
+  assert (schedule_system_output () == 0);
+
+  meta_item_t* meta;
+  for (meta = matcher->metas;
+       meta != NULL;
+       meta = meta->next) {
+    if (meta->meta_aid != -1) {
+      assert (schedule_free_input (meta->meta_aid, file_server_strobe, buffer_alloc (0)) == 0);
+    }
+  }
+
+  query_item_t* query;
+  for (query = matcher->queries;
+       query != NULL;
+       query = query->next) {
+    if (query->query_aid != -1) {
+      assert (schedule_free_input (query->query_aid, file_server_strobe, buffer_alloc (0)) == 0);
+    }
+  }
+
 }
 
 static input_t matcher_free_inputs[] = {
   matcher_callback,
+  matcher_strobe,
   NULL
 };
 
@@ -379,14 +391,12 @@ static input_t matcher_inputs[] = {
   matcher_match_in,
   matcher_meta_download_complete,
   matcher_query_download_complete,
-  matcher_new_comm_in,
   NULL
 };
 
 static output_t matcher_outputs[] = {
   matcher_match_alarm_out,
   matcher_message_out,
-  matcher_new_comm_out,
   NULL
 };
 
