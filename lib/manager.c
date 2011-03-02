@@ -26,11 +26,11 @@ children_key_hash (const void* x0)
   return (size_t)x->child_aid_ptr;
 }
 
-typedef struct {
+typedef struct proxies_key_struct {
   aid_t* proxy_aid_ptr;
   aid_t* source_aid_ptr;
   input_t source_free_input;
-  input_t callback;
+  bid_t bid;
 } proxies_key_t;
 
 static bool
@@ -156,27 +156,27 @@ outputs_key_hash (const void* x0)
     (size_t)x->out_param;
 }
 
-typedef enum {
-  UNDECLARED,
-  UNCREATED,
-  UNCOMPOSED,
-  UNDONE
-} proxy_state_t;
+/* typedef enum { */
+/*   UNDECLARED, */
+/*   UNCREATED, */
+/*   UNCOMPOSED, */
+/*   UNDONE */
+/* } proxy_state_t; */
 
-typedef struct proxy_item_struct proxy_item_t;
-struct proxy_item_struct {
-  proxy_state_t state;
-  void* param;
-  descriptor_t* descriptor;
-  void* arg;
-  aid_t aid;
-  proxy_compose_map_t* compose_map;
-  size_t proxy_out_idx;
-  size_t parent_out_idx;
-  aid_t requester_aid;
-  input_t requester_free_input;
-  proxy_item_t* next;
-};
+/* typedef struct proxy_item_struct proxy_item_t; */
+/* struct proxy_item_struct { */
+/*   proxy_state_t state; */
+/*   void* param; */
+/*   descriptor_t* descriptor; */
+/*   void* arg; */
+/*   aid_t aid; */
+/*   proxy_compose_map_t* compose_map; */
+/*   size_t proxy_out_idx; */
+/*   size_t parent_out_idx; */
+/*   aid_t requester_aid; */
+/*   input_t requester_free_input; */
+/*   proxy_item_t* next; */
+/* }; */
 
 typedef enum {
   NORMAL,
@@ -185,7 +185,7 @@ typedef enum {
 
 typedef enum {
   SELF,
-  PROXY_PRODUCE,
+  /* PROXY_PRODUCE, */
 } action_type_t;
 
 struct manager_struct {
@@ -198,6 +198,7 @@ struct manager_struct {
   proxies_key_t last_proxy;
   compositions_key_t last_composition;
   aid_t self;
+  void* state;
   aid_t* self_ptr;
   aid_t* parent_ptr;
   hashtable_t* children;
@@ -206,8 +207,8 @@ struct manager_struct {
   hashtable_t* compositions;
   hashtable_t* inputs;
   hashtable_t* outputs;
-  proxy_item_t* proxy_front;
-  proxy_item_t** proxy_back;
+  /* proxy_item_t* proxy_front; */
+  /* proxy_item_t** proxy_back; */
 };
 
 manager_t*
@@ -224,8 +225,8 @@ manager_create (void)
   manager->compositions = hashtable_create (sizeof (compositions_key_t), compositions_key_equal, compositions_key_hash);
   manager->inputs = hashtable_create (sizeof (inputs_key_t), inputs_key_equal, inputs_key_hash);
   manager->outputs = hashtable_create (sizeof (outputs_key_t), outputs_key_equal, outputs_key_hash);
-  manager->proxy_front = NULL;
-  manager->proxy_back = &manager->proxy_front;
+  /* manager->proxy_front = NULL; */
+  /* manager->proxy_back = &manager->proxy_front; */
 
   return manager;
 }
@@ -264,22 +265,24 @@ manager_child_add (manager_t* manager, aid_t* child_aid_ptr, descriptor_t* descr
 }
 
 void
-manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback)
+manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, bid_t bid)
 {
   assert (manager != NULL);
   assert (proxy_aid_ptr != NULL);
   assert (source_aid_ptr != NULL);
   assert (source_free_input != NULL);
-  assert (callback != NULL);
+  assert (bid != -1);
   
   /* Clear the automaton. */
   *proxy_aid_ptr = -1;
+
+  buffer_incref (bid);
 
   proxies_key_t key = {
     .proxy_aid_ptr = proxy_aid_ptr,
     .source_aid_ptr = source_aid_ptr,
     .source_free_input = source_free_input,
-    .callback = callback,
+    .bid = bid,
   };
   assert (!hashtable_contains_key (manager->proxies, &key));
   hashtable_insert (manager->proxies, &key);
@@ -307,6 +310,22 @@ manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t outp
   assert (output != NULL);
   assert (in_automaton != NULL);
   assert (input != NULL);
+
+  if (out_param != NULL) {
+    /* Check that we are managing it. */
+    params_key_t key = {
+      .param = out_param,
+    };
+    assert (hashtable_contains_key (manager->params, &key));
+  }
+
+  if (in_param != NULL) {
+    /* Check that we are managing it. */
+    params_key_t key = {
+      .param = in_param,
+    };
+    assert (hashtable_contains_key (manager->params, &key));
+  }
 
   compositions_key_t key = {
     .out_automaton = out_automaton,
@@ -362,7 +381,6 @@ proxy_fire (manager_t* manager)
 {
   if (manager->proxy_status == NORMAL) {
     size_t idx;
-    
     /* Go through the proxies. */
     for (idx = hashtable_first (manager->proxies);
 	 idx != hashtable_last (manager->proxies);
@@ -370,11 +388,7 @@ proxy_fire (manager_t* manager)
       const proxies_key_t* key = hashtable_key_at (manager->proxies, idx);
       if (*key->proxy_aid_ptr == -1 && *key->source_aid_ptr != -1) {
         /* Request a proxy. */
-	bid_t bid = buffer_alloc (sizeof (proxy_request_t));
-	proxy_request_t* request = buffer_write_ptr (bid);
-	request->aid = manager->self;
-	request->free_input = key->callback;
-	assert (schedule_free_input (*key->source_aid_ptr, *key->source_free_input, bid) == 0);
+	assert (schedule_free_input (*key->source_aid_ptr, *key->source_free_input, key->bid) == 0);
 	manager->last_proxy = *key;
 	manager->proxy_status = OUTSTANDING;
 	break;
@@ -417,13 +431,13 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
 	something_changed = true;
 	manager->syscall_status = NORMAL;
 	break;
-      case PROXY_PRODUCE:
-	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNCREATED);
-	manager->proxy_front->aid = receipt->child_created.child;
-	manager->proxy_front->state = UNCOMPOSED;
-	something_changed = true;
-	manager->syscall_status = NORMAL;
-	break;
+      /* case PROXY_PRODUCE: */
+      /* 	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNCREATED); */
+      /* 	manager->proxy_front->aid = receipt->child_created.child; */
+      /* 	manager->proxy_front->state = UNCOMPOSED; */
+      /* 	something_changed = true; */
+      /* 	manager->syscall_status = NORMAL; */
+      /* 	break; */
       }
     }
     break;
@@ -444,12 +458,12 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
 	  manager->syscall_status = NORMAL;
 	}
 	break;
-      case PROXY_PRODUCE:
-	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNDECLARED);
-	manager->proxy_front->state = UNCREATED;
-	something_changed = true;
-	manager->syscall_status = NORMAL;
-	break;
+      /* case PROXY_PRODUCE: */
+      /* 	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNDECLARED); */
+      /* 	manager->proxy_front->state = UNCREATED; */
+      /* 	something_changed = true; */
+      /* 	manager->syscall_status = NORMAL; */
+      /* 	break; */
       }
     }
     break;
@@ -482,23 +496,23 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
 	  manager->syscall_status = NORMAL;
 	}
 	break;
-      case PROXY_PRODUCE:
-	{
-	  if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) {
-	    ++manager->proxy_front->proxy_out_idx;
-	  }
-	  else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) {
-	    ++manager->proxy_front->parent_out_idx;
-	  }
+      /* case PROXY_PRODUCE: */
+      /* 	{ */
+      /* 	  if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) { */
+      /* 	    ++manager->proxy_front->proxy_out_idx; */
+      /* 	  } */
+      /* 	  else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) { */
+      /* 	    ++manager->proxy_front->parent_out_idx; */
+      /* 	  } */
 
-	  if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output == NULL) {
-	    manager->proxy_front->state = UNDONE;
-	  }
+      /* 	  if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output == NULL) { */
+      /* 	    manager->proxy_front->state = UNDONE; */
+      /* 	  } */
 
-	  something_changed = true;
-	  manager->syscall_status = NORMAL;
-	}
-	break;
+      /* 	  something_changed = true; */
+      /* 	  manager->syscall_status = NORMAL; */
+      /* 	} */
+      /* 	break; */
       }
     }
     break;
@@ -561,8 +575,8 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     break;
   }
 
-  /* Fire the proxy. */
-  proxy_fire (manager);
+  /* /\* Fire the proxy. *\/ */
+  /* proxy_fire (manager); */
 
   if ((manager->syscall_status == NORMAL) && something_changed) {
     assert (schedule_system_output () == 0);
@@ -590,7 +604,8 @@ syscall_fire (manager_t* manager)
     }
   }
 
-  /* Go through the parameters. */
+  /* Go through the parameters.
+     Before the compositions to ensure non-NULL parameters declared. */
   for (idx = hashtable_first (manager->params);
        idx != hashtable_last (manager->params);
        idx = hashtable_next (manager->params, idx)) {
@@ -619,76 +634,76 @@ syscall_fire (manager_t* manager)
     }
   }
 
-  /* Are we making a proxy. */
-  if (manager->proxy_front != NULL) {
-    switch (manager->proxy_front->state) {
-    case UNDECLARED:
-      /* Declare the parameter. */
-      order_declare_init (&manager->last_order, manager->proxy_front->param);
-      manager->action_type = PROXY_PRODUCE;
-      return true;
-      break;
-    case UNCREATED:
-      /* Create the proxy. */
-      order_create_init (&manager->last_order, manager->proxy_front->descriptor, manager->proxy_front->arg);
-      manager->action_type = PROXY_PRODUCE;
-      return true;
-      break;
-    case UNCOMPOSED:
-      {
-	if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) {
-	  /* Compose output from proxy with input of parent. */
-	  order_compose_init (&manager->last_order,
-			      manager->proxy_front->aid,
-			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output,
-			      NULL,
-			      manager->self,
-			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].input,
-			      manager->proxy_front->param);
-	  manager->action_type = PROXY_PRODUCE;
-	  return true;
-	}
-	else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) {
-	  /* Compose output from parent with input of proxy. */
-	  order_compose_init (&manager->last_order,
-			      manager->self,
-			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output,
-			      manager->proxy_front->param,
-			      manager->proxy_front->aid,
-			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].input,
-			      NULL);
-	  manager->action_type = PROXY_PRODUCE;
-	  return true;
-	}
-      }
-      break;
-    case UNDONE:
-      {
-	/* Call back. */
-	bid_t bid = buffer_alloc (sizeof (proxy_receipt_t));
-	proxy_receipt_t* receipt = buffer_write_ptr (bid);
-	receipt->proxy_aid = manager->proxy_front->aid;
-	if (schedule_free_input (manager->proxy_front->requester_aid, manager->proxy_front->requester_free_input, bid) != 0) {
-	  /* TODO: Couldn't call back.  Destroy the proxy. */
-	  assert (0);
-	}
+  /* /\* Are we making a proxy. *\/ */
+  /* if (manager->proxy_front != NULL) { */
+  /*   switch (manager->proxy_front->state) { */
+  /*   case UNDECLARED: */
+  /*     /\* Declare the parameter. *\/ */
+  /*     order_declare_init (&manager->last_order, manager->proxy_front->param); */
+  /*     manager->action_type = PROXY_PRODUCE; */
+  /*     return true; */
+  /*     break; */
+  /*   case UNCREATED: */
+  /*     /\* Create the proxy. *\/ */
+  /*     order_create_init (&manager->last_order, manager->proxy_front->descriptor, manager->proxy_front->arg); */
+  /*     manager->action_type = PROXY_PRODUCE; */
+  /*     return true; */
+  /*     break; */
+  /*   case UNCOMPOSED: */
+  /*     { */
+  /* 	if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) { */
+  /* 	  /\* Compose output from proxy with input of parent. *\/ */
+  /* 	  order_compose_init (&manager->last_order, */
+  /* 			      manager->proxy_front->aid, */
+  /* 			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output, */
+  /* 			      NULL, */
+  /* 			      manager->self, */
+  /* 			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].input, */
+  /* 			      manager->proxy_front->param); */
+  /* 	  manager->action_type = PROXY_PRODUCE; */
+  /* 	  return true; */
+  /* 	} */
+  /* 	else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) { */
+  /* 	  /\* Compose output from parent with input of proxy. *\/ */
+  /* 	  order_compose_init (&manager->last_order, */
+  /* 			      manager->self, */
+  /* 			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output, */
+  /* 			      manager->proxy_front->param, */
+  /* 			      manager->proxy_front->aid, */
+  /* 			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].input, */
+  /* 			      NULL); */
+  /* 	  manager->action_type = PROXY_PRODUCE; */
+  /* 	  return true; */
+  /* 	} */
+  /*     } */
+  /*     break; */
+  /*   case UNDONE: */
+  /*     { */
+  /* 	/\* Call back. *\/ */
+  /* 	bid_t bid = buffer_alloc (sizeof (proxy_receipt_t)); */
+  /* 	proxy_receipt_t* receipt = buffer_write_ptr (bid); */
+  /* 	receipt->proxy_aid = manager->proxy_front->aid; */
+  /* 	if (schedule_free_input (manager->proxy_front->requester_aid, manager->proxy_front->requester_free_input, bid) != 0) { */
+  /* 	  /\* TODO: Couldn't call back.  Destroy the proxy. *\/ */
+  /* 	  assert (0); */
+  /* 	} */
 
-	/* Pop. */
-	proxy_item_t* item = manager->proxy_front;
-	manager->proxy_front = item->next;
-	free (item);
+  /* 	/\* Pop. *\/ */
+  /* 	proxy_item_t* item = manager->proxy_front; */
+  /* 	manager->proxy_front = item->next; */
+  /* 	free (item); */
 
-	if (manager->proxy_front == NULL) {
-	  manager->proxy_back = &manager->proxy_front;
-	}
-	else {
-	  /* Go again because there are more proxies. */
-	  assert (schedule_system_output () == 0);
-	}
-      }
-      break;
-    }
-  }
+  /* 	if (manager->proxy_front == NULL) { */
+  /* 	  manager->proxy_back = &manager->proxy_front; */
+  /* 	} */
+  /* 	else { */
+  /* 	  /\* Go again because there are more proxies. *\/ */
+  /* 	  assert (schedule_system_output () == 0); */
+  /* 	} */
+  /*     } */
+  /*     break; */
+  /*   } */
+  /* } */
 
   return false;
 }
@@ -697,6 +712,8 @@ bid_t
 manager_action (manager_t* manager)
 {
   assert (manager != NULL);
+
+  proxy_fire (manager);
 
   switch (manager->syscall_status) {
   case NORMAL:
@@ -723,43 +740,42 @@ manager_action (manager_t* manager)
   return -1;
 }
 
+/* void */
+/* manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor, void* arg, proxy_compose_map_t* compose_map, const proxy_request_t* request) */
+/* { */
+/*   assert (manager != NULL); */
+/*   assert (param != NULL); */
+/*   assert (descriptor != NULL); */
+/*   assert (compose_map != NULL); */
+/*   assert (compose_map->proxy_out_parent_in != NULL); */
+/*   assert (compose_map->parent_out_proxy_in != NULL); */
+/*   assert (request != NULL); */
+
+/*   proxy_item_t* proxy_item = malloc (sizeof (proxy_item_t)); */
+/*   proxy_item->state = UNDECLARED; */
+/*   proxy_item->param = param; */
+/*   proxy_item->descriptor = descriptor; */
+/*   proxy_item->arg = arg; */
+/*   proxy_item->compose_map = compose_map; */
+/*   proxy_item->proxy_out_idx = 0; */
+/*   proxy_item->parent_out_idx = 0; */
+/*   proxy_item->requester_aid = request->aid; */
+/*   proxy_item->requester_free_input = request->free_input; */
+/*   proxy_item->next = NULL; */
+/*   *manager->proxy_back = proxy_item; */
+/*   manager->proxy_back = &proxy_item->next; */
+
+/*   assert (schedule_system_output () == 0); */
+/* } */
+
 void
-manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor, void* arg, proxy_compose_map_t* compose_map, const proxy_request_t* request)
+manager_proxy_receive (manager_t* manager, aid_t proxy_aid)
 {
   assert (manager != NULL);
-  assert (param != NULL);
-  assert (descriptor != NULL);
-  assert (compose_map != NULL);
-  assert (compose_map->proxy_out_parent_in != NULL);
-  assert (compose_map->parent_out_proxy_in != NULL);
-  assert (request != NULL);
-
-  proxy_item_t* proxy_item = malloc (sizeof (proxy_item_t));
-  proxy_item->state = UNDECLARED;
-  proxy_item->param = param;
-  proxy_item->descriptor = descriptor;
-  proxy_item->arg = arg;
-  proxy_item->compose_map = compose_map;
-  proxy_item->proxy_out_idx = 0;
-  proxy_item->parent_out_idx = 0;
-  proxy_item->requester_aid = request->aid;
-  proxy_item->requester_free_input = request->free_input;
-  proxy_item->next = NULL;
-  *manager->proxy_back = proxy_item;
-  manager->proxy_back = &proxy_item->next;
-
-  assert (schedule_system_output () == 0);
-}
-
-void
-manager_proxy_receive (manager_t* manager, const proxy_receipt_t* receipt)
-{
-  assert (manager != NULL);
-  assert (receipt != NULL);
 
   assert (manager->proxy_status == OUTSTANDING);
 
-  *manager->last_proxy.proxy_aid_ptr = receipt->proxy_aid;
+  *manager->last_proxy.proxy_aid_ptr = proxy_aid;
   manager->proxy_status = NORMAL;
 
   proxy_fire (manager);
