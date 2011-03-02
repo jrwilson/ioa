@@ -1,3 +1,8 @@
+Factor out port # from udp_sender/receiver.
+Add discovery for channels
+Create component containers
+Add discovery to component container
+Check for output-before-composed violations in port_manager, port, and friends.
 
 * Code coverage tests ?
 * Manager
