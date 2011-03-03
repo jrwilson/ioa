@@ -124,19 +124,65 @@ file_server_create (void* a)
 
   file_server->manager = manager_create ();
 
-  manager_self_set (file_server->manager, &file_server->self);
+  manager_self_set (file_server->manager,
+		    &file_server->self);
 
-  manager_child_add (file_server->manager, &file_server->announcement_alarm, &alarm_descriptor, NULL);
-  manager_composition_add (file_server->manager, &file_server->announcement_alarm, alarm_alarm_out, NULL, &file_server->self, file_server_announcement_alarm_in, NULL);
-  manager_composition_add (file_server->manager, &file_server->self, file_server_announcement_alarm_out, NULL, &file_server->announcement_alarm, alarm_set_in, NULL);
-  manager_output_add (file_server->manager, &file_server->announcement_alarm_composed, file_server_announcement_alarm_out, NULL);
+  manager_child_add (file_server->manager,
+		     &file_server->announcement_alarm,
+		     &alarm_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_composition_add (file_server->manager,
+			   &file_server->announcement_alarm,
+			   alarm_alarm_out,
+			   NULL,
+			   &file_server->self,
+			   file_server_announcement_alarm_in,
+			   NULL);
+  manager_composition_add (file_server->manager,
+			   &file_server->self,
+			   file_server_announcement_alarm_out,
+			   NULL,
+			   &file_server->announcement_alarm,
+			   alarm_set_in,
+			   NULL);
+  manager_output_add (file_server->manager,
+		      &file_server->announcement_alarm_composed,
+		      file_server_announcement_alarm_out,
+		      NULL);
 
-  manager_child_add (file_server->manager, &file_server->request_alarm, &alarm_descriptor, NULL);
-  manager_composition_add (file_server->manager, &file_server->request_alarm, alarm_alarm_out, NULL, &file_server->self, file_server_request_alarm_in, NULL);
-  manager_composition_add (file_server->manager, &file_server->self, file_server_request_alarm_out, NULL, &file_server->request_alarm, alarm_set_in, NULL);
-  manager_output_add (file_server->manager, &file_server->request_alarm_composed, file_server_request_alarm_out, NULL);
+  manager_child_add (file_server->manager,
+		     &file_server->request_alarm,
+		     &alarm_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_composition_add (file_server->manager,
+			   &file_server->request_alarm,
+			   alarm_alarm_out,
+			   NULL,
+			   &file_server->self,
+			   file_server_request_alarm_in,
+			   NULL);
+  manager_composition_add (file_server->manager,
+			   &file_server->self,
+			   file_server_request_alarm_out,
+			   NULL,
+			   &file_server->request_alarm,
+			   alarm_set_in,
+			   NULL);
+  manager_output_add (file_server->manager,
+		      &file_server->request_alarm_composed,
+		      file_server_request_alarm_out,
+		      NULL);
 
-  manager_child_add (file_server->manager, &file_server->fragment_alarm, &alarm_descriptor, NULL);
+  manager_child_add (file_server->manager,
+		     &file_server->fragment_alarm,
+		     &alarm_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
   manager_composition_add (file_server->manager, &file_server->fragment_alarm, alarm_alarm_out, NULL, &file_server->self, file_server_fragment_alarm_in, NULL);
   manager_composition_add (file_server->manager, &file_server->self, file_server_fragment_alarm_out, NULL, &file_server->fragment_alarm, alarm_set_in, NULL);
   manager_output_add (file_server->manager, &file_server->fragment_alarm_composed, file_server_fragment_alarm_out, NULL);
@@ -409,7 +455,7 @@ file_server_message_out (void* state, void* param)
 }
 
 void
-file_server_strobe (void* state, void* param, bid_t bid)
+file_server_strobe_in (void* state, void* param, bid_t bid)
 {
   assert (schedule_system_output () == 0);
 }
@@ -438,7 +484,7 @@ file_server_download_complete_out (void* state, void* param)
 
 static input_t file_server_free_inputs[] = {
   file_server_callback,
-  file_server_strobe,
+  file_server_strobe_in,
   NULL
 };
 

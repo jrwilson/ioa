@@ -47,24 +47,79 @@ composer_create (void* a)
 
   manager_self_set (composer->manager, &composer->self);
 
-  manager_child_add (composer->manager, &composer->msg_sender, &msg_sender_descriptor, NULL);
-  manager_child_add (composer->manager, &composer->msg_receiver, &msg_receiver_descriptor, NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_sender,
+		     &msg_sender_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_receiver,
+		     &msg_receiver_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
 
   composer->query_arg.file = arg->query;
   composer->query_arg.announce = true;
   composer->query_arg.download = false;
   composer->query_arg.msg_sender = &composer->msg_sender;
   composer->query_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager, &composer->query, &file_server_descriptor, &composer->query_arg);
-
+  manager_child_add (composer->manager,
+		     &composer->query,
+		     &file_server_descriptor,
+		     &composer->query_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->query,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->query,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+  
   composer->matcher_arg.msg_sender = &composer->msg_sender;
   composer->matcher_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager, &composer->matcher, &matcher_descriptor, &composer->matcher_arg);
-
+  manager_child_add (composer->manager,
+		     &composer->matcher,
+		     &matcher_descriptor,
+		     &composer->matcher_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->matcher,
+			  matcher_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->matcher,
+			  matcher_strobe_in,
+			  buffer_alloc (0));
+  
   composer->getter_arg.query = arg->query;
   composer->getter_arg.msg_sender = &composer->msg_sender;
   composer->getter_arg.msg_receiver = &composer->msg_receiver;
-   manager_child_add (composer->manager, &composer->getter, &match_getter_descriptor, &composer->getter_arg);
+  manager_child_add (composer->manager,
+		     &composer->getter,
+		     &match_getter_descriptor,
+		     &composer->getter_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->getter,
+			  match_getter_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->getter,
+			  match_getter_strobe_in,
+			  buffer_alloc (0));
 
   return composer;
 }
@@ -80,16 +135,6 @@ composer_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   manager_apply (composer->manager, receipt);
-
-  if (composer->query != -1) {
-    assert (schedule_free_input (composer->query, file_server_strobe, buffer_alloc (0)) == 0);
-  }
-  if (composer->matcher != -1) {
-    assert (schedule_free_input (composer->matcher, matcher_strobe, buffer_alloc (0)) == 0);
-  }
-  if (composer->getter != -1) {
-    assert (schedule_free_input (composer->getter, match_getter_strobe, buffer_alloc (0)) == 0);
-  }
 }
 
 static bid_t
@@ -101,22 +146,10 @@ composer_system_output (void* state, void* param)
   return manager_action (composer->manager);
 }
 
-static bid_t
-composer_new_comm_out (void* state, void* param)
-{
-  return buffer_alloc (0);
-}
-
-static output_t composer_outputs[] = {
-  composer_new_comm_out,
-  NULL
-};
-
 descriptor_t composer_descriptor = {
   .constructor = composer_create,
   .system_input = composer_system_input,
   .system_output = composer_system_output,
-  .outputs = composer_outputs,
 };
 
 

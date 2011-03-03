@@ -182,7 +182,7 @@ port_system_output (void* state, void* param)
 }
 
 void
-port_strobe (void* state, void* param, bid_t bid)
+port_strobe_in (void* state, void* param, bid_t bid)
 {
   assert (schedule_system_output () == 0);
 }
@@ -288,7 +288,7 @@ port_out (void* state, void* param)
 }
 
 static input_t port_free_inputs[] = {
-  port_strobe,
+  port_strobe_in,
   port_callback,
   NULL
 };

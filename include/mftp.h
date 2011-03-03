@@ -107,7 +107,7 @@ typedef struct {
   aid_t* msg_sender;
   aid_t* msg_receiver;
 } file_server_create_arg_t;
-void file_server_strobe (void*, void*, bid_t);
+void file_server_strobe_in (void*, void*, bid_t);
 bid_t file_server_download_complete_out (void*, void*);
 
 #endif /* __mftp_h__ */

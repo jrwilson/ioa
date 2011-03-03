@@ -157,17 +157,6 @@ component_manager_create (void* a)
   component_manager->port_allocator = port_allocator_create (arg->port_type_descriptors);
   component_manager->ports = NULL;
 
-  json_object* description = encode_descriptor (component_manager);
-  component_manager->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description),
-							    strlen (json_object_to_json_string (description)) + 1,
-							    COMPONENT_DESCRIPTION);
-  component_manager->description_arg.announce = true;
-  component_manager->description_arg.download = false;
-  component_manager->description_arg.msg_sender = arg->msg_sender;
-  component_manager->description_arg.msg_receiver = arg->msg_receiver;
-  json_object_put (description);
-
-  printf ("%s\n", component_manager->description_arg.file->data);
 
   component_manager->manager = manager_create ();
 
@@ -176,11 +165,35 @@ component_manager_create (void* a)
   manager_child_add (component_manager->manager,
 		     &component_manager->component_aid,
 		     arg->component_descriptor,
-		     arg->create_arg);
+		     arg->create_arg,
+		     NULL,
+		     NULL);
+  json_object* description = encode_descriptor (component_manager);
+  component_manager->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description),
+								     strlen (json_object_to_json_string (description)) + 1,
+								     COMPONENT_DESCRIPTION);
+  component_manager->description_arg.announce = true;
+  component_manager->description_arg.download = false;
+  component_manager->description_arg.msg_sender = arg->msg_sender;
+  component_manager->description_arg.msg_receiver = arg->msg_receiver;
+  json_object_put (description);
+  printf ("%s\n", component_manager->description_arg.file->data);
   manager_child_add (component_manager->manager,
 		     &component_manager->description,
 		     &file_server_descriptor,
-		     &component_manager->description_arg);
+		     &component_manager->description_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (component_manager->manager,
+			  arg->msg_sender,
+			  &component_manager->description,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (component_manager->manager,
+			  arg->msg_receiver,
+			  &component_manager->description,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
 
   return component_manager;
 }
@@ -198,15 +211,6 @@ component_manager_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   manager_apply (component_manager->manager, receipt);
-
-  port_t* port;
-  for (port = component_manager->ports;
-       port != NULL;
-       port = port->next) {
-    if (port->port_aid != -1) {
-      assert (schedule_free_input (port->port_aid, port_strobe, buffer_alloc (0)) == 0);
-    }
-  }
 }
 
 static bid_t
@@ -262,7 +266,17 @@ component_manager_request_port (void* state, void* param, bid_t bid)
 			port_idx,
 			proxy_request->callback_aid,
 			proxy_request->callback_free_input);
-  manager_child_add (component_manager->manager, &port->port_aid, &port_descriptor, &port->port_create_arg);
+  manager_child_add (component_manager->manager,
+		     &port->port_aid,
+		     &port_descriptor,
+		     &port->port_create_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (component_manager->manager,
+			  &component_manager->component_aid,
+			  &port->port_aid,
+			  port_strobe_in,
+			  buffer_alloc (0));
 
   port->next = component_manager->ports;
   component_manager->ports = port;
@@ -271,21 +285,14 @@ component_manager_request_port (void* state, void* param, bid_t bid)
 }
 
 void
-component_manager_strobe (void* state, void* param, bid_t bid)
+component_manager_strobe_in (void* state, void* param, bid_t bid)
 {
-  assert (state != NULL);
-  component_manager_t* component_manager = state;
-
   assert (schedule_system_output () == 0);
-
-  if (component_manager->description != -1) {
-    assert (schedule_free_input (component_manager->description, file_server_strobe, buffer_alloc (0)) == 0);
-  }
 }
 
 static input_t component_manager_free_inputs[] = {
   component_manager_request_port,
-  component_manager_strobe,
+  component_manager_strobe_in,
   NULL
 };
 

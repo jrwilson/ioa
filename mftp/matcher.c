@@ -192,11 +192,29 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       meta->meta_arg.download = true;
       meta->meta_arg.msg_sender = matcher->msg_sender;
       meta->meta_arg.msg_receiver = matcher->msg_receiver;
-      manager_child_add (matcher->manager, &meta->meta_aid, &file_server_descriptor, &meta->meta_arg);
-
-
-      
-      manager_composition_add (matcher->manager, &meta->meta_aid, file_server_download_complete_out, NULL, &matcher->self, matcher_meta_download_complete, meta);
+      manager_child_add (matcher->manager,
+			 &meta->meta_aid,
+			 &file_server_descriptor,
+			 &meta->meta_arg,
+			 NULL,
+			 NULL);
+      manager_dependency_add (matcher->manager,
+			      matcher->msg_sender,
+			      &meta->meta_aid,
+			      file_server_strobe_in,
+			      buffer_alloc (0));
+      manager_dependency_add (matcher->manager,
+			      matcher->msg_receiver,
+			      &meta->meta_aid,
+			      file_server_strobe_in,
+			      buffer_alloc (0));
+      manager_composition_add (matcher->manager,
+			       &meta->meta_aid,
+			       file_server_download_complete_out,
+			       NULL,
+			       &matcher->self,
+			       matcher_meta_download_complete,
+			       meta);
       
       meta->next = matcher->metas;
       matcher->metas = meta;
@@ -222,9 +240,29 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       query->query_arg.download = true;
       query->query_arg.msg_sender = matcher->msg_sender;
       query->query_arg.msg_receiver = matcher->msg_receiver;
-      manager_child_add (matcher->manager, &query->query_aid, &file_server_descriptor, &query->query_arg);
-
-      manager_composition_add (matcher->manager, &query->query_aid, file_server_download_complete_out, NULL, &matcher->self, matcher_query_download_complete, query);
+      manager_child_add (matcher->manager,
+			 &query->query_aid,
+			 &file_server_descriptor,
+			 &query->query_arg,
+			 NULL,
+			 NULL);
+      manager_dependency_add (matcher->manager,
+			      matcher->msg_sender,
+			      &query->query_aid,
+			      file_server_strobe_in,
+			      buffer_alloc (0));
+      manager_dependency_add (matcher->manager,
+			      matcher->msg_receiver,
+			      &query->query_aid,
+			      file_server_strobe_in,
+			      buffer_alloc (0));
+      manager_composition_add (matcher->manager,
+			       &query->query_aid,
+			       file_server_download_complete_out,
+			       NULL,
+			       &matcher->self,
+			       matcher_query_download_complete,
+			       query);
       
       query->next = matcher->queries;
       matcher->queries = query;
@@ -283,7 +321,12 @@ add_match (matcher_t* matcher, mftp_FileID_t* meta_fileid, mftp_FileID_t* query_
   memcpy (&match->query_fileid, query_fileid, sizeof (mftp_FileID_t));
   match->next_match = time (NULL);
   match->match_interval = INIT_MATCH_INTERVAL;
-  manager_child_add (matcher->manager, &match->match_alarm, &alarm_descriptor, NULL);
+  manager_child_add (matcher->manager,
+		     &match->match_alarm,
+		     &alarm_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
   manager_composition_add (matcher->manager, &match->match_alarm, alarm_alarm_out, NULL, &matcher->self, matcher_match_alarm_in, match);
   manager_composition_add (matcher->manager, &matcher->self, matcher_match_alarm_out, match, &match->match_alarm, alarm_set_in, NULL);
   manager_output_add (matcher->manager, &match->match_alarm_composed, matcher_match_alarm_out, match);
@@ -352,36 +395,17 @@ matcher_message_out (void* state, void* param)
 }
 
 void
-matcher_strobe (void* state, void* param, bid_t bid)
+matcher_strobe_in (void* state, void* param, bid_t bid)
 {
   matcher_t* matcher = state;
   assert (matcher != NULL);
 
   assert (schedule_system_output () == 0);
-
-  meta_item_t* meta;
-  for (meta = matcher->metas;
-       meta != NULL;
-       meta = meta->next) {
-    if (meta->meta_aid != -1) {
-      assert (schedule_free_input (meta->meta_aid, file_server_strobe, buffer_alloc (0)) == 0);
-    }
-  }
-
-  query_item_t* query;
-  for (query = matcher->queries;
-       query != NULL;
-       query = query->next) {
-    if (query->query_aid != -1) {
-      assert (schedule_free_input (query->query_aid, file_server_strobe, buffer_alloc (0)) == 0);
-    }
-  }
-
 }
 
 static input_t matcher_free_inputs[] = {
   matcher_callback,
-  matcher_strobe,
+  matcher_strobe_in,
   NULL
 };
 

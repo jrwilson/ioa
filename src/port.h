@@ -28,7 +28,7 @@ void port_create_arg_init (port_create_arg_t*,
 			   uint32_t port,
 			   aid_t aid,
 			   input_t free_input);
-void port_strobe (void*, void*, bid_t);
+void port_strobe_in (void*, void*, bid_t);
 void port_in (void*, void*, bid_t);
 bid_t port_out (void*, void*);
 

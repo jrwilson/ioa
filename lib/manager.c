@@ -5,7 +5,9 @@
 #include "hashtable.h"
 
 static bid_t
-proxy_request_create (bid_t bid, aid_t callback_aid, input_t callback_free_input)
+proxy_request_create (bid_t bid,
+		      aid_t callback_aid,
+		      input_t callback_free_input)
 {
   bid_t b = buffer_alloc (sizeof (proxy_request_t));
   proxy_request_t* proxy_request = buffer_write_ptr (b);
@@ -19,7 +21,8 @@ proxy_request_create (bid_t bid, aid_t callback_aid, input_t callback_free_input
 }
 
 bid_t
-proxy_receipt_create (aid_t proxy_aid, bid_t bid)
+proxy_receipt_create (aid_t proxy_aid,
+		      bid_t bid)
 {
   assert (proxy_aid != -1);
 
@@ -36,11 +39,14 @@ proxy_receipt_create (aid_t proxy_aid, bid_t bid)
 typedef struct {
   aid_t* child_aid_ptr;
   descriptor_t* descriptor;
-  void* arg;
+  void* ctor_arg;
+  internal_t internal;
+  void* param;
 } children_key_t;
 
 static bool
-children_key_equal (const void* x0, const void* y0)
+children_key_equal (const void* x0,
+		    const void* y0)
 {
   const children_key_t* x = x0;
   const children_key_t* y = y0;
@@ -64,7 +70,8 @@ typedef struct proxies_key_struct {
 } proxies_key_t;
 
 static bool
-proxies_key_equal (const void* x0, const void* y0)
+proxies_key_equal (const void* x0,
+		   const void* y0)
 {
   const proxies_key_t* x = x0;
   const proxies_key_t* y = y0;
@@ -85,7 +92,8 @@ typedef struct {
 } params_key_t;
 
 static bool
-params_key_equal (const void* x0, const void* y0)
+params_key_equal (const void* x0,
+		  const void* y0)
 {
   const params_key_t* x = x0;
   const params_key_t* y = y0;
@@ -111,7 +119,8 @@ typedef struct {
 } compositions_key_t;
 
 static bool
-compositions_key_equal (const void* x0, const void* y0)
+compositions_key_equal (const void* x0,
+			const void* y0)
 {
   const compositions_key_t* x = x0;
   const compositions_key_t* y = y0;
@@ -134,6 +143,41 @@ compositions_key_hash (const void* x0)
     (size_t)x->input;
 }
 
+typedef enum {
+  DEP_START,
+  DEP_WAITING,
+  DEP_FINISHED,
+} dependency_state_t;
+
+typedef struct {
+  aid_t* child;
+  aid_t* dependent;
+  input_t free_input;
+  bid_t bid;
+  dependency_state_t state;
+} dependencies_key_t;
+
+static bool
+dependencies_key_equal (const void* x0,
+			const void* y0)
+{
+  const dependencies_key_t* x = x0;
+  const dependencies_key_t* y = y0;
+  return
+    x->child == y->child &&
+    x->dependent == y->dependent;
+}
+
+static size_t
+dependencies_key_hash (const void* x0)
+{
+  const dependencies_key_t* x = x0;
+
+  return
+    (size_t)x->child +
+    (size_t)x->dependent;
+}
+
 typedef struct {
   input_t input;
   void* in_param;
@@ -141,7 +185,8 @@ typedef struct {
 } inputs_key_t;
 
 static bool
-inputs_key_equal (const void* x0, const void* y0)
+inputs_key_equal (const void* x0,
+		  const void* y0)
 {
   const inputs_key_t* x = x0;
   const inputs_key_t* y = y0;
@@ -167,7 +212,8 @@ typedef struct {
 } outputs_key_t;
 
 static bool
-outputs_key_equal (const void* x0, const void* y0)
+outputs_key_equal (const void* x0,
+		   const void* y0)
 {
   const outputs_key_t* x = x0;
   const outputs_key_t* y = y0;
@@ -186,42 +232,14 @@ outputs_key_hash (const void* x0)
     (size_t)x->out_param;
 }
 
-/* typedef enum { */
-/*   UNDECLARED, */
-/*   UNCREATED, */
-/*   UNCOMPOSED, */
-/*   UNDONE */
-/* } proxy_state_t; */
-
-/* typedef struct proxy_item_struct proxy_item_t; */
-/* struct proxy_item_struct { */
-/*   proxy_state_t state; */
-/*   void* param; */
-/*   descriptor_t* descriptor; */
-/*   void* arg; */
-/*   aid_t aid; */
-/*   proxy_compose_map_t* compose_map; */
-/*   size_t proxy_out_idx; */
-/*   size_t parent_out_idx; */
-/*   aid_t requester_aid; */
-/*   input_t requester_free_input; */
-/*   proxy_item_t* next; */
-/* }; */
-
 typedef enum {
   NORMAL,
   OUTSTANDING
 } status_t;
 
-typedef enum {
-  SELF,
-  /* PROXY_PRODUCE, */
-} action_type_t;
-
 struct manager_struct {
   status_t syscall_status;
   status_t proxy_status;
-  action_type_t action_type;
   order_t last_order;
   children_key_t last_child;
   params_key_t last_param;
@@ -234,10 +252,9 @@ struct manager_struct {
   hashtable_t* proxies;
   hashtable_t* params;
   hashtable_t* compositions;
+  hashtable_t* dependencies;
   hashtable_t* inputs;
   hashtable_t* outputs;
-  /* proxy_item_t* proxy_front; */
-  /* proxy_item_t** proxy_back; */
 };
 
 manager_t*
@@ -253,49 +270,71 @@ manager_create (void)
   manager->proxies = hashtable_create (sizeof (proxies_key_t), proxies_key_equal, proxies_key_hash);
   manager->params = hashtable_create (sizeof (params_key_t), params_key_equal, params_key_hash);
   manager->compositions = hashtable_create (sizeof (compositions_key_t), compositions_key_equal, compositions_key_hash);
+  manager->dependencies = hashtable_create (sizeof (dependencies_key_t), dependencies_key_equal, dependencies_key_hash);
   manager->inputs = hashtable_create (sizeof (inputs_key_t), inputs_key_equal, inputs_key_hash);
   manager->outputs = hashtable_create (sizeof (outputs_key_t), outputs_key_equal, outputs_key_hash);
-  /* manager->proxy_front = NULL; */
-  /* manager->proxy_back = &manager->proxy_front; */
 
   return manager;
 }
 
 void
-manager_self_set (manager_t* manager, aid_t* self)
+manager_self_set (manager_t* manager,
+		  aid_t* self)
 {
   assert (manager != NULL);
   manager->self_ptr = self;
 }
 
 void
-manager_parent_set (manager_t* manager, aid_t* parent)
+manager_parent_set (manager_t* manager,
+		    aid_t* parent)
 {
   assert (manager != NULL);
   manager->parent_ptr = parent;
 }
 
 void
-manager_child_add (manager_t* manager, aid_t* child_aid_ptr, descriptor_t* descriptor, void* arg)
+manager_child_add (manager_t* manager,
+		   aid_t* child_aid_ptr,
+		   descriptor_t* descriptor,
+		   void* ctor_arg,
+		   internal_t internal,
+		   void* param)
 {
   assert (manager != NULL);
   assert (child_aid_ptr != NULL);
   assert (descriptor != NULL);
 
-  /* Clear the automaton. */
-  *child_aid_ptr = -1;
+  /* Check that we are managing the parameter. */
+  if (internal != NULL && param != NULL) {
+    /* Check that we are managing it. */
+    params_key_t key = {
+      .param = param,
+    };
+    assert (hashtable_contains_key (manager->params, &key));
+  }
 
   children_key_t key = {
     .child_aid_ptr = child_aid_ptr,
     .descriptor = descriptor,
-    .arg = arg,
+    .ctor_arg = ctor_arg,
+    .internal = internal,
+    .param = param
   };
   assert (!hashtable_contains_key (manager->children, &key));
   hashtable_insert (manager->children, &key);
+
+  /* Clear the automaton. */
+  *child_aid_ptr = -1;
 }
 
 void
-manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback, bid_t bid)
+manager_proxy_add (manager_t* manager,
+		   aid_t* proxy_aid_ptr,
+		   aid_t* source_aid_ptr,
+		   input_t source_free_input,
+		   input_t callback,
+		   bid_t bid)
 {
   assert (manager != NULL);
   assert (proxy_aid_ptr != NULL);
@@ -303,13 +342,6 @@ manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_p
   assert (source_free_input != NULL);
   assert (callback != NULL);
   
-  /* Clear the automaton. */
-  *proxy_aid_ptr = -1;
-
-  if (bid != -1) {
-    buffer_incref (bid);
-  }
-
   proxies_key_t key = {
     .proxy_aid_ptr = proxy_aid_ptr,
     .source_aid_ptr = source_aid_ptr,
@@ -319,10 +351,19 @@ manager_proxy_add (manager_t* manager, aid_t* proxy_aid_ptr, aid_t* source_aid_p
   };
   assert (!hashtable_contains_key (manager->proxies, &key));
   hashtable_insert (manager->proxies, &key);
+
+  /* Clear the automaton. */
+  *proxy_aid_ptr = -1;
+
+  /* Increment the reference count. */
+  if (bid != -1) {
+    buffer_incref (bid);
+  }
 }
 
 void
-manager_param_add (manager_t* manager, void* param)
+manager_param_add (manager_t* manager,
+		   void* param)
 {
   assert (manager != NULL);
   assert (param != NULL);
@@ -336,7 +377,13 @@ manager_param_add (manager_t* manager, void* param)
 }
 
 void
-manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t output, void* out_param, aid_t* in_automaton, input_t input, void* in_param)
+manager_composition_add (manager_t* manager,
+			 aid_t* out_automaton,
+			 output_t output,
+			 void* out_param,
+			 aid_t* in_automaton,
+			 input_t input,
+			 void* in_param)
 {
   assert (manager != NULL);
   assert (out_automaton != NULL);
@@ -373,14 +420,59 @@ manager_composition_add (manager_t* manager, aid_t* out_automaton, output_t outp
   hashtable_insert (manager->compositions, &key);
 }
 
+void manager_dependency_add (manager_t* manager,
+			     aid_t* child,
+			     aid_t* dependent,
+			     input_t free_input,
+			     bid_t bid)
+{
+  assert (manager != NULL);
+  assert (child != NULL);
+  assert (dependent != NULL);
+  assert (free_input != NULL);
+  assert (bid != -1);
+
+  dependency_state_t state;
+  if (*child != -1) {
+    state = DEP_FINISHED;
+  }
+  else if (*dependent != -1) {
+    state = DEP_WAITING;
+  }
+  else {
+    state = DEP_START;
+  }
+
+  dependencies_key_t key = {
+    .child = child,
+    .dependent = dependent,
+    .free_input = free_input,
+    .bid = bid,
+    .state = state,
+  };
+  assert (!hashtable_contains_key (manager->dependencies, &key));
+  hashtable_insert (manager->dependencies, &key);
+
+  buffer_incref (bid);
+}
+
 void
-manager_input_add (manager_t* manager, bool* flag, input_t input, void* in_param)
+manager_input_add (manager_t* manager,
+		   bool* flag,
+		   input_t input,
+		   void* in_param)
 {
   assert (manager != NULL);
   assert (flag != NULL);
   assert (input != NULL);
 
-  *flag = false;
+  if (in_param != NULL) {
+    /* Check that we are managing it. */
+    params_key_t key = {
+      .param = in_param,
+    };
+    assert (hashtable_contains_key (manager->params, &key));
+  }
 
   inputs_key_t key = {
     .flag = flag,
@@ -389,16 +481,27 @@ manager_input_add (manager_t* manager, bool* flag, input_t input, void* in_param
   };
   assert (!hashtable_contains_key (manager->inputs, &key));
   hashtable_insert (manager->inputs, &key);
+
+  *flag = false;
 }
 
 void
-manager_output_add (manager_t* manager, bool* flag, output_t output, void* out_param)
+manager_output_add (manager_t* manager,
+		    bool* flag,
+		    output_t output,
+		    void* out_param)
 {
   assert (manager != NULL);
   assert (flag != NULL);
   assert (output != NULL);
 
-  *flag = false;
+  if (out_param != NULL) {
+    /* Check that we are managing it. */
+    params_key_t key = {
+      .param = out_param,
+    };
+    assert (hashtable_contains_key (manager->params, &key));
+  }
 
   outputs_key_t key = {
     .flag = flag,
@@ -407,6 +510,8 @@ manager_output_add (manager_t* manager, bool* flag, output_t output, void* out_p
   };
   assert (!hashtable_contains_key (manager->outputs, &key));
   hashtable_insert (manager->outputs, &key);
+
+  *flag = false;
 }
 
 static void
@@ -433,7 +538,8 @@ proxy_fire (manager_t* manager)
 }
 
 void
-manager_apply (manager_t* manager, const receipt_t* receipt)
+manager_apply (manager_t* manager,
+	       const receipt_t* receipt)
 {
   assert (manager != NULL);
   assert (receipt != NULL);
@@ -460,20 +566,12 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   case CHILD_CREATED:
     {
       assert (manager->syscall_status == OUTSTANDING && manager->last_order.type == CREATE);
-      switch (manager->action_type) {
-      case SELF:
-	*manager->last_child.child_aid_ptr = receipt->child_created.child;
-	something_changed = true;
-	manager->syscall_status = NORMAL;
-	break;
-      /* case PROXY_PRODUCE: */
-      /* 	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNCREATED); */
-      /* 	manager->proxy_front->aid = receipt->child_created.child; */
-      /* 	manager->proxy_front->state = UNCOMPOSED; */
-      /* 	something_changed = true; */
-      /* 	manager->syscall_status = NORMAL; */
-      /* 	break; */
+      *manager->last_child.child_aid_ptr = receipt->child_created.child;
+      if (manager->last_child.internal != NULL) {
+	assert (schedule_internal (manager->last_child.internal, manager->last_child.param) == 0);
       }
+      something_changed = true;
+      manager->syscall_status = NORMAL;
     }
     break;
   case BAD_DESCRIPTOR:
@@ -483,23 +581,11 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   case DECLARED:
     {
       assert (manager->syscall_status == OUTSTANDING && manager->last_order.type == DECLARE);
-      switch (manager->action_type) {
-      case SELF:
-	{
-	  params_key_t* key = hashtable_lookup (manager->params, &manager->last_param);
-	  assert (key->declared == false);
-	  key->declared = true;
-	  something_changed = true;
-	  manager->syscall_status = NORMAL;
-	}
-	break;
-      /* case PROXY_PRODUCE: */
-      /* 	assert (manager->proxy_front != NULL && manager->proxy_front->state == UNDECLARED); */
-      /* 	manager->proxy_front->state = UNCREATED; */
-      /* 	something_changed = true; */
-      /* 	manager->syscall_status = NORMAL; */
-      /* 	break; */
-      }
+      params_key_t* key = hashtable_lookup (manager->params, &manager->last_param);
+      assert (key->declared == false);
+      key->declared = true;
+      something_changed = true;
+      manager->syscall_status = NORMAL;
     }
     break;
   case OUTPUT_DNE:
@@ -521,34 +607,11 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
   case COMPOSED:
     {
       assert (manager->syscall_status == OUTSTANDING && manager->last_order.type == COMPOSE);
-      switch (manager->action_type) {
-      case SELF:
-	{
-	  compositions_key_t* key = hashtable_lookup (manager->compositions, &manager->last_composition);
-	  assert (key->composed == false);
-	  key->composed = true;
-	  something_changed = true;
-	  manager->syscall_status = NORMAL;
-	}
-	break;
-      /* case PROXY_PRODUCE: */
-      /* 	{ */
-      /* 	  if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) { */
-      /* 	    ++manager->proxy_front->proxy_out_idx; */
-      /* 	  } */
-      /* 	  else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) { */
-      /* 	    ++manager->proxy_front->parent_out_idx; */
-      /* 	  } */
-
-      /* 	  if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output == NULL) { */
-      /* 	    manager->proxy_front->state = UNDONE; */
-      /* 	  } */
-
-      /* 	  something_changed = true; */
-      /* 	  manager->syscall_status = NORMAL; */
-      /* 	} */
-      /* 	break; */
-      }
+      compositions_key_t* key = hashtable_lookup (manager->compositions, &manager->last_composition);
+      assert (key->composed == false);
+      key->composed = true;
+      something_changed = true;
+      manager->syscall_status = NORMAL;
     }
     break;
   case INPUT_COMPOSED:
@@ -610,8 +673,8 @@ manager_apply (manager_t* manager, const receipt_t* receipt)
     break;
   }
 
-  /* /\* Fire the proxy. *\/ */
-  /* proxy_fire (manager); */
+  /* Fire the proxy. */
+  proxy_fire (manager);
 
   if ((manager->syscall_status == NORMAL) && something_changed) {
     assert (schedule_system_output () == 0);
@@ -625,21 +688,8 @@ syscall_fire (manager_t* manager)
 
   size_t idx;
 
-  /* Go through the automata. */
-  for (idx = hashtable_first (manager->children);
-       idx != hashtable_last (manager->children);
-       idx = hashtable_next (manager->children, idx)) {
-    const children_key_t* key = hashtable_key_at (manager->children, idx);
-    if (*key->child_aid_ptr == -1) {
-      /* We need to create an automaton. */
-      order_create_init (&manager->last_order, key->descriptor, key->arg);
-      manager->action_type = SELF;
-      manager->last_child = *key;
-      return true;
-    }
-  }
-
   /* Go through the parameters.
+     Before the children incase we need to schedule a parameterized output.
      Before the compositions to ensure non-NULL parameters declared. */
   for (idx = hashtable_first (manager->params);
        idx != hashtable_last (manager->params);
@@ -648,8 +698,21 @@ syscall_fire (manager_t* manager)
     if (!key->declared) {
       /* We need to declare a parameter. */
       order_declare_init (&manager->last_order, key->param);
-      manager->action_type = SELF;
       manager->last_param = *key;
+      return true;
+    }
+  }
+
+  /* Go through the automata.
+     Before the compositions because the compositions can depend on these. */
+  for (idx = hashtable_first (manager->children);
+       idx != hashtable_last (manager->children);
+       idx = hashtable_next (manager->children, idx)) {
+    const children_key_t* key = hashtable_key_at (manager->children, idx);
+    if (*key->child_aid_ptr == -1) {
+      /* We need to create an automaton. */
+      order_create_init (&manager->last_order, key->descriptor, key->ctor_arg);
+      manager->last_child = *key;
       return true;
     }
   }
@@ -669,78 +732,47 @@ syscall_fire (manager_t* manager)
     }
   }
 
-  /* /\* Are we making a proxy. *\/ */
-  /* if (manager->proxy_front != NULL) { */
-  /*   switch (manager->proxy_front->state) { */
-  /*   case UNDECLARED: */
-  /*     /\* Declare the parameter. *\/ */
-  /*     order_declare_init (&manager->last_order, manager->proxy_front->param); */
-  /*     manager->action_type = PROXY_PRODUCE; */
-  /*     return true; */
-  /*     break; */
-  /*   case UNCREATED: */
-  /*     /\* Create the proxy. *\/ */
-  /*     order_create_init (&manager->last_order, manager->proxy_front->descriptor, manager->proxy_front->arg); */
-  /*     manager->action_type = PROXY_PRODUCE; */
-  /*     return true; */
-  /*     break; */
-  /*   case UNCOMPOSED: */
-  /*     { */
-  /* 	if (manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output != NULL) { */
-  /* 	  /\* Compose output from proxy with input of parent. *\/ */
-  /* 	  order_compose_init (&manager->last_order, */
-  /* 			      manager->proxy_front->aid, */
-  /* 			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].output, */
-  /* 			      NULL, */
-  /* 			      manager->self, */
-  /* 			      manager->proxy_front->compose_map->proxy_out_parent_in[manager->proxy_front->proxy_out_idx].input, */
-  /* 			      manager->proxy_front->param); */
-  /* 	  manager->action_type = PROXY_PRODUCE; */
-  /* 	  return true; */
-  /* 	} */
-  /* 	else if (manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output != NULL) { */
-  /* 	  /\* Compose output from parent with input of proxy. *\/ */
-  /* 	  order_compose_init (&manager->last_order, */
-  /* 			      manager->self, */
-  /* 			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].output, */
-  /* 			      manager->proxy_front->param, */
-  /* 			      manager->proxy_front->aid, */
-  /* 			      manager->proxy_front->compose_map->parent_out_proxy_in[manager->proxy_front->parent_out_idx].input, */
-  /* 			      NULL); */
-  /* 	  manager->action_type = PROXY_PRODUCE; */
-  /* 	  return true; */
-  /* 	} */
-  /*     } */
-  /*     break; */
-  /*   case UNDONE: */
-  /*     { */
-  /* 	/\* Call back. *\/ */
-  /* 	bid_t bid = buffer_alloc (sizeof (proxy_receipt_t)); */
-  /* 	proxy_receipt_t* receipt = buffer_write_ptr (bid); */
-  /* 	receipt->proxy_aid = manager->proxy_front->aid; */
-  /* 	if (schedule_free_input (manager->proxy_front->requester_aid, manager->proxy_front->requester_free_input, bid) != 0) { */
-  /* 	  /\* TODO: Couldn't call back.  Destroy the proxy. *\/ */
-  /* 	  assert (0); */
-  /* 	} */
-
-  /* 	/\* Pop. *\/ */
-  /* 	proxy_item_t* item = manager->proxy_front; */
-  /* 	manager->proxy_front = item->next; */
-  /* 	free (item); */
-
-  /* 	if (manager->proxy_front == NULL) { */
-  /* 	  manager->proxy_back = &manager->proxy_front; */
-  /* 	} */
-  /* 	else { */
-  /* 	  /\* Go again because there are more proxies. *\/ */
-  /* 	  assert (schedule_system_output () == 0); */
-  /* 	} */
-  /*     } */
-  /*     break; */
-  /*   } */
-  /* } */
-
   return false;
+}
+
+static void
+dependencies_fire (manager_t* manager)
+{
+  size_t idx;
+
+  /* Go through the dependencies. */
+  for (idx = hashtable_first (manager->dependencies);
+       idx != hashtable_last (manager->dependencies);
+       idx = hashtable_next (manager->dependencies, idx)) {
+    dependencies_key_t* key = hashtable_key_at (manager->dependencies, idx);
+    switch (key->state) {
+    case DEP_START:
+      {
+	/* Only one thing can happen at a time. */
+	if (*key->child != -1) {
+	  /* Child created before dependent.  Finished. */
+	  key->state = DEP_FINISHED;
+	}
+	else if (*key->dependent != -1) {
+	  /* Dependent created before child.  Wait. */
+	  key->state = DEP_WAITING;
+	}
+      }
+      break;
+    case DEP_WAITING:
+      {
+	if (*key->child != -1) {
+	  assert (schedule_free_input (*key->dependent, key->free_input, key->bid) == 0);
+	  key->state = DEP_FINISHED;
+	}
+      }
+      break;
+    case DEP_FINISHED:
+      /* Done. */
+      break;
+    }
+  }
+
 }
 
 bid_t
@@ -749,6 +781,7 @@ manager_action (manager_t* manager)
   assert (manager != NULL);
 
   proxy_fire (manager);
+  dependencies_fire (manager);
 
   switch (manager->syscall_status) {
   case NORMAL:
@@ -775,36 +808,9 @@ manager_action (manager_t* manager)
   return -1;
 }
 
-/* void */
-/* manager_proxy_create (manager_t* manager, void* param, descriptor_t* descriptor, void* arg, proxy_compose_map_t* compose_map, const proxy_request_t* request) */
-/* { */
-/*   assert (manager != NULL); */
-/*   assert (param != NULL); */
-/*   assert (descriptor != NULL); */
-/*   assert (compose_map != NULL); */
-/*   assert (compose_map->proxy_out_parent_in != NULL); */
-/*   assert (compose_map->parent_out_proxy_in != NULL); */
-/*   assert (request != NULL); */
-
-/*   proxy_item_t* proxy_item = malloc (sizeof (proxy_item_t)); */
-/*   proxy_item->state = UNDECLARED; */
-/*   proxy_item->param = param; */
-/*   proxy_item->descriptor = descriptor; */
-/*   proxy_item->arg = arg; */
-/*   proxy_item->compose_map = compose_map; */
-/*   proxy_item->proxy_out_idx = 0; */
-/*   proxy_item->parent_out_idx = 0; */
-/*   proxy_item->requester_aid = request->aid; */
-/*   proxy_item->requester_free_input = request->free_input; */
-/*   proxy_item->next = NULL; */
-/*   *manager->proxy_back = proxy_item; */
-/*   manager->proxy_back = &proxy_item->next; */
-
-/*   assert (schedule_system_output () == 0); */
-/* } */
-
 void
-manager_proxy_receive (manager_t* manager, const proxy_receipt_t* proxy_receipt)
+manager_proxy_receive (manager_t* manager,
+		       const proxy_receipt_t* proxy_receipt)
 {
   assert (manager != NULL);
   assert (proxy_receipt != NULL);

@@ -220,7 +220,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = lib libmftp src mftp . tests
+SUBDIRS = lib libmftp mftp src . tests
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

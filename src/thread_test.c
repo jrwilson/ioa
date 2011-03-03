@@ -153,9 +153,9 @@ composer_create (void* arg)
   composer_t* composer = malloc (sizeof (composer_t));
 
   composer->manager = manager_create ();
-  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL);
-  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL);
-  manager_child_add (composer->manager, &composer->receiver, &receiver_descriptor, NULL);
+  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL, NULL, NULL);
+  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL, NULL, NULL);
+  manager_child_add (composer->manager, &composer->receiver, &receiver_descriptor, NULL, NULL, NULL);
   manager_composition_add (composer->manager, &composer->counter1, counter_output, NULL, &composer->receiver, receiver_input1, NULL);
   manager_composition_add (composer->manager, &composer->counter2, counter_output, NULL, &composer->receiver, receiver_input2, NULL);
 

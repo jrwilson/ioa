@@ -36,7 +36,7 @@ typedef struct {
 void port_receipt_init (port_receipt_t*, uint32_t);
 
 void component_manager_request_port (void*, void*, bid_t);
-void component_manager_strobe (void*, void*, bid_t);
+void component_manager_strobe_in (void*, void*, bid_t);
 
 extern descriptor_t component_manager_descriptor;
 

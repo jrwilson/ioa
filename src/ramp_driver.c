@@ -98,10 +98,21 @@ composer_create (void* arg)
 
   composer->manager = manager_create ();
 
-  manager_self_set (composer->manager, &composer->self);
+  manager_self_set (composer->manager,
+		    &composer->self);
 
-  manager_child_add (composer->manager, &composer->msg_sender, &msg_sender_descriptor, NULL);
-  manager_child_add (composer->manager, &composer->msg_receiver, &msg_receiver_descriptor, NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_sender,
+		     &msg_sender_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_receiver,
+		     &msg_receiver_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
 
   uuid_generate (composer->ramp_component);
   component_manager_create_arg_init (&composer->ramp_manager_arg,
@@ -115,7 +126,19 @@ composer_create (void* arg)
   manager_child_add (composer->manager,
   		     &composer->ramp_manager,
   		     &component_manager_descriptor,
-  		     &composer->ramp_manager_arg);
+  		     &composer->ramp_manager_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->ramp_manager,
+			  component_manager_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->ramp_manager,
+			  component_manager_strobe_in,
+			  buffer_alloc (0));
 
   uuid_generate (composer->display_component);
   component_manager_create_arg_init (&composer->display_manager_arg,
@@ -129,7 +152,19 @@ composer_create (void* arg)
   manager_child_add (composer->manager,
   		     &composer->display_manager,
   		     &component_manager_descriptor,
-  		     &composer->display_manager_arg);
+  		     &composer->display_manager_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->display_manager,
+			  component_manager_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->display_manager,
+			  component_manager_strobe_in,
+			  buffer_alloc (0));
 
   composer->ramp_port_type = 0;
   composer->display_port_type = 0;
@@ -148,7 +183,19 @@ composer_create (void* arg)
   manager_child_add (composer->manager,
 		     &composer->channel,
 		     &channel_descriptor,
-		     &composer->channel_arg);
+		     &composer->channel_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->ramp_manager,
+			  &composer->channel,
+			  channel_strobe,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->display_manager,
+			  &composer->channel,
+			  channel_strobe,
+			  buffer_alloc (0));
 
   return composer;
 }
@@ -164,15 +211,6 @@ composer_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   manager_apply (composer->manager, receipt);
-  if (composer->ramp_manager != -1) {
-    assert (schedule_free_input (composer->ramp_manager, component_manager_strobe, buffer_alloc (0)) == 0);
-  }
-  if (composer->display_manager != -1) {
-    assert (schedule_free_input (composer->display_manager, component_manager_strobe, buffer_alloc (0)) == 0);
-  }
-  if (composer->channel != -1) {
-    assert (schedule_free_input (composer->channel, channel_strobe, buffer_alloc (0)) == 0);
-  }
 }
 
 static bid_t

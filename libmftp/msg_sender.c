@@ -114,9 +114,21 @@ msg_sender_create (void* arg)
   msg_sender_t* msg_sender = malloc (sizeof (msg_sender_t));
 
   msg_sender->manager = manager_create ();
-  manager_self_set (msg_sender->manager, &msg_sender->self);
-  manager_child_add (msg_sender->manager, &msg_sender->udp_sender, &udp_sender_descriptor, NULL);
-  manager_composition_add (msg_sender->manager, &msg_sender->self, msg_sender_packet_out, NULL, &msg_sender->udp_sender, udp_sender_packet_in, NULL);
+  manager_self_set (msg_sender->manager,
+		    &msg_sender->self);
+  manager_child_add (msg_sender->manager,
+		     &msg_sender->udp_sender,
+		     &udp_sender_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_composition_add (msg_sender->manager,
+			   &msg_sender->self,
+			   msg_sender_packet_out,
+			   NULL,
+			   &msg_sender->udp_sender,
+			   udp_sender_packet_in,
+			   NULL);
 
   /* Initialize the queue. */
   msg_sender->bidq = bidq_create ();
@@ -161,7 +173,9 @@ msg_sender_request_proxy (void* state, void* param, bid_t bid)
   manager_child_add (msg_sender->manager,
 		     &proxy->aid,
 		     &msg_sender_proxy_descriptor,
-		     &proxy->create_arg);
+		     &proxy->create_arg,
+		     NULL,
+		     NULL);
   manager_composition_add (msg_sender->manager,
 			   &proxy->aid,
 			   msg_sender_proxy_message_out,

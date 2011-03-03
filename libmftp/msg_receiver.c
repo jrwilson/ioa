@@ -24,9 +24,21 @@ msg_receiver_create (void* arg)
 
   msg_receiver->manager = manager_create ();
 
-  manager_self_set (msg_receiver->manager, &msg_receiver->self);
-  manager_child_add (msg_receiver->manager, &msg_receiver->udp_receiver, &udp_receiver_descriptor, NULL);
-  manager_composition_add (msg_receiver->manager, &msg_receiver->udp_receiver, udp_receiver_packet_out, NULL, &msg_receiver->self, msg_receiver_packet_in, NULL);
+  manager_self_set (msg_receiver->manager,
+		    &msg_receiver->self);
+  manager_child_add (msg_receiver->manager,
+		     &msg_receiver->udp_receiver,
+		     &udp_receiver_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_composition_add (msg_receiver->manager,
+			   &msg_receiver->udp_receiver,
+			   udp_receiver_packet_out,
+			   NULL,
+			   &msg_receiver->self,
+			   msg_receiver_packet_in,
+			   NULL);
 
   /* Initialize the queue. */
   msg_receiver->announcements = bidq_create ();

@@ -23,15 +23,50 @@ composer_create (void* arg)
 
   composer->manager = manager_create ();
 
-  manager_self_set (composer->manager, &composer->self);
+  manager_self_set (composer->manager,
+		    &composer->self);
 
-  manager_child_add (composer->manager, &composer->msg_receiver, &msg_receiver_descriptor, NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_receiver,
+		     &msg_receiver_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
 
-  manager_child_add (composer->manager, &composer->consumer, &consumer_descriptor, NULL);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_announcement_out, NULL, &composer->consumer, consumer_announcement_in, NULL);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_match_out, NULL, &composer->consumer, consumer_match_in, NULL);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_request_out, NULL, &composer->consumer, consumer_request_in, NULL);
-  manager_composition_add (composer->manager, &composer->msg_receiver, msg_receiver_fragment_out, NULL, &composer->consumer, consumer_fragment_in, NULL);
+  manager_child_add (composer->manager,
+		     &composer->consumer,
+		     &consumer_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_composition_add (composer->manager,
+			   &composer->msg_receiver,
+			   msg_receiver_announcement_out,
+			   NULL,
+			   &composer->consumer,
+			   consumer_announcement_in,
+			   NULL);
+  manager_composition_add (composer->manager,
+			   &composer->msg_receiver,
+			   msg_receiver_match_out, 
+			   NULL, 
+			   &composer->consumer, 
+			   consumer_match_in, 
+			   NULL);
+  manager_composition_add (composer->manager, 
+			   &composer->msg_receiver, 
+			   msg_receiver_request_out, 
+			   NULL, 
+			   &composer->consumer, 
+			   consumer_request_in, 
+			   NULL);
+  manager_composition_add (composer->manager,
+			   &composer->msg_receiver,
+			   msg_receiver_fragment_out,
+			   NULL,
+			   &composer->consumer,
+			   consumer_fragment_in,
+			   NULL);
 
   return composer;
 }

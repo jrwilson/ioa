@@ -56,9 +56,16 @@ match_getter_create (void* a)
   match_getter->msg_sender = arg->msg_sender;
   match_getter->msg_receiver = arg->msg_receiver;
 
-  manager_self_set (match_getter->manager, &match_getter->self);
+  manager_self_set (match_getter->manager,
+		    &match_getter->self);
 
-  manager_composition_add (match_getter->manager, match_getter->msg_receiver, msg_receiver_match_out, NULL, &match_getter->self, match_getter_match_in, NULL);
+  manager_composition_add (match_getter->manager,
+			   match_getter->msg_receiver,
+			   msg_receiver_match_out,
+			   NULL,
+			   &match_getter->self,
+			   match_getter_match_in,
+			   NULL);
 
   return match_getter;
 }
@@ -122,10 +129,29 @@ match_getter_match_in (void* state, void* param, bid_t bid)
 	meta->meta_arg.download = true;
 	meta->meta_arg.msg_sender = match_getter->msg_sender;
 	meta->meta_arg.msg_receiver = match_getter->msg_receiver;
-	manager_child_add (match_getter->manager, &meta->meta_aid, &file_server_descriptor, &meta->meta_arg);
-	
-	
-	manager_composition_add (match_getter->manager, &meta->meta_aid, file_server_download_complete_out, NULL, &match_getter->self, match_getter_meta_download_complete, meta);
+	manager_child_add (match_getter->manager,
+			   &meta->meta_aid,
+			   &file_server_descriptor,
+			   &meta->meta_arg,
+			   NULL,
+			   NULL);
+	manager_dependency_add (match_getter->manager,
+				match_getter->msg_sender,
+				&meta->meta_aid,
+				file_server_strobe_in,
+				buffer_alloc (0));
+	manager_dependency_add (match_getter->manager,
+				match_getter->msg_receiver,
+				&meta->meta_aid,
+				file_server_strobe_in,
+				buffer_alloc (0));
+	manager_composition_add (match_getter->manager,
+				 &meta->meta_aid,
+				 file_server_download_complete_out,
+				 NULL,
+				 &match_getter->self,
+				 match_getter_meta_download_complete,
+				 meta);
 	
 	meta->next = match_getter->metas;
 	match_getter->metas = meta;
@@ -159,11 +185,29 @@ match_getter_meta_download_complete (void* state, void* param, bid_t bid)
       meta->file_arg.download = true;
       meta->file_arg.msg_sender = match_getter->msg_sender;
       meta->file_arg.msg_receiver = match_getter->msg_receiver;
-      manager_child_add (match_getter->manager, &meta->file_aid, &file_server_descriptor, &meta->file_arg);
-      
-      /* manager_composition_add (match_getter->manager, &match_getter->self, match_getter_new_comm_out, NULL, &meta->file_aid, file_server_new_comm_in, NULL); */
-      
-      manager_composition_add (match_getter->manager, &meta->file_aid, file_server_download_complete_out, NULL, &match_getter->self, match_getter_file_download_complete, meta);
+      manager_child_add (match_getter->manager,
+			 &meta->file_aid,
+			 &file_server_descriptor,
+			 &meta->file_arg,
+			 NULL,
+			 NULL);
+      manager_dependency_add (match_getter->manager,
+			      match_getter->msg_sender,
+			      &meta->file_aid,
+			      file_server_strobe_in,
+			      buffer_alloc (0));
+      manager_dependency_add (match_getter->manager,
+			      match_getter->msg_receiver,
+			      &meta->file_aid,
+			      file_server_strobe_in,
+			      buffer_alloc (0));
+      manager_composition_add (match_getter->manager,
+			       &meta->file_aid,
+			       file_server_download_complete_out,
+			       NULL,
+			       &match_getter->self,
+			       match_getter_file_download_complete,
+			       meta);
     
       assert (schedule_system_output () == 0);
     }
@@ -216,34 +260,16 @@ match_getter_file_download_complete (void* state, void* param, bid_t bid)
 }
 
 void
-match_getter_strobe (void* state, void* param, bid_t bid)
+match_getter_strobe_in (void* state, void* param, bid_t bid)
 {
   match_getter_t* match_getter = state;
   assert (match_getter != NULL);
 
   assert (schedule_system_output () == 0);
-
-  meta_item_t* meta;
-  for (meta = match_getter->metas;
-       meta != NULL;
-       meta = meta->next) {
-    if (meta->meta_aid != -1) {
-      assert (schedule_free_input (meta->meta_aid, file_server_strobe, buffer_alloc (0)) == 0);
-    }
-    if (meta->file_aid != -1) {
-      assert (schedule_free_input (meta->file_aid, file_server_strobe, buffer_alloc (0)) == 0);
-    }
-  }
-}
-
-static bid_t
-match_getter_new_comm_out (void* state, void* param)
-{
-  return buffer_alloc (0);
 }
 
 static input_t match_getter_free_inputs[] = {
-  match_getter_strobe,
+  match_getter_strobe_in,
   NULL
 };
 
@@ -254,16 +280,10 @@ static input_t match_getter_inputs[] = {
   NULL
 };
 
-static output_t match_getter_outputs[] = {
-  match_getter_new_comm_out,
-  NULL
-};
-
 descriptor_t match_getter_descriptor = {
   .constructor = match_getter_create,
   .system_input = match_getter_system_input,
   .system_output = match_getter_system_output,
   .free_inputs = match_getter_free_inputs,
   .inputs = match_getter_inputs,
-  .outputs = match_getter_outputs,
 };

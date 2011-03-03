@@ -11,8 +11,6 @@
 #include "ft.h"
 #include "matcher.h"
 
-static bid_t composer_new_comm_out (void*, void*);
-
 typedef struct {
   manager_t* manager;
   aid_t self;
@@ -47,28 +45,84 @@ composer_create (void* a)
 
   composer->manager = manager_create ();
 
-  manager_self_set (composer->manager, &composer->self);
+  manager_self_set (composer->manager,
+		    &composer->self);
 
-  manager_child_add (composer->manager, &composer->msg_sender, &msg_sender_descriptor, NULL);
-  manager_child_add (composer->manager, &composer->msg_receiver, &msg_receiver_descriptor, NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_sender,
+		     &msg_sender_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
+  manager_child_add (composer->manager,
+		     &composer->msg_receiver,
+		     &msg_receiver_descriptor,
+		     NULL,
+		     NULL,
+		     NULL);
 
   composer->file_arg.file = arg->file;
   composer->file_arg.announce = true;
   composer->file_arg.download = false;
   composer->file_arg.msg_sender = &composer->msg_sender;
   composer->file_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager, &composer->file, &file_server_descriptor, &composer->file_arg);
+  manager_child_add (composer->manager,
+		     &composer->file,
+		     &file_server_descriptor,
+		     &composer->file_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->file,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->file,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
 
   composer->meta_arg.file = arg->meta;
   composer->meta_arg.announce = true;
   composer->meta_arg.download = false;
   composer->meta_arg.msg_sender = &composer->msg_sender;
   composer->meta_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager, &composer->meta, &file_server_descriptor, &composer->meta_arg);
+  manager_child_add (composer->manager,
+		     &composer->meta,
+		     &file_server_descriptor,
+		     &composer->meta_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->meta,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->meta,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
 
   composer->matcher_arg.msg_sender = &composer->msg_sender;
   composer->matcher_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager, &composer->matcher, &matcher_descriptor, &composer->matcher_arg);
+  manager_child_add (composer->manager,
+		     &composer->matcher,
+		     &matcher_descriptor,
+		     &composer->matcher_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (composer->manager,
+			  &composer->msg_sender,
+			  &composer->matcher,
+			  matcher_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (composer->manager,
+			  &composer->msg_receiver,
+			  &composer->matcher,
+			  matcher_strobe_in,
+			  buffer_alloc (0));
 
   return composer;
 }
@@ -84,16 +138,6 @@ composer_system_input (void* state, void* param, bid_t bid)
   const receipt_t* receipt = buffer_read_ptr (bid);
 
   manager_apply (composer->manager, receipt);
-
-  if (composer->file != -1) {
-    assert (schedule_free_input (composer->file, file_server_strobe, buffer_alloc (0)) == 0);
-  }
-  if (composer->meta != -1) {
-    assert (schedule_free_input (composer->meta, file_server_strobe, buffer_alloc (0)) == 0);
-  }
-  if (composer->matcher != -1) {
-    assert (schedule_free_input (composer->matcher, matcher_strobe, buffer_alloc (0)) == 0);
-  }
 }
 
 static bid_t
@@ -105,22 +149,10 @@ composer_system_output (void* state, void* param)
   return manager_action (composer->manager);
 }
 
-static bid_t
-composer_new_comm_out (void* state, void* param)
-{
-  return buffer_alloc (0);
-}
-
-static output_t composer_outputs[] = {
-  composer_new_comm_out,
-  NULL
-};
-
 descriptor_t composer_descriptor = {
   .constructor = composer_create,
   .system_input = composer_system_input,
   .system_output = composer_system_output,
-  .outputs = composer_outputs,
 };
 
 
