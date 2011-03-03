@@ -20,7 +20,7 @@ typedef struct {
 } integer_display_t;
 
 static void*
-integer_display_create (void* arg)
+integer_display_create (const void* arg)
 {
   integer_display_t* integer_display = malloc (sizeof (integer_display_t));
 

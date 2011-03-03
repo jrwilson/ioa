@@ -31,7 +31,7 @@ typedef struct {
 #define BORDER_WIDTH 0
 
 static void*
-display_create (void* arg)
+display_create (const void* arg)
 {
   display_t* display = malloc (sizeof (display_t));
 

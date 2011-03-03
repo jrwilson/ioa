@@ -9,12 +9,12 @@
 typedef int aid_t;
 typedef int bid_t;
 
-typedef void* (*constructor_t) (void*);
+typedef void* (*constructor_t) (const void*);
 typedef void (*input_t) (void*, void*, bid_t);
 typedef bid_t (*output_t) (void*, void*);
 typedef void (*internal_t) (void*, void*);
 
-typedef struct {
+typedef struct descriptor_struct {
   constructor_t constructor;
   input_t system_input;
   output_t system_output;
@@ -40,8 +40,8 @@ typedef struct {
   order_type_t type;
   union {
     struct {
-      descriptor_t* descriptor;
-      void* arg;
+      const descriptor_t* descriptor;
+      const void* arg;
     } create;
     struct {
       void* param;
@@ -137,14 +137,14 @@ typedef struct {
   };
 } receipt_t;
 
-void order_create_init (order_t*, descriptor_t*, void*);
+void order_create_init (order_t*, const descriptor_t*, const void*);
 void order_declare_init (order_t*, void*);
 void order_compose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_decompose_init (order_t*, aid_t, output_t, void*, aid_t, input_t, void*);
 void order_rescind_init (order_t*, void*);
 void order_destroy_init (order_t*, aid_t);
 
-void ueioa_run (descriptor_t*, void*, int);
+void ueioa_run (const descriptor_t*, const void*, int);
 
 int schedule_system_output (void) __attribute__ ((warn_unused_result));
 int schedule_alarm_input (time_t, suseconds_t) __attribute__ ((warn_unused_result));
@@ -173,8 +173,8 @@ void manager_self_set (manager_t*, aid_t*);
 void manager_parent_set (manager_t*, aid_t*);
 void manager_child_add (manager_t* manager,
 			aid_t* child_aid_ptr,
-			descriptor_t* descriptor,
-			void* ctor_arg,
+			const descriptor_t* descriptor,
+			const void* ctor_arg,
 			internal_t internal,
 			void* param);
 void manager_proxy_add (manager_t*, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback, bid_t);

@@ -59,9 +59,9 @@ typedef struct {
 } file_server_t;
 
 static void*
-file_server_create (void* a)
+file_server_create (const void* a)
 {
-  file_server_create_arg_t* arg = a;
+  const file_server_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->file != NULL);
   assert (arg->msg_sender != NULL);

@@ -40,6 +40,6 @@ bid_t channel_a_out (void*, void*);
 void channel_b_in (void*, void*, bid_t);
 bid_t channel_b_out (void*, void*);
 
-extern descriptor_t channel_descriptor;
+extern const descriptor_t channel_descriptor;
 
 #endif

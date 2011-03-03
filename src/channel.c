@@ -75,9 +75,9 @@ typedef struct channel_struct {
 } channel_t;
 
 static void*
-channel_create (void* a)
+channel_create (const void* a)
 {
-  channel_create_arg_t* arg = a;
+  const channel_create_arg_t* arg = a;
   assert (arg != NULL);
 
   channel_t* channel = malloc (sizeof (channel_t));
@@ -329,7 +329,7 @@ static output_t channel_outputs[] = {
   NULL
 };
 
-descriptor_t channel_descriptor = {
+const descriptor_t channel_descriptor = {
   .constructor = channel_create,
   .system_input = channel_system_input,
   .system_output = channel_system_output,

@@ -40,9 +40,9 @@ typedef struct {
 } match_getter_t;
 
 static void*
-match_getter_create (void* a)
+match_getter_create (const void* a)
 {
-  match_getter_create_arg_t* arg = a;
+  const match_getter_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->query != NULL);
   assert (arg->msg_sender != NULL);

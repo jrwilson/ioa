@@ -16,9 +16,9 @@ typedef struct {
 } udp_sender_t;
 
 static void*
-udp_sender_create (void* a)
+udp_sender_create (const void* a)
 {
-  udp_sender_create_arg_t* arg = a;
+  const udp_sender_create_arg_t* arg = a;
   assert (arg != NULL);
 
   udp_sender_t* udp_sender = malloc (sizeof (udp_sender_t));

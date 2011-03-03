@@ -146,7 +146,7 @@ fdset_clear_write (const void* e, void* a)
 }
 
 void
-ueioa_run (descriptor_t* descriptor, void* arg, int thread_count)
+ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
 {
   assert (descriptor != NULL);
   assert (thread_count > 0 && thread_count <= MAX_THREADS);

@@ -19,9 +19,9 @@ typedef struct {
 static void msg_receiver_packet_in (void* state, void* param, bid_t bid);
 
 static void*
-msg_receiver_create (void* a)
+msg_receiver_create (const void* a)
 {
-  msg_receiver_create_arg_t* arg = a;
+  const msg_receiver_create_arg_t* arg = a;
   assert (arg != NULL);
 
   msg_receiver_t* msg_receiver = malloc (sizeof (msg_receiver_t));

@@ -24,7 +24,7 @@ typedef struct {
 } composer_t;
 
 static void*
-composer_create (void* a)
+composer_create (const void* a)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 

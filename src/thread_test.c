@@ -11,7 +11,7 @@ typedef struct {
 static void counter_internal (void* state, void* param);
 
 static void*
-counter_create (void* arg)
+counter_create (const void* arg)
 {
   counter_t* counter = malloc (sizeof (counter_t));
   counter->count = 0;
@@ -80,7 +80,7 @@ typedef struct {
 } receiver_t;
 
 static void*
-receiver_create (void* arg)
+receiver_create (const void* arg)
 {
   receiver_t* receiver = malloc (sizeof (receiver_t));
   receiver->in1 = false;
@@ -148,7 +148,7 @@ typedef struct {
 } composer_t;
 
 static void*
-composer_create (void* arg)
+composer_create (const void* arg)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 

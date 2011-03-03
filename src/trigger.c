@@ -11,7 +11,7 @@ typedef struct {
 } trigger_t;
 
 static void*
-trigger_create (void* arg)
+trigger_create (const void* arg)
 {
   printf ("trigger_create\n");
   trigger_t* trigger = malloc (sizeof (trigger_t));

@@ -38,8 +38,8 @@ proxy_receipt_create (aid_t proxy_aid,
 
 typedef struct {
   aid_t* child_aid_ptr;
-  descriptor_t* descriptor;
-  void* ctor_arg;
+  const descriptor_t* descriptor;
+  const void* ctor_arg;
   internal_t internal;
   void* param;
 } children_key_t;
@@ -296,8 +296,8 @@ manager_parent_set (manager_t* manager,
 void
 manager_child_add (manager_t* manager,
 		   aid_t* child_aid_ptr,
-		   descriptor_t* descriptor,
-		   void* ctor_arg,
+		   const descriptor_t* descriptor,
+		   const void* ctor_arg,
 		   internal_t internal,
 		   void* param)
 {

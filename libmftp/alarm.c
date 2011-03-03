@@ -12,7 +12,7 @@ typedef struct {
 } alarm_t;
 
 static void*
-alarm_create (void* arg)
+alarm_create (const void* arg)
 {
   alarm_t* alarm = malloc (sizeof (alarm_t));
   alarm->set = false;

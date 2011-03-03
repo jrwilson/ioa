@@ -72,9 +72,9 @@ typedef struct port_struct {
 } port_t;
 
 static void*
-port_create (void* a)
+port_create (const void* a)
 {
-  port_create_arg_t* arg = a;
+  const port_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->aid != -1);
   assert (arg->free_input != NULL);

@@ -14,7 +14,7 @@ typedef struct {
 static void counter_internal (void* state, void* param);
 
 static void*
-counter_create (void* arg)
+counter_create (const void* arg)
 {
   printf ("counter_create\n");
   counter_t* counter = malloc (sizeof (counter_t));

@@ -3,7 +3,7 @@
 #include <assert.h>
 
 void
-order_create_init (order_t* order, descriptor_t* descriptor, void* arg)
+order_create_init (order_t* order, const descriptor_t* descriptor, const void* arg)
 {
   assert (order != NULL);
 

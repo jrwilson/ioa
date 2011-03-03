@@ -10,7 +10,7 @@ typedef struct {
 } msg_sender_proxy_t;
 
 static void*
-msg_sender_proxy_create (void* a)
+msg_sender_proxy_create (const void* a)
 {
   msg_sender_proxy_t* msg_sender_proxy = malloc (sizeof (msg_sender_proxy_t));
 
@@ -84,9 +84,9 @@ static void msg_sender_message_in (void* state, void* param, bid_t bid);
 static void msg_sender_proxy_created (void*, void*);
 
 static void*
-msg_sender_create (void* a)
+msg_sender_create (const void* a)
 {
-  msg_sender_create_arg_t* arg = a;
+  const msg_sender_create_arg_t* arg = a;
   assert (arg != NULL);
 
   msg_sender_t* msg_sender = malloc (sizeof (msg_sender_t));

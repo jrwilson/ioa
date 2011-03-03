@@ -241,8 +241,8 @@ internal_entry_for_aid_internal (automata_t* automata, aid_t aid, internal_t int
 }
 
 typedef struct {
-  aid_t aid;
-  void* param;
+  const aid_t aid;
+  const void* param;
 } param_entry_t;
 
 static bool
@@ -396,7 +396,7 @@ composition_entry_any_aid_equal (const void* x0, void* y0)
 }
 
 static void
-create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, descriptor_t* descriptor, void* arg)
+create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t parent, const descriptor_t* descriptor, const void* arg)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
@@ -516,7 +516,7 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t parent, 
 }
 
 static void
-declare (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, void* param)
+declare (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t aid, const void* param)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
@@ -866,7 +866,7 @@ destroy (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* bu
 }
 
 void
-automata_create_automaton (automata_t* automata, receipts_t* receipts, runq_t* runq, descriptor_t* descriptor, void* arg)
+automata_create_automaton (automata_t* automata, receipts_t* receipts, runq_t* runq, const descriptor_t* descriptor, const void* arg)
 {
   assert (automata != NULL);
   assert (receipts != NULL);

@@ -142,9 +142,9 @@ encode_descriptor (component_manager_t* component_manager)
 }
 
 static void*
-component_manager_create (void* a)
+component_manager_create (const void* a)
 {
-  component_manager_create_arg_t* arg = a;
+  const component_manager_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->component_descriptor != NULL);
   assert (arg->port_type_descriptors != NULL);

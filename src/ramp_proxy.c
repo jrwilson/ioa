@@ -10,7 +10,7 @@ typedef struct {
 } ramp_proxy_t;
 
 static void*
-ramp_proxy_create (void* a)
+ramp_proxy_create (const void* a)
 {
   ramp_proxy_t* ramp_proxy = malloc (sizeof (ramp_proxy_t));
 

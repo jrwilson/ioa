@@ -35,9 +35,9 @@ typedef struct {
 } composer_create_arg_t;
 
 static void*
-composer_create (void* a)
+composer_create (const void* a)
 {
-  composer_create_arg_t* arg = a;
+  const composer_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->query != NULL);
 

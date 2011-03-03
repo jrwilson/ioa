@@ -63,9 +63,9 @@ typedef struct {
 } matcher_t;
 
 static void*
-matcher_create (void* a)
+matcher_create (const void* a)
 {
-  matcher_create_arg_t* arg = a;
+  const matcher_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->msg_sender != NULL);
   assert (arg->msg_receiver != NULL);

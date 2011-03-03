@@ -20,7 +20,7 @@ typedef struct {
 } composer_t;
 
 static void*
-composer_create (void* arg)
+composer_create (const void* arg)
 {
   printf ("composer_create\n");
   composer_t* composer = malloc (sizeof (composer_t));

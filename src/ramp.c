@@ -25,7 +25,7 @@ typedef struct {
 #define LIMIT 10
 
 static void*
-ramp_create (void* arg)
+ramp_create (const void* arg)
 {
   ramp_t* ramp = malloc (sizeof (ramp_t));
 
