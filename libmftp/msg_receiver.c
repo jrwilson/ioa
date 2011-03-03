@@ -8,6 +8,7 @@
 typedef struct {
   manager_t* manager;
   aid_t self;
+  udp_receiver_create_arg_t udp_receiver_create_arg;
   aid_t udp_receiver;
   bidq_t* announcements;
   bidq_t* matches;
@@ -18,18 +19,22 @@ typedef struct {
 static void msg_receiver_packet_in (void* state, void* param, bid_t bid);
 
 static void*
-msg_receiver_create (void* arg)
+msg_receiver_create (void* a)
 {
+  msg_receiver_create_arg_t* arg = a;
+  assert (arg != NULL);
+
   msg_receiver_t* msg_receiver = malloc (sizeof (msg_receiver_t));
 
   msg_receiver->manager = manager_create ();
 
   manager_self_set (msg_receiver->manager,
 		    &msg_receiver->self);
+  msg_receiver->udp_receiver_create_arg.port = arg->port;
   manager_child_add (msg_receiver->manager,
 		     &msg_receiver->udp_receiver,
 		     &udp_receiver_descriptor,
-		     NULL,
+		     &msg_receiver->udp_receiver_create_arg,
 		     NULL,
 		     NULL);
   manager_composition_add (msg_receiver->manager,

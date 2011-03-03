@@ -15,8 +15,11 @@ typedef struct {
 } udp_receiver_t;
 
 static void*
-udp_receiver_create (void* arg)
+udp_receiver_create (void* a)
 {
+  udp_receiver_create_arg_t* arg = a;
+  assert (arg != NULL);
+
   udp_receiver_t* udp_receiver = malloc (sizeof (udp_receiver_t));
   /* Create the socket. */
   if ((udp_receiver->fd = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -53,7 +56,7 @@ udp_receiver_create (void* arg)
   struct sockaddr_in dest;
   dest.sin_family = AF_INET;
   dest.sin_addr.s_addr = htonl (INADDR_ANY);
-  dest.sin_port = htons (64470);
+  dest.sin_port = htons (arg->port);
   if (bind (udp_receiver->fd, (struct sockaddr*)&dest, sizeof (dest)) == -1) {
     perror ("bind");
     exit (EXIT_FAILURE);

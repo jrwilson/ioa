@@ -16,8 +16,11 @@ typedef struct {
 } udp_sender_t;
 
 static void*
-udp_sender_create (void* arg)
+udp_sender_create (void* a)
 {
+  udp_sender_create_arg_t* arg = a;
+  assert (arg != NULL);
+
   udp_sender_t* udp_sender = malloc (sizeof (udp_sender_t));
   /* Create the socket. */
   if ((udp_sender->fd = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -40,7 +43,7 @@ udp_sender_create (void* arg)
   */
   udp_sender->dest.sin_family = AF_INET;
   udp_sender->dest.sin_addr.s_addr = inet_addr ("255.255.255.255");
-  udp_sender->dest.sin_port = htons (64470);
+  udp_sender->dest.sin_port = htons (arg->port);
   udp_sender->dest_len = sizeof (udp_sender->dest);
 
   /* Initialize the queue. */

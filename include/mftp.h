@@ -81,15 +81,21 @@ mftp_File_t* mftp_File_create_buffer (const void* buffer, uint32_t size, uint32_
 mftp_File_t* mftp_File_create_empty (const mftp_FileID_t*);
 void mftp_File_destroy (mftp_File_t*);
 
-extern descriptor_t msg_sender_descriptor;
+typedef struct {
+  uint16_t port;
+} msg_sender_create_arg_t;
 void msg_sender_request_proxy (void*, void*, bid_t);
 void msg_sender_proxy_message_in (void*, void*, bid_t);
+extern descriptor_t msg_sender_descriptor;
 
-extern descriptor_t msg_receiver_descriptor;
+typedef struct {
+  uint16_t port;
+} msg_receiver_create_arg_t;
 bid_t msg_receiver_announcement_out (void*, void*);
 bid_t msg_receiver_match_out (void*, void*);
 bid_t msg_receiver_request_out (void*, void*);
 bid_t msg_receiver_fragment_out (void*, void*);
+extern descriptor_t msg_receiver_descriptor;
 
 extern descriptor_t alarm_descriptor;
 typedef struct {

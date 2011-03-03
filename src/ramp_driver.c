@@ -74,7 +74,9 @@ typedef struct {
 
   aid_t self;
 
+  msg_sender_create_arg_t msg_sender_arg;
   aid_t msg_sender;
+  msg_receiver_create_arg_t msg_receiver_arg;
   aid_t msg_receiver;
 
   uuid_t ramp_component;
@@ -101,16 +103,18 @@ composer_create (void* arg)
   manager_self_set (composer->manager,
 		    &composer->self);
 
+  composer->msg_sender_arg.port = 64470;
   manager_child_add (composer->manager,
 		     &composer->msg_sender,
 		     &msg_sender_descriptor,
-		     NULL,
+		     &composer->msg_sender_arg,
 		     NULL,
 		     NULL);
+  composer->msg_receiver_arg.port = 64470;
   manager_child_add (composer->manager,
 		     &composer->msg_receiver,
 		     &msg_receiver_descriptor,
-		     NULL,
+		     &composer->msg_receiver_arg,
 		     NULL,
 		     NULL);
 

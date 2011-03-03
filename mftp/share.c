@@ -15,7 +15,9 @@ typedef struct {
   manager_t* manager;
   aid_t self;
 
+  msg_sender_create_arg_t msg_sender_arg;
   aid_t msg_sender;
+  msg_receiver_create_arg_t msg_receiver_arg;
   aid_t msg_receiver;
 
   file_server_create_arg_t file_arg;
@@ -48,16 +50,18 @@ composer_create (void* a)
   manager_self_set (composer->manager,
 		    &composer->self);
 
+  composer->msg_sender_arg.port = PORT;
   manager_child_add (composer->manager,
 		     &composer->msg_sender,
 		     &msg_sender_descriptor,
-		     NULL,
+		     &composer->msg_sender_arg,
 		     NULL,
 		     NULL);
+  composer->msg_receiver_arg.port = PORT;
   manager_child_add (composer->manager,
 		     &composer->msg_receiver,
 		     &msg_receiver_descriptor,
-		     NULL,
+		     &composer->msg_receiver_arg,
 		     NULL,
 		     NULL);
 
