@@ -361,6 +361,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
+AM_LDFLAGS = -lpthread
 schedule_system_output_SOURCES = schedule_system_output.c
 schedule_system_output_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
 bad_order_SOURCES = bad_order.c

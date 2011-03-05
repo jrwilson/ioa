@@ -1,4 +1,5 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
+AM_LDFLAGS = -lpthread
 
 TESTS = \
 automan_create \

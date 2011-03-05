@@ -12,7 +12,7 @@ static void*
 write_create (const void* arg)
 {
   write_t* write = malloc (sizeof (write_t));
-  pipe (write->pipes);
+  assert (pipe (write->pipes) == 0);
   return write;
 }
 

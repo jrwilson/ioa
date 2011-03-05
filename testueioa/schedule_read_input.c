@@ -12,7 +12,7 @@ static void*
 read_create (const void* arg)
 {
   read_t* read = malloc (sizeof (read_t));
-  pipe (read->pipes);
+  assert (pipe (read->pipes) == 0);
   return read;
 }
 
@@ -41,7 +41,7 @@ read_write_input (void* state, void* param, bid_t bid)
   assert (rd != NULL);
 
   char c = 'A';
-  write (rd->pipes[1], &c, 1);
+  assert (write (rd->pipes[1], &c, 1) == 1);
   assert (schedule_read_input (rd->pipes[0]) == 0);
 }
 
@@ -52,7 +52,7 @@ read_read_input (void* state, void* param, bid_t bid)
   assert (rd != NULL);
 
   char c;
-  read (rd->pipes[0], &c, 1);
+  assert (read (rd->pipes[0], &c, 1) == 1);
   assert (c == 'A');
   exit (EXIT_SUCCESS);
 }
