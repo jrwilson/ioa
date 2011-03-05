@@ -118,6 +118,15 @@ port_allocator_cardinality (port_allocator_t* port_allocator, uint32_t idx)
 }
 
 uint32_t
+port_allocator_free_count (port_allocator_t* port_allocator, uint32_t idx)
+{
+  assert (port_allocator != NULL);
+  assert (idx < port_allocator->port_type_count);
+
+  return bitset_size (port_allocator->port_sets[idx].bitset);
+}
+
+uint32_t
 port_allocator_input_message_count (port_allocator_t* port_allocator, uint32_t idx)
 {
   assert (port_allocator != NULL);

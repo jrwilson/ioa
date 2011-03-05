@@ -31,8 +31,7 @@ ramp_create (const void* arg)
 
   ramp->x = LIMIT - 1;
 
-  ramp->manager = manager_create ();
-  manager_self_set (ramp->manager, &ramp->self);
+  ramp->manager = manager_create (&ramp->self);
 
   return ramp;
 }

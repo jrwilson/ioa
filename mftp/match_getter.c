@@ -52,12 +52,9 @@ match_getter_create (const void* a)
   match_getter->query = arg->query;
   match_getter->metas = NULL;
 
-  match_getter->manager = manager_create ();
+  match_getter->manager = manager_create (&match_getter->self);
   match_getter->msg_sender = arg->msg_sender;
   match_getter->msg_receiver = arg->msg_receiver;
-
-  manager_self_set (match_getter->manager,
-		    &match_getter->self);
 
   manager_composition_add (match_getter->manager,
 			   match_getter->msg_receiver,

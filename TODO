@@ -1,4 +1,17 @@
-Factor out port # from udp_sender/receiver.
+table
+=====
+* Unit tests
+* Hash index
+
+ueioa
+=====
+* Memory allocation
+* Threading
+
+automanager
+===========
+
+
 Add discovery for channels
 Create component containers
 Add discovery to component container

@@ -122,10 +122,7 @@ file_server_create (const void* a)
 
    */
 
-  file_server->manager = manager_create ();
-
-  manager_self_set (file_server->manager,
-		    &file_server->self);
+  file_server->manager = manager_create (&file_server->self);
 
   manager_child_add (file_server->manager,
 		     &file_server->announcement_alarm,

@@ -47,9 +47,12 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([getpagesize gettimeofday memset select socket strerror])
 
 AC_CONFIG_FILES([Makefile
-                 lib/Makefile
+		 libtable/Makefile
+                 libueioa/Makefile
+		 testueioa/Makefile
+		 libautoman/Makefile
+		 testautoman/Makefile
 		 libmftp/Makefile
 		 mftp/Makefile
-                 src/Makefile
-		 tests/Makefile])
+                 src/Makefile])
 AC_OUTPUT

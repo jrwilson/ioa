@@ -45,10 +45,7 @@ composer_create (const void* a)
 
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create ();
-
-  manager_self_set (composer->manager,
-		    &composer->self);
+  composer->manager = manager_create (&composer->self);
 
   composer->msg_sender_arg.port = PORT;
   manager_child_add (composer->manager,

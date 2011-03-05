@@ -11925,7 +11925,7 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile lib/Makefile libmftp/Makefile mftp/Makefile src/Makefile tests/Makefile"
+ac_config_files="$ac_config_files Makefile libtable/Makefile libueioa/Makefile testueioa/Makefile libautoman/Makefile testautoman/Makefile libmftp/Makefile mftp/Makefile src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -12941,11 +12941,14 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+    "libtable/Makefile") CONFIG_FILES="$CONFIG_FILES libtable/Makefile" ;;
+    "libueioa/Makefile") CONFIG_FILES="$CONFIG_FILES libueioa/Makefile" ;;
+    "testueioa/Makefile") CONFIG_FILES="$CONFIG_FILES testueioa/Makefile" ;;
+    "libautoman/Makefile") CONFIG_FILES="$CONFIG_FILES libautoman/Makefile" ;;
+    "testautoman/Makefile") CONFIG_FILES="$CONFIG_FILES testautoman/Makefile" ;;
     "libmftp/Makefile") CONFIG_FILES="$CONFIG_FILES libmftp/Makefile" ;;
     "mftp/Makefile") CONFIG_FILES="$CONFIG_FILES mftp/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

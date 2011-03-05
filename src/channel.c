@@ -101,9 +101,7 @@ channel_create (const void* a)
   channel->b_to_a_map = malloc (sizeof (uint32_t) * channel->b_to_a_map_size);
   memcpy (channel->b_to_a_map, arg->b_to_a_map, sizeof (uint32_t) * channel->b_to_a_map_size);
 
-  channel->manager = manager_create ();
-
-  manager_self_set (channel->manager, &channel->self);
+  channel->manager = manager_create (&channel->self);
 
   bid_t b;
   port_request_t* port_request;

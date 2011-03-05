@@ -16,6 +16,7 @@ typedef struct {
 static void integer_display_proxy_created (void*, void*);
 
 typedef struct {
+  aid_t self;
   manager_t* manager;
 } integer_display_t;
 
@@ -24,7 +25,7 @@ integer_display_create (const void* arg)
 {
   integer_display_t* integer_display = malloc (sizeof (integer_display_t));
 
-  integer_display->manager = manager_create ();
+  integer_display->manager = manager_create (&integer_display->self);
 
   return integer_display;
 }

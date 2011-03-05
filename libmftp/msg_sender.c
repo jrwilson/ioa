@@ -91,9 +91,7 @@ msg_sender_create (const void* a)
 
   msg_sender_t* msg_sender = malloc (sizeof (msg_sender_t));
 
-  msg_sender->manager = manager_create ();
-  manager_self_set (msg_sender->manager,
-		    &msg_sender->self);
+  msg_sender->manager = manager_create (&msg_sender->self);
   msg_sender->udp_sender_create_arg.port = arg->port;
   manager_child_add (msg_sender->manager,
 		     &msg_sender->udp_sender,

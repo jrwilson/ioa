@@ -25,9 +25,7 @@ composer_create (const void* arg)
   printf ("composer_create\n");
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create ();
-  manager_self_set (composer->manager, &composer->self);
-  manager_parent_set (composer->manager, &composer->parent);
+  composer->manager = manager_create (&composer->self);
   manager_child_add (composer->manager, &composer->trigger, &trigger_descriptor, NULL, NULL, NULL);
   manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL, NULL, NULL);
   manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL, NULL, NULL);

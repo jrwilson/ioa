@@ -26,10 +26,8 @@ msg_receiver_create (const void* a)
 
   msg_receiver_t* msg_receiver = malloc (sizeof (msg_receiver_t));
 
-  msg_receiver->manager = manager_create ();
+  msg_receiver->manager = manager_create (&msg_receiver->self);
 
-  manager_self_set (msg_receiver->manager,
-		    &msg_receiver->self);
   msg_receiver->udp_receiver_create_arg.port = arg->port;
   manager_child_add (msg_receiver->manager,
 		     &msg_receiver->udp_receiver,

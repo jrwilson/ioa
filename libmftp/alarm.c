@@ -7,6 +7,7 @@
 typedef struct {
   bool set;
   bool expired;
+  aid_t self;
   manager_t* manager;
   bool composed;
 } alarm_t;
@@ -18,7 +19,7 @@ alarm_create (const void* arg)
   alarm->set = false;
   alarm->expired = false;
 
-  alarm->manager = manager_create ();
+  alarm->manager = manager_create (&alarm->self);
 
   manager_output_add (alarm->manager, &alarm->composed, alarm_alarm_out, NULL);
 

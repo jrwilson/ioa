@@ -140,6 +140,7 @@ descriptor_t receiver_descriptor = {
 };
 
 typedef struct {
+  aid_t self;
   manager_t* manager;
 
   aid_t counter1;
@@ -152,7 +153,7 @@ composer_create (const void* arg)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create ();
+  composer->manager = manager_create (&composer->self);
   manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL, NULL, NULL);
   manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL, NULL, NULL);
   manager_child_add (composer->manager, &composer->receiver, &receiver_descriptor, NULL, NULL, NULL);

@@ -12,6 +12,7 @@
 #include "mftp.h"
 
 #define COMPONENT_DESCRIPTION 0
+#define COMPONENT_CHANNEL_SUMMARY 1
 
 void
 component_manager_create_arg_init (component_manager_create_arg_t* arg,
@@ -59,6 +60,9 @@ typedef struct {
 
   file_server_create_arg_t description_arg;
   aid_t description;
+
+  file_server_create_arg_t channel_summary_arg;
+  aid_t channel_summary;
   
   port_t* ports;
   manager_t* manager;
@@ -141,6 +145,99 @@ encode_descriptor (component_manager_t* component_manager)
   return object;
 }
 
+static json_object*
+encode_port_type_summary (component_manager_t* component_manager, uint32_t port_type)
+{
+  json_object* object = json_object_new_object ();
+
+  json_object_object_add (object, "cardinality", json_object_new_int (port_allocator_cardinality (component_manager->port_allocator, port_type)));
+  json_object_object_add (object, "count", json_object_new_int (port_allocator_free_count (component_manager->port_allocator, port_type)));
+
+  return object;
+}
+
+static json_object*
+encode_port_type_summaries (component_manager_t* component_manager)
+{
+  json_object* array = json_object_new_array ();
+
+  uint32_t port_type;
+  for (port_type = 0;
+       port_type < port_allocator_port_type_count (component_manager->port_allocator);
+       ++port_type) {
+    json_object_array_add (array, encode_port_type_summary (component_manager, port_type));
+  }
+
+  return array;
+}
+
+static json_object* 
+encode_channel_summary (component_manager_t* component_manager)
+{
+  char u[37];
+  uuid_unparse (component_manager->component, u);
+
+  json_object* object = json_object_new_object ();
+  json_object_object_add (object, "component", json_object_new_string (u));
+  json_object_object_add (object, "port types", encode_port_type_summaries (component_manager));
+
+  return object;
+}
+
+static void
+build_channel_summary_server (component_manager_t* component_manager)
+{
+  json_object* channel_summary = encode_channel_summary (component_manager);
+  component_manager->channel_summary_arg.file = mftp_File_create_buffer (json_object_to_json_string (channel_summary),
+								     strlen (json_object_to_json_string (channel_summary)) + 1,
+								     COMPONENT_CHANNEL_SUMMARY);
+  json_object_put (channel_summary);
+  printf ("%s\n", component_manager->channel_summary_arg.file->data);
+  manager_child_add (component_manager->manager,
+		     &component_manager->channel_summary,
+		     &file_server_descriptor,
+		     &component_manager->channel_summary_arg,
+		     NULL,
+		     NULL);
+  manager_dependency_add (component_manager->manager,
+			  component_manager->channel_summary_arg.msg_sender,
+			  &component_manager->channel_summary,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+  manager_dependency_add (component_manager->manager,
+			  component_manager->channel_summary_arg.msg_receiver,
+			  &component_manager->channel_summary,
+			  file_server_strobe_in,
+			  buffer_alloc (0));
+}
+
+static void
+destroy_channel_summary_server (component_manager_t* component_manager)
+{
+  manager_dependency_remove (component_manager->manager,
+			     component_manager->channel_summary_arg.msg_receiver,
+			     &component_manager->channel_summary);
+  manager_dependency_remove (component_manager->manager,
+			     component_manager->channel_summary_arg.msg_sender,
+			     &component_manager->channel_summary);
+  manager_child_remove (component_manager->manager,
+			&component_manager->channel_summary);
+  /* assert (0); */
+  /* json_object* channel_summary = encode_channel_summary (component_manager); */
+  /* component_manager->channel_summary_arg.file = mftp_File_create_buffer (json_object_to_json_string (channel_summary), */
+  /* 								     strlen (json_object_to_json_string (channel_summary)) + 1, */
+  /* 								     COMPONENT_CHANNEL_SUMMARY); */
+  /* json_object_put (channel_summary); */
+  /* printf ("%s\n", component_manager->channel_summary_arg.file->data); */
+}
+
+static void
+rebuild_channel_summary_server (component_manager_t* component_manager)
+{
+  destroy_channel_summary_server (component_manager);
+  build_channel_summary_server (component_manager);
+}
+
 static void*
 component_manager_create (const void* a)
 {
@@ -158,26 +255,25 @@ component_manager_create (const void* a)
   component_manager->ports = NULL;
 
 
-  component_manager->manager = manager_create ();
+  component_manager->manager = manager_create (&component_manager->self);
 
-  manager_self_set (component_manager->manager,
-		    &component_manager->self);
   manager_child_add (component_manager->manager,
 		     &component_manager->component_aid,
 		     arg->component_descriptor,
 		     arg->create_arg,
 		     NULL,
 		     NULL);
+
   json_object* description = encode_descriptor (component_manager);
   component_manager->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description),
 								     strlen (json_object_to_json_string (description)) + 1,
 								     COMPONENT_DESCRIPTION);
+  json_object_put (description);
+  printf ("%s\n", component_manager->description_arg.file->data);
   component_manager->description_arg.announce = true;
   component_manager->description_arg.download = false;
   component_manager->description_arg.msg_sender = arg->msg_sender;
   component_manager->description_arg.msg_receiver = arg->msg_receiver;
-  json_object_put (description);
-  printf ("%s\n", component_manager->description_arg.file->data);
   manager_child_add (component_manager->manager,
 		     &component_manager->description,
 		     &file_server_descriptor,
@@ -194,6 +290,13 @@ component_manager_create (const void* a)
 			  &component_manager->description,
 			  file_server_strobe_in,
 			  buffer_alloc (0));
+
+  component_manager->channel_summary_arg.announce = true;
+  component_manager->channel_summary_arg.download = false;
+  component_manager->channel_summary_arg.msg_sender = arg->msg_sender;
+  component_manager->channel_summary_arg.msg_receiver = arg->msg_receiver;
+
+  build_channel_summary_server (component_manager);
 
   return component_manager;
 }
@@ -281,6 +384,8 @@ component_manager_request_port (void* state, void* param, bid_t bid)
   port->next = component_manager->ports;
   component_manager->ports = port;
 
+  rebuild_channel_summary_server (component_manager);
+  
   assert (schedule_system_output () == 0);
 }
 

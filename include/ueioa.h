@@ -24,7 +24,7 @@ typedef struct descriptor_struct {
   input_t* free_inputs;
   input_t* inputs;
   output_t* outputs;
-  internal_t* internals;
+  const internal_t* internals;
 } descriptor_t;
 
 typedef enum {
@@ -105,7 +105,6 @@ typedef struct {
   union {
     struct {
       aid_t self;
-      aid_t parent;
     } self_created;
     struct {
       aid_t child;
@@ -164,43 +163,6 @@ void buffer_decref (bid_t);
 void buffer_add_child (bid_t, bid_t);
 void buffer_remove_child (bid_t, bid_t);
 bid_t buffer_dup (bid_t, size_t);
-
-typedef struct manager_struct manager_t;
-
-manager_t* manager_create (void);
-
-void manager_self_set (manager_t*, aid_t*);
-void manager_parent_set (manager_t*, aid_t*);
-void manager_child_add (manager_t* manager,
-			aid_t* child_aid_ptr,
-			const descriptor_t* descriptor,
-			const void* ctor_arg,
-			internal_t internal,
-			void* param);
-void manager_proxy_add (manager_t*, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback, bid_t);
-typedef struct proxy_request_struct {
-  bid_t bid;
-  aid_t callback_aid;
-  input_t callback_free_input;
-} proxy_request_t;
-typedef struct proxy_receipt_struct {
-  aid_t proxy_aid;
-  bid_t bid;
-} proxy_receipt_t;
-bid_t proxy_receipt_create (aid_t, bid_t);
-void manager_proxy_receive (manager_t*, const proxy_receipt_t*);
-void manager_param_add (manager_t*, void*);
-void manager_composition_add (manager_t*, aid_t*, output_t, void*, aid_t*, input_t, void*);
-void manager_dependency_add (manager_t* manager,
-			     aid_t* child,
-			     aid_t* dependent,
-			     input_t free_input,
-			     bid_t bid);
-void manager_input_add (manager_t*, bool*, input_t, void*);
-void manager_output_add (manager_t*, bool*, output_t, void*);
-
-void manager_apply (manager_t*, const receipt_t*);
-bid_t manager_action (manager_t*);
 
 typedef struct bidq_struct bidq_t;
 

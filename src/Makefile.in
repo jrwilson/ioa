@@ -53,14 +53,16 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_display_OBJECTS = display_driver.$(OBJEXT) display.$(OBJEXT)
 display_OBJECTS = $(am_display_OBJECTS)
-display_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+display_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
+	$(top_builddir)/libueioa/libueioa.la
 display_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(display_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) trigger.$(OBJEXT) \
 	counter.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
-main_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+main_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
+	$(top_builddir)/libueioa/libueioa.la
 main_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(main_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -70,14 +72,16 @@ am_ramp_OBJECTS = ramp_driver.$(OBJEXT) ramp.$(OBJEXT) \
 	bitset.$(OBJEXT) port_allocator.$(OBJEXT) port.$(OBJEXT) \
 	channel.$(OBJEXT)
 ramp_OBJECTS = $(am_ramp_OBJECTS)
-ramp_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+ramp_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
+	$(top_builddir)/libueioa/libueioa.la \
 	$(top_builddir)/libmftp/libmftp.la
 ramp_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ramp_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_thread_test_OBJECTS = thread_test.$(OBJEXT)
 thread_test_OBJECTS = $(am_thread_test_OBJECTS)
-thread_test_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+thread_test_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
+	$(top_builddir)/libueioa/libueioa.la
 thread_test_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(thread_test_LDFLAGS) $(LDFLAGS) -o $@
@@ -217,16 +221,16 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 main_SOURCES = main.c composer.c trigger.c counter.c
-main_LDADD = $(top_builddir)/lib/libueioa.la
+main_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
 main_LDFLAGS = -lpthread
 thread_test_SOURCES = thread_test.c
-thread_test_LDADD = $(top_builddir)/lib/libueioa.la
+thread_test_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
 thread_test_LDFLAGS = -lpthread
 display_SOURCES = display_driver.c display.c
-display_LDADD = $(top_builddir)/lib/libueioa.la
+display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
 display_LDFLAGS = -lX11 -lpthread -ljpeg
 ramp_SOURCES = ramp_driver.c ramp.c integer_display.c ramp_proxy.c integer_display_proxy.c component_manager.c bitset.c port_allocator.c port.c channel.c
-ramp_LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/libmftp/libmftp.la
+ramp_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libmftp/libmftp.la
 ramp_LDFLAGS = -lpthread -ljson -lcrypto
 all: all-am
 
@@ -573,11 +577,11 @@ uninstall-am: uninstall-binPROGRAMS
 @WANT_CAMERA_TRUE@	bin_PROGRAMS += camera camera_display
 
 @WANT_CAMERA_TRUE@	camera_SOURCES = camera_driver.c camera.c
-@WANT_CAMERA_TRUE@	camera_LDADD = $(top_builddir)/lib/libueioa.la
+@WANT_CAMERA_TRUE@	camera_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
 @WANT_CAMERA_TRUE@	camera_LDFLAGS = -lpthread
 
 @WANT_CAMERA_TRUE@	camera_display_SOURCES = camera_display.c camera.c display.c
-@WANT_CAMERA_TRUE@	camera_display_LDADD = $(top_builddir)/lib/libueioa.la
+@WANT_CAMERA_TRUE@	camera_display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
 @WANT_CAMERA_TRUE@	camera_display_LDFLAGS = -lX11 -lpthread -ljpeg
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -6,11 +6,13 @@
 
 #include "mftp.h"
 #include "consumer.h"
+#include "ft.h"
 
 typedef struct {
   manager_t* manager;
   aid_t self;
-
+  
+  msg_receiver_create_arg_t msg_receiver_arg;
   aid_t msg_receiver;
 
   aid_t consumer;
@@ -21,15 +23,13 @@ composer_create (const void* arg)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create ();
+  composer->manager = manager_create (&composer->self);
 
-  manager_self_set (composer->manager,
-		    &composer->self);
-
+  composer->msg_receiver_arg.port = PORT;
   manager_child_add (composer->manager,
 		     &composer->msg_receiver,
 		     &msg_receiver_descriptor,
-		     NULL,
+		     &composer->msg_receiver_arg,
 		     NULL,
 		     NULL);
 

@@ -94,9 +94,7 @@ port_create (const void* a)
   port->outq = bidq_create ();
   port->inq = bidq_create ();
   port->port_to_components = NULL;
-  port->manager = manager_create ();
-
-  manager_self_set (port->manager, &port->self);
+  port->manager = manager_create (&port->self);
 
   /* Add a proxy for the component. */
   manager_proxy_add (port->manager, &port->component_proxy, port->component_aid, port->request_proxy, port_callback, -1);

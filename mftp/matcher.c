@@ -76,11 +76,9 @@ matcher_create (const void* a)
   matcher->queries = NULL;
   matcher->matches = NULL;
 
-  matcher->manager = manager_create ();
+  matcher->manager = manager_create (&matcher->self);
   matcher->msg_sender = arg->msg_sender;
   matcher->msg_receiver = arg->msg_receiver;
-
-  manager_self_set (matcher->manager, &matcher->self);
 
   manager_composition_add (matcher->manager, matcher->msg_receiver, msg_receiver_announcement_out, NULL, &matcher->self, matcher_announcement_in, NULL);
   manager_composition_add (matcher->manager, matcher->msg_receiver, msg_receiver_match_out, NULL, &matcher->self, matcher_match_in, NULL);
