@@ -4,44 +4,78 @@
 #include <ueioa.h>
 
 typedef struct automan_struct automan_t;
+typedef void (*automan_handler_t) (void* state, void* param, receipt_type_t receipt);
 
-automan_t* automan_create (aid_t* self_ptr);
+automan_t*
+automan_creat (void* state,
+	       aid_t* self_ptr);
 
-void automan_apply (automan_t* automan,
-		    const receipt_t* receipt);
+void
+automan_apply (automan_t* automan,
+	       const receipt_t* receipt);
 
-bid_t automan_action (automan_t* automan);
+bid_t
+automan_action (automan_t* automan) __attribute__ ((warn_unused_result));
 
-int automan_child_create (automan_t* automan,
-			  aid_t* child_aid_ptr,
-			  const descriptor_t* descriptor,
-			  const void* ctor_arg,
-			  internal_t internal,
-			  void* param) __attribute__ ((warn_unused_result));
+int
+automan_create (automan_t* automan,
+		aid_t* aid_ptr,
+		const descriptor_t* descriptor,
+		const void* ctor_arg,
+		automan_handler_t handler,
+		void* hparam) __attribute__ ((warn_unused_result));
 
-int automan_param_declare (automan_t* automan,
-			   void* param,
-			   internal_t internal);
+int
+automan_declare (automan_t* automan,
+		 bool* flag_ptr,
+		 void* param,
+		 automan_handler_t handler,
+		 void* hparam) __attribute__ ((warn_unused_result));
 
-/* void automan_child_remove (automan_t* automan, */
-/* 			   aid_t* child_aid_ptr); */
+int
+automan_compose (automan_t* automan,
+		 bool* flag_ptr,
+		 aid_t* out_aid_ptr,
+		 output_t output,
+		 void* out_param,
+		 aid_t* in_aid_ptr,
+		 input_t input,
+		 void* in_param,
+		 automan_handler_t handler,
+		 void* hparam) __attribute__ ((warn_unused_result));
 
-/* void automan_input_add (automan_t* automan, */
-/* 			bool* flag_ptr, */
-/* 			input_t input, */
-/* 			void* in_param, */
-/* 			internal_t internal); */
+int
+automan_decompose (automan_t* automan,
+		   bool* flag_ptr) __attribute__ ((warn_unused_result));
+
+int
+automan_rescind (automan_t* automan,
+		 bool* flag_ptr) __attribute__ ((warn_unused_result));
+
+int
+automan_destroy (automan_t* automan,
+		 aid_t* aid_ptr) __attribute__ ((warn_unused_result));
+
+int
+automan_input_add (automan_t* automan,
+		   bool* flag_ptr,
+		   input_t input,
+		   void* in_param,
+		   automan_handler_t handler,
+		   void* hparam) __attribute__ ((warn_unused_result));
+
+int
+automan_output_add (automan_t* automan,
+		    bool* flag_ptr,
+		    output_t output,
+		    void* out_param,
+		    automan_handler_t handler,
+		    void* hparam) __attribute__ ((warn_unused_result));
 
 /* void automan_output_add (automan_t* automan, */
 /* 			 bool* flag_ptr, */
 /* 			 output_t output, */
 /* 			 void* out_param); */
-
-
-/* void automan_param_remove (automan_t* automan, */
-/* 			   void* param); */
-
-/* void automan_composition_add (automan_t*, aid_t*, output_t, void*, aid_t*, input_t, void*); */
 
 /* void automan_dependency_add (automan_t* automan, */
 /* 			     aid_t* child, */

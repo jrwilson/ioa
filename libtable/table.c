@@ -1025,6 +1025,24 @@ riterator_ne (riterator_t iter1, riterator_t iter2)
   return iter1.pos != iter2.pos;
 }
 
+iterator_t
+riterator_reverse (index_t* index, riterator_t riterator)
+{
+  assert (index != NULL);
+
+  if (riterator.pos != -1) {
+    assert (is_used (index->table, riterator.pos));
+    iterator_t iterator = {
+      .pos = riterator.pos,
+    };
+    return iterator;
+  }
+  else {
+    return index_begin (index);
+  }
+}
+
+
 void
 index_for_each (index_t* index, iterator_t begin, iterator_t end, function_t function, void* arg)
 {

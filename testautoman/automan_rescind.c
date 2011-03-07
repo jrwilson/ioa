@@ -2,15 +2,19 @@
 #include <assert.h>
 #include <automan.h>
 
-static const descriptor_t child_descriptor = {
-};
+static void automaton_param_declared (void* state, void* param, receipt_type_t receipt);
 
-static void automaton_child_created (void* state, void* param);
+typedef enum {
+  DECLARE_RECV,
+  RESCIND_RECV,
+} state_t;
 
 typedef struct {
+  state_t state;
   aid_t self;
+  bool declared;
+  void* param;
   automan_t* automan;
-  aid_t child;
 } automaton_t;
 
 static void*
@@ -18,14 +22,15 @@ automaton_create (const void* arg)
 {
   automaton_t* automaton = malloc (sizeof (automaton_t));
 
-  automaton->automan = automan_create (&automaton->self);
-  automaton->child = -1;
-  assert (automan_child_create (automaton->automan,
-				&automaton->child,
-				&child_descriptor,
-				NULL,
-				automaton_child_created,
-				NULL) == 0);
+  automaton->state = DECLARE_RECV;
+  automaton->declared = false;
+  automaton->param = malloc (64);
+  automaton->automan = automan_creat (automaton, &automaton->self);
+  assert (automan_declare (automaton->automan,
+			   &automaton->declared,
+			   automaton->param,
+			   automaton_param_declared,
+			   automaton->param) == 0);
   return automaton;
 }
 
@@ -52,29 +57,34 @@ automaton_system_output (void* state, void* param)
 }
 
 static void
-automaton_child_created (void* state, void* param)
+automaton_param_declared (void* state, void* param, receipt_type_t receipt)
 {
   automaton_t* automaton = state;
   assert (automaton != NULL);
+  assert (automaton->param == param);
 
-  if (automaton->child != -1) {
+  switch (automaton->state) {
+  case DECLARE_RECV:
+    assert (receipt == DECLARED);
+    assert (automaton->declared);
+    assert (automan_rescind (automaton->automan,
+			     &automaton->declared) == 0);
+    assert (schedule_system_output () == 0);
+    automaton->state = RESCIND_RECV;
+    break;
+  case RESCIND_RECV:
+    assert (receipt == RESCINDED);
+    assert (!automaton->declared);
     exit (EXIT_SUCCESS);
+    break;
   }
-  else {
-    exit (EXIT_FAILURE);
-  }
-}
 
-static const internal_t automaton_internals[] = {
-  automaton_child_created,
-  NULL
-};
+}
 
 static const descriptor_t automaton_descriptor = {
   .constructor = automaton_create,
   .system_input = automaton_system_input,
   .system_output = automaton_system_output,
-  .internals = automaton_internals,
 };
 
 int

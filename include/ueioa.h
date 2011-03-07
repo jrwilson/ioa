@@ -22,8 +22,8 @@ typedef struct descriptor_struct {
   input_t read_input;
   input_t write_input;
   input_t* free_inputs;
-  input_t* inputs;
-  output_t* outputs;
+  const input_t* inputs;
+  const output_t* outputs;
   const internal_t* internals;
 } descriptor_t;
 

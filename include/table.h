@@ -57,6 +57,8 @@ bool iterator_ne (iterator_t iter1, iterator_t iter2);
 bool riterator_eq (riterator_t iter1, riterator_t iter2);
 bool riterator_ne (riterator_t iter1, riterator_t iter2);
 
+iterator_t riterator_reverse (index_t*, riterator_t);
+
 /* splice */
 /* remove */
 /* remove_if */

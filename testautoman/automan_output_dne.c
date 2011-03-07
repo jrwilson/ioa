@@ -2,15 +2,34 @@
 #include <assert.h>
 #include <automan.h>
 
-static const descriptor_t child_descriptor = {
+static void
+child_input (void* state, void* param, bid_t bid)
+{
+}
+
+static bid_t
+child_output (void* state, void* param)
+{
+  return -1;
+}
+
+static const input_t child_inputs[] = {
+  child_input,
+  NULL
 };
 
-static void automaton_created (void* state, void* param, receipt_type_t receipt);
+static const descriptor_t child_descriptor = {
+  .inputs = child_inputs,
+};
+
+static void automaton_composed (void* state, void* param, receipt_type_t receipt);
 
 typedef struct {
   aid_t self;
   automan_t* automan;
-  aid_t child;
+  bool composed;
+  aid_t child1;
+  aid_t child2;
 } automaton_t;
 
 static void*
@@ -19,13 +38,29 @@ automaton_create (const void* arg)
   automaton_t* automaton = malloc (sizeof (automaton_t));
 
   automaton->automan = automan_creat (automaton, &automaton->self);
-  automaton->child = -1;
+  automaton->composed = false;
   assert (automan_create (automaton->automan,
-			  &automaton->child,
+			  &automaton->child1,
 			  &child_descriptor,
 			  NULL,
-			  automaton_created,
+			  NULL,
 			  NULL) == 0);
+  assert (automan_create (automaton->automan,
+			  &automaton->child2,
+			  &child_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (automaton->automan,
+			   &automaton->composed,
+			   &automaton->child1,
+			   child_output,
+			   NULL,
+			   &automaton->child2,
+			   child_input,
+			   NULL,
+			   automaton_composed,
+			   NULL) == 0);
   return automaton;
 }
 
@@ -52,13 +87,13 @@ automaton_system_output (void* state, void* param)
 }
 
 static void
-automaton_created (void* state, void* param, receipt_type_t receipt)
+automaton_composed (void* state, void* param, receipt_type_t receipt)
 {
   automaton_t* automaton = state;
   assert (automaton != NULL);
-  assert (receipt == CHILD_CREATED);
-  assert (automaton->child != -1);
+  assert (receipt == OUTPUT_DNE);
 
+  assert (!automaton->composed);
   exit (EXIT_SUCCESS);
 }
 

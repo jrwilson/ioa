@@ -2,14 +2,41 @@
 #include <assert.h>
 #include <automan.h>
 
-static const descriptor_t child_descriptor = {
+static void
+child_input (void* state, void* param, bid_t bid)
+{
+}
+
+static bid_t
+child_output (void* state, void* param)
+{
+  return -1;
+}
+
+static const input_t child_inputs[] = {
+  child_input,
+  NULL
 };
 
-static void automaton_created (void* state, void* param, receipt_type_t receipt);
+static const output_t child_outputs[] = {
+  child_output,
+  NULL
+};
+
+static const descriptor_t child_descriptor = {
+  .inputs = child_inputs,
+  .outputs = child_outputs,
+};
+
+static bid_t automaton_output (void* state, void* param);
+static void automaton_composed (void* state, void* param, receipt_type_t receipt);
 
 typedef struct {
   aid_t self;
+  bool declared;
+  void* param;
   automan_t* automan;
+  bool composed;
   aid_t child;
 } automaton_t;
 
@@ -18,14 +45,30 @@ automaton_create (const void* arg)
 {
   automaton_t* automaton = malloc (sizeof (automaton_t));
 
+  automaton->param = malloc (64);
+
   automaton->automan = automan_creat (automaton, &automaton->self);
-  automaton->child = -1;
+  assert (automan_declare (automaton->automan,
+			   &automaton->declared,
+			   automaton->param,
+			   NULL,
+			   NULL) == 0);
   assert (automan_create (automaton->automan,
 			  &automaton->child,
 			  &child_descriptor,
 			  NULL,
-			  automaton_created,
+			  NULL,
 			  NULL) == 0);
+  assert (automan_compose (automaton->automan,
+  			   &automaton->composed,
+  			   &automaton->self,
+  			   automaton_output,
+  			   automaton->param,
+  			   &automaton->child,
+  			   child_input,
+  			   NULL,
+  			   automaton_composed,
+  			   NULL) == 0);
   return automaton;
 }
 
@@ -51,21 +94,37 @@ automaton_system_output (void* state, void* param)
   return automan_action (automaton->automan);
 }
 
+static bid_t
+automaton_output (void* state, void* param)
+{
+  return -1;
+}
+
 static void
-automaton_created (void* state, void* param, receipt_type_t receipt)
+automaton_composed (void* state, void* param, receipt_type_t receipt)
 {
   automaton_t* automaton = state;
   assert (automaton != NULL);
-  assert (receipt == CHILD_CREATED);
-  assert (automaton->child != -1);
+  assert (receipt == COMPOSED);
 
-  exit (EXIT_SUCCESS);
+  if (automaton->composed) {
+    exit (EXIT_SUCCESS);
+  }
+  else {
+    exit (EXIT_FAILURE);
+  }
 }
+
+static const output_t automaton_outputs[] = {
+  automaton_output,
+  NULL
+};
 
 static const descriptor_t automaton_descriptor = {
   .constructor = automaton_create,
   .system_input = automaton_system_input,
   .system_output = automaton_system_output,
+  .outputs = automaton_outputs,
 };
 
 int
