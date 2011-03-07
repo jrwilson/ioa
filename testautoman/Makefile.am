@@ -16,7 +16,11 @@ automan_decompose \
 automan_rescind \
 automan_destroy \
 automan_input_add \
-automan_output_add
+automan_input_add2 \
+automan_output_add \
+automan_output_add2 \
+automan_external_destroy \
+automan_external_decompose
 
 check_PROGRAMS = $(TESTS)
 
@@ -62,5 +66,17 @@ automan_destroy_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/lib
 automan_input_add_SOURCES = automan_input_add.c
 automan_input_add_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
 
+automan_input_add2_SOURCES = automan_input_add2.c
+automan_input_add2_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+
 automan_output_add_SOURCES = automan_output_add.c
 automan_output_add_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+
+automan_output_add2_SOURCES = automan_output_add2.c
+automan_output_add2_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+
+automan_external_destroy_SOURCES = automan_external_destroy.c
+automan_external_destroy_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+
+automan_external_decompose_SOURCES = automan_external_decompose.c
+automan_external_decompose_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la

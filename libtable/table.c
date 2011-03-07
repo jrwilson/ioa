@@ -1059,7 +1059,7 @@ index_for_each (index_t* index, iterator_t begin, iterator_t end, function_t fun
 }
 
 iterator_t
-index_find (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, void* value)
+index_find (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, const void* value)
 {
   assert (index != NULL);
   assert (predicate != NULL);
@@ -1095,7 +1095,7 @@ index_rfind (index_t* index, riterator_t begin, riterator_t end, predicate_t pre
 }
 
 void*
-index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, void* arg, iterator_t* ptr)
+index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t predicate, const void* arg, iterator_t* ptr)
 {
   assert (index != NULL);
 
@@ -1104,10 +1104,10 @@ index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t 
 				    end,
 				    predicate,
 				    arg);
+  if (ptr != NULL) {
+    *ptr = iterator;
+  }
   if (iterator_ne (iterator, index_end (index))) {
-    if (ptr != NULL) {
-      *ptr = iterator;
-    }
     return index_value (index, iterator);
   }
   else {
@@ -1125,10 +1125,10 @@ index_rfind_value (index_t* index, riterator_t rbegin, riterator_t rend, predica
 				      rend,
 				      predicate,
 				      arg);
+  if (ptr != NULL) {
+    *ptr = iterator;
+  }
   if (riterator_ne (iterator, index_rend (index))) {
-    if (ptr != NULL) {
-      *ptr = iterator;
-    }
     return index_rvalue (index, iterator);
   }
   else {

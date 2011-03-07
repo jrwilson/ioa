@@ -18,7 +18,7 @@ typedef struct {
 } receipt_entry_t;
 
 static bool
-receipt_entry_to_equal (const void* x0, void* y0)
+receipt_entry_to_equal (const void* x0, const void* y0)
 {
   const receipt_entry_t* x = x0;
   const receipt_entry_t* y = y0;

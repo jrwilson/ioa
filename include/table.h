@@ -12,7 +12,7 @@ typedef struct {
 typedef struct {
   size_t pos;
 } riterator_t;
-typedef bool (*predicate_t) (const void*, void*);
+typedef bool (*predicate_t) (const void*, const void*);
 
 table_t* table_create (size_t);
 void table_destroy (table_t*);
@@ -77,9 +77,9 @@ typedef void (*function_t) (const void*, void*);
 typedef void (*tfunction_t) (void*, void*);
 
 void index_for_each (index_t*, iterator_t, iterator_t, function_t, void*);
-iterator_t index_find (index_t*, iterator_t, iterator_t, predicate_t, void*);
+iterator_t index_find (index_t*, iterator_t, iterator_t, predicate_t, const void*);
 riterator_t index_rfind (index_t*, riterator_t, riterator_t, predicate_t, void*);
-void* index_find_value (index_t*, iterator_t, iterator_t, predicate_t, void*, iterator_t*);
+void* index_find_value (index_t*, iterator_t, iterator_t, predicate_t, const void*, iterator_t*);
 void* index_rfind_value (index_t*, riterator_t, riterator_t, predicate_t, void*, riterator_t*);
 void index_remove (index_t*, iterator_t, iterator_t, predicate_t, void*);
 

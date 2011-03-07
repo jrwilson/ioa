@@ -50,7 +50,7 @@ typedef struct {
 } automaton_entry_t;
 
 static bool
-automaton_entry_aid_equal (const void* x0, void* y0)
+automaton_entry_aid_equal (const void* x0, const void* y0)
 {
   const automaton_entry_t* x = x0;
   const automaton_entry_t* y = y0;
@@ -75,7 +75,7 @@ automaton_entry_for_aid (automata_t* automata, aid_t aid, iterator_t* ptr)
 }
 
 static bool
-automaton_entry_parent_equal (const void* x0, void* y0)
+automaton_entry_parent_equal (const void* x0, const void* y0)
 {
   const automaton_entry_t* x = x0;
   const automaton_entry_t* y = y0;
@@ -105,7 +105,7 @@ typedef struct {
 } input_entry_t;
 
 static bool
-input_entry_aid_input_equal (const void* x0, void* y0)
+input_entry_aid_input_equal (const void* x0, const void* y0)
 {
   const input_entry_t* x = x0;
   const input_entry_t* y = y0;
@@ -114,7 +114,7 @@ input_entry_aid_input_equal (const void* x0, void* y0)
 }
 
 static bool
-input_entry_aid_equal (const void* x0, void* y0)
+input_entry_aid_equal (const void* x0, const void* y0)
 {
   const input_entry_t* x = x0;
   const input_entry_t* y = y0;
@@ -164,7 +164,7 @@ typedef struct {
 } output_entry_t;
 
 static bool
-output_entry_aid_output_equal (const void* x0, void* y0)
+output_entry_aid_output_equal (const void* x0, const void* y0)
 {
   const output_entry_t* x = x0;
   const output_entry_t* y = y0;
@@ -173,7 +173,7 @@ output_entry_aid_output_equal (const void* x0, void* y0)
 }
 
 static bool
-output_entry_aid_equal (const void* x0, void* y0)
+output_entry_aid_equal (const void* x0, const void* y0)
 {
   const output_entry_t* x = x0;
   const output_entry_t* y = y0;
@@ -205,7 +205,7 @@ typedef struct {
 } internal_entry_t;
 
 static bool
-internal_entry_aid_internal_equal (const void* x0, void* y0)
+internal_entry_aid_internal_equal (const void* x0, const void* y0)
 {
   const internal_entry_t* x = x0;
   const internal_entry_t* y = y0;
@@ -214,7 +214,7 @@ internal_entry_aid_internal_equal (const void* x0, void* y0)
 }
 
 static bool
-internal_entry_aid_equal (const void* x0, void* y0)
+internal_entry_aid_equal (const void* x0, const void* y0)
 {
   const internal_entry_t* x = x0;
   const internal_entry_t* y = y0;
@@ -246,7 +246,7 @@ typedef struct {
 } param_entry_t;
 
 static bool
-param_entry_aid_equal (const void* x0, void* y0)
+param_entry_aid_equal (const void* x0, const void* y0)
 {
   const param_entry_t* x = x0;
   const param_entry_t* y = y0;
@@ -255,7 +255,7 @@ param_entry_aid_equal (const void* x0, void* y0)
 }
 
 static bool
-param_entry_aid_param_equal (const void* x0, void* y0)
+param_entry_aid_param_equal (const void* x0, const void* y0)
 {
   const param_entry_t* x = x0;
   const param_entry_t* y = y0;
@@ -295,7 +295,7 @@ typedef struct {
 } composition_entry_t;
 
 static bool
-composition_entry_in_aid_input_in_param_equal (const void* x0, void* y0)
+composition_entry_in_aid_input_in_param_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;
@@ -307,7 +307,7 @@ composition_entry_in_aid_input_in_param_equal (const void* x0, void* y0)
 }
 
 static bool
-composition_sorted (const void* x0, void* y0)
+composition_sorted (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;
@@ -340,7 +340,7 @@ composition_entry_for_in_aid_input_in_param (automata_t* automata, aid_t in_aid,
 }
 
 static bool
-composition_entry_out_aid_output_out_param_in_aid_equal (const void* x0, void* y0)
+composition_entry_out_aid_output_out_param_in_aid_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;
@@ -373,7 +373,7 @@ composition_entry_for_out_aid_output_out_param_in_aid (automata_t* automata, aid
 }
 
 static bool
-composition_entry_any_param_equal (const void* x0, void* y0)
+composition_entry_any_param_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;
@@ -384,7 +384,7 @@ composition_entry_any_param_equal (const void* x0, void* y0)
 }
 
 static bool
-composition_entry_any_aid_equal (const void* x0, void* y0)
+composition_entry_any_aid_equal (const void* x0, const void* y0)
 {
   const composition_entry_t* x = x0;
   const composition_entry_t* y = y0;

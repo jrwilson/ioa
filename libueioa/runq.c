@@ -7,7 +7,7 @@
 #include "table.h"
 
 static bool
-runnable_equal (const void* x0, void* y0)
+runnable_equal (const void* x0, const void* y0)
 {
   const runnable_t* x = x0;
   const runnable_t* y = y0;
@@ -50,7 +50,7 @@ runnable_equal (const void* x0, void* y0)
 
 
 static bool
-runnable_aid_equal (const void* x0, void* y0)
+runnable_aid_equal (const void* x0, const void* y0)
 {
   const runnable_t* x = x0;
   const runnable_t* y = y0;
@@ -58,7 +58,7 @@ runnable_aid_equal (const void* x0, void* y0)
 }
 
 static bool
-runnable_aid_param_equal (const void* x0, void* y0)
+runnable_aid_param_equal (const void* x0, const void* y0)
 {
   const runnable_t* x = x0;
   const runnable_t* y = y0;

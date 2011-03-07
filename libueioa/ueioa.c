@@ -66,7 +66,7 @@ typedef struct {
 } alarm_t;
 
 static bool
-alarm_aid_equal (const void* x0, void* y0)
+alarm_aid_equal (const void* x0, const void* y0)
 {
   const alarm_t* x = x0;
   const alarm_t* y = y0;
@@ -75,7 +75,7 @@ alarm_aid_equal (const void* x0, void* y0)
 }
 
 static bool
-alarm_lt (const void* x0, void* y0)
+alarm_lt (const void* x0, const void* y0)
 {
   const alarm_t* x = x0;
   const alarm_t* y = y0;
@@ -92,7 +92,7 @@ typedef struct {
 } fd_t;
 
 static bool
-fd_aid_equal (const void* x0, void* y0)
+fd_aid_equal (const void* x0, const void* y0)
 {
   const fd_t* x = x0;
   const fd_t* y = y0;
@@ -114,14 +114,14 @@ fdset_set (const void* e, void* a)
 }
 
 static bool
-fdset_clear_read (const void* e, void* a)
+fdset_clear_read (const void* e, const void* a)
 {
   const fd_t* fd = e;
-  fdset_t* fdset = a;
+  const fdset_t* fdset = a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
     runq_insert_read_input (runq, fd->aid);
-    FD_CLR (fd->fd, &fdset->fds);
+    /* FD_CLR (fd->fd, &fdset->fds); */
     return true;
   }
   else {
@@ -130,14 +130,14 @@ fdset_clear_read (const void* e, void* a)
 }
 
 static bool
-fdset_clear_write (const void* e, void* a)
+fdset_clear_write (const void* e, const void* a)
 {
   const fd_t* fd = e;
-  fdset_t* fdset = a;
+  const fdset_t* fdset = a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
     runq_insert_write_input (runq, fd->aid);
-    FD_CLR (fd->fd, &fdset->fds);
+    /* FD_CLR (fd->fd, &fdset->fds); */
     return true;
   }
   else {
@@ -186,6 +186,9 @@ ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
   index_t* read_index = index_create_list (read_table);
 
   for (;;) {
+    FD_ZERO (&read_arg.fds);
+    FD_ZERO (&write_arg.fds);
+
     /* Add the interrupt. */
     FD_SET (interrupt, &read_arg.fds);
 
@@ -267,7 +270,7 @@ ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
 		      index_end (write_index),
 		      fdset_clear_write,
 		      &write_arg);
-	
+
 	if (FD_ISSET (interrupt, &read_arg.fds)) {
 	  char c;
 	  assert (read (interrupt, &c, 1) == 1);

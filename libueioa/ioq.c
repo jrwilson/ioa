@@ -9,7 +9,7 @@
 #include "table.h"
 
 static bool
-io_equal (const void* x0, void* y0)
+io_equal (const void* x0, const void* y0)
 {
   const io_t* x = x0;
   const io_t* y = y0;
