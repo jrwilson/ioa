@@ -1,5 +1,7 @@
 #include <mftp.h>
 
+#include <automan.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -11,8 +13,10 @@
 #include "ft.h"
 #include "matcher.h"
 
+static void composer_sender_receiver_created (void* state, void* param, receipt_type_t recipt);
+
 typedef struct {
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
 
   msg_sender_create_arg_t msg_sender_arg;
@@ -45,85 +49,31 @@ composer_create (const void* a)
 
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create (&composer->self);
-
+  composer->automan = automan_creat (composer,
+				     &composer->self);
+  
   composer->msg_sender_arg.port = PORT;
-  manager_child_add (composer->manager,
-		     &composer->msg_sender,
-		     &msg_sender_descriptor,
-		     &composer->msg_sender_arg,
-		     NULL,
-		     NULL);
+  assert (automan_create (composer->automan,
+			  &composer->msg_sender,
+			  &msg_sender_descriptor,
+			  &composer->msg_sender_arg,
+			  composer_sender_receiver_created,
+			  NULL) == 0);
   composer->msg_receiver_arg.port = PORT;
-  manager_child_add (composer->manager,
-		     &composer->msg_receiver,
-		     &msg_receiver_descriptor,
-		     &composer->msg_receiver_arg,
-		     NULL,
-		     NULL);
+  assert (automan_create (composer->automan,
+			  &composer->msg_receiver,
+			  &msg_receiver_descriptor,
+			  &composer->msg_receiver_arg,
+			  composer_sender_receiver_created,
+			  NULL) == 0);
 
   composer->file_arg.file = arg->file;
   composer->file_arg.announce = true;
   composer->file_arg.download = false;
-  composer->file_arg.msg_sender = &composer->msg_sender;
-  composer->file_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager,
-		     &composer->file,
-		     &file_server_descriptor,
-		     &composer->file_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (composer->manager,
-			  &composer->msg_sender,
-			  &composer->file,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
-  manager_dependency_add (composer->manager,
-			  &composer->msg_receiver,
-			  &composer->file,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
 
   composer->meta_arg.file = arg->meta;
   composer->meta_arg.announce = true;
   composer->meta_arg.download = false;
-  composer->meta_arg.msg_sender = &composer->msg_sender;
-  composer->meta_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager,
-		     &composer->meta,
-		     &file_server_descriptor,
-		     &composer->meta_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (composer->manager,
-			  &composer->msg_sender,
-			  &composer->meta,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
-  manager_dependency_add (composer->manager,
-			  &composer->msg_receiver,
-			  &composer->meta,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
-
-  composer->matcher_arg.msg_sender = &composer->msg_sender;
-  composer->matcher_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager,
-		     &composer->matcher,
-		     &matcher_descriptor,
-		     &composer->matcher_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (composer->manager,
-			  &composer->msg_sender,
-			  &composer->matcher,
-			  matcher_strobe_in,
-			  buffer_alloc (0));
-  manager_dependency_add (composer->manager,
-			  &composer->msg_receiver,
-			  &composer->matcher,
-			  matcher_strobe_in,
-			  buffer_alloc (0));
 
   return composer;
 }
@@ -138,7 +88,7 @@ composer_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (composer->manager, receipt);
+  automan_apply (composer->automan, receipt);
 }
 
 static bid_t
@@ -147,7 +97,46 @@ composer_system_output (void* state, void* param)
   composer_t* composer = state;
   assert (composer != NULL);
 
-  return manager_action (composer->manager);
+  return automan_action (composer->automan);
+}
+
+static void
+composer_sender_receiver_created (void* state, void* param, receipt_type_t receipt)
+{
+  composer_t* composer = state;
+  assert (composer != NULL);
+  assert (receipt == CHILD_CREATED);
+
+  if (composer->msg_sender != -1 &&
+      composer->msg_receiver != -1) {
+
+    composer->file_arg.msg_sender = composer->msg_sender;
+    composer->file_arg.msg_receiver = composer->msg_receiver;
+    assert (automan_create (composer->automan,
+			    &composer->file,
+			    &file_server_descriptor,
+			    &composer->file_arg,
+			    NULL,
+			    NULL) == 0);
+    
+    composer->meta_arg.msg_sender = composer->msg_sender;
+    composer->meta_arg.msg_receiver = composer->msg_receiver;
+    assert (automan_create (composer->automan,
+			    &composer->meta,
+			    &file_server_descriptor,
+			    &composer->meta_arg,
+			    NULL,
+			    NULL) == 0);
+    
+    composer->matcher_arg.msg_sender = composer->msg_sender;
+    composer->matcher_arg.msg_receiver = composer->msg_receiver;
+    assert (automan_create (composer->automan,
+			    &composer->matcher,
+			    &matcher_descriptor,
+			    &composer->matcher_arg,
+			    NULL,
+			    NULL) == 0);
+  }
 }
 
 descriptor_t composer_descriptor = {

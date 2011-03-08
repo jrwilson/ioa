@@ -1,5 +1,7 @@
 #include "matcher.h"
 
+#include <automan.h>
+
 #include "ft.h"
 
 #include <stdlib.h>
@@ -10,6 +12,7 @@ static void matcher_callback (void* state, void* param, bid_t bid);
 
 static void matcher_match_alarm_in (void*, void*, bid_t);
 static bid_t matcher_match_alarm_out (void*, void*);
+static void matcher_match_alarm_composed (void*, void*, receipt_type_t);
 
 static void matcher_meta_download_complete (void* state, void* param, bid_t bid);
 static void matcher_query_download_complete (void* state, void* param, bid_t bid);
@@ -20,10 +23,12 @@ static bid_t matcher_message_out (void*, void*);
 
 /* In seconds. */
 #define INIT_MATCH_INTERVAL 1
-#define MAX_MATCH_INTERVAL 4096
+#define MAX_MATCH_INTERVAL 16 /* 4096 */
 
 typedef struct meta_item_struct meta_item_t;
 struct meta_item_struct {
+  bool declared;
+  bool download_complete_composed;
   mftp_FileID_t meta_fileid;
   file_server_create_arg_t meta_arg;
   aid_t meta_aid;
@@ -32,6 +37,8 @@ struct meta_item_struct {
 
 typedef struct query_item_struct query_item_t;
 struct query_item_struct {
+  bool declared;
+  bool download_complete_composed;
   mftp_FileID_t query_fileid;
   file_server_create_arg_t query_arg;
   aid_t query_aid;
@@ -40,12 +47,14 @@ struct query_item_struct {
 
 typedef struct match_item_struct match_item_t;
 struct match_item_struct {
+  bool declared;
+  bool alarm_in_composed;
+  bool alarm_out_composed;
   mftp_FileID_t meta_fileid;
   mftp_FileID_t query_fileid;
   time_t next_match;
   time_t match_interval;
   aid_t match_alarm;
-  bool match_alarm_composed;
   match_item_t* next;
 };
 
@@ -55,11 +64,14 @@ typedef struct {
   query_item_t* queries;
   match_item_t* matches;
 
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
-  aid_t* msg_sender;
+  aid_t msg_sender;
   aid_t msg_sender_proxy;
-  aid_t* msg_receiver;
+  aid_t msg_receiver;
+  bool announcement_in_composed;
+  bool match_in_composed;
+  bool message_out_composed;
 } matcher_t;
 
 static void*
@@ -67,8 +79,8 @@ matcher_create (const void* a)
 {
   const matcher_create_arg_t* arg = a;
   assert (arg != NULL);
-  assert (arg->msg_sender != NULL);
-  assert (arg->msg_receiver != NULL);
+  assert (arg->msg_sender != -1);
+  assert (arg->msg_receiver != -1);
 
   matcher_t* matcher = malloc (sizeof (matcher_t));
   matcher->bidq = bidq_create ();
@@ -76,15 +88,50 @@ matcher_create (const void* a)
   matcher->queries = NULL;
   matcher->matches = NULL;
 
-  matcher->manager = manager_create (&matcher->self);
+  matcher->automan = automan_creat (matcher,
+				    &matcher->self);
   matcher->msg_sender = arg->msg_sender;
   matcher->msg_receiver = arg->msg_receiver;
 
-  manager_composition_add (matcher->manager, matcher->msg_receiver, msg_receiver_announcement_out, NULL, &matcher->self, matcher_announcement_in, NULL);
-  manager_composition_add (matcher->manager, matcher->msg_receiver, msg_receiver_match_out, NULL, &matcher->self, matcher_match_in, NULL);
+  assert (automan_compose (matcher->automan,
+			   &matcher->announcement_in_composed,
+			   &matcher->msg_receiver,
+			   msg_receiver_announcement_out,
+			   NULL,
+			   &matcher->self,
+			   matcher_announcement_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (matcher->automan,
+			   &matcher->match_in_composed,
+			   &matcher->msg_receiver,
+			   msg_receiver_match_out,
+			   NULL,
+			   &matcher->self,
+			   matcher_match_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
-  manager_proxy_add (matcher->manager, &matcher->msg_sender_proxy, matcher->msg_sender, msg_sender_request_proxy, matcher_callback, -1);
-  manager_composition_add (matcher->manager, &matcher->self, matcher_message_out, NULL, &matcher->msg_sender_proxy, msg_sender_proxy_message_in, NULL);
+  assert (automan_proxy_add (matcher->automan,
+			     &matcher->msg_sender_proxy,
+			     matcher->msg_sender,
+			     msg_sender_request_proxy,
+			     -1,
+			     matcher_callback,
+			     NULL,
+			     NULL) == 0);
+  assert (automan_compose (matcher->automan,
+			   &matcher->message_out_composed,
+			   &matcher->self,
+			   matcher_message_out,
+			   NULL,
+			   &matcher->msg_sender_proxy,
+			   msg_sender_proxy_message_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
   return matcher;
 }
@@ -99,7 +146,7 @@ matcher_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (matcher->manager, receipt);
+  automan_apply (matcher->automan, receipt);
 }
 
 static bid_t
@@ -108,7 +155,7 @@ matcher_system_output (void* state, void* param)
   matcher_t* matcher = state;
   assert (matcher != NULL);
 
-  return manager_action (matcher->manager);
+  return automan_action (matcher->automan);
 }
 
 static void
@@ -119,7 +166,23 @@ matcher_callback (void* state, void* param, bid_t bid)
 
   assert (buffer_size (bid) == sizeof (proxy_receipt_t));
   const proxy_receipt_t* receipt = buffer_read_ptr (bid);
-  manager_proxy_receive (matcher->manager, receipt);
+  automan_proxy_receive (matcher->automan, receipt);
+}
+
+static void
+matcher_match_alarm_composed (void* state, void* param, receipt_type_t receipt)
+{
+  matcher_t* matcher = state;
+  assert (matcher != NULL);
+  assert (receipt == COMPOSED);
+
+  match_item_t* match = param;
+  assert (match != NULL);
+
+  if (match->alarm_in_composed &&
+      match->alarm_out_composed) {
+    assert (schedule_output (matcher_match_alarm_out, match) == 0);
+  }
 }
 
 static void
@@ -182,7 +245,11 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       /* Add it to the list. */
       meta = malloc (sizeof (meta_item_t));
       
-      manager_param_add (matcher->manager, meta);
+      assert (automan_declare (matcher->automan,
+			       &meta->declared,
+			       meta,
+			       NULL,
+			       NULL) == 0);
       
       memcpy (&meta->meta_fileid, &message->announcement.fileid, sizeof (mftp_FileID_t));
       meta->meta_arg.file = mftp_File_create_empty (&meta->meta_fileid);
@@ -190,29 +257,22 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       meta->meta_arg.download = true;
       meta->meta_arg.msg_sender = matcher->msg_sender;
       meta->meta_arg.msg_receiver = matcher->msg_receiver;
-      manager_child_add (matcher->manager,
-			 &meta->meta_aid,
-			 &file_server_descriptor,
-			 &meta->meta_arg,
-			 NULL,
-			 NULL);
-      manager_dependency_add (matcher->manager,
-			      matcher->msg_sender,
+      assert (automan_create (matcher->automan,
 			      &meta->meta_aid,
-			      file_server_strobe_in,
-			      buffer_alloc (0));
-      manager_dependency_add (matcher->manager,
-			      matcher->msg_receiver,
-			      &meta->meta_aid,
-			      file_server_strobe_in,
-			      buffer_alloc (0));
-      manager_composition_add (matcher->manager,
+			      &file_server_descriptor,
+			      &meta->meta_arg,
+			      NULL,
+			      NULL) == 0);
+      assert (automan_compose (matcher->automan,
+			       &meta->download_complete_composed,
 			       &meta->meta_aid,
 			       file_server_download_complete_out,
 			       NULL,
 			       &matcher->self,
 			       matcher_meta_download_complete,
-			       meta);
+			       meta,
+			       NULL,
+			       NULL) == 0);
       
       meta->next = matcher->metas;
       matcher->metas = meta;
@@ -230,7 +290,11 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       /* Add it to the list. */
       query = malloc (sizeof (query_item_t));
       
-      manager_param_add (matcher->manager, query);
+      assert (automan_declare (matcher->automan,
+			       &query->declared,
+			       query,
+			       NULL,
+			       NULL) == 0);
       
       memcpy (&query->query_fileid, &message->announcement.fileid, sizeof (mftp_FileID_t));
       query->query_arg.file = mftp_File_create_empty (&query->query_fileid);
@@ -238,29 +302,22 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       query->query_arg.download = true;
       query->query_arg.msg_sender = matcher->msg_sender;
       query->query_arg.msg_receiver = matcher->msg_receiver;
-      manager_child_add (matcher->manager,
-			 &query->query_aid,
-			 &file_server_descriptor,
-			 &query->query_arg,
-			 NULL,
-			 NULL);
-      manager_dependency_add (matcher->manager,
-			      matcher->msg_sender,
+      assert (automan_create (matcher->automan,
 			      &query->query_aid,
-			      file_server_strobe_in,
-			      buffer_alloc (0));
-      manager_dependency_add (matcher->manager,
-			      matcher->msg_receiver,
-			      &query->query_aid,
-			      file_server_strobe_in,
-			      buffer_alloc (0));
-      manager_composition_add (matcher->manager,
+			      &file_server_descriptor,
+			      &query->query_arg,
+			      NULL,
+			      NULL) == 0);
+      assert (automan_compose (matcher->automan,
+			       &query->download_complete_composed,
 			       &query->query_aid,
 			       file_server_download_complete_out,
 			       NULL,
 			       &matcher->self,
 			       matcher_query_download_complete,
-			       query);
+			       query,
+			       NULL,
+			       NULL) == 0);
       
       query->next = matcher->queries;
       matcher->queries = query;
@@ -313,21 +370,42 @@ add_match (matcher_t* matcher, mftp_FileID_t* meta_fileid, mftp_FileID_t* query_
 
   match_item_t* match = malloc (sizeof (match_item_t));
 
-  manager_param_add (matcher->manager, match);
+  assert (automan_declare (matcher->automan,
+			   &match->declared,
+			   match,
+			   NULL,
+			   NULL) == 0);
 
   memcpy (&match->meta_fileid, meta_fileid, sizeof (mftp_FileID_t));
   memcpy (&match->query_fileid, query_fileid, sizeof (mftp_FileID_t));
   match->next_match = time (NULL);
   match->match_interval = INIT_MATCH_INTERVAL;
-  manager_child_add (matcher->manager,
-		     &match->match_alarm,
-		     &alarm_descriptor,
-		     NULL,
-		     NULL,
-		     NULL);
-  manager_composition_add (matcher->manager, &match->match_alarm, alarm_alarm_out, NULL, &matcher->self, matcher_match_alarm_in, match);
-  manager_composition_add (matcher->manager, &matcher->self, matcher_match_alarm_out, match, &match->match_alarm, alarm_set_in, NULL);
-  manager_output_add (matcher->manager, &match->match_alarm_composed, matcher_match_alarm_out, match);
+  assert (automan_create (matcher->automan,
+			  &match->match_alarm,
+			  &alarm_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (matcher->automan,
+			   &match->alarm_in_composed,
+			   &match->match_alarm,
+			   alarm_alarm_out,
+			   NULL,
+			   &matcher->self,
+			   matcher_match_alarm_in,
+			   match,
+			   matcher_match_alarm_composed,
+			   match) == 0);
+  assert (automan_compose (matcher->automan,
+			   &match->alarm_out_composed,
+			   &matcher->self,
+			   matcher_match_alarm_out,
+			   match,
+			   &match->match_alarm,
+			   alarm_set_in,
+			   NULL,
+			   matcher_match_alarm_composed,
+			   match) == 0);
 
   match->next = matcher->matches;
   matcher->matches = match;
@@ -392,18 +470,8 @@ matcher_message_out (void* state, void* param)
   }
 }
 
-void
-matcher_strobe_in (void* state, void* param, bid_t bid)
-{
-  matcher_t* matcher = state;
-  assert (matcher != NULL);
-
-  assert (schedule_system_output () == 0);
-}
-
 static input_t matcher_free_inputs[] = {
   matcher_callback,
-  matcher_strobe_in,
   NULL
 };
 

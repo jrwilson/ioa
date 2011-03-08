@@ -1,5 +1,7 @@
 #include "match_getter.h"
 
+#include <automan.h>
+
 #include "ft.h"
 
 #include <stdlib.h>
@@ -18,13 +20,16 @@ static void match_getter_match_in (void*, void*, bid_t);
 
 typedef struct meta_item_struct meta_item_t;
 struct meta_item_struct {
+  bool declared;
   mftp_FileID_t meta_fileid;
   file_server_create_arg_t meta_arg;
   aid_t meta_aid;
+  bool meta_download_complete_composed;
 
   mftp_FileID_t file_fileid;
   file_server_create_arg_t file_arg;
   aid_t file_aid;
+  bool file_download_complete_composed;
 
   meta_item_t* next;
 };
@@ -33,10 +38,11 @@ typedef struct {
   mftp_File_t* query;
   meta_item_t* metas;
 
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
-  aid_t* msg_sender;
-  aid_t* msg_receiver;
+  aid_t msg_sender;
+  aid_t msg_receiver;
+  bool match_in_composed;
 } match_getter_t;
 
 static void*
@@ -45,24 +51,28 @@ match_getter_create (const void* a)
   const match_getter_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->query != NULL);
-  assert (arg->msg_sender != NULL);
-  assert (arg->msg_receiver != NULL);
+  assert (arg->msg_sender != -1);
+  assert (arg->msg_receiver != -1);
 
   match_getter_t* match_getter = malloc (sizeof (match_getter_t));
   match_getter->query = arg->query;
   match_getter->metas = NULL;
 
-  match_getter->manager = manager_create (&match_getter->self);
+  match_getter->automan = automan_creat (match_getter,
+					 &match_getter->self);
   match_getter->msg_sender = arg->msg_sender;
   match_getter->msg_receiver = arg->msg_receiver;
 
-  manager_composition_add (match_getter->manager,
-			   match_getter->msg_receiver,
+  assert (automan_compose (match_getter->automan,
+			   &match_getter->match_in_composed,
+			   &match_getter->msg_receiver,
 			   msg_receiver_match_out,
 			   NULL,
 			   &match_getter->self,
 			   match_getter_match_in,
-			   NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
   return match_getter;
 }
@@ -77,7 +87,7 @@ match_getter_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (match_getter->manager, receipt);
+  automan_apply (match_getter->automan, receipt);
 }
 
 static bid_t
@@ -86,7 +96,7 @@ match_getter_system_output (void* state, void* param)
   match_getter_t* match_getter = state;
   assert (match_getter != NULL);
 
-  return manager_action (match_getter->manager);
+  return automan_action (match_getter->automan);
 }
 
 void
@@ -118,7 +128,11 @@ match_getter_match_in (void* state, void* param, bid_t bid)
 	meta->meta_aid = -1;
 	meta->file_aid = -1;
 
-	manager_param_add (match_getter->manager, meta);
+	assert (automan_declare (match_getter->automan,
+				 &meta->declared,
+				 meta,
+				 NULL,
+				 NULL) == 0);
 	
 	memcpy (&meta->meta_fileid, &message->announcement.fileid, sizeof (mftp_FileID_t));
 	meta->meta_arg.file = mftp_File_create_empty (&meta->meta_fileid);
@@ -126,29 +140,22 @@ match_getter_match_in (void* state, void* param, bid_t bid)
 	meta->meta_arg.download = true;
 	meta->meta_arg.msg_sender = match_getter->msg_sender;
 	meta->meta_arg.msg_receiver = match_getter->msg_receiver;
-	manager_child_add (match_getter->manager,
-			   &meta->meta_aid,
-			   &file_server_descriptor,
-			   &meta->meta_arg,
-			   NULL,
-			   NULL);
-	manager_dependency_add (match_getter->manager,
-				match_getter->msg_sender,
+	assert (automan_create (match_getter->automan,
 				&meta->meta_aid,
-				file_server_strobe_in,
-				buffer_alloc (0));
-	manager_dependency_add (match_getter->manager,
-				match_getter->msg_receiver,
-				&meta->meta_aid,
-				file_server_strobe_in,
-				buffer_alloc (0));
-	manager_composition_add (match_getter->manager,
+				&file_server_descriptor,
+				&meta->meta_arg,
+				NULL,
+				NULL) == 0);
+	assert (automan_compose (match_getter->automan,
+				 &meta->meta_download_complete_composed,
 				 &meta->meta_aid,
 				 file_server_download_complete_out,
 				 NULL,
 				 &match_getter->self,
 				 match_getter_meta_download_complete,
-				 meta);
+				 meta,
+				 NULL,
+				 NULL) == 0);
 	
 	meta->next = match_getter->metas;
 	match_getter->metas = meta;
@@ -182,29 +189,22 @@ match_getter_meta_download_complete (void* state, void* param, bid_t bid)
       meta->file_arg.download = true;
       meta->file_arg.msg_sender = match_getter->msg_sender;
       meta->file_arg.msg_receiver = match_getter->msg_receiver;
-      manager_child_add (match_getter->manager,
-			 &meta->file_aid,
-			 &file_server_descriptor,
-			 &meta->file_arg,
-			 NULL,
-			 NULL);
-      manager_dependency_add (match_getter->manager,
-			      match_getter->msg_sender,
+      assert (automan_create (match_getter->automan,
 			      &meta->file_aid,
-			      file_server_strobe_in,
-			      buffer_alloc (0));
-      manager_dependency_add (match_getter->manager,
-			      match_getter->msg_receiver,
-			      &meta->file_aid,
-			      file_server_strobe_in,
-			      buffer_alloc (0));
-      manager_composition_add (match_getter->manager,
+			      &file_server_descriptor,
+			      &meta->file_arg,
+			      NULL,
+			      NULL) == 0);
+      assert (automan_compose (match_getter->automan,
+			       &meta->file_download_complete_composed,
 			       &meta->file_aid,
 			       file_server_download_complete_out,
 			       NULL,
 			       &match_getter->self,
 			       match_getter_file_download_complete,
-			       meta);
+			       meta,
+			       NULL,
+			       NULL) == 0);
     
       assert (schedule_system_output () == 0);
     }
@@ -256,20 +256,6 @@ match_getter_file_download_complete (void* state, void* param, bid_t bid)
   free (filename);
 }
 
-void
-match_getter_strobe_in (void* state, void* param, bid_t bid)
-{
-  match_getter_t* match_getter = state;
-  assert (match_getter != NULL);
-
-  assert (schedule_system_output () == 0);
-}
-
-static input_t match_getter_free_inputs[] = {
-  match_getter_strobe_in,
-  NULL
-};
-
 static input_t match_getter_inputs[] = {
   match_getter_match_in,
   match_getter_meta_download_complete,
@@ -281,6 +267,5 @@ descriptor_t match_getter_descriptor = {
   .constructor = match_getter_create,
   .system_input = match_getter_system_input,
   .system_output = match_getter_system_output,
-  .free_inputs = match_getter_free_inputs,
   .inputs = match_getter_inputs,
 };

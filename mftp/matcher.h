@@ -5,10 +5,8 @@
 
 extern descriptor_t matcher_descriptor;
 typedef struct {
-  aid_t* msg_sender;
-  aid_t* msg_receiver;
+  aid_t msg_sender;
+  aid_t msg_receiver;
 } matcher_create_arg_t;
-
-void matcher_strobe_in (void*, void*, bid_t);
 
 #endif

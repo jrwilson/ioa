@@ -12,17 +12,22 @@ static void file_server_callback (void* state, void* param, bid_t bid);
 
 static void file_server_announcement_alarm_in (void*, void*, bid_t);
 static bid_t file_server_announcement_alarm_out (void*, void*);
+static void file_server_announcement_alarm_composed (void*, void*, receipt_type_t);
 
 static void file_server_request_alarm_in (void*, void*, bid_t);
 static bid_t file_server_request_alarm_out (void*, void*);
+static void file_server_request_alarm_composed (void*, void*, receipt_type_t);
 
 static void file_server_fragment_alarm_in (void*, void*, bid_t);
 static bid_t file_server_fragment_alarm_out (void*, void*);
+static void file_server_fragment_alarm_composed (void*, void*, receipt_type_t);
 
 static void file_server_announcement_in (void*, void*, bid_t);
 static void file_server_request_in (void*, void*, bid_t);
 static void file_server_fragment_in (void*, void*, bid_t);
 static bid_t file_server_message_out (void*, void*);
+
+static void file_server_download_complete_composed (void*, void*, receipt_type_t);
 
 #define OFFSET_TO_FRAGMENT(offset) ((offset) >> FRAGMENT_SIZE_LOG2)
 #define FRAGMENT_TO_OFFSET(fragment) ((fragment) << FRAGMENT_SIZE_LOG2)
@@ -155,7 +160,7 @@ file_server_create (const void* a)
 			   &file_server->self,
 			   file_server_announcement_alarm_in,
 			   NULL,
-			   NULL,
+			   file_server_announcement_alarm_composed,
 			   NULL) == 0);
   assert (automan_compose (file_server->automan,
 			   &file_server->announcement_alarm_out_composed,
@@ -165,7 +170,7 @@ file_server_create (const void* a)
 			   &file_server->announcement_alarm,
 			   alarm_set_in,
 			   NULL,
-			   NULL,
+			   file_server_announcement_alarm_composed,
 			   NULL) == 0);
 
   assert (automan_create (file_server->automan,
@@ -182,7 +187,7 @@ file_server_create (const void* a)
 			   &file_server->self,
 			   file_server_request_alarm_in,
 			   NULL,
-			   NULL,
+			   file_server_request_alarm_composed,
 			   NULL) == 0);
   assert (automan_compose (file_server->automan,
 			   &file_server->request_alarm_out_composed,
@@ -192,7 +197,7 @@ file_server_create (const void* a)
 			   &file_server->request_alarm,
 			   alarm_set_in,
 			   NULL,
-			   NULL,
+			   file_server_request_alarm_composed,
 			   NULL) == 0);
 
   assert (automan_create (file_server->automan,
@@ -209,7 +214,7 @@ file_server_create (const void* a)
 			   &file_server->self,
 			   file_server_fragment_alarm_in,
 			   NULL,
-			   NULL,
+			   file_server_fragment_alarm_composed,
 			   NULL) == 0);
   assert (automan_compose (file_server->automan,
 			   &file_server->fragment_alarm_out_composed,
@@ -219,14 +224,14 @@ file_server_create (const void* a)
 			   &file_server->fragment_alarm,
 			   alarm_set_in,
 			   NULL,
-			   NULL,
+			   file_server_fragment_alarm_composed,
 			   NULL) == 0);
 
   assert (automan_output_add (file_server->automan,
 			      &file_server->download_complete_composed,
 			      file_server_download_complete_out,
 			      NULL,
-			      NULL,
+			      file_server_download_complete_composed,
 			      NULL) == 0);
 
   assert (automan_proxy_add (file_server->automan,
@@ -302,6 +307,45 @@ file_server_system_output (void* state, void* param)
   assert (file_server != NULL);
 
   return automan_action (file_server->automan);
+}
+
+static void
+file_server_announcement_alarm_composed (void* state, void* param, receipt_type_t receipt)
+{
+  file_server_t* file_server = state;
+  assert (file_server != NULL);
+  assert (receipt == COMPOSED);
+
+  if (file_server->announcement_alarm_in_composed &&
+      file_server->announcement_alarm_out_composed) {
+    assert (schedule_output (file_server_announcement_alarm_out, NULL) == 0);
+  }
+}
+
+static void
+file_server_request_alarm_composed (void* state, void* param, receipt_type_t receipt)
+{
+  file_server_t* file_server = state;
+  assert (file_server != NULL);
+  assert (receipt == COMPOSED);
+
+  if (file_server->request_alarm_in_composed &&
+      file_server->request_alarm_out_composed) {
+    assert (schedule_output (file_server_request_alarm_out, NULL) == 0);
+  }
+}
+
+static void
+file_server_fragment_alarm_composed (void* state, void* param, receipt_type_t receipt)
+{
+  file_server_t* file_server = state;
+  assert (file_server != NULL);
+  assert (receipt == COMPOSED);
+
+  if (file_server->fragment_alarm_in_composed &&
+      file_server->fragment_alarm_out_composed) {
+    assert (schedule_output (file_server_fragment_alarm_out, NULL) == 0);
+  }
 }
 
 static void
@@ -536,6 +580,15 @@ file_server_message_out (void* state, void* param)
     /* No messages. */
     return -1;
   }
+}
+
+static void
+file_server_download_complete_composed (void* state, void* param, receipt_type_t receipt)
+{
+  file_server_t* file_server = state;
+  assert (file_server != NULL);
+
+  assert (schedule_output (file_server_download_complete_out, NULL) == 0);
 }
 
 bid_t

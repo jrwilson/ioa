@@ -1,5 +1,7 @@
 #include <mftp.h>
 
+#include <automan.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -12,11 +14,15 @@
 
 #include "matcher.h"
 
+static void composer_sender_receiver_created (void* state, void* param, receipt_type_t recipt);
+
 typedef struct {
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
 
+  msg_sender_create_arg_t msg_sender_arg;
   aid_t msg_sender;
+  msg_receiver_create_arg_t msg_receiver_arg;
   aid_t msg_receiver;
 
   matcher_create_arg_t matcher_arg;
@@ -28,39 +34,23 @@ composer_create (const void* a)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create (&composer->self);
+  composer->automan = automan_creat (composer,
+				     &composer->self);
 
-  manager_child_add (composer->manager,
-		     &composer->msg_sender,
-		     &msg_sender_descriptor,
-		     NULL,
-		     NULL,
-		     NULL);
-  manager_child_add (composer->manager,
-		     &composer->msg_receiver,
-		     &msg_receiver_descriptor,
-		     NULL,
-		     NULL,
-		     NULL);
-
-  composer->matcher_arg.msg_sender = &composer->msg_sender;
-  composer->matcher_arg.msg_receiver = &composer->msg_receiver;
-  manager_child_add (composer->manager,
-		     &composer->matcher,
-		     &matcher_descriptor,
-		     &composer->matcher_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (composer->manager,
+  composer->msg_sender_arg.port = PORT;
+  assert (automan_create (composer->automan,
 			  &composer->msg_sender,
-			  &composer->matcher,
-			  matcher_strobe_in,
-			  buffer_alloc (0));
-  manager_dependency_add (composer->manager,
+			  &msg_sender_descriptor,
+			  &composer->msg_sender_arg,
+			  composer_sender_receiver_created,
+			  NULL) == 0);
+  composer->msg_receiver_arg.port = PORT;
+  assert (automan_create (composer->automan,
 			  &composer->msg_receiver,
-			  &composer->matcher,
-			  matcher_strobe_in,
-			  buffer_alloc (0));
+			  &msg_receiver_descriptor,
+			  &composer->msg_receiver_arg,
+			  composer_sender_receiver_created,
+			  NULL) == 0);
 
   return composer;
 }
@@ -75,7 +65,7 @@ composer_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (composer->manager, receipt);
+  automan_apply (composer->automan, receipt);
 }
 
 static bid_t
@@ -84,7 +74,28 @@ composer_system_output (void* state, void* param)
   composer_t* composer = state;
   assert (composer != NULL);
 
-  return manager_action (composer->manager);
+  return automan_action (composer->automan);
+}
+
+static void
+composer_sender_receiver_created (void* state, void* param, receipt_type_t receipt)
+{
+  composer_t* composer = state;
+  assert (composer != NULL);
+  assert (receipt == CHILD_CREATED);
+
+  if (composer->msg_sender != -1 &&
+      composer->msg_receiver != -1) {
+
+    composer->matcher_arg.msg_sender = composer->msg_sender;
+    composer->matcher_arg.msg_receiver = composer->msg_receiver;
+    assert (automan_create (composer->automan,
+			    &composer->matcher,
+			    &matcher_descriptor,
+			    &composer->matcher_arg,
+			    NULL,
+			    NULL) == 0);
+  }
 }
 
 descriptor_t composer_descriptor = {

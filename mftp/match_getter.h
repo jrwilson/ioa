@@ -6,10 +6,8 @@
 extern descriptor_t match_getter_descriptor;
 typedef struct {
   mftp_File_t* query;
-  aid_t* msg_sender;
-  aid_t* msg_receiver;
+  aid_t msg_sender;
+  aid_t msg_receiver;
 } match_getter_create_arg_t;
-
-void match_getter_strobe_in (void*, void*, bid_t);
 
 #endif
