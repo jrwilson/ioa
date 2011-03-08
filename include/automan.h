@@ -3,8 +3,14 @@
 
 #include <ueioa.h>
 
+typedef enum {
+  PROXY_CREATED,
+  PROXY_REQUEST_INPUT_DNE,
+} proxy_receipt_type_t;
+
 typedef struct automan_struct automan_t;
 typedef void (*automan_handler_t) (void* state, void* param, receipt_type_t receipt);
+typedef void (*proxy_handler_t) (void* state, void* param, proxy_receipt_type_t receipt);
 
 automan_t*
 automan_creat (void* state,
@@ -72,31 +78,34 @@ automan_output_add (automan_t* automan,
 		    automan_handler_t handler,
 		    void* hparam) __attribute__ ((warn_unused_result));
 
-/* void automan_output_add (automan_t* automan, */
-/* 			 bool* flag_ptr, */
-/* 			 output_t output, */
-/* 			 void* out_param); */
+typedef struct proxy_request_struct {
+  bid_t bid;
+  aid_t callback_aid;
+  input_t callback_free_input;
+} proxy_request_t;
 
-/* void automan_dependency_add (automan_t* automan, */
-/* 			     aid_t* child, */
-/* 			     aid_t* dependent, */
-/* 			     input_t free_input, */
-/* 			     bid_t bid); */
-/* void automan_dependency_remove (automan_t* automan, */
-/* 				aid_t* child, */
-/* 				aid_t* dependent); */
+typedef struct proxy_receipt_struct {
+  aid_t proxy_aid;
+  bid_t bid;
+} proxy_receipt_t;
 
-/* void automan_proxy_add (automan_t*, aid_t* proxy_aid_ptr, aid_t* source_aid_ptr, input_t source_free_input, input_t callback, bid_t); */
-/* typedef struct proxy_request_struct { */
-/*   bid_t bid; */
-/*   aid_t callback_aid; */
-/*   input_t callback_free_input; */
-/* } proxy_request_t; */
-/* typedef struct proxy_receipt_struct { */
-/*   aid_t proxy_aid; */
-/*   bid_t bid; */
-/* } proxy_receipt_t; */
-/* bid_t proxy_receipt_create (aid_t, bid_t); */
-/* void automan_proxy_receive (automan_t*, const proxy_receipt_t*); */
+int
+automan_proxy_add (automan_t* automan,
+		   aid_t* aid_ptr,
+		   aid_t source_aid,
+		   input_t source_free_input,
+		   bid_t bid,
+		   input_t callback,
+		   proxy_handler_t handler,
+		   void* pparam) __attribute__ ((warn_unused_result));
+
+int
+automan_proxy_send (aid_t proxy_aid,
+		    bid_t bid,
+		    const proxy_request_t* proxy_request)  __attribute__ ((warn_unused_result));
+
+void
+automan_proxy_receive (automan_t* automan,
+		       const proxy_receipt_t* proxy_receipt);
 
 #endif /* __automan_h__ */

@@ -20,7 +20,8 @@ automan_input_add2 \
 automan_output_add \
 automan_output_add2 \
 automan_external_destroy \
-automan_external_decompose
+automan_external_decompose \
+automan_proxy_add
 
 check_PROGRAMS = $(TESTS)
 
@@ -80,3 +81,6 @@ automan_external_destroy_LDADD = $(top_builddir)/libtable/libtable.la $(top_buil
 
 automan_external_decompose_SOURCES = automan_external_decompose.c
 automan_external_decompose_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+
+automan_proxy_add_SOURCES = automan_proxy_add.c
+automan_proxy_add_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la

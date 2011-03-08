@@ -21,7 +21,7 @@ typedef struct descriptor_struct {
   input_t alarm_input;
   input_t read_input;
   input_t write_input;
-  input_t* free_inputs;
+  const input_t* free_inputs;
   const input_t* inputs;
   const output_t* outputs;
   const internal_t* internals;

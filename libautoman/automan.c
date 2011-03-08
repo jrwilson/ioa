@@ -1,10 +1,3 @@
-#include <automan.h>
-
-#include <assert.h>
-#include <stdlib.h>
-
-#include <table.h>
-
 /*
 
   Automan (Automata Manager)
@@ -95,1046 +88,14 @@
   Handlers associated with create/destroy and compose/decompose may be called with out regards to a sequence operation if an externally controlled automaton is destroyed.
 */
 
-/******************************************************************************************
- * TYPES
- ******************************************************************************************/
+#include "decls.h"
 
-typedef enum {
-  NORMAL,
-  OUTSTANDING
-} status_t;
-
-typedef struct sequence_item_struct {
-  order_type_t order_type;
-  automan_handler_t handler;
-  void* hparam;
-  union {
-    aid_t* aid_ptr;
-    bool* flag_ptr;
-  };
-  union {
-    struct {
-      const descriptor_t* descriptor;
-      const void* ctor_arg;
-    } create;
-    struct {
-      void* param;
-    } declare;
-    struct {
-      aid_t* out_aid_ptr;
-      output_t output;
-      void* out_param;
-      aid_t* in_aid_ptr;
-      input_t input;
-      void* in_param;
-    } compose;
-  };
-} sequence_item_t;
-
-typedef struct input_item_struct {
-  automan_handler_t handler;
-  void* hparam;
-  bool* flag_ptr;
-  input_t input;
-  void* in_param;
-} input_item_t;
-
-typedef struct output_item_struct {
-  automan_handler_t handler;
-  void* hparam;
-  bool* flag_ptr;
-  output_t output;
-  void* out_param;
-} output_item_t;
-
-struct automan_struct {
-  void* state;
-  aid_t* self_ptr;
-  status_t syscall_status;
-  order_t last_order;
-  sequence_item_t last_action;
-  table_t* si_table;
-  index_t* si_index;
-  table_t* ii_table;
-  index_t* ii_index;
-  table_t* oi_table;
-  index_t* oi_index;
-
-/*   status_t proxy_status; */
-/*   proxies_key_t last_proxy; */
-/*   hashtable_t* proxies; */
-/*   hashtable_t* dependencies; */
-};
+#include <assert.h>
+#include <stdlib.h>
 
 /******************************************************************************************
  * PRIVATE FUNCTIONS
  ******************************************************************************************/
-
-static bool
-aid_ptr_equal (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
-
-  return x->aid_ptr == y->aid_ptr;
-}
-
-static bool
-flag_ptr_equal (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
-
-  return x->flag_ptr == y->flag_ptr;
-}
-
-static bool
-child_destroyed_aid_equal (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const receipt_t* y = y0;
-
-  switch (x->order_type) {
-  case COMPOSE:
-  case DECOMPOSE:
-  case DECLARE:
-  case RESCIND:
-    return false;
-  case CREATE:
-  case DESTROY:
-    return *x->aid_ptr == y->child_destroyed.child;
-  }
-  /* Not reached. */
-  assert (0);
-  return false;
-}
-
-static bool
-decomposed_input_equal (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const receipt_t* y = y0;
-
-  switch (x->order_type) {
-  case CREATE:
-  case DESTROY:
-  case DECLARE:
-  case RESCIND:
-    return false;
-  case COMPOSE:
-  case DECOMPOSE:
-    return
-      *x->compose.in_aid_ptr == y->decomposed.in_aid &&
-      x->compose.input == y->decomposed.input &&
-      x->compose.in_param == y->decomposed.in_param;
-  }
-  /* Not reached. */
-  assert (0);
-  return false;
-}
-
-static bool
-param_equal (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
-
-  switch (x->order_type) {
-  case CREATE:
-  case COMPOSE:
-  case DECOMPOSE:
-  case DESTROY:
-    return false;
-  case DECLARE:
-  case RESCIND:
-    return x->declare.param == y->declare.param;
-  }
-  /* Not reached. */
-  assert (0);
-  return false;
-}
-
-static bool
-input_equal (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
-
-  switch (x->order_type) {
-  case CREATE:
-  case DECLARE:
-  case RESCIND:
-  case DESTROY:
-    return false;
-  case COMPOSE:
-  case DECOMPOSE:
-    return
-      x->compose.in_aid_ptr == y->compose.in_aid_ptr &&
-      x->compose.input == y->compose.input &&
-      x->compose.in_param == y->compose.in_param;
-}
-  /* Not reached. */
-  assert (0);
-  return false;
-}
-
-static bool
-parameterized_composition (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
-
-  switch (x->order_type) {
-  case CREATE:
-  case DECLARE:
-  case DECOMPOSE:
-  case RESCIND:
-  case DESTROY:
-    return false;
-  case COMPOSE:
-    return x->compose.out_param == y->declare.param || x->compose.in_param == y->declare.param;
-  }
-  /* Not reached. */
-  assert (0);
-  return false;
-}
-
-static bool
-aid_composition (const void* x0, const void* y0)
-{
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
-  
-  switch (x->order_type) {
-  case CREATE:
-  case DECLARE:
-  case DECOMPOSE:
-  case RESCIND:
-  case DESTROY:
-    return false;
-  case COMPOSE:
-    return x->compose.out_aid_ptr == y->aid_ptr || x->compose.in_aid_ptr == y->aid_ptr;
-  }
-  /* Not reached. */
-  assert (0);
-  return false;
-}
-
-static bool
-closed_aid_ptr (automan_t* automan,
-		aid_t* aid_ptr)
-{
-  if (aid_ptr == automan->self_ptr) {
-    /* Always open with respect to ourself. */
-    return false;
-  }
-
-  sequence_item_t key;
-  key.aid_ptr = aid_ptr;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      aid_ptr_equal,
-						      &key,
-						      NULL);
-
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == DESTROY ||
-      sequence_item->order_type == RESCIND ||
-      sequence_item->order_type == DECOMPOSE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return true;
-  }
-}
-
-static bool
-open_aid_ptr_create (automan_t* automan,
-		     aid_t* aid_ptr)
-{
-  if (aid_ptr == automan->self_ptr) {
-    /* Always open with respect to ourself. */
-    return false;
-  }
-
-  sequence_item_t key;
-  key.aid_ptr = aid_ptr;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      aid_ptr_equal,
-						      &key,
-						      NULL);
-
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == CREATE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return false;
-  }
-}
-
-static bool
-closed_flag_ptr (automan_t* automan,
-		 bool* flag_ptr)
-{
-  if ((aid_t*)flag_ptr == automan->self_ptr) {
-    /* Alway open with respect to ourself. */
-    return false;
-  }
-
-  sequence_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      flag_ptr_equal,
-						      &key,
-						      NULL);
-
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == DESTROY ||
-      sequence_item->order_type == RESCIND ||
-      sequence_item->order_type == DECOMPOSE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return true;
-  }
-}
-
-static bool
-open_flag_ptr_declare (automan_t* automan,
-		       bool* flag_ptr)
-{
-  sequence_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      flag_ptr_equal,
-						      &key,
-						      NULL);
-  
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == DECLARE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return false;
-  }
-}
-
-static bool
-open_flag_ptr_compose (automan_t* automan,
-		       bool* flag_ptr)
-{
-  sequence_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      flag_ptr_equal,
-						      &key,
-						      NULL);
-  
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == COMPOSE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return false;
-  }
-}
-
-static bool
-closed_param (automan_t* automan,
-	      void* param)
-{
-  sequence_item_t key;
-  key.declare.param = param;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      param_equal,
-						      &key,
-						      NULL);
-  
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == RESCIND;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return true;
-  }
-}
-
-static bool
-open_param (automan_t* automan,
-	      void* param)
-{
-  sequence_item_t key;
-  key.declare.param = param;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      param_equal,
-						      &key,
-						      NULL);
-  
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == DECLARE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return false;
-  }
-}
-
-static bool
-closed_input (automan_t* automan,
-	      aid_t* in_aid_ptr,
-	      input_t input,
-	      void* in_param)
-{
-  sequence_item_t key;
-  key.compose.in_aid_ptr = in_aid_ptr;
-  key.compose.input = input;
-  key.compose.in_param = in_param;
-  
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      input_equal,
-						      &key,
-						      NULL);
-  
-  if (sequence_item != NULL) {
-    /* Found one. */
-    return
-      sequence_item->order_type == DECOMPOSE;
-  }
-  else {
-    /* Closed because it doesn't exist. */
-    return true;
-  }
-}
-
-static void
-append_create (automan_t* automan,
-	       aid_t* aid_ptr,
-	       const descriptor_t* descriptor,
-	       const void* ctor_arg,
-	       automan_handler_t handler,
-	       void* hparam)
-{
-  sequence_item_t sequence_item;
-  sequence_item.order_type = CREATE;
-  sequence_item.handler = handler;
-  sequence_item.hparam = hparam;
-  sequence_item.aid_ptr = aid_ptr;
-  sequence_item.create.descriptor = descriptor;
-  sequence_item.create.ctor_arg = ctor_arg;
-
-  index_push_back (automan->si_index, &sequence_item);
-}
-
-static void
-append_destroy (automan_t* automan,
-		aid_t* aid_ptr,
-		automan_handler_t handler,
-		void* hparam)
-{
-  sequence_item_t sequence_item;
-  sequence_item.order_type = DESTROY;
-  sequence_item.handler = handler;
-  sequence_item.hparam = hparam;
-  sequence_item.aid_ptr = aid_ptr;
-
-  index_push_back (automan->si_index, &sequence_item);
-}
-
-static void
-append_declare (automan_t* automan,
-		bool* flag_ptr,
-		void* param,
-		automan_handler_t handler,
-		void* hparam)
-{
-  sequence_item_t sequence_item;
-  sequence_item.order_type = DECLARE;
-  sequence_item.handler = handler;
-  sequence_item.hparam = hparam;
-  sequence_item.flag_ptr = flag_ptr;
-  sequence_item.declare.param = param;
-  
-  index_push_back (automan->si_index, &sequence_item);
-}
-
-static void
-append_rescind (automan_t* automan,
-		bool* flag_ptr,
-		void* param,
-		automan_handler_t handler,
-		void* hparam)
-{
-  sequence_item_t sequence_item;
-  sequence_item.order_type = RESCIND;
-  sequence_item.handler = handler;
-  sequence_item.hparam = hparam;
-  sequence_item.flag_ptr = flag_ptr;
-  sequence_item.declare.param = param;
-  
-  index_push_back (automan->si_index, &sequence_item);
-}
-
-static void
-append_compose (automan_t* automan,
-		bool* flag_ptr,
-		aid_t* out_aid_ptr,
-		output_t output,
-		void* out_param,
-		aid_t* in_aid_ptr,
-		input_t input,
-		void* in_param,
-		automan_handler_t handler,
-		void* hparam)
-{
-  sequence_item_t sequence_item;
-  sequence_item.order_type = COMPOSE;
-  sequence_item.handler = handler;
-  sequence_item.hparam = hparam;
-  sequence_item.flag_ptr = flag_ptr;
-  sequence_item.compose.out_aid_ptr = out_aid_ptr;
-  sequence_item.compose.output = output;
-  sequence_item.compose.out_param = out_param;
-  sequence_item.compose.in_aid_ptr = in_aid_ptr;
-  sequence_item.compose.input = input;
-  sequence_item.compose.in_param = in_param;
-
-  index_push_back (automan->si_index, &sequence_item);
-}
-
-static void
-append_decompose (automan_t* automan,
-		  bool* flag_ptr,
-		  aid_t* out_aid_ptr,
-		  output_t output,
-		  void* out_param,
-		  aid_t* in_aid_ptr,
-		  input_t input,
-		  void* in_param,
-		  automan_handler_t handler,
-		  void* hparam)
-{
-  sequence_item_t sequence_item;
-  sequence_item.order_type = DECOMPOSE;
-  sequence_item.handler = handler;
-  sequence_item.hparam = hparam;
-  sequence_item.flag_ptr = flag_ptr;
-  sequence_item.compose.out_aid_ptr = out_aid_ptr;
-  sequence_item.compose.output = output;
-  sequence_item.compose.out_param = out_param;
-  sequence_item.compose.in_aid_ptr = in_aid_ptr;
-  sequence_item.compose.input = input;
-  sequence_item.compose.in_param = in_param;
-
-  index_push_back (automan->si_index, &sequence_item);
-}
-
-static void
-append_input (automan_t* automan,
-	      bool* flag_ptr,
-	      input_t input,
-	      void* in_param,
-	      automan_handler_t handler,
-	      void* hparam)
-{
-  input_item_t input_item;
-  input_item.handler = handler;
-  input_item.hparam = hparam;
-  input_item.flag_ptr = flag_ptr;
-  input_item.input = input;
-  input_item.in_param = in_param;
-
-  index_push_back (automan->ii_index, &input_item);
-}
-
-static void
-append_output (automan_t* automan,
-	      bool* flag_ptr,
-	      output_t output,
-	      void* out_param,
-	      automan_handler_t handler,
-	      void* hparam)
-{
-  output_item_t output_item;
-  output_item.handler = handler;
-  output_item.hparam = hparam;
-  output_item.flag_ptr = flag_ptr;
-  output_item.output = output;
-  output_item.out_param = out_param;
-
-  index_push_back (automan->oi_index, &output_item);
-}
-
-static bool
-param_declared (automan_t* automan,
-		void* param)
-{
-  if (param == NULL) {
-    return true;
-  }
-  
-  sequence_item_t key;
-  key.declare.param = param;
-  
-  sequence_item_t* sequence_item = index_find_value (automan->si_index,
-						     index_begin (automan->si_index),
-						     index_end (automan->si_index),
-						     param_equal,
-						     &key,
-						     NULL);
-  
-  if (sequence_item != NULL) {
-    return *sequence_item->flag_ptr;
-  }
-  else {
-    /* Doesn't exist. */
-    return false;
-  }
-}
-
-static sequence_item_t*
-find_flag_ptr (automan_t* automan,
-	       bool* flag_ptr,
-	       iterator_t begin,
-	       iterator_t end,
-	       iterator_t* iterator)
-{
-  sequence_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  return index_find_value (automan->si_index,
-			   begin,
-			   end,
-			   flag_ptr_equal,
-			   &key,
-			   iterator);
-}
-
-static sequence_item_t*
-rfind_flag_ptr (automan_t* automan,
-		bool* flag_ptr,
-		riterator_t* riterator)
-{
-  sequence_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  return index_rfind_value (automan->si_index,
-			    index_rbegin (automan->si_index),
-			    index_rend (automan->si_index),
-			    flag_ptr_equal,
-			    &key,
-			    riterator);
-}
-
-static sequence_item_t*
-find_aid_ptr (automan_t* automan,
-	      aid_t* aid_ptr,
-	      iterator_t begin,
-	      iterator_t end,
-	      iterator_t* iterator)
-{
-  sequence_item_t key;
-  key.aid_ptr = aid_ptr;
-  
-  return index_find_value (automan->si_index,
-			   begin,
-			   end,
-			   aid_ptr_equal,
-			   &key,
-			   iterator);
-}
-
-static sequence_item_t*
-rfind_aid_ptr (automan_t* automan,
-	       aid_t* aid_ptr,
-	       riterator_t* riterator)
-{
-  sequence_item_t key;
-  key.aid_ptr = aid_ptr;
-  
-  return index_rfind_value (automan->si_index,
-			    index_rbegin (automan->si_index),
-			    index_rend (automan->si_index),
-			    aid_ptr_equal,
-			    &key,
-			    riterator);
-}
-
-static sequence_item_t*
-find_composition_param (automan_t* automan,
-			bool* flag_ptr,
-			void* param,
-			iterator_t begin,
-			iterator_t* pos)
-{
-  sequence_item_t key;
-  key.flag_ptr = flag_ptr;
-  key.declare.param = param;
-
-  return index_find_value (automan->si_index,
-			   begin,
-			   index_end (automan->si_index),
-			   parameterized_composition,
-			   &key,
-			   pos);
-}
-
-static sequence_item_t*
-find_composition_aid (automan_t* automan,
-		      aid_t* aid_ptr,
-		      iterator_t begin,
-		      iterator_t end,
-		      iterator_t* pos)
-{
-  sequence_item_t key;
-  key.aid_ptr = aid_ptr;
-
-  return index_find_value (automan->si_index,
-			   begin,
-			   end,
-			   aid_composition,
-			   &key,
-			   pos);
-}
-
-static bool
-process_sequence_items (automan_t* automan)
-{
-  assert (automan != NULL);
-
-  iterator_t iterator;
-  for (iterator = index_begin (automan->si_index);
-       iterator_ne (iterator, index_end (automan->si_index));
-       iterator = index_advance (automan->si_index, iterator)) {
-    sequence_item_t* sequence_item = index_value (automan->si_index, iterator);
-    switch (sequence_item->order_type) {
-    case CREATE:
-      {
-	if (*sequence_item->aid_ptr == -1) {
-	  /* Create an automaton. */
-	  order_create_init (&automan->last_order,
-			     sequence_item->create.descriptor,
-			     sequence_item->create.ctor_arg);
-	  automan->last_action = *sequence_item;
-	  return true;
-	}
-      }
-      break;
-    case DECLARE:
-      {
-	if (*sequence_item->flag_ptr == false) {
-	  /* We need to declare a parameter. */
-	  order_declare_init (&automan->last_order,
-			      sequence_item->declare.param);
-	  automan->last_action = *sequence_item;
-	  return true;
-	}
-      }
-      break;
-    case COMPOSE:
-      {
-      	if (*sequence_item->flag_ptr == false &&
-      	    *sequence_item->compose.out_aid_ptr != -1 &&
-      	    param_declared (automan, sequence_item->compose.out_param) &&
-      	    *sequence_item->compose.in_aid_ptr != -1 &&
-      	    param_declared (automan, sequence_item->compose.in_param)) {
-      	  /* We need to compose. */
-      	  order_compose_init (&automan->last_order,
-      			      *sequence_item->compose.out_aid_ptr,
-      			      sequence_item->compose.output,
-      			      sequence_item->compose.out_param,
-      			      *sequence_item->compose.in_aid_ptr,
-      			      sequence_item->compose.input,
-      			      sequence_item->compose.in_param);
-      	  automan->last_action = *sequence_item;
-      	  return true;
-      	}
-      }
-      break;
-    case DECOMPOSE:
-      {
-	if (*sequence_item->flag_ptr == true) {
-	  /* We need to decompose. */
-	  order_decompose_init (&automan->last_order,
-				*sequence_item->compose.out_aid_ptr,
-				sequence_item->compose.output,
-				sequence_item->compose.out_param,
-				*sequence_item->compose.in_aid_ptr,
-				sequence_item->compose.input,
-				sequence_item->compose.in_param);
-	  automan->last_action = *sequence_item;
-	  return true;
-	}
-      }
-      break;
-    case RESCIND:
-      {
-	if (*sequence_item->flag_ptr == true) {
-	  /* We need to rescind a parameter. */
-	  order_rescind_init (&automan->last_order,
-			      sequence_item->declare.param);
-	  automan->last_action = *sequence_item;
-	  return true;
-	}
-      }
-      break;
-    case DESTROY:
-      {
-	if (*sequence_item->aid_ptr != -1) {
-	  /* Create an automaton. */
-	  order_destroy_init (&automan->last_order,
-			      *sequence_item->aid_ptr);
-	  automan->last_action = *sequence_item;
-	  return true;
-	}
-      }
-      break;
-    }
-  }
-
-  return false;
-}
-
-static bool
-ii_flag_ptr_equal (const void* x0,
-		   const void* y0)
-{
-  const input_item_t* x = x0;
-  const input_item_t* y = y0;
-
-  return x->flag_ptr == y->flag_ptr;
-}
-
-static input_item_t*
-find_ii_flag_ptr (automan_t* automan,
-		  bool* flag_ptr)
-{
-  input_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  return index_find_value (automan->ii_index,
-			   index_begin (automan->ii_index),
-			   index_end (automan->ii_index),
-			   ii_flag_ptr_equal,
-			   &key,
-			   NULL);
-}
-
-static bool
-ii_input_equal (const void* x0,
-		const void* y0)
-{
-  const input_item_t* x = x0;
-  const input_item_t* y = y0;
-  
-  return
-    x->input == y->input &&
-    x->in_param == y->in_param;
-}
-
-static input_item_t*
-find_ii_input (automan_t* automan,
-	       input_t input,
-	       void* in_param)
-{
-  input_item_t key;
-  key.input = input;
-  key.in_param = in_param;
-  
-  return index_find_value (automan->ii_index,
-			   index_begin (automan->ii_index),
-			   index_end (automan->ii_index),
-			   ii_input_equal,
-			   &key,
-			   NULL);
-}
-
-static bool
-oi_flag_ptr_equal (const void* x0,
-		   const void* y0)
-{
-  const output_item_t* x = x0;
-  const output_item_t* y = y0;
-
-  return x->flag_ptr == y->flag_ptr;
-}
-
-static output_item_t*
-find_oi_flag_ptr (automan_t* automan,
-		  bool* flag_ptr)
-{
-  output_item_t key;
-  key.flag_ptr = flag_ptr;
-  
-  return index_find_value (automan->oi_index,
-			   index_begin (automan->oi_index),
-			   index_end (automan->oi_index),
-			   oi_flag_ptr_equal,
-			   &key,
-			   NULL);
-}
-
-static bool
-oi_output_equal (const void* x0,
-		 const void* y0)
-{
-  const output_item_t* x = x0;
-  const output_item_t* y = y0;
-  
-  return
-    x->output == y->output &&
-    x->out_param == y->out_param;
-}
-
-static output_item_t*
-find_oi_output (automan_t* automan,
-	       output_t output,
-	       void* out_param)
-{
-  output_item_t key;
-  key.output = output;
-  key.out_param = out_param;
-  
-  return index_find_value (automan->oi_index,
-			   index_begin (automan->oi_index),
-			   index_end (automan->oi_index),
-			   oi_output_equal,
-			   &key,
-			   NULL);
-}
-
-static iterator_t
-decompose_flag_ptr (automan_t* automan,
-		    bool* flag_ptr)
-{
-  /* Remove the compose. */
-  iterator_t compose_pos;
-  sequence_item_t* compose = find_flag_ptr (automan,
-					    flag_ptr,
-					    index_begin (automan->si_index),
-					    index_end (automan->si_index),
-					    &compose_pos);
-  assert (compose != NULL);
-  assert (compose->order_type == COMPOSE);
-  sequence_item_t compose_item = *compose;
-  compose_pos = index_erase (automan->si_index, compose_pos);
-
-  /* Remove the decompose. */
-  iterator_t decompose_pos;
-  sequence_item_t* decompose = find_flag_ptr (automan,
-					      flag_ptr,
-					      compose_pos,
-					      index_end (automan->si_index),
-					      &decompose_pos);
-  assert (decompose != NULL);
-  assert (decompose->order_type == DECOMPOSE);
-  decompose_pos = index_erase (automan->si_index, decompose_pos);
-
-  /* Set the flag. */
-  *compose_item.flag_ptr = false;
-
-  if (compose_item.handler != NULL) {
-    compose_item.handler (automan->state, compose_item.hparam, DECOMPOSED);
-  }
-
-  return compose_pos;
-}
-
-static void
-destroy_aid_ptr (automan_t* automan,
-		 aid_t* aid_ptr)
-{
-  /* Remove the create. */
-  iterator_t create_pos;
-  sequence_item_t* create = find_aid_ptr (automan,
-					  aid_ptr,
-					  index_begin (automan->si_index),
-					  index_end (automan->si_index),
-					  &create_pos);
-  assert (create != NULL);
-  assert (create->order_type == CREATE);
-  sequence_item_t create_item = *create;
-  create_pos = index_erase (automan->si_index, create_pos);
-  
-  /* Remove the destroy. */
-  iterator_t destroy_pos;
-  sequence_item_t* destroy = find_aid_ptr (automan,
-					   aid_ptr,
-					   create_pos,
-					   index_end (automan->si_index),
-					   &destroy_pos);
-  assert (destroy != NULL);
-  assert (destroy->order_type == DESTROY);
-  if (iterator_eq (create_pos, destroy_pos)) {
-    /* Nothing between create and destroy. Skip over. */
-    create_pos = index_advance (automan->si_index, create_pos);
-    /* The next line will make them equal again. */
-  }
-  destroy_pos = index_erase (automan->si_index, destroy_pos);
-
-  /* Remove all compositions between create_pos and destroy_pos that use this aid. */
-  iterator_t compose_pos = create_pos;
-  for (;;) {
-    /* Find a composition that uses this aid. */
-    sequence_item_t* composition = find_composition_aid (automan,
-							 create_item.aid_ptr,
-							 compose_pos,
-							 destroy_pos,
-							 &compose_pos);
-    if (composition != NULL) {
-      /* Found one.  Decompose. */
-      compose_pos = decompose_flag_ptr (automan,
-					composition->flag_ptr);
-    }
-    else {
-      /* No more compositions use this aid.  Done. */
-      break;
-    }
-  }
-  
-  /* Set the aid pointer. */
-  *create_item.aid_ptr = -1;
-  
-  if (create_item.handler != NULL) {
-    create_item.handler (automan->state, create_item.hparam, CHILD_DESTROYED);
-  }
-}
 
 /******************************************************************************************
  * PUBLIC FUNCTIONS
@@ -1151,20 +112,20 @@ automan_creat (void* state, aid_t* self_ptr)
   automan->state = state;
   automan->self_ptr = self_ptr;
   *self_ptr = -1;
-  automan->syscall_status = NORMAL;
+
+  automan->sequence_status = NORMAL;
   automan->si_table = table_create (sizeof (sequence_item_t));
   automan->si_index = index_create_list (automan->si_table);
+
   automan->ii_table = table_create (sizeof (input_item_t));
   automan->ii_index = index_create_list (automan->ii_table);
+
   automan->oi_table = table_create (sizeof (output_item_t));
   automan->oi_index = index_create_list (automan->oi_table);
 
-
-  /* automan->proxy_status = NORMAL; */
-  /* automan->create = hashtable_create (sizeof (create_key_t), create_key_equal, create_key_hash); */
-  /* automan->proxies = hashtable_create (sizeof (proxies_key_t), proxies_key_equal, proxies_key_hash); */
-  /* automan->dependencies = hashtable_create (sizeof (dependencies_key_t), dependencies_key_equal, dependencies_key_hash); */
-  /* automan->outputs = hashtable_create (sizeof (outputs_key_t), outputs_key_equal, outputs_key_hash); */
+  automan->proxy_status = NORMAL;
+  automan->pi_table = table_create (sizeof (proxy_item_t));
+  automan->pi_index = index_create_list (automan->pi_table);
 
   return automan;
 }
@@ -1187,17 +148,20 @@ automan_apply (automan_t* automan,
     {
       *automan->self_ptr = receipt->self_created.self;
       something_changed = true;
+
+      /* Fire the proxies. */
+      pi_process (automan);
     }
     break;
   case CHILD_CREATED:
     {
-      assert (automan->syscall_status == OUTSTANDING && automan->last_order.type == CREATE);
-      *automan->last_action.aid_ptr = receipt->child_created.child;
-      if (automan->last_action.handler != NULL) {
-	automan->last_action.handler (automan->state, automan->last_action.hparam, receipt->type);
+      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == CREATE);
+      *automan->last_sequence.aid_ptr = receipt->child_created.child;
+      if (automan->last_sequence.handler != NULL) {
+	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
       }
       something_changed = true;
-      automan->syscall_status = NORMAL;
+      automan->sequence_status = NORMAL;
     }
     break;
   case BAD_DESCRIPTOR:
@@ -1207,13 +171,13 @@ automan_apply (automan_t* automan,
     break;
   case DECLARED:
     {
-      assert (automan->syscall_status == OUTSTANDING && automan->last_order.type == DECLARE);
-      *automan->last_action.flag_ptr = true;
-      if (automan->last_action.handler != NULL) {
-	automan->last_action.handler (automan->state, automan->last_action.hparam, receipt->type);
+      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == DECLARE);
+      *automan->last_sequence.flag_ptr = true;
+      if (automan->last_sequence.handler != NULL) {
+	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
       }
       something_changed = true;
-      automan->syscall_status = NORMAL;
+      automan->sequence_status = NORMAL;
     }
     break;
   case OUTPUT_DNE:
@@ -1221,48 +185,30 @@ automan_apply (automan_t* automan,
   case OUTPUT_UNAVAILABLE:
   case INPUT_UNAVAILABLE:
     {
-      assert (automan->syscall_status == OUTSTANDING && automan->last_order.type == COMPOSE);
-      iterator_t pos;
-      /* Find the composition. */
-      find_flag_ptr (automan,
-		     automan->last_action.flag_ptr,
-		     index_begin (automan->si_index),
-		     index_end (automan->si_index),
-		     &pos);
-      /* Erase the composition. */
-      pos = index_erase (automan->si_index, pos);
-      /* Find the decomposition. */
-      sequence_item_t* decompose = find_flag_ptr (automan,
-						  automan->last_action.flag_ptr,
-						  index_begin (automan->si_index),
-						  index_end (automan->si_index),
-						  &pos);
-      /* Erase it if it exists. */
-      if (decompose != NULL) {
-	index_erase (automan->si_index, pos);
-      }
-      if (automan->last_action.handler != NULL) {
-	automan->last_action.handler (automan->state, automan->last_action.hparam, receipt->type);
-      }
+      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == COMPOSE);
+
+      si_balance_compose (automan, automan->last_sequence.flag_ptr);
+      si_decompose_flag_ptr (automan, automan->last_sequence.flag_ptr, receipt->type);
+
       something_changed = true;
-      automan->syscall_status = NORMAL;
+      automan->sequence_status = NORMAL;
     }
     break;
   case COMPOSED:
     {
-      assert (automan->syscall_status == OUTSTANDING && automan->last_order.type == COMPOSE);
-      *automan->last_action.flag_ptr = true;
-      if (automan->last_action.handler != NULL) {
-	automan->last_action.handler (automan->state, automan->last_action.hparam, receipt->type);
+      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == COMPOSE);
+      *automan->last_sequence.flag_ptr = true;
+      if (automan->last_sequence.handler != NULL) {
+	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
       }
       something_changed = true;
-      automan->syscall_status = NORMAL;
+      automan->sequence_status = NORMAL;
     }
     break;
   case INPUT_COMPOSED:
     {
       /* Look up the input. */
-      input_item_t* input_item = find_ii_input (automan,
+      input_item_t* input_item = ii_find_input (automan,
 						receipt->input_composed.input,
 						receipt->input_composed.in_param);
       if (input_item != NULL) {
@@ -1278,7 +224,7 @@ automan_apply (automan_t* automan,
   case OUTPUT_COMPOSED:
     {
       /* Look up the output. */
-      output_item_t* output_item = find_oi_output (automan,
+      output_item_t* output_item = oi_find_output (automan,
 						   receipt->output_composed.output,
 						   receipt->output_composed.out_param);
       if (output_item != NULL) {
@@ -1319,15 +265,15 @@ automan_apply (automan_t* automan,
 	 If a child dies, ueioa might send DECOMPOSED events before the CHILD_DESTROYED.
 	 To maintain a good sequence, we will pretend as though the user ordered the decompose by inserting a decompose order if necessary.
       */
-      if (automan->syscall_status == OUTSTANDING &&
+      if (automan->sequence_status == OUTSTANDING &&
 	  automan->last_order.type == DECOMPOSE &&
-	  *automan->last_action.compose.in_aid_ptr == receipt->decomposed.in_aid &&
-	  automan->last_action.compose.input == receipt->decomposed.input &&
-	  automan->last_action.compose.in_param == receipt->decomposed.in_param) {
+	  *automan->last_sequence.compose.in_aid_ptr == receipt->decomposed.in_aid &&
+	  automan->last_sequence.compose.input == receipt->decomposed.input &&
+	  automan->last_sequence.compose.in_param == receipt->decomposed.in_param) {
 	/* Decomposed intentionally. */
-	decompose_flag_ptr (automan, automan->last_action.flag_ptr);
+	si_decompose_flag_ptr (automan, automan->last_sequence.flag_ptr, receipt->type);
 	something_changed = true;
-	automan->syscall_status = NORMAL;
+	automan->sequence_status = NORMAL;
       }
       else {
 	/* Decomposed unintentionally. */
@@ -1337,28 +283,16 @@ automan_apply (automan_t* automan,
 	sequence_item_t* compose = index_find_value (automan->si_index,
 						     index_begin (automan->si_index),
 						     index_end (automan->si_index),
-						     decomposed_input_equal,
+						     si_decomposed_input_equal,
 						     receipt,
 						     &compose_pos);
 	assert (compose != NULL);
 	assert (compose->order_type == COMPOSE);
 	bool* flag_ptr = compose->flag_ptr;
-	compose_pos = index_advance (automan->si_index, compose_pos);
 
-	/* Find the decompose. */
-	sequence_item_t* decompose = find_flag_ptr (automan,
-						    flag_ptr,
-						    compose_pos,
-						    index_end (automan->si_index),
-						    NULL);
-	
-	if (decompose == NULL) {
-	  /* Decompose doesn't exist so add one. */
-	  assert (automan_decompose (automan,
-				     flag_ptr) == 0);
-	}
-	/* Sequence now is in good order. */
-	decompose_flag_ptr (automan, flag_ptr);
+	si_balance_compose (automan, flag_ptr);
+	si_decompose_flag_ptr (automan, flag_ptr, receipt->type);
+
 	something_changed = true;
       }
     }
@@ -1366,7 +300,7 @@ automan_apply (automan_t* automan,
   case INPUT_DECOMPOSED:
     {
       /* Look up the input. */
-      input_item_t* input_item = find_ii_input (automan,
+      input_item_t* input_item = ii_find_input (automan,
 						receipt->input_composed.input,
 						receipt->input_composed.in_param);
       if (input_item != NULL) {
@@ -1382,7 +316,7 @@ automan_apply (automan_t* automan,
   case OUTPUT_DECOMPOSED:
     {
       /* Look up the output. */
-      output_item_t* output_item = find_oi_output (automan,
+      output_item_t* output_item = oi_find_output (automan,
 						   receipt->output_composed.output,
 						   receipt->output_composed.out_param);
       if (output_item != NULL) {
@@ -1397,16 +331,16 @@ automan_apply (automan_t* automan,
     break;
   case RESCINDED:
     {
-      assert (automan->syscall_status == OUTSTANDING && automan->last_order.type == RESCIND);
+      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == RESCIND);
       /* Remove the declare. */
       
 
-      *automan->last_action.flag_ptr = false;
-      if (automan->last_action.handler != NULL) {
-	automan->last_action.handler (automan->state, automan->last_action.hparam, receipt->type);
+      *automan->last_sequence.flag_ptr = false;
+      if (automan->last_sequence.handler != NULL) {
+	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
       }
       something_changed = true;
-      automan->syscall_status = NORMAL;
+      automan->sequence_status = NORMAL;
     }
     break;
   case AUTOMATON_DNE:
@@ -1449,13 +383,13 @@ automan_apply (automan_t* automan,
 	 We'll make use of the fact that the destroy procedure will process composes and decomposes.
 	 */
 
-      if (automan->syscall_status == OUTSTANDING &&
+      if (automan->sequence_status == OUTSTANDING &&
 	  automan->last_order.type == DESTROY &&
-	  *automan->last_action.aid_ptr == receipt->child_destroyed.child) {
+	  *automan->last_sequence.aid_ptr == receipt->child_destroyed.child) {
 	/* Child died intentionally. */
-	destroy_aid_ptr (automan, automan->last_action.aid_ptr);
+	si_destroy_aid_ptr (automan, automan->last_sequence.aid_ptr);
 	something_changed = true;
-	automan->syscall_status = NORMAL;
+	automan->sequence_status = NORMAL;
       }
       else {
 	/* Child died unintentionally. */
@@ -1465,723 +399,23 @@ automan_apply (automan_t* automan,
 	sequence_item_t* create = index_find_value (automan->si_index,
 						    index_begin (automan->si_index),
 						    index_end (automan->si_index),
-						    child_destroyed_aid_equal,
+						    si_child_destroyed_aid_equal,
 						    receipt,
 						    &create_pos);
 	assert (create != NULL);
 	assert (create->order_type == CREATE);
 	aid_t* aid_ptr = create->aid_ptr;
-	create_pos = index_advance (automan->si_index, create_pos);
 
-	/* Find the destroy. */
-	sequence_item_t* destroy = find_aid_ptr (automan,
-						 aid_ptr,
-						 create_pos,
-						 index_end (automan->si_index),
-						 NULL);
+	si_balance_create (automan, aid_ptr);
+	si_destroy_aid_ptr (automan, aid_ptr);
 
-	if (destroy == NULL) {
-	  /* Destroy doesn't exist so add one. */
-	  assert (automan_destroy (automan,
-				   aid_ptr) == 0);
-	}
-	/* Sequence now is in good order. */
-	destroy_aid_ptr (automan, aid_ptr);
 	something_changed = true;
       }
     }
     break;
   }
 
-  /* /\* Fire the proxy. *\/ */
-  /* proxy_fire (automan); */
-
-  if ((automan->syscall_status == NORMAL) && something_changed) {
+  if ((automan->sequence_status == NORMAL) && something_changed) {
     assert (schedule_system_output () == 0);
   }
 }
-
-bid_t
-automan_action (automan_t* automan)
-{
-  assert (automan != NULL);
-
-/*   proxy_fire (automan); */
-/*   dependencies_fire (automan); */
-
-  switch (automan->syscall_status) {
-  case NORMAL:
-    {
-      if (process_sequence_items (automan)) {
-	bid_t bid = buffer_alloc (sizeof (order_t));
-	order_t* order = buffer_write_ptr (bid);
-	*order = automan->last_order;
-	automan->syscall_status = OUTSTANDING;
-	return bid;
-      }
-      else {
-	return -1;
-      }
-    }
-    break;
-  case OUTSTANDING:
-    return -1;
-    break;
-  }
-
-  /* Not reached. */
-  assert (0);
-  return -1;
-}
-
-int
-automan_create (automan_t* automan,
-		aid_t* aid_ptr,
-		const descriptor_t* descriptor,
-		const void* ctor_arg,
-		automan_handler_t handler,
-		void* hparam)
-{
-  assert (automan != NULL);
-  assert (aid_ptr != NULL);
-  assert (descriptor != NULL);
-  assert (hparam == NULL || handler != NULL);
-
-  if (!closed_aid_ptr (automan, aid_ptr)) {
-    /* Duplicate create. */
-    return -1;
-  }
-  
-  /* Clear the automaton. */
-  *aid_ptr = -1;
-
-  /* Add an action item. */
-  append_create (automan,
-		 aid_ptr,
-		 descriptor,
-		 ctor_arg,
-		 handler,
-		 hparam);
-
-  if (*automan->self_ptr != -1) {
-    assert (schedule_system_output () == 0);
-  }
-
-  return 0;
-}
-
-int
-automan_declare (automan_t* automan,
-		 bool* flag_ptr,
-		 void* param,
-		 automan_handler_t handler,
-		 void* hparam)
-{
-  assert (automan != NULL);
-  assert (flag_ptr != NULL);
-  assert (param != NULL);
-  assert (hparam == NULL || handler != NULL);
-
-  if (!closed_flag_ptr (automan, flag_ptr) ||
-      !closed_param (automan, param)) {
-    /* Duplicate declare. */
-    return -1;
-  }
-
-  /* Clear the flag. */
-  *flag_ptr = false;
-  
-  /* Add an action item. */
-  append_declare (automan,
-		  flag_ptr,
-		  param,
-		  handler,
-		  hparam);
-
-  if (*automan->self_ptr != -1) {
-    assert (schedule_system_output () == 0);
-  }
-  
-  return 0;
-}
-
-int
-automan_compose (automan_t* automan,
-		 bool* flag_ptr,
-		 aid_t* out_aid_ptr,
-		 output_t output,
-		 void* out_param,
-		 aid_t* in_aid_ptr,
-		 input_t input,
-		 void* in_param,
-		 automan_handler_t handler,
-		 void* hparam)
-{
-  assert (automan != NULL);
-  assert (flag_ptr != NULL);
-  assert (out_aid_ptr != NULL);
-  assert (output != NULL);
-  assert (in_aid_ptr != NULL);
-  assert (input != NULL);
-  assert (out_param == NULL || in_param == NULL);
-  assert (out_param == NULL || automan->self_ptr == out_aid_ptr);
-  assert (in_param == NULL || automan->self_ptr == in_aid_ptr);
-
-  assert (hparam == NULL || handler != NULL);
-  
-  /* Check for parameter management. */
-  if (out_param != NULL &&
-      !open_param (automan, out_param)) {
-    return -1;
-  }
-  else if (in_param != NULL &&
-	   !open_param (automan, in_param)) {
-    return -1;
-  }
-
-  if (!closed_flag_ptr (automan, flag_ptr) ||
-      !closed_input (automan, in_aid_ptr, input, in_param)) {
-    /* Duplicate composition. */
-    return -1;
-  }
-  
-  /* Clear the flag. */
-  *flag_ptr = false;
-  
-  append_compose (automan,
-		  flag_ptr,
-		  out_aid_ptr,
-		  output,
-		  out_param,
-		  in_aid_ptr,
-		  input,
-		  in_param,
-		  handler,
-		  hparam);
-
-  if (*automan->self_ptr != -1) {
-    assert (schedule_system_output () == 0);
-  }
-  
-  return 0;
-}
-
-int
-automan_decompose (automan_t* automan,
-		   bool* flag_ptr)
-{
-  assert (automan != NULL);
-  assert (flag_ptr != NULL);
-
-  if (!open_flag_ptr_compose (automan, flag_ptr)) {
-    /* Duplicate decompose. */
-    return -1;
-  }
-  
-  /* Find the compose. */
-  sequence_item_t* sequence_item = rfind_flag_ptr (automan, flag_ptr, NULL);
-  
-  append_decompose (automan,
-		    sequence_item->flag_ptr,
-		    sequence_item->compose.out_aid_ptr,
-		    sequence_item->compose.output,
-		    sequence_item->compose.out_param,
-		    sequence_item->compose.in_aid_ptr,
-		    sequence_item->compose.input,
-		    sequence_item->compose.in_param,
-		    sequence_item->handler,
-		    sequence_item->hparam);
-
-  if (*automan->self_ptr != -1) {
-    assert (schedule_system_output () == 0);
-  }
-  
-  return 0;
-}
-
-int
-automan_rescind (automan_t* automan,
-		 bool* flag_ptr)
-{
-  assert (automan != NULL);
-  assert (flag_ptr != NULL);
-
-  if (!open_flag_ptr_declare (automan, flag_ptr)) {
-    /* Duplicate rescind. */
-    return -1;
-  }
-  
-  /* Find the declare. */
-  riterator_t declare_pos;
-  sequence_item_t* sequence_item = rfind_flag_ptr (automan,
-						   flag_ptr,
-						   &declare_pos);
-
-  /* Every composition that uses the parameter must be paired with a decomposition. */
-  iterator_t compose_pos = riterator_reverse (automan->si_index, declare_pos);
-  for (;;) {
-    /* Find a composition using this parameter. */
-    sequence_item_t* composition = find_composition_param (automan,
-							   flag_ptr,
-							   sequence_item->declare.param,
-							   compose_pos,
-							   &compose_pos);
-
-    if (composition != NULL) {
-      /* Found a composition using this parameter. Look for the decomposition. */
-      sequence_item_t* decomposition = find_flag_ptr (automan,
-						      composition->flag_ptr,
-						      compose_pos,
-						      index_end (automan->si_index),
-						      NULL);
-      if (decomposition == NULL) {
-      	/* No corresponding decomposition so add one. */
-	append_decompose (automan,
-			  composition->flag_ptr,
-			  composition->compose.out_aid_ptr,
-			  composition->compose.output,
-			  composition->compose.out_param,
-			  composition->compose.in_aid_ptr,
-			  composition->compose.input,
-			  composition->compose.in_param,
-			  composition->handler,
-			  composition->hparam);
-	/* Technically, we don't need to add the decompositions.
-	   We could just rescind the parameter and let the system tell us about all of the decompositions.
-	   However, it would violate the invariant that the user could extend the sequence by leaving unpaired compositions.
-	*/
-      }
-      
-      /* Advance. */
-      compose_pos = index_advance (automan->si_index, compose_pos);
-    }
-    else {
-      /* No subsequent compositions use this paramter.  Done. */
-      break;
-    }
-  }
-  
-  /* Add an action item. */
-  append_rescind (automan,
-		  sequence_item->flag_ptr,
-		  sequence_item->declare.param,
-		  sequence_item->handler,
-		  sequence_item->hparam);
-
-  if (*automan->self_ptr != -1) {
-    assert (schedule_system_output () == 0);
-  }
-  
-  return 0;
-}
-
-int
-automan_destroy (automan_t* automan,
-		 aid_t* aid_ptr)
-{
-  assert (automan != NULL);
-  assert (aid_ptr != NULL);
-
-  if (!open_aid_ptr_create (automan, aid_ptr)) {
-    /* Duplicate destroy. */
-    return -1;
-  }
-
-  /* Find the create. */
-  riterator_t create_pos;
-  sequence_item_t* sequence_item = rfind_aid_ptr (automan,
-						  aid_ptr,
-						  &create_pos);
-
-  /* Every composition that uses this aid must be paired with a decomposition. */
-  iterator_t compose_pos = riterator_reverse (automan->si_index, create_pos);
-  for (;;) {
-    /* Find a composition using this aid. */
-    sequence_item_t* composition = find_composition_aid (automan,
-							 aid_ptr,
-							 compose_pos,
-							 index_end (automan->si_index),
-							 &compose_pos);
-    if (composition != NULL) {
-      /* Found a composition using this aid. Look for the decomposition. */
-      sequence_item_t* decomposition = find_flag_ptr (automan,
-						      composition->flag_ptr,
-						      compose_pos,
-						      index_end (automan->si_index),
-						      NULL);
-      if (decomposition == NULL) {
-      	/* No corresponding decomposition so add one. */
-  	append_decompose (automan,
-  			  composition->flag_ptr,
-  			  composition->compose.out_aid_ptr,
-  			  composition->compose.output,
-  			  composition->compose.out_param,
-  			  composition->compose.in_aid_ptr,
-  			  composition->compose.input,
-  			  composition->compose.in_param,
-  			  composition->handler,
-  			  composition->hparam);
-  	/* Technically, we don't need to add the decompositions.
-  	   We could just destroy the automaton and let the system tell us about all of the decompositions.
-  	   However, it would violate the invariant that the user could extend the sequence by leaving unpaired compositions.
-  	*/
-      }
-      
-      /* Advance. */
-      compose_pos = index_advance (automan->si_index, compose_pos);
-    }
-    else {
-      /* No subsequent compositions use this paramter.  Done. */
-      break;
-    }
-  }
-  
-  /* Add an action item. */
-  append_destroy (automan,
-		  sequence_item->aid_ptr,
-		  sequence_item->handler,
-		  sequence_item->hparam);
-
-  if (*automan->self_ptr != -1) {
-    assert (schedule_system_output () == 0);
-  }
-
-  return 0;
-}
-
-int
-automan_input_add (automan_t* automan,
-		   bool* flag_ptr,
-		   input_t input,
-		   void* in_param,
-		   automan_handler_t handler,
-		   void* hparam)
-{
-  assert (automan != NULL);
-  assert (flag_ptr != NULL);
-  assert (input != NULL);
-  assert (hparam == NULL || handler != NULL);
-
-  if (find_ii_flag_ptr (automan,
-			flag_ptr) != NULL ||
-      find_ii_input (automan,
-		     input,
-		     in_param) != NULL) {
-    /* Already tracking. */
-    return -1;
-  }
-
-  /* Clear the flag. */
-  *flag_ptr = false;
-
-  append_input (automan,
-		flag_ptr,
-		input,
-		in_param,
-		handler,
-		hparam);
-
-  return 0;
-}
-
-int
-automan_output_add (automan_t* automan,
-		    bool* flag_ptr,
-		    output_t output,
-		    void* out_param,
-		    automan_handler_t handler,
-		    void* hparam)
-{
-  assert (automan != NULL);
-  assert (flag_ptr != NULL);
-  assert (output != NULL);
-  assert (hparam == NULL || handler != NULL);
-  
-  if (find_oi_flag_ptr (automan,
-			flag_ptr) != NULL ||
-      find_oi_output (automan,
-		      output,
-		      out_param) != NULL) {
-    /* Already tracking. */
-    return -1;
-  }
-
-  /* Clear the flag. */
-  *flag_ptr = false;
-  
-  append_output (automan,
-		 flag_ptr,
-		 output,
-		 out_param,
-		 handler,
-		 hparam);
-
-  return 0;
-}
-
-
-
-
-
-
-
-/* void */
-/* automan_proxy_add (automan_t* automan, */
-/* 		   aid_t* proxy_aid_ptr, */
-/* 		   aid_t* source_aid_ptr, */
-/* 		   input_t source_free_input, */
-/* 		   input_t callback, */
-/* 		   bid_t bid) */
-/* { */
-/*   assert (automan != NULL); */
-/*   assert (proxy_aid_ptr != NULL); */
-/*   assert (source_aid_ptr != NULL); */
-/*   assert (source_free_input != NULL); */
-/*   assert (callback != NULL); */
-  
-/*   proxies_key_t key = { */
-/*     .proxy_aid_ptr = proxy_aid_ptr, */
-/*     .source_aid_ptr = source_aid_ptr, */
-/*     .source_free_input = source_free_input, */
-/*     .callback = callback, */
-/*     .bid = bid, */
-/*   }; */
-/*   assert (!hashtable_contains_key (automan->proxies, &key)); */
-/*   hashtable_insert (automan->proxies, &key); */
-
-/*   /\* Clear the automaton. *\/ */
-/*   *proxy_aid_ptr = -1; */
-
-/*   /\* Increment the reference count. *\/ */
-/*   if (bid != -1) { */
-/*     buffer_incref (bid); */
-/*   } */
-/* } */
-
-/* void */
-/* automan_dependency_add (automan_t* automan, */
-/* 			aid_t* child, */
-/* 			aid_t* dependent, */
-/* 			input_t free_input, */
-/* 			bid_t bid) */
-/* { */
-/*   assert (automan != NULL); */
-/*   assert (child != NULL); */
-/*   assert (dependent != NULL); */
-/*   assert (free_input != NULL); */
-/*   assert (bid != -1); */
-
-/*   dependency_state_t state; */
-/*   if (*child != -1) { */
-/*     state = DEP_FINISHED; */
-/*   } */
-/*   else if (*dependent != -1) { */
-/*     state = DEP_WAITING; */
-/*   } */
-/*   else { */
-/*     state = DEP_START; */
-/*   } */
-
-/*   dependencies_key_t key = { */
-/*     .child = child, */
-/*     .dependent = dependent, */
-/*     .free_input = free_input, */
-/*     .bid = bid, */
-/*     .state = state, */
-/*   }; */
-/*   assert (!hashtable_contains_key (automan->dependencies, &key)); */
-/*   hashtable_insert (automan->dependencies, &key); */
-
-/*   buffer_incref (bid); */
-/* } */
-
-/* void */
-/* automan_dependency_remove (automan_t* automan, */
-/* 			   aid_t* child, */
-/* 			   aid_t* dependent) */
-/* { */
-/*   assert (automan != NULL); */
-/*   assert (child != NULL); */
-/*   assert (dependent != NULL); */
-
-/*   dependencies_key_t key = { */
-/*     .child = child, */
-/*     .dependent = dependent, */
-/*   }; */
-/*   dependencies_key_t* k = hashtable_lookup (automan->dependencies, &key); */
-/*   assert (k != NULL); */
-/*   buffer_decref (k->bid); */
-/*   hashtable_remove (automan->dependencies, &key); */
-/* } */
-
-/* static void */
-/* proxy_fire (automan_t* automan) */
-/* { */
-/*   assert (*automan->self_ptr != -1); */
-/*   if (automan->proxy_status == NORMAL) { */
-/*     size_t idx; */
-/*     /\* Go through the proxies. *\/ */
-/*     for (idx = hashtable_first (automan->proxies); */
-/* 	 idx != hashtable_last (automan->proxies); */
-/* 	 idx = hashtable_next (automan->proxies, idx)) { */
-/*       const proxies_key_t* key = hashtable_key_at (automan->proxies, idx); */
-/*       if (*key->proxy_aid_ptr == -1 && *key->source_aid_ptr != -1) { */
-/*         /\* Request a proxy. *\/ */
-/* 	bid_t bid = proxy_request_create (key->bid, *automan->self_ptr, key->callback); */
-/* 	assert (schedule_free_input (*key->source_aid_ptr, *key->source_free_input, bid) == 0); */
-/* 	automan->last_proxy = *key; */
-/* 	automan->proxy_status = OUTSTANDING; */
-/* 	break; */
-/*       } */
-/*     } */
-/*   } */
-/* } */
-
-/* static void */
-/* dependencies_fire (automan_t* automan) */
-/* { */
-/*   size_t idx; */
-
-/*   /\* Go through the dependencies. *\/ */
-/*   for (idx = hashtable_first (automan->dependencies); */
-/*        idx != hashtable_last (automan->dependencies); */
-/*        idx = hashtable_next (automan->dependencies, idx)) { */
-/*     dependencies_key_t* key = hashtable_key_at (automan->dependencies, idx); */
-/*     switch (key->state) { */
-/*     case DEP_START: */
-/*       { */
-/* 	/\* Only one thing can happen at a time. *\/ */
-/* 	if (*key->child != -1) { */
-/* 	  /\* Child created before dependent.  Finished. *\/ */
-/* 	  key->state = DEP_FINISHED; */
-/* 	} */
-/* 	else if (*key->dependent != -1) { */
-/* 	  /\* Dependent created before child.  Wait. *\/ */
-/* 	  key->state = DEP_WAITING; */
-/* 	} */
-/*       } */
-/*       break; */
-/*     case DEP_WAITING: */
-/*       { */
-/* 	if (*key->child != -1) { */
-/* 	  assert (schedule_free_input (*key->dependent, key->free_input, key->bid) == 0); */
-/* 	  key->state = DEP_FINISHED; */
-/* 	} */
-/*       } */
-/*       break; */
-/*     case DEP_FINISHED: */
-/*       /\* Done. *\/ */
-/*       break; */
-/*     } */
-/*   } */
-
-/* } */
-
-/* void */
-/* automan_proxy_receive (automan_t* automan, */
-/* 		       const proxy_receipt_t* proxy_receipt) */
-/* { */
-/*   assert (automan != NULL); */
-/*   assert (proxy_receipt != NULL); */
-
-/*   assert (automan->proxy_status == OUTSTANDING); */
-
-/*   *automan->last_proxy.proxy_aid_ptr = proxy_receipt->proxy_aid; */
-/*   automan->proxy_status = NORMAL; */
-
-/*   proxy_fire (automan); */
-
-/*   assert (schedule_system_output () == 0); */
-/* } */
-
-/* static bid_t */
-/* proxy_request_create (bid_t bid, */
-/* 		      aid_t callback_aid, */
-/* 		      input_t callback_free_input) */
-/* { */
-/*   bid_t b = buffer_alloc (sizeof (proxy_request_t)); */
-/*   proxy_request_t* proxy_request = buffer_write_ptr (b); */
-/*   proxy_request->bid = bid; */
-/*   if (bid != -1) { */
-/*     buffer_add_child (b, bid); */
-/*   } */
-/*   proxy_request->callback_aid = callback_aid; */
-/*   proxy_request->callback_free_input = callback_free_input; */
-/*   return b; */
-/* } */
-
-/* bid_t */
-/* proxy_receipt_create (aid_t proxy_aid, */
-/* 		      bid_t bid) */
-/* { */
-/*   assert (proxy_aid != -1); */
-
-/*   bid_t b = buffer_alloc (sizeof (proxy_receipt_t)); */
-/*   proxy_receipt_t* proxy_receipt = buffer_write_ptr (b); */
-/*   proxy_receipt->proxy_aid = proxy_aid; */
-/*   proxy_receipt->bid = bid; */
-/*   if (bid != -1) { */
-/*     buffer_add_child (b, bid); */
-/*   } */
-/*   return b; */
-/* } */
-
-/* typedef struct proxies_key_struct { */
-/*   aid_t* proxy_aid_ptr; */
-/*   aid_t* source_aid_ptr; */
-/*   input_t source_free_input; */
-/*   input_t callback; */
-/*   bid_t bid; */
-/* } proxies_key_t; */
-
-/* static bool */
-/* proxies_key_equal (const void* x0, */
-/* 		   const void* y0) */
-/* { */
-/*   const proxies_key_t* x = x0; */
-/*   const proxies_key_t* y = y0; */
-/*   return x->proxy_aid_ptr == y->proxy_aid_ptr; */
-/* } */
-
-/* static size_t */
-/* proxies_key_hash (const void* x0) */
-/* { */
-/*   const proxies_key_t* x = x0; */
-  
-/*   return (size_t)x->proxy_aid_ptr; */
-/* } */
-
-/* typedef enum { */
-/*   DEP_START, */
-/*   DEP_WAITING, */
-/*   DEP_FINISHED, */
-/* } dependency_state_t; */
-
-/* typedef struct { */
-/*   aid_t* child; */
-/*   aid_t* dependent; */
-/*   input_t free_input; */
-/*   bid_t bid; */
-/*   dependency_state_t state; */
-/* } dependencies_key_t; */
-
-/* static bool */
-/* dependencies_key_equal (const void* x0, */
-/* 			const void* y0) */
-/* { */
-/*   const dependencies_key_t* x = x0; */
-/*   const dependencies_key_t* y = y0; */
-/*   return */
-/*     x->child == y->child && */
-/*     x->dependent == y->dependent; */
-/* } */
-
-/* static size_t */
-/* dependencies_key_hash (const void* x0) */
-/* { */
-/*   const dependencies_key_t* x = x0; */
-
-/*   return */
-/*     (size_t)x->child + */
-/*     (size_t)x->dependent; */
-/* } */
