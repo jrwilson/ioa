@@ -1,5 +1,7 @@
 #include <mftp.h>
 
+#include <automan.h>
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -46,16 +48,30 @@ typedef struct {
   bitset_t* fragments;		/* Bitset of acquired fragments. */
   size_t fragment_idx;		/* Index into the fragments. */
 
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
+
   aid_t announcement_alarm;
-  bool announcement_alarm_composed;
+  bool announcement_alarm_in_composed;
+  bool announcement_alarm_out_composed;
+
   aid_t request_alarm;
-  bool request_alarm_composed;
+  bool request_alarm_in_composed;
+  bool request_alarm_out_composed;
+
   aid_t fragment_alarm;
-  bool fragment_alarm_composed;
+  bool fragment_alarm_in_composed;
+  bool fragment_alarm_out_composed;
+
   bool download_complete_composed;
+
   aid_t msg_sender_proxy;
+  bool message_out_composed;
+
+  aid_t msg_receiver;
+  bool announcement_in_composed;
+  bool request_in_composed;
+  bool fragment_in_composed;
 } file_server_t;
 
 static void*
@@ -64,8 +80,8 @@ file_server_create (const void* a)
   const file_server_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->file != NULL);
-  assert (arg->msg_sender != NULL);
-  assert (arg->msg_receiver != NULL);
+  assert (arg->msg_sender != -1);
+  assert (arg->msg_receiver != -1);
 
   file_server_t* file_server = malloc (sizeof (file_server_t));
   file_server->file = arg->file;
@@ -122,76 +138,147 @@ file_server_create (const void* a)
 
    */
 
-  file_server->manager = manager_create (&file_server->self);
+  file_server->automan = automan_creat (file_server,
+					&file_server->self);
 
-  manager_child_add (file_server->manager,
-		     &file_server->announcement_alarm,
-		     &alarm_descriptor,
-		     NULL,
-		     NULL,
-		     NULL);
-  manager_composition_add (file_server->manager,
+  assert (automan_create (file_server->automan,
+			  &file_server->announcement_alarm,
+			  &alarm_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->announcement_alarm_in_composed,
 			   &file_server->announcement_alarm,
 			   alarm_alarm_out,
 			   NULL,
 			   &file_server->self,
 			   file_server_announcement_alarm_in,
-			   NULL);
-  manager_composition_add (file_server->manager,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->announcement_alarm_out_composed,
 			   &file_server->self,
 			   file_server_announcement_alarm_out,
 			   NULL,
 			   &file_server->announcement_alarm,
 			   alarm_set_in,
-			   NULL);
-  manager_output_add (file_server->manager,
-		      &file_server->announcement_alarm_composed,
-		      file_server_announcement_alarm_out,
-		      NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
-  manager_child_add (file_server->manager,
-		     &file_server->request_alarm,
-		     &alarm_descriptor,
-		     NULL,
-		     NULL,
-		     NULL);
-  manager_composition_add (file_server->manager,
+  assert (automan_create (file_server->automan,
+			  &file_server->request_alarm,
+			  &alarm_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->request_alarm_in_composed,
 			   &file_server->request_alarm,
 			   alarm_alarm_out,
 			   NULL,
 			   &file_server->self,
 			   file_server_request_alarm_in,
-			   NULL);
-  manager_composition_add (file_server->manager,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->request_alarm_out_composed,
 			   &file_server->self,
 			   file_server_request_alarm_out,
 			   NULL,
 			   &file_server->request_alarm,
 			   alarm_set_in,
-			   NULL);
-  manager_output_add (file_server->manager,
-		      &file_server->request_alarm_composed,
-		      file_server_request_alarm_out,
-		      NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
-  manager_child_add (file_server->manager,
-		     &file_server->fragment_alarm,
-		     &alarm_descriptor,
-		     NULL,
-		     NULL,
-		     NULL);
-  manager_composition_add (file_server->manager, &file_server->fragment_alarm, alarm_alarm_out, NULL, &file_server->self, file_server_fragment_alarm_in, NULL);
-  manager_composition_add (file_server->manager, &file_server->self, file_server_fragment_alarm_out, NULL, &file_server->fragment_alarm, alarm_set_in, NULL);
-  manager_output_add (file_server->manager, &file_server->fragment_alarm_composed, file_server_fragment_alarm_out, NULL);
+  assert (automan_create (file_server->automan,
+			  &file_server->fragment_alarm,
+			  &alarm_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->fragment_alarm_in_composed,
+			   &file_server->fragment_alarm,
+			   alarm_alarm_out,
+			   NULL,
+			   &file_server->self,
+			   file_server_fragment_alarm_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->fragment_alarm_out_composed,
+			   &file_server->self,
+			   file_server_fragment_alarm_out,
+			   NULL,
+			   &file_server->fragment_alarm,
+			   alarm_set_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
-  manager_output_add (file_server->manager, &file_server->download_complete_composed, file_server_download_complete_out, NULL);
+  assert (automan_output_add (file_server->automan,
+			      &file_server->download_complete_composed,
+			      file_server_download_complete_out,
+			      NULL,
+			      NULL,
+			      NULL) == 0);
 
-  manager_proxy_add (file_server->manager, &file_server->msg_sender_proxy, arg->msg_sender, msg_sender_request_proxy, file_server_callback, -1);
-  manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_announcement_out, NULL, &file_server->self, file_server_announcement_in, NULL);
-  manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_request_out, NULL, &file_server->self, file_server_request_in, NULL);
-  manager_composition_add (file_server->manager, arg->msg_receiver, msg_receiver_fragment_out, NULL, &file_server->self, file_server_fragment_in, NULL);
-  manager_composition_add (file_server->manager, &file_server->self, file_server_message_out, NULL, &file_server->msg_sender_proxy, msg_sender_proxy_message_in, NULL);
+  assert (automan_proxy_add (file_server->automan,
+			     &file_server->msg_sender_proxy,
+			     arg->msg_sender,
+			     msg_sender_request_proxy,
+			     -1,
+			     file_server_callback,
+			     NULL,
+			     NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->message_out_composed,
+			   &file_server->self,
+			   file_server_message_out,
+			   NULL,
+			   &file_server->msg_sender_proxy,
+			   msg_sender_proxy_message_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
+  file_server->msg_receiver = arg->msg_receiver;
+  assert (automan_compose (file_server->automan,
+			   &file_server->announcement_in_composed,
+			   &file_server->msg_receiver,
+			   msg_receiver_announcement_out,
+			   NULL,
+			   &file_server->self,
+			   file_server_announcement_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->request_in_composed,
+			   &file_server->msg_receiver,
+			   msg_receiver_request_out,
+			   NULL,
+			   &file_server->self,
+			   file_server_request_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (file_server->automan,
+			   &file_server->fragment_in_composed,
+			   &file_server->msg_receiver,
+			   msg_receiver_fragment_out,
+			   NULL,
+			   &file_server->self,
+			   file_server_fragment_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
   return file_server;
 }
 
@@ -205,7 +292,7 @@ file_server_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (file_server->manager, receipt);
+  automan_apply (file_server->automan, receipt);
 }
 
 static bid_t
@@ -214,7 +301,7 @@ file_server_system_output (void* state, void* param)
   file_server_t* file_server = state;
   assert (file_server != NULL);
 
-  return manager_action (file_server->manager);
+  return automan_action (file_server->automan);
 }
 
 static void
@@ -225,7 +312,7 @@ file_server_callback (void* state, void* param, bid_t bid)
 
   assert (buffer_size (bid) == sizeof (proxy_receipt_t));
   const proxy_receipt_t* receipt = buffer_read_ptr (bid);
-  manager_proxy_receive (file_server->manager, receipt);
+  automan_proxy_receive (file_server->automan, receipt);
 }
 
 static void
@@ -451,12 +538,6 @@ file_server_message_out (void* state, void* param)
   }
 }
 
-void
-file_server_strobe_in (void* state, void* param, bid_t bid)
-{
-  assert (schedule_system_output () == 0);
-}
-
 bid_t
 file_server_download_complete_out (void* state, void* param)
 {
@@ -481,7 +562,6 @@ file_server_download_complete_out (void* state, void* param)
 
 static input_t file_server_free_inputs[] = {
   file_server_callback,
-  file_server_strobe_in,
   NULL
 };
 

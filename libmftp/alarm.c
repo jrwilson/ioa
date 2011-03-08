@@ -7,9 +7,6 @@
 typedef struct {
   bool set;
   bool expired;
-  aid_t self;
-  manager_t* manager;
-  bool composed;
 } alarm_t;
 
 static void*
@@ -19,33 +16,7 @@ alarm_create (const void* arg)
   alarm->set = false;
   alarm->expired = false;
 
-  alarm->manager = manager_create (&alarm->self);
-
-  manager_output_add (alarm->manager, &alarm->composed, alarm_alarm_out, NULL);
-
   return alarm;
-}
-
-static void
-alarm_system_input (void* state, void* param, bid_t bid)
-{
-  assert (state != NULL);
-  alarm_t* alarm = state;
-
-  assert (bid != -1);
-  assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
-
-  manager_apply (alarm->manager, receipt);
-}
-
-static bid_t
-alarm_system_output (void* state, void* param)
-{
-  alarm_t* alarm = state;
-  assert (alarm != NULL);
-
-  return manager_action (alarm->manager);
 }
 
 void
@@ -101,8 +72,6 @@ static output_t alarm_outputs[] = {
 
 descriptor_t alarm_descriptor = {
   .constructor = alarm_create,
-  .system_input = alarm_system_input,
-  .system_output = alarm_system_output,
   .alarm_input = alarm_alarm_input,
   .inputs = alarm_inputs,
   .outputs = alarm_outputs,

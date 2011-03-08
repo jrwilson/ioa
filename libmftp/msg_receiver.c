@@ -1,15 +1,21 @@
 #include <mftp.h>
 
+#include <automan.h>
+
 #include <stdlib.h>
 #include <assert.h>
 
 #include "udp_receiver.h"
 
 typedef struct {
-  manager_t* manager;
-  aid_t self;
   udp_receiver_create_arg_t udp_receiver_create_arg;
+
+  automan_t* automan;
+  aid_t self;
+
   aid_t udp_receiver;
+  bool packet_in_composed;
+
   bidq_t* announcements;
   bidq_t* matches;
   bidq_t* requests;
@@ -26,22 +32,26 @@ msg_receiver_create (const void* a)
 
   msg_receiver_t* msg_receiver = malloc (sizeof (msg_receiver_t));
 
-  msg_receiver->manager = manager_create (&msg_receiver->self);
+  msg_receiver->automan = automan_creat (msg_receiver,
+					 &msg_receiver->self);
 
   msg_receiver->udp_receiver_create_arg.port = arg->port;
-  manager_child_add (msg_receiver->manager,
-		     &msg_receiver->udp_receiver,
-		     &udp_receiver_descriptor,
-		     &msg_receiver->udp_receiver_create_arg,
-		     NULL,
-		     NULL);
-  manager_composition_add (msg_receiver->manager,
+  assert (automan_create (msg_receiver->automan,
+			  &msg_receiver->udp_receiver,
+			  &udp_receiver_descriptor,
+			  &msg_receiver->udp_receiver_create_arg,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (msg_receiver->automan,
+			   &msg_receiver->packet_in_composed,
 			   &msg_receiver->udp_receiver,
 			   udp_receiver_packet_out,
 			   NULL,
 			   &msg_receiver->self,
 			   msg_receiver_packet_in,
-			   NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
   /* Initialize the queue. */
   msg_receiver->announcements = bidq_create ();
@@ -60,7 +70,7 @@ msg_receiver_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (msg_receiver->manager, receipt);
+  automan_apply (msg_receiver->automan, receipt);
 }
 
 static bid_t
@@ -69,7 +79,7 @@ msg_receiver_system_output (void* state, void* param)
   msg_receiver_t* msg_receiver = state;
   assert (msg_receiver != NULL);
 
-  return manager_action (msg_receiver->manager);
+  return automan_action (msg_receiver->automan);
 }
 
 static void

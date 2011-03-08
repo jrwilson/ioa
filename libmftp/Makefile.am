@@ -10,6 +10,7 @@ file_server.c \
 message.c \
 msg_receiver.c \
 msg_sender.c \
+msg_sender_proxy.c \
 udp_receiver.c \
 udp_sender.c
 

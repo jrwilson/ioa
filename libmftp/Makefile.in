@@ -73,7 +73,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libmftp_la_LIBADD =
 am_libmftp_la_OBJECTS = alarm.lo bitset.lo file.lo fileid.lo \
 	file_server.lo message.lo msg_receiver.lo msg_sender.lo \
-	udp_receiver.lo udp_sender.lo
+	msg_sender_proxy.lo udp_receiver.lo udp_sender.lo
 libmftp_la_OBJECTS = $(am_libmftp_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -218,6 +218,7 @@ file_server.c \
 message.c \
 msg_receiver.c \
 msg_sender.c \
+msg_sender_proxy.c \
 udp_receiver.c \
 udp_sender.c
 
@@ -303,6 +304,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg_receiver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg_sender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg_sender_proxy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp_receiver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp_sender.Plo@am__quote@
 

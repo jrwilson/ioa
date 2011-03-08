@@ -110,10 +110,9 @@ typedef struct {
   mftp_File_t* file;
   bool announce;
   bool download;
-  aid_t* msg_sender;
-  aid_t* msg_receiver;
+  aid_t msg_sender;
+  aid_t msg_receiver;
 } file_server_create_arg_t;
-void file_server_strobe_in (void*, void*, bid_t);
 bid_t file_server_download_complete_out (void*, void*);
 
 #endif /* __mftp_h__ */

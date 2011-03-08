@@ -1,4 +1,4 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = libtable libueioa testueioa libautoman testautoman
+SUBDIRS = libtable libueioa testueioa libautoman testautoman libmftp
 
-# libmftp mftp src .
+# mftp src .
