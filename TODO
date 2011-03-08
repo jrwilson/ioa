@@ -5,45 +5,24 @@ table
 
 ueioa
 =====
-* Memory allocation
+* Memory allocation - Modify malloc and friends so we can associate memory with an automaton and free it when the automaton is destroyed.
 * Threading
-
-automanager
-===========
-* Remove hashtable
-
-Add discovery for channels
-Create component containers
-Add discovery to component container
-Check for output-before-composed violations in port_manager, port, and friends.
-
-* Code coverage tests ?
-* Manager
-* Memory management
-
-* Tests to write
-  bid_t buffer_alloc (size_t);
-  void* buffer_write_ptr (bid_t);
-  const void* buffer_read_ptr (bid_t);
-  size_t buffer_size (bid_t);
-  void buffer_incref (bid_t);
-  void buffer_decref (bid_t);
-  void buffer_add_child (bid_t, bid_t);
-  void buffer_remove_child (bid_t, bid_t);
-  bid_t buffer_dup (bid_t);
-* Unit tests
-** automata.c
-** buffers.c
-** descriptor.c
-** order.c
-** receipts.c
-** runq.c
-** table.c
-** ueioa.c
-* Test for memory leaks
-
 
 Probably need to move to separate runqs for each thread.
 Purging the runq should be unnecessary if we check the runnable before executing.
 This is predicated on aid's not be reused too fast.
 As an alternative, one could destroy an automaton by 1) inhibiting the automaton so all existence checks fail, 2) inserting a flush token in all runqs, 3) destroy the automaton when the final flush token has been processed.
+
+* Write unit tests for buffers.  See the tests folder.
+
+automan
+=======
+* Move hashtable to table
+
+* Code coverage tests ?
+* Test for memory leaks
+
+Add discovery for channels
+Create component containers
+Add discovery to component container
+Check for output-before-composed violations in port_manager, port, and friends.
