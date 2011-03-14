@@ -11,8 +11,8 @@ typedef struct {
   input_t request_proxy;
   uuid_t component;
   port_type_descriptor_t* port_type_descriptors;
-  aid_t* msg_sender;
-  aid_t* msg_receiver;
+  aid_t msg_sender;
+  aid_t msg_receiver;
 } component_manager_create_arg_t;
 
 void component_manager_create_arg_init (component_manager_create_arg_t*,
@@ -21,8 +21,8 @@ void component_manager_create_arg_init (component_manager_create_arg_t*,
 					input_t,
 					uuid_t,
 					port_type_descriptor_t*,
-					aid_t*,
-					aid_t*);
+					aid_t,
+					aid_t);
 typedef struct {
   uint32_t port_type;
 } port_request_t;

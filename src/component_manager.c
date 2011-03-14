@@ -10,6 +10,7 @@
 #include <json/json.h>
 #include <string.h>
 #include "mftp.h"
+#include <automan.h>
 
 #define COMPONENT_DESCRIPTION 0
 #define COMPONENT_CHANNEL_SUMMARY 1
@@ -21,15 +22,15 @@ component_manager_create_arg_init (component_manager_create_arg_t* arg,
 				   input_t request_proxy,
 				   uuid_t component,
 				   port_type_descriptor_t* port_type_descriptors,
-				   aid_t* msg_sender,
-				   aid_t* msg_receiver)
+				   aid_t msg_sender,
+				   aid_t msg_receiver)
 {
   assert (arg != NULL);
   assert (component_descriptor != NULL);
   assert (request_proxy != NULL);
   assert (port_type_descriptors != NULL);
-  assert (msg_sender != NULL);
-  assert (msg_receiver != NULL);
+  assert (msg_sender != -1);
+  assert (msg_receiver != -1);
 
   arg->component_descriptor = component_descriptor;
   arg->create_arg = create_arg;
@@ -65,7 +66,7 @@ typedef struct {
   aid_t channel_summary;
   
   port_t* ports;
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
 } component_manager_t;
 
@@ -192,36 +193,20 @@ build_channel_summary_server (component_manager_t* component_manager)
 								     strlen (json_object_to_json_string (channel_summary)) + 1,
 								     COMPONENT_CHANNEL_SUMMARY);
   json_object_put (channel_summary);
-  printf ("%s\n", component_manager->channel_summary_arg.file->data);
-  manager_child_add (component_manager->manager,
-		     &component_manager->channel_summary,
-		     &file_server_descriptor,
-		     &component_manager->channel_summary_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (component_manager->manager,
-			  component_manager->channel_summary_arg.msg_sender,
+  //  printf ("%s\n", component_manager->channel_summary_arg.file->data);
+  assert (automan_create (component_manager->automan,
 			  &component_manager->channel_summary,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
-  manager_dependency_add (component_manager->manager,
-			  component_manager->channel_summary_arg.msg_receiver,
-			  &component_manager->channel_summary,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
+			  &file_server_descriptor,
+			  &component_manager->channel_summary_arg,
+			  NULL,
+			  NULL) == 0);
 }
 
 static void
 destroy_channel_summary_server (component_manager_t* component_manager)
 {
-  manager_dependency_remove (component_manager->manager,
-			     component_manager->channel_summary_arg.msg_receiver,
-			     &component_manager->channel_summary);
-  manager_dependency_remove (component_manager->manager,
-			     component_manager->channel_summary_arg.msg_sender,
-			     &component_manager->channel_summary);
-  manager_child_remove (component_manager->manager,
-			&component_manager->channel_summary);
+  assert (automan_destroy (component_manager->automan,
+			   &component_manager->channel_summary) == 0);
   /* assert (0); */
   /* json_object* channel_summary = encode_channel_summary (component_manager); */
   /* component_manager->channel_summary_arg.file = mftp_File_create_buffer (json_object_to_json_string (channel_summary), */
@@ -255,42 +240,32 @@ component_manager_create (const void* a)
   component_manager->ports = NULL;
 
 
-  component_manager->manager = manager_create (&component_manager->self);
+  component_manager->automan = automan_creat (component_manager, &component_manager->self);
 
-  manager_child_add (component_manager->manager,
-		     &component_manager->component_aid,
-		     arg->component_descriptor,
-		     arg->create_arg,
-		     NULL,
-		     NULL);
+  assert (automan_create (component_manager->automan,
+			  &component_manager->component_aid,
+			  arg->component_descriptor,
+			  arg->create_arg,
+			  NULL,
+			  NULL) == 0);
 
   json_object* description = encode_descriptor (component_manager);
   component_manager->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description),
 								     strlen (json_object_to_json_string (description)) + 1,
 								     COMPONENT_DESCRIPTION);
   json_object_put (description);
-  printf ("%s\n", component_manager->description_arg.file->data);
+  //  printf ("%s\n", component_manager->description_arg.file->data);
   component_manager->description_arg.announce = true;
   component_manager->description_arg.download = false;
   component_manager->description_arg.msg_sender = arg->msg_sender;
   component_manager->description_arg.msg_receiver = arg->msg_receiver;
-  manager_child_add (component_manager->manager,
-		     &component_manager->description,
-		     &file_server_descriptor,
-		     &component_manager->description_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (component_manager->manager,
-			  arg->msg_sender,
+  assert (automan_create (component_manager->automan,
 			  &component_manager->description,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
-  manager_dependency_add (component_manager->manager,
-			  arg->msg_receiver,
-			  &component_manager->description,
-			  file_server_strobe_in,
-			  buffer_alloc (0));
-
+			  &file_server_descriptor,
+			  &component_manager->description_arg,
+			  NULL,
+			  NULL) == 0);
+  
   component_manager->channel_summary_arg.announce = true;
   component_manager->channel_summary_arg.download = false;
   component_manager->channel_summary_arg.msg_sender = arg->msg_sender;
@@ -313,7 +288,7 @@ component_manager_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (component_manager->manager, receipt);
+  automan_apply (component_manager->automan, receipt);
 }
 
 static bid_t
@@ -322,12 +297,13 @@ component_manager_system_output (void* state, void* param)
   assert (state != NULL);
   component_manager_t* component_manager = state;
 
-  return manager_action (component_manager->manager);
+  return automan_action (component_manager->automan);
 }
 
 void
 component_manager_request_port (void* state, void* param, bid_t bid)
 {
+  printf ("%s\n", __func__);
   assert (state != NULL);
   component_manager_t* component_manager = state;
 
@@ -359,7 +335,7 @@ component_manager_request_port (void* state, void* param, bid_t bid)
   uint32_t port_idx = port_allocator_get_free_port (component_manager->port_allocator, request->port_type);
   /* Add a child for the port. */
   port_create_arg_init (&port->port_create_arg,
-			&component_manager->component_aid,
+			component_manager->component_aid,
 			component_manager->request_proxy,
 			component_manager->port_type_descriptors,
 			port_allocator_input_message_count (component_manager->port_allocator, request->port_type),
@@ -369,17 +345,12 @@ component_manager_request_port (void* state, void* param, bid_t bid)
 			port_idx,
 			proxy_request->callback_aid,
 			proxy_request->callback_free_input);
-  manager_child_add (component_manager->manager,
-		     &port->port_aid,
-		     &port_descriptor,
-		     &port->port_create_arg,
-		     NULL,
-		     NULL);
-  manager_dependency_add (component_manager->manager,
-			  &component_manager->component_aid,
+  assert (automan_create (component_manager->automan,
 			  &port->port_aid,
-			  port_strobe_in,
-			  buffer_alloc (0));
+			  &port_descriptor,
+			  &port->port_create_arg,
+			  NULL,
+			  NULL) == 0);
 
   port->next = component_manager->ports;
   component_manager->ports = port;
@@ -387,6 +358,16 @@ component_manager_request_port (void* state, void* param, bid_t bid)
   rebuild_channel_summary_server (component_manager);
   
   assert (schedule_system_output () == 0);
+
+
+  /* if (receipt->type == SELF_CREATED) { */
+  /*   /\* /\\* Callback. *\\/ *\/ */
+  /*   /\* bid_t port_bid = buffer_alloc (sizeof (port_receipt_t)); *\/ */
+  /*   /\* port_receipt_t* port_receipt = buffer_write_ptr (port_bid); *\/ */
+  /*   /\* port_receipt_init (port_receipt, port->port); *\/ */
+  /*   /\* bid_t proxy_bid = proxy_receipt_create (receipt->self_created.self, port_bid); *\/ */
+  /*   /\* assert (schedule_free_input (port->aid, port->free_input, proxy_bid) == 0); *\/ */
+  /* } */
 }
 
 void

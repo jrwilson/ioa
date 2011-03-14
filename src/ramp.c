@@ -5,20 +5,22 @@
 
 #include "component_manager.h"
 #include "ramp_proxy.h"
+#include <automan.h>
 
 static bid_t ramp_integer_out (void*, void*);
 
 typedef struct {
   aid_t aid;
-  aid_t callback_aid;
-  input_t callback_free_input;
+  bool declared;
+  bool composed;
+  proxy_request_t request;
 } ramp_proxy_t;
 
-static void ramp_proxy_created (void*, void*);
+static void ramp_proxy_created (void*, void*, receipt_type_t);
 
 typedef struct {
   int x;
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
 } ramp_t;
 
@@ -31,7 +33,7 @@ ramp_create (const void* arg)
 
   ramp->x = LIMIT - 1;
 
-  ramp->manager = manager_create (&ramp->self);
+  ramp->automan = automan_creat (ramp, &ramp->self);
 
   return ramp;
 }
@@ -46,7 +48,7 @@ ramp_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (ramp->manager, receipt);
+  automan_apply (ramp->automan, receipt);
 
   if (receipt->type == SELF_CREATED) {
     /* Schedule output. */
@@ -60,7 +62,7 @@ ramp_system_output (void* state, void* param)
   ramp_t* ramp = state;
   assert (ramp != NULL);
 
-  return manager_action (ramp->manager);
+  return automan_action (ramp->automan);
 }
 
 bid_t
@@ -92,32 +94,41 @@ ramp_request_proxy (void* state, void* param, bid_t bid)
 
   const proxy_request_t* request = buffer_read_ptr (bid);
   ramp_proxy_t* ramp_proxy = malloc (sizeof (ramp_proxy_t));
-  ramp_proxy->callback_aid = request->callback_aid;
-  ramp_proxy->callback_free_input = request->callback_free_input;
-  manager_param_add (ramp->manager,
-		     ramp_proxy);
-  manager_child_add (ramp->manager,
-		     &ramp_proxy->aid,
-		     &ramp_proxy_descriptor,
-		     NULL,
-		     ramp_proxy_created,
-		     ramp_proxy);
-  manager_composition_add (ramp->manager,
-			   &ramp->self, ramp_integer_out, ramp_proxy,
-			   &ramp_proxy->aid, ramp_proxy_integer_in, NULL);
+  ramp_proxy->request = *request;
+  assert (automan_declare (ramp->automan,
+			   &ramp_proxy->composed,
+			   ramp_proxy,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_create (ramp->automan,
+			  &ramp_proxy->aid,
+			  &ramp_proxy_descriptor,
+			  NULL,
+			  ramp_proxy_created,
+			  ramp_proxy) == 0);
+  assert (automan_compose (ramp->automan,
+			   &ramp_proxy->composed,
+			   &ramp->self,
+			   ramp_integer_out,
+			   ramp_proxy,
+			   &ramp_proxy->aid,
+			   ramp_proxy_integer_in,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
   assert (schedule_system_output () == 0);
 }
 
 static void
-ramp_proxy_created (void* state, void* param)
+ramp_proxy_created (void* state, void* param, receipt_type_t receipt)
 {
   ramp_t* ramp = state;
   assert (ramp != NULL);
   
   ramp_proxy_t* ramp_proxy = param;
   assert (ramp_proxy != NULL);
-  
-  assert (schedule_free_input (ramp_proxy->callback_aid, ramp_proxy->callback_free_input, proxy_receipt_create (ramp_proxy->aid, -1)) == 0);
+
+  assert (automan_proxy_send (ramp_proxy->aid, -1, &ramp_proxy->request) == 0);
 }
 
 static input_t ramp_free_inputs[] = {
@@ -130,16 +141,10 @@ static output_t ramp_outputs[] = {
   NULL
 };
 
-static internal_t ramp_internals[] = {
-  ramp_proxy_created,
-  NULL
-};
-
 descriptor_t ramp_descriptor = {
   .constructor = ramp_create,
   .system_input = ramp_system_input,
   .system_output = ramp_system_output,
   .free_inputs = ramp_free_inputs,
   .outputs = ramp_outputs,
-  .internals = ramp_internals,
 };

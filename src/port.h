@@ -5,7 +5,7 @@
 #include "component_manager.h"
 
 typedef struct port_create_arg_struct {
-  aid_t* component_aid;
+  aid_t component_aid;
   input_t request_proxy;
   port_type_descriptor_t* port_type_descriptors;
   uint32_t input_count;
@@ -18,7 +18,7 @@ typedef struct port_create_arg_struct {
 } port_create_arg_t;
 
 void port_create_arg_init (port_create_arg_t*,
-			   aid_t* component_aid,
+			   aid_t component_aid,
 			   input_t request_proxy,
 			   port_type_descriptor_t* port_type_descriptors,
 			   uint32_t input_count,

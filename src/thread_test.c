@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <ueioa.h>
+#include <automan.h>
 
 typedef struct {
   int count;
@@ -141,11 +142,14 @@ descriptor_t receiver_descriptor = {
 
 typedef struct {
   aid_t self;
-  manager_t* manager;
+  automan_t* automan;
 
   aid_t counter1;
   aid_t counter2;
   aid_t receiver;
+
+  bool counter1_composed;
+  bool counter2_composed;
 } composer_t;
 
 static void*
@@ -153,12 +157,46 @@ composer_create (const void* arg)
 {
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create (&composer->self);
-  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL, NULL, NULL);
-  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL, NULL, NULL);
-  manager_child_add (composer->manager, &composer->receiver, &receiver_descriptor, NULL, NULL, NULL);
-  manager_composition_add (composer->manager, &composer->counter1, counter_output, NULL, &composer->receiver, receiver_input1, NULL);
-  manager_composition_add (composer->manager, &composer->counter2, counter_output, NULL, &composer->receiver, receiver_input2, NULL);
+  composer->automan = automan_creat (composer,
+				     &composer->self);
+  assert (automan_create (composer->automan,
+			  &composer->counter1,
+			  &counter_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_create (composer->automan,
+			  &composer->counter2,
+			  &counter_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_create (composer->automan,
+			  &composer->receiver,
+			  &receiver_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (composer->automan,
+			   &composer->counter1_composed,
+			   &composer->counter1,
+			   counter_output,
+			   NULL,
+			   &composer->receiver,
+			   receiver_input1,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (composer->automan,
+			   &composer->counter2_composed,
+			   &composer->counter2,
+			   counter_output,
+			   NULL,
+			   &composer->receiver,
+			   receiver_input2,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
   return composer;
 }
@@ -175,7 +213,7 @@ composer_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (composer->manager, receipt);
+  automan_apply (composer->automan, receipt);
 }
 
 static bid_t
@@ -184,7 +222,7 @@ composer_system_output (void* state, void* param)
   assert (state != NULL);
   composer_t* composer = state;
 
-  return manager_action (composer->manager);
+  return automan_action (composer->automan);
 }
 
 static input_t composer_inputs[] = { NULL };

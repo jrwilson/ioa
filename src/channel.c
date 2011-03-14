@@ -8,13 +8,14 @@
 #include "component_manager.h"
 #include "port.h"
 #include "message.h"
+#include <automan.h>
 
 void
 channel_create_arg_init (channel_create_arg_t* arg,
-			 aid_t* a_component_manager,
+			 aid_t a_component_manager,
 			 uuid_t a_component,
 			 uint32_t a_port_type,
-			 aid_t* b_component_manager,
+			 aid_t b_component_manager,
 			 uuid_t b_component,
 			 uint32_t b_port_type,
 			 uint32_t a_to_b_map_size,
@@ -24,8 +25,8 @@ channel_create_arg_init (channel_create_arg_t* arg,
 
 {
   assert (arg != NULL);
-  assert (a_component_manager != NULL);
-  assert (b_component_manager != NULL);
+  assert (a_component_manager != -1);
+  assert (b_component_manager != -1);
   assert (a_to_b_map != NULL);
   assert (b_to_a_map != NULL);
   assert (a_component != b_component);
@@ -52,13 +53,13 @@ typedef struct channel_struct {
   bidq_t* a_to_b;
   bidq_t* b_to_a;
 
-  aid_t* a_component_manager;
+  aid_t a_component_manager;
   uuid_t a_component;
   uint32_t a_port_type;
   uint32_t a_port;
   aid_t a_port_aid;
 
-  aid_t* b_component_manager;
+  aid_t b_component_manager;
   uuid_t b_component;
   uint32_t b_port_type;
   uint32_t b_port;
@@ -70,7 +71,12 @@ typedef struct channel_struct {
   uint32_t b_to_a_map_size;
   uint32_t* b_to_a_map;
 
-  manager_t* manager;
+  bool a_in_composed;
+  bool a_out_composed;
+  bool b_in_composed;
+  bool b_out_composed;
+
+  automan_t* automan;
   aid_t self;
 } channel_t;
 
@@ -101,7 +107,7 @@ channel_create (const void* a)
   channel->b_to_a_map = malloc (sizeof (uint32_t) * channel->b_to_a_map_size);
   memcpy (channel->b_to_a_map, arg->b_to_a_map, sizeof (uint32_t) * channel->b_to_a_map_size);
 
-  channel->manager = manager_create (&channel->self);
+  channel->automan = automan_creat (channel, &channel->self);
 
   bid_t b;
   port_request_t* port_request;
@@ -110,55 +116,71 @@ channel_create (const void* a)
   port_request = buffer_write_ptr (b);
   port_request_init (port_request,
 		     channel->a_port_type);
-  manager_proxy_add (channel->manager,
-		     &channel->a_port_aid,
-		     channel->a_component_manager,
-		     component_manager_request_port,
-		     channel_a_callback,
-		     b);
+  assert (automan_proxy_add (channel->automan,
+			     &channel->a_port_aid,
+			     channel->a_component_manager,
+			     component_manager_request_port,
+			     b,
+			     channel_a_callback,
+			     NULL,
+			     NULL) == 0);
   
   b = buffer_alloc (sizeof (port_request_t));
   port_request = buffer_write_ptr (b);
   port_request_init (port_request,
 		     channel->b_port_type);
-  manager_proxy_add (channel->manager,
-		     &channel->b_port_aid,
-		     channel->b_component_manager,
-		     component_manager_request_port,
-		     channel_b_callback,
-		     b);
+  assert (automan_proxy_add (channel->automan,
+			     &channel->b_port_aid,
+			     channel->b_component_manager,
+			     component_manager_request_port,
+			     b,
+			     channel_b_callback,
+			     NULL,
+			     NULL) == 0);
   
-  manager_composition_add (channel->manager,
+  assert (automan_compose (channel->automan,
+			   &channel->a_in_composed,
 			   &channel->a_port_aid,
 			   port_out,
 			   NULL,
 			   &channel->self,
 			   channel_a_in,
-			   NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
   
-  manager_composition_add (channel->manager,
+  assert (automan_compose (channel->automan,
+			   &channel->a_out_composed,
 			   &channel->self,
 			   channel_a_out,
 			   NULL,
 			   &channel->a_port_aid,
 			   port_in,
-			   NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
   
-  manager_composition_add (channel->manager,
+  assert (automan_compose (channel->automan,
+			   &channel->b_in_composed,
 			   &channel->b_port_aid,
 			   port_out,
 			   NULL,
 			   &channel->self,
 			   channel_b_in,
-			   NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
   
-  manager_composition_add (channel->manager,
+  assert (automan_compose (channel->automan,
+			   &channel->b_out_composed,
 			   &channel->self,
 			   channel_b_out,
 			   NULL,
 			   &channel->b_port_aid,
 			   port_in,
-			   NULL);
+			   NULL,
+			   NULL,
+			   NULL) == 0);
   
   return channel;
 }
@@ -166,6 +188,7 @@ channel_create (const void* a)
 static void
 channel_a_callback (void* state, void* param, bid_t bid)
 {
+  printf ("%s\n", __func__);
   channel_t* channel = state;
   assert (channel != NULL);
 
@@ -175,13 +198,14 @@ channel_a_callback (void* state, void* param, bid_t bid)
   assert (buffer_size (proxy_receipt->bid) == sizeof (port_receipt_t));
   const port_receipt_t* port_receipt = buffer_read_ptr (proxy_receipt->bid);
   buffer_decref (bid);
-  manager_proxy_receive (channel->manager, proxy_receipt);
+  automan_proxy_receive (channel->automan, proxy_receipt);
   channel->a_port = port_receipt->port;
 }
 
 static void
 channel_b_callback (void* state, void* param, bid_t bid)
 {
+  printf ("%s\n", __func__);
   channel_t* channel = state;
   assert (channel != NULL);
 
@@ -191,14 +215,8 @@ channel_b_callback (void* state, void* param, bid_t bid)
   assert (buffer_size (proxy_receipt->bid) == sizeof (port_receipt_t));
   const port_receipt_t* port_receipt = buffer_read_ptr (proxy_receipt->bid);
   buffer_decref (bid);
-  manager_proxy_receive (channel->manager, proxy_receipt);
+  automan_proxy_receive (channel->automan, proxy_receipt);
   channel->b_port = port_receipt->port;
-}
-
-void
-channel_strobe (void* state, void* param, bid_t bid)
-{
-  assert (schedule_system_output () == 0);
 }
 
 static void
@@ -211,7 +229,7 @@ channel_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (channel->manager, receipt);
+  automan_apply (channel->automan, receipt);
 }
 
 static bid_t
@@ -220,7 +238,7 @@ channel_system_output (void* state, void* param)
   channel_t* channel = state;
   assert (channel != NULL);
 
-  return manager_action (channel->manager);
+  return automan_action (channel->automan);
 }
 
 void
@@ -311,7 +329,6 @@ channel_b_out (void* state, void* param)
 static input_t channel_free_inputs[] = {
   channel_a_callback,
   channel_b_callback,
-  channel_strobe,
   NULL
 };
 

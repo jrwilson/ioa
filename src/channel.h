@@ -6,11 +6,11 @@
 #include <stdint.h>
 
 typedef struct channel_create_arg_struct {
-  aid_t* a_component_manager;
+  aid_t a_component_manager;
   uuid_t a_component;
   uint32_t a_port_type;
 
-  aid_t* b_component_manager;
+  aid_t b_component_manager;
   uuid_t b_component;
   uint32_t b_port_type;
 
@@ -22,18 +22,16 @@ typedef struct channel_create_arg_struct {
 } channel_create_arg_t;
 
 void channel_create_arg_init (channel_create_arg_t*,
-			      aid_t* a_component_manager,
+			      aid_t a_component_manager,
 			      uuid_t a_component,
 			      uint32_t a_port_type,
-			      aid_t* b_component_manager,
+			      aid_t b_component_manager,
 			      uuid_t b_component,
 			      uint32_t b_port_type,
 			      uint32_t,
 			      uint32_t*,
 			      uint32_t,
 			      uint32_t*);
-
-void channel_strobe (void*, void*, bid_t);
 
 void channel_a_in (void*, void*, bid_t);
 bid_t channel_a_out (void*, void*);

@@ -9,14 +9,21 @@
 #include "trigger.h"
 #include "counter.h"
 
+#include <automan.h>
+
 typedef struct {
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
   aid_t parent;
 
   aid_t trigger;
   aid_t counter1;
   aid_t counter2;
+
+  bool counter1_input_composed;
+  bool counter1_output_composed;
+  bool counter2_input_composed;
+  bool counter2_output_composed;
 } composer_t;
 
 static void*
@@ -25,14 +32,66 @@ composer_create (const void* arg)
   printf ("composer_create\n");
   composer_t* composer = malloc (sizeof (composer_t));
 
-  composer->manager = manager_create (&composer->self);
-  manager_child_add (composer->manager, &composer->trigger, &trigger_descriptor, NULL, NULL, NULL);
-  manager_child_add (composer->manager, &composer->counter1, &counter_descriptor, NULL, NULL, NULL);
-  manager_child_add (composer->manager, &composer->counter2, &counter_descriptor, NULL, NULL, NULL);
-  manager_composition_add (composer->manager, &composer->trigger, trigger_output, NULL, &composer->counter1, counter_input, NULL);
-  manager_composition_add (composer->manager, &composer->counter1, counter_output, NULL, &composer->self, composer_input1, NULL);
-  manager_composition_add (composer->manager, &composer->trigger, trigger_output, NULL, &composer->counter2, counter_input, NULL);
-  manager_composition_add (composer->manager, &composer->counter2, counter_output, NULL, &composer->self, composer_input2, NULL);
+  composer->automan = automan_creat (composer,
+				     &composer->self);
+  assert (automan_create (composer->automan,
+			  &composer->trigger,
+			  &trigger_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_create (composer->automan,
+			  &composer->counter1,
+			  &counter_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_create (composer->automan,
+			  &composer->counter2,
+			  &counter_descriptor,
+			  NULL,
+			  NULL,
+			  NULL) == 0);
+  assert (automan_compose (composer->automan,
+			   &composer->counter1_input_composed,
+			   &composer->trigger,
+			   trigger_output,
+			   NULL,
+			   &composer->counter1,
+			   counter_input,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (composer->automan,
+			   &composer->counter1_output_composed,
+			   &composer->counter1,
+			   counter_output,
+			   NULL,
+			   &composer->self,
+			   composer_input1,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (composer->automan,
+			   &composer->counter2_input_composed,
+			   &composer->trigger,
+			   trigger_output,
+			   NULL,
+			   &composer->counter2,
+			   counter_input,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
+  assert (automan_compose (composer->automan,
+			   &composer->counter2_output_composed,
+			   &composer->counter2,
+			   counter_output,
+			   NULL,
+			   &composer->self,
+			   composer_input2,
+			   NULL,
+			   NULL,
+			   NULL) == 0);
 
   return composer;
 }
@@ -50,7 +109,7 @@ composer_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (composer->manager, receipt);
+  automan_apply (composer->automan, receipt);
 }
 
 static bid_t
@@ -60,7 +119,7 @@ composer_system_output (void* state, void* param)
   assert (state != NULL);
   composer_t* composer = state;
 
-  return manager_action (composer->manager);
+  return automan_action (composer->automan);
 }
 
 void

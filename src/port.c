@@ -5,20 +5,25 @@
 
 #include "component_manager.h"
 #include "message.h"
+#include <automan.h>
 
 typedef struct port_to_component_struct port_to_component_t;
 struct port_to_component_struct {
+  bool declared;
+  bool composed;
   uint32_t message;
   port_to_component_t* next;
 };
 
 typedef struct {
+  bool declared;
+  bool composed;
   uint32_t message;
 } component_to_port_t;
 
 void
 port_create_arg_init (port_create_arg_t* arg,
-		      aid_t* component_aid,
+		      aid_t component_aid,
 		      input_t request_proxy,
 		      port_type_descriptor_t* port_type_descriptors,
 		      uint32_t input_count,
@@ -30,7 +35,7 @@ port_create_arg_init (port_create_arg_t* arg,
 		      input_t free_input)
 {
   assert (arg != NULL);
-  assert (component_aid != NULL);
+  assert (component_aid != -1);
   assert (request_proxy != NULL);
   assert (port_type_descriptors != NULL);
   assert (aid != -1);
@@ -53,7 +58,7 @@ static void port_component_in (void* state, void* param, bid_t bid);
 static bid_t port_component_out (void* state, void* param);
 
 typedef struct port_struct {
-  aid_t* component_aid;
+  aid_t component_aid;
   input_t request_proxy;
   port_type_descriptor_t* port_type_descriptors;
   uuid_t component;
@@ -66,7 +71,7 @@ typedef struct port_struct {
   bidq_t* outq;
   bidq_t* inq;
   port_to_component_t* port_to_components;
-  manager_t* manager;
+  automan_t* automan;
   aid_t self;
   aid_t component_proxy;
 } port_t;
@@ -94,10 +99,17 @@ port_create (const void* a)
   port->outq = bidq_create ();
   port->inq = bidq_create ();
   port->port_to_components = NULL;
-  port->manager = manager_create (&port->self);
+  port->automan = automan_creat (port, &port->self);
 
   /* Add a proxy for the component. */
-  manager_proxy_add (port->manager, &port->component_proxy, port->component_aid, port->request_proxy, port_callback, -1);
+  assert (automan_proxy_add (port->automan,
+			     &port->component_proxy,
+			     port->component_aid,
+			     port->request_proxy,
+			     -1,
+			     port_callback,
+			     NULL,
+			     NULL) == 0);
   
   /* Hook up component to port actions. */
   uint32_t input_idx;
@@ -106,14 +118,21 @@ port_create (const void* a)
        ++input_idx) {
     port_to_component_t* port_to_component = malloc (sizeof (port_to_component_t));
     port_to_component->message = input_idx;
-    manager_param_add (port->manager, port_to_component);
-    manager_composition_add (port->manager,
+    assert (automan_declare (port->automan, 
+			     &port_to_component->declared,
+			     port_to_component,
+			     NULL,
+			     NULL) == 0);
+    assert (automan_compose (port->automan,
+			     &port_to_component->composed,
 			     &port->self,
 			     port_component_out,
 			     port_to_component,
 			     &port->component_proxy,
 			     port->port_type_descriptors[port->port_type].input_messages[input_idx].input,
-			     NULL);
+			     NULL,
+			     NULL,
+			     NULL) == 0);
     port_to_component->next = port->port_to_components;
     port->port_to_components = port_to_component;
   }
@@ -125,14 +144,21 @@ port_create (const void* a)
        ++output_idx) {
     component_to_port_t* component_to_port = malloc (sizeof (component_to_port_t));
     component_to_port->message = output_idx;
-    manager_param_add (port->manager, component_to_port);
-    manager_composition_add (port->manager,
+    assert (automan_declare (port->automan,
+			     &component_to_port->declared,
+			     component_to_port,
+			     NULL,
+			     NULL) == 0);
+    assert (automan_compose (port->automan,
+			     &component_to_port->composed,
 			     &port->component_proxy,
 			     port->port_type_descriptors[port->port_type].output_messages[output_idx].output,
 			     NULL,
 			     &port->self,
 			     port_component_in,
-			     component_to_port);
+			     component_to_port,
+			     NULL,
+			     NULL) == 0);
   }
   
   return port;
@@ -146,7 +172,7 @@ port_callback (void* state, void* param, bid_t bid)
 
   assert (buffer_size (bid) == sizeof (proxy_receipt_t));
   const proxy_receipt_t* receipt = buffer_read_ptr (bid);
-  manager_proxy_receive (port->manager, receipt);
+  automan_proxy_receive (port->automan, receipt);
 }
 
 static void
@@ -158,16 +184,7 @@ port_system_input (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (receipt_t));
   const receipt_t* receipt = buffer_read_ptr (bid);
 
-  manager_apply (port->manager, receipt);
-
-  if (receipt->type == SELF_CREATED) {
-    /* Callback. */
-    bid_t port_bid = buffer_alloc (sizeof (port_receipt_t));
-    port_receipt_t* port_receipt = buffer_write_ptr (port_bid);
-    port_receipt_init (port_receipt, port->port);
-    bid_t proxy_bid = proxy_receipt_create (receipt->self_created.self, port_bid);
-    assert (schedule_free_input (port->aid, port->free_input, proxy_bid) == 0);
-  }
+  automan_apply (port->automan, receipt);
 }
 
 static bid_t
@@ -176,7 +193,7 @@ port_system_output (void* state, void* param)
   port_t* port = state;
   assert (port != NULL);
 
-  return manager_action (port->manager);
+  return automan_action (port->automan);
 }
 
 void
