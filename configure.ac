@@ -53,6 +53,8 @@ AC_CONFIG_FILES([Makefile
 		 libautoman/Makefile
 		 testautoman/Makefile
 		 libmftp/Makefile
+		 libccm/Makefile
+		 testccm/Makefile
 		 mftp/Makefile
                  src/Makefile])
 AC_OUTPUT

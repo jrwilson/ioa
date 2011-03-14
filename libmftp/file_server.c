@@ -34,8 +34,8 @@ static void file_server_download_complete_composed (void*, void*, receipt_type_t
 
 /* In seconds. */
 #define INIT_ANNOUNCE_INTERVAL 1
-#define MAX_ANNOUNCE_INTERVAL 16 /*4096*/
-#define REQUEST_INTERVAL 2
+#define MAX_ANNOUNCE_INTERVAL 8 /*4096*/
+#define REQUEST_INTERVAL 1
 
 /* In microseconds. */
 #define FRAGMENT_INTERVAL 1000
@@ -501,7 +501,7 @@ file_server_announcement_in (void* state, void* param, bid_t bid)
 
   if (mftp_FileID_cmp (&file_server->file->fileid, &message->announcement.fileid) == 0) {
     /* The announcement is for our file.
-       It could have come for us or someone else, it doesn't matter.
+       It could have come from us or someone else, it doesn't matter.
        Set the next announce time and double the interval to achieve exponential backoff. */
     file_server->next_announce += file_server->announcement_interval;
     file_server->announcement_interval *= 2;

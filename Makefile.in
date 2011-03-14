@@ -220,7 +220,14 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = libtable libueioa testueioa libautoman testautoman libmftp mftp src .
+SUBDIRS = \
+libtable \
+libueioa testueioa \
+libautoman testautoman \
+libmftp \
+libccm testccm \
+mftp src .
+
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

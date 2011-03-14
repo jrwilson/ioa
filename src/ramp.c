@@ -6,6 +6,7 @@
 #include "component_manager.h"
 #include "ramp_proxy.h"
 #include <automan.h>
+#include <arpa/inet.h>
 
 static bid_t ramp_integer_out (void*, void*);
 
