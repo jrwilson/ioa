@@ -23,26 +23,26 @@ void
 port_create_arg_init (port_create_arg_t* arg,
 		      aid_t component_aid,
 		      input_t request_proxy,
-		      const port_type_descriptor_t* port_type_descriptors,
+		      const port_descriptor_t* port_descriptors,
 		      uint32_t input_count,
 		      uint32_t output_count,
 		      uuid_t component,
-		      uint32_t port_type,
-		      uint32_t port)
+		      uint32_t port,
+		      uint32_t instance)
 {
   assert (arg != NULL);
   assert (component_aid != -1);
   assert (request_proxy != NULL);
-  assert (port_type_descriptors != NULL);
+  assert (port_descriptors != NULL);
 
   arg->component_aid = component_aid;
   arg->request_proxy = request_proxy;
-  arg->port_type_descriptors = port_type_descriptors;
+  arg->port_descriptors = port_descriptors;
   arg->input_count = input_count;
   arg->output_count = output_count;
   uuid_copy (arg->component, component);
-  arg->port_type = port_type;
   arg->port = port;
+  arg->instance = instance;
 }
 
 static void port_callback (void* state, void* param, bid_t bid);
@@ -53,10 +53,10 @@ static void port_demux (void* state, void* param);
 typedef struct port_struct {
   aid_t component_aid;
   input_t request_proxy;
-  const port_type_descriptor_t* port_type_descriptors;
+  const port_descriptor_t* port_descriptors;
   uuid_t component;
-  uint32_t port_type;
   uint32_t port;
+  uint32_t instance;
   uint32_t input_count;
   uint32_t output_count;
   bidq_t* outq;
@@ -120,10 +120,10 @@ port_create (const void* a)
 
   port->component_aid = arg->component_aid;
   port->request_proxy = arg->request_proxy;
-  port->port_type_descriptors = arg->port_type_descriptors;
+  port->port_descriptors = arg->port_descriptors;
   uuid_copy (port->component, arg->component);
-  port->port_type = arg->port_type;
   port->port = arg->port;
+  port->instance = arg->instance;
   port->input_count = arg->input_count;
   port->output_count = arg->output_count;
   port->outq = bidq_create ();
@@ -159,7 +159,7 @@ port_create (const void* a)
 			     port_component_out,
 			     port_to_component,
 			     &port->component_proxy,
-			     port->port_type_descriptors[port->port_type].input_messages[input_idx].input,
+			     port->port_descriptors[port->port].input_message_descriptors[input_idx].input,
 			     NULL,
 			     port_port_to_component_composed,
 			     port_to_component) == 0);
@@ -182,7 +182,7 @@ port_create (const void* a)
     assert (automan_compose (port->automan,
 			     &component_to_port->composed,
 			     &port->component_proxy,
-			     port->port_type_descriptors[port->port_type].output_messages[output_idx].output,
+			     port->port_descriptors[port->port].output_message_descriptors[output_idx].output,
 			     NULL,
 			     &port->self,
 			     port_component_in,
@@ -237,8 +237,8 @@ port_component_in (void* state, void* param, bid_t bid)
   bid_t b = buffer_alloc (sizeof (message_t));
   message_t* m = buffer_write_ptr (b);
   uuid_copy (m->src_component, port->component);
-  m->src_port_type = port->port_type;
   m->src_port = port->port;
+  m->src_instance = port->instance;
   m->src_message = component_to_port->message;
   buffer_add_child (b, bid);
   m->bid = bid;
@@ -301,8 +301,8 @@ port_in (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (message_t));
   const message_t* m = buffer_read_ptr (bid);
   assert (uuid_compare (m->dst_component, port->component) == 0);
-  assert (m->dst_port_type == port->port_type);
   assert (m->dst_port == port->port);
+  assert (m->dst_instance == port->instance);
   assert (m->dst_message < port->input_count);
 
   buffer_incref (bid);

@@ -99,7 +99,7 @@ integer_reflector_descriptor = {
   .free_inputs = integer_reflector_free_inputs,
 };
 
-static input_message_t integer_reflector_inputs[] = {
+static input_message_descriptor_t integer_reflector_inputs[] = {
   {
     "integer_in", "integer", integer_reflector_proxy_integer_in
   },
@@ -108,7 +108,7 @@ static input_message_t integer_reflector_inputs[] = {
   }
 };
 
-static output_message_t integer_reflector_outputs[] = {
+static output_message_descriptor_t integer_reflector_outputs[] = {
   {
     "integer_out", "integer", integer_reflector_proxy_integer_out
   },
@@ -117,12 +117,12 @@ static output_message_t integer_reflector_outputs[] = {
   }
 };
 
-const port_type_descriptor_t
-integer_reflector_port_type_descriptors[] = {
+const port_descriptor_t
+integer_reflector_port_descriptors[] = {
   {
     .cardinality = 0,
-    .input_messages = integer_reflector_inputs,
-    .output_messages = integer_reflector_outputs,
+    .input_message_descriptors = integer_reflector_inputs,
+    .output_message_descriptors = integer_reflector_outputs,
   },
   {
     0, NULL, NULL

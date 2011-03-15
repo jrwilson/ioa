@@ -34,14 +34,14 @@ component_create_arg_init (component_create_arg_t* arg,
 			   const void* create_arg,
 			   input_t request_proxy,
 			   const uuid_t id,
-			   const port_type_descriptor_t* port_type_descriptors,
+			   const port_descriptor_t* port_descriptors,
 			   aid_t msg_sender,
 			   aid_t msg_receiver)
 {
   assert (arg != NULL);
   assert (descriptor != NULL);
   assert (request_proxy != NULL);
-  assert (port_type_descriptors != NULL);
+  assert (port_descriptors != NULL);
   assert (msg_sender != -1);
   assert (msg_receiver != -1);
 
@@ -49,7 +49,7 @@ component_create_arg_init (component_create_arg_t* arg,
   arg->create_arg = create_arg;
   arg->request_proxy = request_proxy;
   uuid_copy (arg->id, id);
-  arg->port_type_descriptors = port_type_descriptors;
+  arg->port_descriptors = port_descriptors;
   arg->msg_sender = msg_sender;
   arg->msg_receiver = msg_receiver;
 }
@@ -77,7 +77,7 @@ typedef struct {
 
   aid_t automaton;
   input_t request_proxy;
-  const port_type_descriptor_t* port_type_descriptors;
+  const port_descriptor_t* port_descriptors;
   uuid_t id;
   port_t* ports;
   bidq_t* port_requestq;
@@ -129,14 +129,14 @@ component_create (const void* a)
   const component_create_arg_t* arg = a;
   assert (arg != NULL);
   assert (arg->descriptor != NULL);
-  assert (arg->port_type_descriptors != NULL);
+  assert (arg->port_descriptors != NULL);
 
   component_t* component = malloc (sizeof (component_t));
 
   component->automan = automan_creat (component,
 				      &component->self);
 
-  component->port_allocator = port_allocator_create (arg->port_type_descriptors);
+  component->port_allocator = port_allocator_create (arg->port_descriptors);
 
   assert (automan_create (component->automan,
   			  &component->automaton,
@@ -147,7 +147,7 @@ component_create (const void* a)
 
   component->request_proxy = arg->request_proxy;
 
-  component->port_type_descriptors = arg->port_type_descriptors;
+  component->port_descriptors = arg->port_descriptors;
 
   uuid_copy (component->id, arg->id);
 
@@ -261,7 +261,7 @@ component_process_port_requests (void* state,
     port_create_arg_init (&port->create_arg,
 			  component->automaton,
 			  component->request_proxy,
-			  component->port_type_descriptors,
+			  component->port_descriptors,
 			  port_allocator_input_message_count (component->port_allocator, request->port_type),
 			  port_allocator_output_message_count (component->port_allocator, request->port_type),
 			  component->id,

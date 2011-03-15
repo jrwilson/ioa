@@ -113,7 +113,7 @@ composer_sender_receiver_created (void* state,
 			       NULL,
 			       integer_reflector_request_proxy,
 			       composer->id,
-			       integer_reflector_port_type_descriptors,
+			       integer_reflector_port_descriptors,
 			       composer->msg_sender,
 			       composer->msg_receiver);
     
@@ -207,8 +207,8 @@ composer_out (void* state,
   message_t* m = buffer_write_ptr (mbid);
 
   uuid_copy (m->dst_component, composer->id);
-  m->dst_port_type = 0;
   m->dst_port = 0;
+  m->dst_instance = 0;
   m->dst_message = 0;
 
   m->bid = ibid;

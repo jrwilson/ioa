@@ -18,13 +18,13 @@ struct port_allocator_struct {
 };
 
 port_allocator_t*
-port_allocator_create (const port_type_descriptor_t* port_descriptors)
+port_allocator_create (const port_descriptor_t* port_descriptors)
 {
   assert (port_descriptors != NULL);
 
   uint32_t port_type_count;
   for (port_type_count = 0;
-       port_descriptors[port_type_count].input_messages != NULL;
+       port_descriptors[port_type_count].input_message_descriptors != NULL;
        ++port_type_count)
     ;;
   assert (port_type_count > 0);
@@ -49,14 +49,14 @@ port_allocator_create (const port_type_descriptor_t* port_descriptors)
 
     uint32_t input_message_count = 0;
     for (input_message_count = 0;
-	 port_descriptors[idx].input_messages[input_message_count].input != NULL;
+	 port_descriptors[idx].input_message_descriptors[input_message_count].input != NULL;
 	 ++input_message_count)
       ;;
     port_allocator->port_sets[idx].input_message_count = input_message_count;
 
     uint32_t output_message_count = 0;
     for (output_message_count = 0;
-	 port_descriptors[idx].output_messages[output_message_count].output != NULL;
+	 port_descriptors[idx].output_message_descriptors[output_message_count].output != NULL;
 	 ++output_message_count)
       ;;
     port_allocator->port_sets[idx].output_message_count = output_message_count;

@@ -9,26 +9,26 @@ typedef struct {
   char* name;
   char* type;
   input_t input;
-} input_message_t;
+} input_message_descriptor_t;
 
 typedef struct {
   char* name;
   char* type;
   output_t output;
-} output_message_t;
+} output_message_descriptor_t;
 
 typedef struct {
   uint32_t cardinality; /* 0 means infinity. */
-  input_message_t* input_messages; /* NULL terminated array of input messages. */
-  output_message_t* output_messages; /* NULL terminated array of output messages. */
-} port_type_descriptor_t;
+  input_message_descriptor_t* input_message_descriptors; /* NULL terminated array of input messages. */
+  output_message_descriptor_t* output_message_descriptors; /* NULL terminated array of output messages. */
+} port_descriptor_t;
 
 typedef struct {
   const descriptor_t* descriptor;
   const void* create_arg;
   input_t request_proxy;
   uuid_t id;
-  const port_type_descriptor_t* port_type_descriptors;
+  const port_descriptor_t* port_descriptors;
   aid_t msg_sender;
   aid_t msg_receiver;
 } component_create_arg_t;
@@ -39,7 +39,7 @@ component_create_arg_init (component_create_arg_t*,
 			   const void* create_arg,
 			   input_t request_proxy,
 			   const uuid_t id,
-			   const port_type_descriptor_t* port_type_descriptors,
+			   const port_descriptor_t* port_descriptors,
 			   aid_t msg_sender,
 			   aid_t msg_receiver);
 
@@ -68,13 +68,13 @@ port_out (void*,
 
 typedef struct message_struct {
   uuid_t src_component;
-  uint32_t src_port_type;
   uint32_t src_port;
+  uint32_t src_instance;
   uint32_t src_message;
 
   uuid_t dst_component;
-  uint32_t dst_port_type;
   uint32_t dst_port;
+  uint32_t dst_instance;
   uint32_t dst_message;
 
   bid_t bid;
