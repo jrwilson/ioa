@@ -16,7 +16,7 @@ display_LDFLAGS = -lX11 -lpthread -ljpeg
 
 ramp_SOURCES = ramp_driver.c ramp.c integer_display.c ramp_proxy.c integer_display_proxy.c component_manager.c bitset.c port_allocator.c port.c channel.c
 ramp_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libmftp/libmftp.la $(top_builddir)/libautoman/libautoman.la
-ramp_LDFLAGS = -lpthread -ljson -lcrypto -luuid
+ramp_LDFLAGS = -lpthread -ljson -lcrypto
 
 if WANT_CAMERA
 	bin_PROGRAMS += camera camera_display

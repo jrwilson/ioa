@@ -54,40 +54,20 @@ PROGRAMS = $(bin_PROGRAMS)
 am_get_OBJECTS = get.$(OBJEXT) matcher.$(OBJEXT) \
 	match_getter.$(OBJEXT)
 get_OBJECTS = $(am_get_OBJECTS)
-get_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la \
-	$(top_builddir)/libmftp/libmftp.la
-get_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(get_LDFLAGS) \
-	$(LDFLAGS) -o $@
+get_LDADD = $(LDADD)
+get_DEPENDENCIES = $(top_builddir)/libmftp/libmftp.la
 am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) consumer.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
-main_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la \
-	$(top_builddir)/libmftp/libmftp.la
-main_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(main_LDFLAGS) \
-	$(LDFLAGS) -o $@
+main_LDADD = $(LDADD)
+main_DEPENDENCIES = $(top_builddir)/libmftp/libmftp.la
 am_match_OBJECTS = match.$(OBJEXT) matcher.$(OBJEXT)
 match_OBJECTS = $(am_match_OBJECTS)
-match_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la \
-	$(top_builddir)/libmftp/libmftp.la
-match_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(match_LDFLAGS) \
-	$(LDFLAGS) -o $@
+match_LDADD = $(LDADD)
+match_DEPENDENCIES = $(top_builddir)/libmftp/libmftp.la
 am_share_OBJECTS = share.$(OBJEXT) matcher.$(OBJEXT)
 share_OBJECTS = $(am_share_OBJECTS)
-share_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la \
-	$(top_builddir)/libmftp/libmftp.la
-share_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(share_LDFLAGS) \
-	$(LDFLAGS) -o $@
+share_LDADD = $(LDADD)
+share_DEPENDENCIES = $(top_builddir)/libmftp/libmftp.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -223,18 +203,11 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
+LDADD = $(top_builddir)/libmftp/libmftp.la
 main_SOURCES = main.c composer.c consumer.c
-main_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la $(top_builddir)/libmftp/libmftp.la
-main_LDFLAGS = -lcrypto -lpthread
 share_SOURCES = share.c matcher.c
-share_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la $(top_builddir)/libmftp/libmftp.la
-share_LDFLAGS = -lcrypto -lpthread
 match_SOURCES = match.c matcher.c
-match_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la $(top_builddir)/libmftp/libmftp.la
-match_LDFLAGS = -lcrypto -lpthread
 get_SOURCES = get.c matcher.c match_getter.c
-get_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la $(top_builddir)/libmftp/libmftp.la
-get_LDFLAGS = -lcrypto -lpthread
 all: all-am
 
 .SUFFIXES:
@@ -314,16 +287,16 @@ clean-binPROGRAMS:
 	rm -f $$list
 get$(EXEEXT): $(get_OBJECTS) $(get_DEPENDENCIES) 
 	@rm -f get$(EXEEXT)
-	$(get_LINK) $(get_OBJECTS) $(get_LDADD) $(LIBS)
+	$(LINK) $(get_OBJECTS) $(get_LDADD) $(LIBS)
 main$(EXEEXT): $(main_OBJECTS) $(main_DEPENDENCIES) 
 	@rm -f main$(EXEEXT)
-	$(main_LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
+	$(LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
 match$(EXEEXT): $(match_OBJECTS) $(match_DEPENDENCIES) 
 	@rm -f match$(EXEEXT)
-	$(match_LINK) $(match_OBJECTS) $(match_LDADD) $(LIBS)
+	$(LINK) $(match_OBJECTS) $(match_LDADD) $(LIBS)
 share$(EXEEXT): $(share_OBJECTS) $(share_DEPENDENCIES) 
 	@rm -f share$(EXEEXT)
-	$(share_LINK) $(share_OBJECTS) $(share_LDADD) $(LIBS)
+	$(LINK) $(share_OBJECTS) $(share_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

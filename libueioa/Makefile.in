@@ -70,7 +70,7 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libueioa_la_LIBADD =
+libueioa_la_DEPENDENCIES = $(top_builddir)/libtable/libtable.la
 am_libueioa_la_OBJECTS = automata.lo bidq.lo buffers.lo ioq.lo \
 	order.lo receipts.lo runq.lo ueioa.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
@@ -218,6 +218,7 @@ receipts.c \
 runq.c \
 ueioa.c
 
+libueioa_la_LIBADD = $(top_builddir)/libtable/libtable.la
 all: all-am
 
 .SUFFIXES:

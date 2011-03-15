@@ -23,12 +23,11 @@ AC_PROG_MAKE_SET
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lX11':
 #AC_CHECK_LIB([X11], [main])
-# FIXME: Replace `main' with a function in `-lcrypto':
-#AC_CHECK_LIB([crypto], [main])
+AC_SEARCH_LIBS([MD5], [crypto])
 # FIXME: Replace `main' with a function in `-ljpeg':
 #AC_CHECK_LIB([jpeg], [main])
-# FIXME: Replace `main' with a function in `-lpthread':
-#AC_CHECK_LIB([pthread], [main])
+AC_SEARCH_LIBS([pthread_self], [pthread])
+AC_SEARCH_LIBS([uuid_clear], [uuid])
 
 # Checks for header files.
 AC_PATH_X

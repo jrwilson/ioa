@@ -11,3 +11,4 @@ receipts.c \
 runq.c \
 ueioa.c
 
+libueioa_la_LIBADD = $(top_builddir)/libtable/libtable.la

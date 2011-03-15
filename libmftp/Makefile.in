@@ -70,7 +70,7 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libmftp_la_LIBADD =
+libmftp_la_DEPENDENCIES = $(top_builddir)/libautoman/libautoman.la
 am_libmftp_la_OBJECTS = alarm.lo bitset.lo file.lo fileid.lo \
 	file_server.lo message.lo msg_receiver.lo msg_sender.lo \
 	msg_sender_proxy.lo udp_receiver.lo udp_sender.lo
@@ -222,6 +222,7 @@ msg_sender_proxy.c \
 udp_receiver.c \
 udp_sender.c
 
+libmftp_la_LIBADD = $(top_builddir)/libautoman/libautoman.la
 all: all-am
 
 .SUFFIXES:

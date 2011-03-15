@@ -14,3 +14,4 @@ msg_sender_proxy.c \
 udp_receiver.c \
 udp_sender.c
 
+libmftp_la_LIBADD = $(top_builddir)/libautoman/libautoman.la
