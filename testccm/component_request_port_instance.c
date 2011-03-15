@@ -5,7 +5,11 @@
 #include <mftp.h>
 #include "integer_reflector.h"
 
-#define PORT 64470
+#define UDP_PORT 64470
+
+#define PORT 0
+#define OUT_MESSAGE 0
+#define IN_MESSAGE 0
 
 static void
 composer_callback (void*, 
@@ -21,7 +25,7 @@ composer_in (void*,
 	     void*,
 	     bid_t);
 
-typedef struct {
+typedef struct composer_struct {
   aid_t self;
   automan_t* automan;
 
@@ -34,9 +38,10 @@ typedef struct {
   component_create_arg_t component_arg;
   aid_t component;
 
-  aid_t port;
+  aid_t port_instance;
   bool out_composed;
   bool in_composed;
+  uint32_t instance;
 } composer_t;
 
 static void
@@ -65,10 +70,10 @@ composer_component_created (void* state,
 
   if (composer->component != -1) {
     assert (automan_proxy_add (composer->automan,
-			       &composer->port,
+			       &composer->port_instance,
 			       composer->component,
-			       component_request_port,
-			       port_request_create (0),
+			       component_request_port_instance,
+			       port_instance_request_create (PORT),
 			       composer_callback,
 			       NULL,
 			       NULL) == 0);
@@ -77,14 +82,14 @@ composer_component_created (void* state,
 			     &composer->self,
 			     composer_out,
 			     NULL,
-			     &composer->port,
+			     &composer->port_instance,
 			     port_in,
 			     NULL,
 			     composer_composed,
 			     NULL) == 0);
     assert (automan_compose (composer->automan,
 			     &composer->in_composed,
-			     &composer->port,
+			     &composer->port_instance,
 			     port_out,
 			     NULL,
 			     &composer->self,
@@ -133,7 +138,7 @@ composer_create (const void* arg)
 
   composer->automan = automan_creat (composer, &composer->self);
 
-  composer->msg_sender_arg.port = PORT;
+  composer->msg_sender_arg.port = UDP_PORT;
   assert (automan_create (composer->automan,
 			  &composer->msg_sender,
 			  &msg_sender_descriptor,
@@ -141,7 +146,7 @@ composer_create (const void* arg)
 			  composer_sender_receiver_created,
 			  NULL) == 0);
 
-  composer->msg_receiver_arg.port = PORT;
+  composer->msg_receiver_arg.port = UDP_PORT;
   assert (automan_create (composer->automan,
 			  &composer->msg_receiver,
 			  &msg_receiver_descriptor,
@@ -188,6 +193,12 @@ composer_callback (void* state,
   assert (buffer_size (bid) == sizeof (proxy_receipt_t));
   const proxy_receipt_t* proxy_receipt = buffer_read_ptr (bid);
   automan_proxy_receive (composer->automan, proxy_receipt);
+
+  buffer_incref (bid);
+  const port_instance_receipt_t* port_instance_receipt = buffer_read_ptr (proxy_receipt->bid);
+  assert (port_instance_receipt->status == PORT_INSTANCE_OKAY);
+  composer->instance = port_instance_receipt->instance;
+  buffer_decref (bid);
 }
 
 static bid_t
@@ -207,9 +218,9 @@ composer_out (void* state,
   message_t* m = buffer_write_ptr (mbid);
 
   uuid_copy (m->dst_component, composer->id);
-  m->dst_port = 0;
-  m->dst_instance = 0;
-  m->dst_message = 0;
+  m->dst_port = PORT;
+  m->dst_instance = composer->instance;
+  m->dst_message = OUT_MESSAGE;
 
   m->bid = ibid;
   buffer_add_child (mbid, ibid);

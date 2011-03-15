@@ -16,15 +16,26 @@
 #define COMPONENT_CHANNEL_SUMMARY 1
 
 typedef struct {
-  uint32_t port_type;
-} port_request_t;
+  uint32_t port;
+} port_instance_request_t;
 
 bid_t
-port_request_create (uint32_t port_type)
+port_instance_request_create (uint32_t port)
 {
-  bid_t bid = buffer_alloc (sizeof (port_request_t));
-  port_request_t* port_request = buffer_write_ptr (bid);
-  port_request->port_type = port_type;
+  bid_t bid = buffer_alloc (sizeof (port_instance_request_t));
+  port_instance_request_t* request = buffer_write_ptr (bid);
+  request->port = port;
+  return bid;
+}
+
+bid_t
+port_instance_receipt_create (port_instance_receipt_status_t status,
+			      uint32_t instance)
+{
+  bid_t bid = buffer_alloc (sizeof (port_instance_receipt_t));
+  port_instance_receipt_t* receipt = buffer_write_ptr (bid);
+  receipt->status = status;
+  receipt->instance = instance;
   return bid;
 }
 
@@ -33,7 +44,7 @@ component_create_arg_init (component_create_arg_t* arg,
 			   const descriptor_t* descriptor,
 			   const void* create_arg,
 			   input_t request_proxy,
-			   const uuid_t id,
+			   const uuid_t component_id,
 			   const port_descriptor_t* port_descriptors,
 			   aid_t msg_sender,
 			   aid_t msg_receiver)
@@ -48,21 +59,21 @@ component_create_arg_init (component_create_arg_t* arg,
   arg->descriptor = descriptor;
   arg->create_arg = create_arg;
   arg->request_proxy = request_proxy;
-  uuid_copy (arg->id, id);
+  uuid_copy (arg->component_id, component_id);
   arg->port_descriptors = port_descriptors;
   arg->msg_sender = msg_sender;
   arg->msg_receiver = msg_receiver;
 }
 
-typedef struct port_struct port_t;
-struct port_struct {
+typedef struct port_instance_struct port_instance_t;
+struct port_instance_struct {
   proxy_request_t request;
-  uint32_t type;
   uint32_t port;
+  uint32_t instance;
   bool declared;
   port_create_arg_t create_arg;
   aid_t aid;
-  port_t* next;
+  port_instance_t* next;
 };
 
 static void
@@ -78,8 +89,8 @@ typedef struct {
   aid_t automaton;
   input_t request_proxy;
   const port_descriptor_t* port_descriptors;
-  uuid_t id;
-  port_t* ports;
+  uuid_t component_id;
+  port_instance_t* port_instances;
   bidq_t* port_requestq;
 
   /* file_server_create_arg_t description_arg; */
@@ -109,18 +120,13 @@ component_port_created (void* state,
 {
   component_t* component = state;
   assert (component != NULL);
-  port_t* port = param;
-  assert (port != NULL);
+  port_instance_t* port_instance = param;
+  assert (port_instance != NULL);
   assert (receipt == CHILD_CREATED);
 
-
-  bid_t bid = buffer_alloc (sizeof (port_receipt_t));
-  port_receipt_t* port_receipt = buffer_write_ptr (bid);
-  port_receipt->port = port->port;
-  
-  assert (automan_proxy_send (port->aid,
-			      bid,
-			      &port->request) == 0);
+  assert (automan_proxy_send (port_instance->aid,
+			      port_instance_receipt_create (PORT_INSTANCE_OKAY, port_instance->instance),
+			      &port_instance->request) == 0);
 }
 
 static void*
@@ -149,9 +155,9 @@ component_create (const void* a)
 
   component->port_descriptors = arg->port_descriptors;
 
-  uuid_copy (component->id, arg->id);
+  uuid_copy (component->component_id, arg->component_id);
 
-  component->ports = NULL;
+  component->port_instances = NULL;
 
   component->port_requestq = bidq_create ();
 
@@ -207,7 +213,7 @@ component_system_output (void* state, void* param)
 }
 
 void
-component_request_port (void* state, void* param, bid_t bid)
+component_request_port_instance (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
   component_t* component = state;
@@ -233,49 +239,52 @@ component_process_port_requests (void* state,
     assert (buffer_size (bid) == sizeof (proxy_request_t));
     const proxy_request_t* proxy_request = buffer_read_ptr (bid);
 
-    assert (buffer_size (proxy_request->bid) == sizeof (port_request_t));
-    const port_request_t* request = buffer_read_ptr (proxy_request->bid);
+    assert (buffer_size (proxy_request->bid) == sizeof (port_instance_request_t));
+    const port_instance_request_t* request = buffer_read_ptr (proxy_request->bid);
 
-    if (request->port_type >= port_allocator_port_type_count (component->port_allocator)) {
-      /* TODO: Out of bounds. */
-      assert (0);
+    if (request->port >= port_allocator_port_count (component->port_allocator)) {
+      /* Requested port was out of bounds. */
+      assert (automan_proxy_send (-1,
+      				  port_instance_receipt_create (PORT_INSTANCE_DNE, -1),
+      				  proxy_request) == 0);
+      return;
     }
     
-    if (!port_allocator_contains_free_port (component->port_allocator, request->port_type)) {
+    if (!port_allocator_contains_free_instance (component->port_allocator, request->port)) {
       /* TODO: Out of ports. */
       assert (0);
     }
 
-    port_t* port = malloc (sizeof (port_t));
-    port->request = *proxy_request;
-    /* Set the port type. */
-    port->type = request->port_type;
-    /* Set the port index. */
-    port->port = port_allocator_get_free_port (component->port_allocator, request->port_type);
+    port_instance_t* port_instance = malloc (sizeof (port_instance_t));
+    port_instance->request = *proxy_request;
+    /* Set the port. */
+    port_instance->port = request->port;
+    /* Set the port instance. */
+    port_instance->instance = port_allocator_get_free_instance (component->port_allocator, request->port);
     /* Add a child for the port. */
     assert (automan_declare (component->automan,
-			     &port->declared,
-			     port,
+			     &port_instance->declared,
+			     port_instance,
 			     NULL,
 			     NULL) == 0);
-    port_create_arg_init (&port->create_arg,
+    port_create_arg_init (&port_instance->create_arg,
 			  component->automaton,
 			  component->request_proxy,
 			  component->port_descriptors,
-			  port_allocator_input_message_count (component->port_allocator, request->port_type),
-			  port_allocator_output_message_count (component->port_allocator, request->port_type),
-			  component->id,
-			  port->type,
-			  port->port);
+			  port_allocator_input_message_count (component->port_allocator, request->port),
+			  port_allocator_output_message_count (component->port_allocator, request->port),
+			  component->component_id,
+			  port_instance->port,
+			  port_instance->instance);
     assert (automan_create (component->automan,
-			    &port->aid,
+			    &port_instance->aid,
 			    &port_descriptor,
-			    &port->create_arg,
+			    &port_instance->create_arg,
 			    component_port_created,
-			    port) == 0);
+			    port_instance) == 0);
     
-    port->next = component->ports;
-    component->ports = port;
+    port_instance->next = component->port_instances;
+    component->port_instances = port_instance;
     
     /* rebuild_channel_summary_server (component); */
         
@@ -284,7 +293,7 @@ component_process_port_requests (void* state,
 }
 
 static input_t component_free_inputs[] = {
-  component_request_port,
+  component_request_port_instance,
   NULL
 };
 
@@ -300,20 +309,3 @@ descriptor_t component_descriptor = {
   .free_inputs = component_free_inputs,
   .internals = component_internals,
 };
-
-/* TODO: Factor these out. */
-void
-port_request_init (port_request_t* pr, uint32_t port_type)
-{
-  assert (pr != NULL);
-
-  pr->port_type = port_type;
-}
-
-void
-port_receipt_init (port_receipt_t* pr, uint32_t port)
-{
-  assert (pr != NULL);
-
-  pr->port = port;
-}

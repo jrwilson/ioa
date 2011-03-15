@@ -27,7 +27,7 @@ typedef struct {
   const descriptor_t* descriptor;
   const void* create_arg;
   input_t request_proxy;
-  uuid_t id;
+  uuid_t component_id;
   const port_descriptor_t* port_descriptors;
   aid_t msg_sender;
   aid_t msg_receiver;
@@ -46,14 +46,19 @@ component_create_arg_init (component_create_arg_t*,
 extern descriptor_t component_descriptor;
 
 bid_t
-port_request_create (uint32_t port_type);
+port_instance_request_create (uint32_t port);
 void
-component_request_port (void*,
-			void*,
-			bid_t);
+component_request_port_instance (void*,
+				 void*,
+				 bid_t);
+typedef enum {
+  PORT_INSTANCE_OKAY,
+  PORT_INSTANCE_DNE
+} port_instance_receipt_status_t;
 typedef struct {
-  uint32_t port;
-} port_receipt_t;
+  port_instance_receipt_status_t status;
+  uint32_t instance;
+} port_instance_receipt_t;
 
 extern descriptor_t port_descriptor;
 

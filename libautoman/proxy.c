@@ -139,7 +139,7 @@ automan_proxy_send (aid_t proxy_aid,
 		    bid_t bid,
 		    const proxy_request_t* proxy_request)
 {
-  assert (proxy_aid != -1);
+  /* If proxy creation fails, proxy_aid might be -1. */
   assert (proxy_request != NULL);
 
   bid_t b = buffer_alloc (sizeof (proxy_receipt_t));
