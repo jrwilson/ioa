@@ -251,8 +251,11 @@ component_process_port_requests (void* state,
     }
     
     if (!port_allocator_contains_free_instance (component->port_allocator, request->port)) {
-      /* TODO: Out of ports. */
-      assert (0);
+      /* Out of port instances. */
+      assert (automan_proxy_send (-1,
+      				  port_instance_receipt_create (PORT_INSTANCE_REQUEST_UNAVAILABLE, -1),
+      				  proxy_request) == 0);
+      return;
     }
 
     port_instance_t* port_instance = malloc (sizeof (port_instance_t));

@@ -53,7 +53,8 @@ component_request_port_instance (void*,
 				 bid_t);
 typedef enum {
   PORT_INSTANCE_REQUEST_OKAY,
-  PORT_INSTANCE_REQUEST_DNE
+  PORT_INSTANCE_REQUEST_DNE,
+  PORT_INSTANCE_REQUEST_UNAVAILABLE
 } port_instance_receipt_status_t;
 typedef struct {
   port_instance_receipt_status_t status;

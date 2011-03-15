@@ -120,7 +120,7 @@ static output_message_descriptor_t integer_reflector_outputs[] = {
 const port_descriptor_t
 integer_reflector_port_descriptors[] = {
   {
-    .cardinality = 0,
+    .cardinality = 1,
     .input_message_descriptors = integer_reflector_inputs,
     .output_message_descriptors = integer_reflector_outputs,
   },
