@@ -149,7 +149,7 @@ composer_callback (void* state,
 
   buffer_incref (bid);
   const port_instance_receipt_t* port_instance_receipt = buffer_read_ptr (proxy_receipt->bid);
-  if (port_instance_receipt->status == PORT_INSTANCE_DNE) {
+  if (port_instance_receipt->status == PORT_INSTANCE_REQUEST_DNE) {
     exit (EXIT_SUCCESS);
   }
   else {

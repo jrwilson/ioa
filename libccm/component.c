@@ -125,7 +125,7 @@ component_port_created (void* state,
   assert (receipt == CHILD_CREATED);
 
   assert (automan_proxy_send (port_instance->aid,
-			      port_instance_receipt_create (PORT_INSTANCE_OKAY, port_instance->instance),
+			      port_instance_receipt_create (PORT_INSTANCE_REQUEST_OKAY, port_instance->instance),
 			      &port_instance->request) == 0);
 }
 
@@ -245,7 +245,7 @@ component_process_port_requests (void* state,
     if (request->port >= port_allocator_port_count (component->port_allocator)) {
       /* Requested port was out of bounds. */
       assert (automan_proxy_send (-1,
-      				  port_instance_receipt_create (PORT_INSTANCE_DNE, -1),
+      				  port_instance_receipt_create (PORT_INSTANCE_REQUEST_DNE, -1),
       				  proxy_request) == 0);
       return;
     }
