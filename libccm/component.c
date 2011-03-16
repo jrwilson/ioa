@@ -1,19 +1,8 @@
-#include <ccm.h>
+#include "component.h"
 
 #include <stdlib.h>
 #include <assert.h>
-#include <stdio.h>
-#include <uuid/uuid.h>
-
-#include "instance_allocator.h"
-#include "instance.h"
-#include <json/json.h>
 #include <string.h>
-#include "mftp.h"
-#include <automan.h>
-
-#define COMPONENT_DESCRIPTION 0
-#define COMPONENT_CHANNEL_SUMMARY 1
 
 typedef struct {
   uint32_t port;
@@ -65,41 +54,9 @@ component_create_arg_init (component_create_arg_t* arg,
   arg->msg_receiver = msg_receiver;
 }
 
-typedef struct instance_struct instance_t;
-struct instance_struct {
-  proxy_request_t request;
-  uint32_t port;
-  uint32_t instance;
-  bool declared;
-  instance_create_arg_t create_arg;
-  aid_t aid;
-  aid_t aid2;
-  instance_t* next;
-};
-
 static void
 component_process_instance_requests (void*,
 				     void*);
-
-typedef struct {
-  aid_t self;
-  automan_t* automan;
-
-  instance_allocator_t* instance_allocator;
-
-  aid_t automaton;
-  input_t request_proxy;
-  const port_descriptor_t* port_descriptors;
-  uuid_t component_id;
-  instance_t* instances;
-  bidq_t* instance_requestq;
-
-  /* file_server_create_arg_t description_arg; */
-  /* aid_t description; */
-
-  /* file_server_create_arg_t channel_summary_arg; */
-  /* aid_t channel_summary; */
-} component_t;
 
 static void
 component_automaton_created (void* state,
@@ -209,29 +166,29 @@ component_create (const void* a)
 
   component->instance_requestq = bidq_create ();
 
-  /* json_object* description = encode_descriptor (component); */
-  /* component->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description), */
-  /* 								     strlen (json_object_to_json_string (description)) + 1, */
-  /* 								     COMPONENT_DESCRIPTION); */
-  /* json_object_put (description); */
-  /* //  printf ("%s\n", component->description_arg.file->data); */
-  /* component->description_arg.announce = true; */
-  /* component->description_arg.download = false; */
-  /* component->description_arg.msg_sender = arg->msg_sender; */
-  /* component->description_arg.msg_receiver = arg->msg_receiver; */
-  /* assert (automan_create (component->automan, */
-  /* 			  &component->description, */
-  /* 			  &file_server_descriptor, */
-  /* 			  &component->description_arg, */
-  /* 			  NULL, */
-  /* 			  NULL) == 0); */
+  json_object* description = encode_description (component);
+  component->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description),
+  								     strlen (json_object_to_json_string (description)) + 1,
+  								     COMPONENT_DESCRIPTION);
+  json_object_put (description);
+  /* printf ("%s\n", component->description_arg.file->data); */
+  component->description_arg.announce = true;
+  component->description_arg.download = false;
+  component->description_arg.msg_sender = arg->msg_sender;
+  component->description_arg.msg_receiver = arg->msg_receiver;
+  assert (automan_create (component->automan,
+  			  &component->description,
+  			  &file_server_descriptor,
+  			  &component->description_arg,
+  			  NULL,
+  			  NULL) == 0);
   
-  /* component->channel_summary_arg.announce = true; */
-  /* component->channel_summary_arg.download = false; */
-  /* component->channel_summary_arg.msg_sender = arg->msg_sender; */
-  /* component->channel_summary_arg.msg_receiver = arg->msg_receiver; */
+  component->instance_summary_arg.announce = true;
+  component->instance_summary_arg.download = false;
+  component->instance_summary_arg.msg_sender = arg->msg_sender;
+  component->instance_summary_arg.msg_receiver = arg->msg_receiver;
 
-  /* build_channel_summary_server (component); */
+  build_instance_summary_server (component);
 
   return component;
 }
@@ -335,7 +292,7 @@ component_process_instance_requests (void* state,
     instance->next = component->instances;
     component->instances = instance;
     
-    /* rebuild_channel_summary_server (component); */
+    rebuild_instance_summary_server (component);
         
     buffer_decref (bid);
 

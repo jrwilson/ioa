@@ -151,7 +151,11 @@ msg_sender_proxy_created (void* state, void* param, receipt_type_t receipt)
   assert (proxy != NULL);
 
   if (receipt == CHILD_CREATED) {
-    assert (automan_proxy_send_created (proxy->aid, -1, &proxy->proxy_request) == 0);
+    if (automan_proxy_send_created (proxy->aid, -1, &proxy->proxy_request) != 0) {
+      /* Guess they didn't want our child. */
+      assert (automan_destroy (msg_sender->automan,
+			       &proxy->aid) == 0);
+    }
   }
   else if (receipt == CHILD_DESTROYED) {
     assert (automan_rescind (msg_sender->automan,

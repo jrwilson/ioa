@@ -4,6 +4,7 @@ lib_LTLIBRARIES = libccm.la
 libccm_la_SOURCES = \
 bitset.c \
 component.c \
+component_discovery.c \
 instance.c \
 instance_allocator.c
 
