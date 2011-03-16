@@ -164,9 +164,7 @@ matcher_callback (void* state, void* param, bid_t bid)
   matcher_t* matcher = state;
   assert (matcher != NULL);
 
-  assert (buffer_size (bid) == sizeof (proxy_receipt_t));
-  const proxy_receipt_t* receipt = buffer_read_ptr (bid);
-  automan_proxy_receive (matcher->automan, receipt);
+  automan_proxy_receive (matcher->automan, bid);
 }
 
 static void

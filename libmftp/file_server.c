@@ -354,9 +354,7 @@ file_server_callback (void* state, void* param, bid_t bid)
   file_server_t* file_server = state;
   assert (file_server != NULL);
 
-  assert (buffer_size (bid) == sizeof (proxy_receipt_t));
-  const proxy_receipt_t* receipt = buffer_read_ptr (bid);
-  automan_proxy_receive (file_server->automan, receipt);
+  automan_proxy_receive (file_server->automan, bid);
 }
 
 static void

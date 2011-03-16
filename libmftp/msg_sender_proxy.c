@@ -14,7 +14,6 @@ typedef struct {
   automan_t* automan;
   bool composed;
 
-  bool time_to_die;
   bidq_t* bidq;
 } msg_sender_proxy_t;
 
@@ -31,8 +30,6 @@ msg_sender_proxy_create (const void* a)
 			     NULL,
 			     msg_sender_proxy_composed,
 			     NULL) == 0);
-
-  msg_sender_proxy->time_to_die = false;
 
   /* Initialize the queue. */
   msg_sender_proxy->bidq = bidq_create ();
@@ -58,15 +55,7 @@ msg_sender_proxy_system_output (void* state, void* param)
   msg_sender_proxy_t* msg_sender_proxy = state;
   assert (msg_sender_proxy != NULL);
 
-  if (msg_sender_proxy->time_to_die) {
-    bid_t bid = buffer_alloc (sizeof (order_t));
-    order_t* order = buffer_write_ptr (bid);
-    order_destroy_init (order, msg_sender_proxy->self);
-    return bid;
-  }
-  else {
-    return automan_action (msg_sender_proxy->automan);
-  }
+  return automan_action (msg_sender_proxy->automan);
 }
 
 static void
@@ -79,8 +68,7 @@ msg_sender_proxy_composed (void* state, void* param, receipt_type_t receipt)
     /* Yay. */
   }
   else if (receipt == INPUT_DECOMPOSED) {
-    msg_sender_proxy->time_to_die = true;
-    assert (schedule_system_output () == 0);
+    automan_self_destruct (msg_sender_proxy->automan);
   }
   else {
     assert (0);
