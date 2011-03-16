@@ -124,7 +124,6 @@ component_instance_created (void* state,
   instance_t* instance = param;
   assert (instance != NULL);
 
-
   if (receipt == CHILD_CREATED) {
     instance->aid2 = instance->aid;
     assert (automan_proxy_send_created (instance->aid,
@@ -132,17 +131,36 @@ component_instance_created (void* state,
 					&instance->request) == 0);
   }
   else if (receipt == CHILD_DESTROYED) {
-    /* Instance died. */
-    /* Rescind the parameter. */
+    /* Instance died. Rescind the parameter. */
     assert (automan_rescind (component->automan,
 			     &instance->declared) == 0);
-    assert (automan_proxy_send_destroyed (instance->aid2,
-					  &instance->request) == 0);
+  }
+  else {
+    assert (0);
+  }
+}
 
+static void
+component_instance_declared (void* state,
+			     void* param,
+			     receipt_type_t receipt)
+{
+  component_t* component = state;
+  assert (component != NULL);
+  instance_t* instance = param;
+  assert (instance != NULL);
+
+  if (receipt == DECLARED) {
+    /* Okay. */
+  }
+  else if (receipt == RESCINDED) {
     /* Return the instance to the allocator. */
     instance_allocator_return_instance (component->instance_allocator,
 					instance->port,
 					instance->instance);
+    /* Send the destoyed. */
+    assert (automan_proxy_send_destroyed (instance->aid2,
+					  &instance->request) == 0);
     /* Find the instance and remove it. */
     instance_t** ptr;
     for (ptr = &component->instances;
@@ -296,8 +314,8 @@ component_process_instance_requests (void* state,
     assert (automan_declare (component->automan,
 			     &instance->declared,
 			     instance,
-			     NULL,
-			     NULL) == 0);
+			     component_instance_declared,
+			     instance) == 0);
     instance_create_arg_init (&instance->create_arg,
 			      component->automaton,
 			      component->request_proxy,
