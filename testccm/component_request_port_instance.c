@@ -38,7 +38,7 @@ typedef struct composer_struct {
   component_create_arg_t component_arg;
   aid_t component;
 
-  aid_t port_instance;
+  aid_t instance_aid;
   bool out_composed;
   bool in_composed;
   uint32_t instance;
@@ -60,6 +60,20 @@ composer_composed (void* state,
 }
 
 static void
+composer_proxy_created (void* state,
+			void* param,
+			proxy_receipt_type_t receipt,
+			bid_t bid)
+{
+  composer_t* composer = state;
+  assert (composer != NULL);
+  assert (buffer_size (bid) == sizeof (instance_receipt_t));
+  const instance_receipt_t* instance_receipt = buffer_read_ptr (bid);
+  assert (instance_receipt->status == INSTANCE_REQUEST_OKAY);
+  composer->instance = instance_receipt->instance;
+}
+
+static void
 composer_component_created (void* state,
 			    void* param,
 			    receipt_type_t receipt)
@@ -70,27 +84,27 @@ composer_component_created (void* state,
 
   if (composer->component != -1) {
     assert (automan_proxy_add (composer->automan,
-			       &composer->port_instance,
+			       &composer->instance_aid,
 			       composer->component,
-			       component_request_port_instance,
-			       port_instance_request_create (PORT),
+			       component_request_instance,
+			       instance_request_create (PORT),
 			       composer_callback,
-			       NULL,
+			       composer_proxy_created,
 			       NULL) == 0);
     assert (automan_compose (composer->automan,
 			     &composer->out_composed,
 			     &composer->self,
 			     composer_out,
 			     NULL,
-			     &composer->port_instance,
-			     port_in,
+			     &composer->instance_aid,
+			     instance_in,
 			     NULL,
 			     composer_composed,
 			     NULL) == 0);
     assert (automan_compose (composer->automan,
 			     &composer->in_composed,
-			     &composer->port_instance,
-			     port_out,
+			     &composer->instance_aid,
+			     instance_out,
 			     NULL,
 			     &composer->self,
 			     composer_in,
@@ -190,15 +204,7 @@ composer_callback (void* state,
   composer_t* composer = state;
   assert (composer != NULL);
 
-  assert (buffer_size (bid) == sizeof (proxy_receipt_t));
-  const proxy_receipt_t* proxy_receipt = buffer_read_ptr (bid);
-  automan_proxy_receive (composer->automan, proxy_receipt);
-
-  buffer_incref (bid);
-  const port_instance_receipt_t* port_instance_receipt = buffer_read_ptr (proxy_receipt->bid);
-  assert (port_instance_receipt->status == PORT_INSTANCE_REQUEST_OKAY);
-  composer->instance = port_instance_receipt->instance;
-  buffer_decref (bid);
+  automan_proxy_receive (composer->automan, bid);
 }
 
 static bid_t

@@ -46,31 +46,31 @@ component_create_arg_init (component_create_arg_t*,
 extern descriptor_t component_descriptor;
 
 bid_t
-port_instance_request_create (uint32_t port);
+instance_request_create (uint32_t port);
 void
-component_request_port_instance (void*,
+component_request_instance (void*,
 				 void*,
 				 bid_t);
 typedef enum {
-  PORT_INSTANCE_REQUEST_OKAY,
-  PORT_INSTANCE_REQUEST_DNE,
-  PORT_INSTANCE_REQUEST_UNAVAILABLE
-} port_instance_receipt_status_t;
+  INSTANCE_REQUEST_OKAY,
+  INSTANCE_REQUEST_DNE,
+  INSTANCE_REQUEST_UNAVAILABLE
+} instance_receipt_status_t;
 typedef struct {
-  port_instance_receipt_status_t status;
+  instance_receipt_status_t status;
   uint32_t instance;
-} port_instance_receipt_t;
+} instance_receipt_t;
 
-extern descriptor_t port_descriptor;
+extern descriptor_t instance_descriptor;
 
 void
-port_in (void*,
-	 void*,
-	 bid_t);
+instance_in (void*,
+	     void*,
+	     bid_t);
 
 bid_t
-port_out (void*,
-	  void*);
+instance_out (void*,
+	      void*);
 
 typedef struct message_struct {
   uuid_t src_component;

@@ -825,6 +825,44 @@ si_balance_create (automan_t* automan,
   }
 }
 
+iterator_t
+si_rescind_flag_ptr (automan_t* automan,
+		     bool* flag_ptr,
+		     receipt_type_t receipt)
+{
+  /* Remove the declare. */
+  iterator_t declare_pos;
+  sequence_item_t* declare = si_find_flag_ptr (automan,
+					    flag_ptr,
+					    index_begin (automan->si_index),
+					    index_end (automan->si_index),
+					    &declare_pos);
+  assert (declare != NULL);
+  assert (declare->order_type == DECLARE);
+  sequence_item_t declare_item = *declare;
+  declare_pos = index_erase (automan->si_index, declare_pos);
+
+  /* Remove the rescind. */
+  iterator_t rescind_pos;
+  sequence_item_t* rescind = si_find_flag_ptr (automan,
+					      flag_ptr,
+					      declare_pos,
+					      index_end (automan->si_index),
+					      &rescind_pos);
+  assert (rescind != NULL);
+  assert (rescind->order_type == RESCIND);
+  rescind_pos = index_erase (automan->si_index, rescind_pos);
+
+  /* Set the flag. */
+  *declare_item.flag_ptr = false;
+
+  if (declare_item.handler != NULL) {
+    declare_item.handler (automan->state, declare_item.hparam, receipt);
+  }
+
+  return declare_pos;
+}
+
 void
 si_destroy_aid_ptr (automan_t* automan,
 		    aid_t* aid_ptr)
@@ -903,22 +941,28 @@ automan_create (automan_t* automan,
     /* Duplicate create. */
     return -1;
   }
-  
-  /* Clear the automaton. */
-  *aid_ptr = -1;
 
+  if (si_find_aid_ptr (automan,
+		       aid_ptr,
+		       index_begin (automan->si_index),
+		       index_end (automan->si_index),
+		       NULL) == NULL) {
+    /* Clear the aid. */
+    *aid_ptr = -1;
+  }
+  
   /* Add an action item. */
   si_append_create (automan,
-		 aid_ptr,
-		 descriptor,
-		 ctor_arg,
-		 handler,
-		 hparam);
+		    aid_ptr,
+		    descriptor,
+		    ctor_arg,
+		    handler,
+		    hparam);
 
   if (*automan->self_ptr != -1) {
     assert (schedule_system_output () == 0);
   }
-
+  
   return 0;
 }
 
@@ -940,8 +984,14 @@ automan_declare (automan_t* automan,
     return -1;
   }
 
-  /* Clear the flag. */
-  *flag_ptr = false;
+  if (si_find_flag_ptr (automan,
+			flag_ptr,
+			index_begin (automan->si_index),
+			index_end (automan->si_index),
+			NULL) == NULL) {
+    /* Clear the flag. */
+    *flag_ptr = false;
+  }
   
   /* Add an action item. */
   si_append_declare (automan,
@@ -996,9 +1046,15 @@ automan_compose (automan_t* automan,
     /* Duplicate composition. */
     return -1;
   }
-  
-  /* Clear the flag. */
-  *flag_ptr = false;
+
+  if (si_find_flag_ptr (automan,
+			flag_ptr,
+			index_begin (automan->si_index),
+			index_end (automan->si_index),
+			NULL) == NULL) {
+    /* Clear the flag. */
+    *flag_ptr = false;
+  }
   
   si_append_compose (automan,
 		  flag_ptr,
@@ -1066,11 +1122,12 @@ automan_rescind (automan_t* automan,
   /* Find the declare. */
   riterator_t declare_pos;
   sequence_item_t* sequence_item = si_rfind_flag_ptr (automan,
-						   flag_ptr,
-						   &declare_pos);
+						      flag_ptr,
+						      &declare_pos);
 
   /* Every composition that uses the parameter must be paired with a decomposition. */
   iterator_t compose_pos = riterator_reverse (automan->si_index, declare_pos);
+  compose_pos = index_advance (automan->si_index, compose_pos);
   for (;;) {
     /* Find a composition using this parameter. */
     sequence_item_t* composition = si_find_composition_param (automan,
@@ -1082,10 +1139,10 @@ automan_rescind (automan_t* automan,
     if (composition != NULL) {
       /* Found a composition using this parameter. Look for the decomposition. */
       sequence_item_t* decomposition = si_find_flag_ptr (automan,
-						      composition->flag_ptr,
-						      compose_pos,
-						      index_end (automan->si_index),
-						      NULL);
+							 composition->flag_ptr,
+							 index_advance (automan->si_index, compose_pos),
+							 index_end (automan->si_index),
+							 NULL);
       if (decomposition == NULL) {
       	/* No corresponding decomposition so add one. */
 	si_append_decompose (automan,
@@ -1147,20 +1204,21 @@ automan_destroy (automan_t* automan,
 
   /* Every composition that uses this aid must be paired with a decomposition. */
   iterator_t compose_pos = riterator_reverse (automan->si_index, create_pos);
+  compose_pos = index_advance (automan->si_index, compose_pos);
   for (;;) {
     /* Find a composition using this aid. */
     sequence_item_t* composition = si_find_composition_aid (automan,
-							 aid_ptr,
-							 compose_pos,
-							 index_end (automan->si_index),
-							 &compose_pos);
+							    aid_ptr,
+							    compose_pos,
+							    index_end (automan->si_index),
+							    &compose_pos);
     if (composition != NULL) {
       /* Found a composition using this aid. Look for the decomposition. */
       sequence_item_t* decomposition = si_find_flag_ptr (automan,
-						      composition->flag_ptr,
-						      compose_pos,
-						      index_end (automan->si_index),
-						      NULL);
+							 composition->flag_ptr,
+							 index_advance (automan->si_index, compose_pos),
+							 index_end (automan->si_index),
+							 NULL);
       if (decomposition == NULL) {
       	/* No corresponding decomposition so add one. */
   	si_append_decompose (automan,
@@ -1199,6 +1257,22 @@ automan_destroy (automan_t* automan,
   }
 
   return 0;
+}
+
+void
+automan_self_destruct (automan_t* automan)
+{
+  assert (automan != NULL);
+
+  /* Add an action item. */
+  si_append_destroy (automan,
+		     automan->self_ptr,
+		     NULL,
+		     NULL);
+  
+  if (*automan->self_ptr != -1) {
+    assert (schedule_system_output () == 0);
+  }
 }
 
 bid_t

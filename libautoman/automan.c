@@ -156,10 +156,13 @@ automan_apply (automan_t* automan,
   case CHILD_CREATED:
     {
       assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == CREATE);
+      assert (automan->last_sequence.order_type == CREATE);
+
       *automan->last_sequence.aid_ptr = receipt->child_created.child;
       if (automan->last_sequence.handler != NULL) {
 	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
       }
+
       something_changed = true;
       automan->sequence_status = NORMAL;
     }
@@ -333,12 +336,7 @@ automan_apply (automan_t* automan,
     {
       assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == RESCIND);
       /* Remove the declare. */
-      
-
-      *automan->last_sequence.flag_ptr = false;
-      if (automan->last_sequence.handler != NULL) {
-	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
-      }
+      si_rescind_flag_ptr (automan, automan->last_sequence.flag_ptr, receipt->type);
       something_changed = true;
       automan->sequence_status = NORMAL;
     }

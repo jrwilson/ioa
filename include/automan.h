@@ -4,13 +4,15 @@
 #include <ueioa.h>
 
 typedef enum {
-  PROXY_CREATED,
   PROXY_REQUEST_INPUT_DNE,
+  PROXY_CREATED,
+  PROXY_NOT_CREATED,
+  PROXY_DESTROYED,
 } proxy_receipt_type_t;
 
 typedef struct automan_struct automan_t;
 typedef void (*automan_handler_t) (void* state, void* param, receipt_type_t receipt);
-typedef void (*proxy_handler_t) (void* state, void* param, proxy_receipt_type_t receipt);
+typedef void (*proxy_handler_t) (void* state, void* param, proxy_receipt_type_t receipt, bid_t bid);
 
 automan_t*
 automan_creat (void* state,
@@ -62,6 +64,9 @@ int
 automan_destroy (automan_t* automan,
 		 aid_t* aid_ptr) __attribute__ ((warn_unused_result));
 
+void
+automan_self_destruct (automan_t* automan);
+
 int
 automan_input_add (automan_t* automan,
 		   bool* flag_ptr,
@@ -85,6 +90,7 @@ typedef struct proxy_request_struct {
 } proxy_request_t;
 
 typedef struct proxy_receipt_struct {
+  proxy_receipt_type_t type;
   aid_t proxy_aid;
   bid_t bid;
 } proxy_receipt_t;
@@ -100,12 +106,20 @@ automan_proxy_add (automan_t* automan,
 		   void* pparam) __attribute__ ((warn_unused_result));
 
 int
-automan_proxy_send (aid_t proxy_aid,
-		    bid_t bid,
-		    const proxy_request_t* proxy_request)  __attribute__ ((warn_unused_result));
+automan_proxy_send_created (aid_t proxy_aid,
+			    bid_t bid,
+			    const proxy_request_t* proxy_request)  __attribute__ ((warn_unused_result));
+
+int
+automan_proxy_send_not_created (bid_t bid,
+				const proxy_request_t* proxy_request)  __attribute__ ((warn_unused_result));
+
+int
+automan_proxy_send_destroyed (aid_t proxy_aid,
+			      const proxy_request_t* proxy_request)  __attribute__ ((warn_unused_result));
 
 void
 automan_proxy_receive (automan_t* automan,
-		       const proxy_receipt_t* proxy_receipt);
+		       bid_t bid);
 
 #endif /* __automan_h__ */

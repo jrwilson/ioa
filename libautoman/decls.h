@@ -79,6 +79,7 @@ struct automan_struct {
   index_t* oi_index;
 
   status_t proxy_status;
+  proxy_item_t last_proxy;
   table_t* pi_table;
   index_t* pi_index;
 };
@@ -95,6 +96,11 @@ iterator_t
 si_decompose_flag_ptr (automan_t* automan,
 		       bool* flag_ptr,
 		       receipt_type_t receipt);
+
+iterator_t
+si_rescind_flag_ptr (automan_t* automan,
+		     bool* flag_ptr,
+		     receipt_type_t receipt);
 
 bool
 si_child_destroyed_aid_equal (const void* x0, const void* y0);

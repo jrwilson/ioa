@@ -1107,7 +1107,7 @@ index_find_value (index_t* index, iterator_t begin, iterator_t end, predicate_t 
   if (ptr != NULL) {
     *ptr = iterator;
   }
-  if (iterator_ne (iterator, index_end (index))) {
+  if (iterator_ne (iterator, end)) {
     return index_value (index, iterator);
   }
   else {
@@ -1128,7 +1128,7 @@ index_rfind_value (index_t* index, riterator_t rbegin, riterator_t rend, predica
   if (ptr != NULL) {
     *ptr = iterator;
   }
-  if (riterator_ne (iterator, index_rend (index))) {
+  if (riterator_ne (iterator, rend)) {
     return index_rvalue (index, iterator);
   }
   else {

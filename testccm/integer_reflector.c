@@ -8,6 +8,7 @@
 typedef struct {
   bool declared;
   aid_t aid;
+  aid_t aid2;
   proxy_request_t request;
 } integer_reflector_proxy_t;
 
@@ -83,7 +84,19 @@ integer_reflector_proxy_created (void* state, void* param, receipt_type_t receip
   integer_reflector_proxy_t* integer_reflector_proxy = param;
   assert (integer_reflector_proxy != NULL);
 
-  assert (automan_proxy_send (integer_reflector_proxy->aid, -1, &integer_reflector_proxy->request) == 0);
+  if (receipt == CHILD_CREATED) {
+    integer_reflector_proxy->aid2 = integer_reflector_proxy->aid;
+    assert (automan_proxy_send_created (integer_reflector_proxy->aid, -1, &integer_reflector_proxy->request) == 0);
+  }
+  else if (receipt == CHILD_DESTROYED) {
+    assert (automan_rescind (integer_reflector->automan,
+			     &integer_reflector_proxy->declared) == 0);
+    assert (automan_proxy_send_destroyed (integer_reflector_proxy->aid2, &integer_reflector_proxy->request) == 0);
+    free (integer_reflector_proxy);
+  }
+  else {
+    assert (0);
+  }
 }
 
 static input_t integer_reflector_free_inputs[] = {

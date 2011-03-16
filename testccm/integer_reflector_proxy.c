@@ -7,7 +7,8 @@
 typedef struct {
   int x;
   bool have_x;
-  bool composed;
+  bool in_composed;
+  bool out_composed;
   aid_t self;
   automan_t* automan;
 } integer_reflector_proxy_t;
@@ -17,7 +18,19 @@ composed (void* state,
 	  void* param,
 	  receipt_type_t receipt)
 {
+  integer_reflector_proxy_t* integer_reflector_proxy = state;
+  assert (integer_reflector_proxy != NULL);
+
+  /* We might need to output. */
   assert (schedule_output (integer_reflector_proxy_integer_out, NULL) == 0);
+ 
+  if (receipt == INPUT_DECOMPOSED ||
+      receipt == OUTPUT_DECOMPOSED) {
+    if (!integer_reflector_proxy->in_composed &&
+	!integer_reflector_proxy->out_composed) {
+      automan_self_destruct (integer_reflector_proxy->automan);
+    }
+  }
 }
 
 static void*
@@ -27,8 +40,14 @@ integer_reflector_proxy_create (const void* arg)
   integer_reflector_proxy->have_x = false;
   integer_reflector_proxy->automan = automan_creat (integer_reflector_proxy,
 						    &integer_reflector_proxy->self);
+  assert (automan_input_add (integer_reflector_proxy->automan,
+			      &integer_reflector_proxy->in_composed,
+			      integer_reflector_proxy_integer_in,
+			      NULL,
+			      composed,
+			      NULL) == 0);
   assert (automan_output_add (integer_reflector_proxy->automan,
-			      &integer_reflector_proxy->composed,
+			      &integer_reflector_proxy->out_composed,
 			      integer_reflector_proxy_integer_out,
 			      NULL,
 			      composed,
@@ -85,7 +104,7 @@ integer_reflector_proxy_integer_out (void* state,
   assert (integer_reflector_proxy != NULL);
 
   if (integer_reflector_proxy->have_x &&
-      integer_reflector_proxy->composed) {
+      integer_reflector_proxy->out_composed) {
     bid_t bid = buffer_alloc (sizeof (int));
     int* x = buffer_write_ptr (bid);
     *x = integer_reflector_proxy->x;

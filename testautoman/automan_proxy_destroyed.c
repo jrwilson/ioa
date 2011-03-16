@@ -9,6 +9,7 @@ static void proxy_generator_proxy_created (void* state, void* param, receipt_typ
 
 typedef struct {
   aid_t aid;
+  aid_t aid2;
   proxy_request_t proxy_request;
 } pg_proxy_t;
 
@@ -75,12 +76,20 @@ proxy_generator_proxy_created (void* state, void* param, receipt_type_t receipt)
 {
   proxy_generator_t* proxy_generator = state;
   assert (proxy_generator != NULL);
-  assert (receipt == CHILD_CREATED);
 
   pg_proxy_t* pg_proxy = param;
   assert (pg_proxy != NULL);
 
-  assert (automan_proxy_send_created (pg_proxy->aid, -1, &pg_proxy->proxy_request) == 0);
+  if (receipt == CHILD_CREATED) {
+    pg_proxy->aid2 = pg_proxy->aid;
+    assert (automan_proxy_send_created (pg_proxy->aid, -1, &pg_proxy->proxy_request) == 0);
+    assert (automan_destroy (proxy_generator->automan,
+			     &pg_proxy->aid) == 0);
+  }
+  else {
+    assert (automan_proxy_send_destroyed (pg_proxy->aid2, &pg_proxy->proxy_request) == 0);
+  }
+  
 }
 
 static const input_t proxy_generator_free_inputs[] = {
@@ -176,10 +185,18 @@ automaton_proxy_created (void* state, void* param, proxy_receipt_type_t receipt,
 {
   automaton_t* automaton = state;
   assert (automaton != NULL);
-  assert (receipt == PROXY_CREATED);
-  assert (automaton->proxy != -1);
 
-  exit (EXIT_SUCCESS);
+  if (receipt == PROXY_CREATED) {
+    /* Created. */
+    assert (automaton->proxy != -1);
+  }
+  else if (receipt == PROXY_DESTROYED) {
+    assert (automaton->proxy == -1);
+    exit (EXIT_SUCCESS);
+  }
+  else {
+    assert (0);
+  }
 }
 
 static const input_t automaton_free_inputs[] = {

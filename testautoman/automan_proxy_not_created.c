@@ -2,16 +2,6 @@
 #include <assert.h>
 #include <automan.h>
 
-static const descriptor_t proxy_descriptor = {
-};
-
-static void proxy_generator_proxy_created (void* state, void* param, receipt_type_t receipt);
-
-typedef struct {
-  aid_t aid;
-  proxy_request_t proxy_request;
-} pg_proxy_t;
-
 typedef struct {
   aid_t self;
   automan_t* automan;
@@ -58,29 +48,8 @@ proxy_generator_request_proxy (void* state, void* param, bid_t bid)
   assert (buffer_size (bid) == sizeof (proxy_request_t));
   const proxy_request_t* proxy_request = buffer_read_ptr (bid);
 
-  pg_proxy_t* pg_proxy = malloc (sizeof (pg_proxy_t));
-
-  pg_proxy->proxy_request = *proxy_request;
-
-  assert (automan_create (proxy_generator->automan,
-			  &pg_proxy->aid,
-			  &proxy_descriptor,
-			  NULL,
-			  proxy_generator_proxy_created,
-			  pg_proxy) == 0);
-}
-
-static void
-proxy_generator_proxy_created (void* state, void* param, receipt_type_t receipt)
-{
-  proxy_generator_t* proxy_generator = state;
-  assert (proxy_generator != NULL);
-  assert (receipt == CHILD_CREATED);
-
-  pg_proxy_t* pg_proxy = param;
-  assert (pg_proxy != NULL);
-
-  assert (automan_proxy_send_created (pg_proxy->aid, -1, &pg_proxy->proxy_request) == 0);
+  assert (automan_proxy_send_not_created (-1,
+					  proxy_request) == 0);
 }
 
 static const input_t proxy_generator_free_inputs[] = {
@@ -176,8 +145,7 @@ automaton_proxy_created (void* state, void* param, proxy_receipt_type_t receipt,
 {
   automaton_t* automaton = state;
   assert (automaton != NULL);
-  assert (receipt == PROXY_CREATED);
-  assert (automaton->proxy != -1);
+  assert (receipt == PROXY_NOT_CREATED);
 
   exit (EXIT_SUCCESS);
 }

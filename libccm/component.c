@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <uuid/uuid.h>
 
-#include "port_allocator.h"
-#include "port.h"
+#include "instance_allocator.h"
+#include "instance.h"
 #include <json/json.h>
 #include <string.h>
 #include "mftp.h"
@@ -17,23 +17,23 @@
 
 typedef struct {
   uint32_t port;
-} port_instance_request_t;
+} instance_request_t;
 
 bid_t
-port_instance_request_create (uint32_t port)
+instance_request_create (uint32_t port)
 {
-  bid_t bid = buffer_alloc (sizeof (port_instance_request_t));
-  port_instance_request_t* request = buffer_write_ptr (bid);
+  bid_t bid = buffer_alloc (sizeof (instance_request_t));
+  instance_request_t* request = buffer_write_ptr (bid);
   request->port = port;
   return bid;
 }
 
 bid_t
-port_instance_receipt_create (port_instance_receipt_status_t status,
+instance_receipt_create (instance_receipt_status_t status,
 			      uint32_t instance)
 {
-  bid_t bid = buffer_alloc (sizeof (port_instance_receipt_t));
-  port_instance_receipt_t* receipt = buffer_write_ptr (bid);
+  bid_t bid = buffer_alloc (sizeof (instance_receipt_t));
+  instance_receipt_t* receipt = buffer_write_ptr (bid);
   receipt->status = status;
   receipt->instance = instance;
   return bid;
@@ -65,33 +65,34 @@ component_create_arg_init (component_create_arg_t* arg,
   arg->msg_receiver = msg_receiver;
 }
 
-typedef struct port_instance_struct port_instance_t;
-struct port_instance_struct {
+typedef struct instance_struct instance_t;
+struct instance_struct {
   proxy_request_t request;
   uint32_t port;
   uint32_t instance;
   bool declared;
-  port_create_arg_t create_arg;
+  instance_create_arg_t create_arg;
   aid_t aid;
-  port_instance_t* next;
+  aid_t aid2;
+  instance_t* next;
 };
 
 static void
-component_process_port_requests (void*,
-				 void*);
+component_process_instance_requests (void*,
+				     void*);
 
 typedef struct {
   aid_t self;
   automan_t* automan;
 
-  port_allocator_t* port_allocator;
+  instance_allocator_t* instance_allocator;
 
   aid_t automaton;
   input_t request_proxy;
   const port_descriptor_t* port_descriptors;
   uuid_t component_id;
-  port_instance_t* port_instances;
-  bidq_t* port_requestq;
+  instance_t* instances;
+  bidq_t* instance_requestq;
 
   /* file_server_create_arg_t description_arg; */
   /* aid_t description; */
@@ -110,23 +111,52 @@ component_automaton_created (void* state,
   assert (receipt == CHILD_CREATED);
 
   /* Might have requests waiting. */
-  assert (schedule_internal (component_process_port_requests, NULL) == 0);
+  assert (schedule_internal (component_process_instance_requests, NULL) == 0);
 }
 
 static void
-component_port_created (void* state,
-			void* param,
-			receipt_type_t receipt)
+component_instance_created (void* state,
+			    void* param,
+			    receipt_type_t receipt)
 {
   component_t* component = state;
   assert (component != NULL);
-  port_instance_t* port_instance = param;
-  assert (port_instance != NULL);
-  assert (receipt == CHILD_CREATED);
+  instance_t* instance = param;
+  assert (instance != NULL);
 
-  assert (automan_proxy_send (port_instance->aid,
-			      port_instance_receipt_create (PORT_INSTANCE_REQUEST_OKAY, port_instance->instance),
-			      &port_instance->request) == 0);
+
+  if (receipt == CHILD_CREATED) {
+    instance->aid2 = instance->aid;
+    assert (automan_proxy_send_created (instance->aid,
+					instance_receipt_create (INSTANCE_REQUEST_OKAY, instance->instance),
+					&instance->request) == 0);
+  }
+  else if (receipt == CHILD_DESTROYED) {
+    /* Instance died. */
+    /* Rescind the parameter. */
+    assert (automan_rescind (component->automan,
+			     &instance->declared) == 0);
+    assert (automan_proxy_send_destroyed (instance->aid2,
+					  &instance->request) == 0);
+
+    /* Return the instance to the allocator. */
+    instance_allocator_return_instance (component->instance_allocator,
+					instance->port,
+					instance->instance);
+    /* Find the instance and remove it. */
+    instance_t** ptr;
+    for (ptr = &component->instances;
+	 *ptr != NULL &&
+	   *ptr != instance;
+	 ptr = &(*ptr)->next)
+      ;;
+    assert (*ptr == instance);
+    *ptr = instance->next;
+    free (instance);
+  }
+  else {
+    assert (0);
+  }
 }
 
 static void*
@@ -142,7 +172,7 @@ component_create (const void* a)
   component->automan = automan_creat (component,
 				      &component->self);
 
-  component->port_allocator = port_allocator_create (arg->port_descriptors);
+  component->instance_allocator = instance_allocator_create (arg->port_descriptors);
 
   assert (automan_create (component->automan,
   			  &component->automaton,
@@ -157,9 +187,9 @@ component_create (const void* a)
 
   uuid_copy (component->component_id, arg->component_id);
 
-  component->port_instances = NULL;
+  component->instances = NULL;
 
-  component->port_requestq = bidq_create ();
+  component->instance_requestq = bidq_create ();
 
   /* json_object* description = encode_descriptor (component); */
   /* component->description_arg.file = mftp_File_create_buffer (json_object_to_json_string (description), */
@@ -206,102 +236,102 @@ component_system_input (void* state, void* param, bid_t bid)
 static bid_t
 component_system_output (void* state, void* param)
 {
-  assert (state != NULL);
   component_t* component = state;
+  assert (component != NULL);
 
   return automan_action (component->automan);
 }
 
 void
-component_request_port_instance (void* state, void* param, bid_t bid)
+component_request_instance (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
   component_t* component = state;
 
   buffer_incref (bid);
-  bidq_push_back (component->port_requestq, bid);
+  bidq_push_back (component->instance_requestq, bid);
 
-  assert (schedule_internal (component_process_port_requests, NULL) == 0);
+  assert (schedule_internal (component_process_instance_requests, NULL) == 0);
 }
 
 static void
-component_process_port_requests (void* state,
-				 void* param)
+component_process_instance_requests (void* state,
+				     void* param)
 {
   assert (state != NULL);
   component_t* component = state;
 
-  if (!bidq_empty (component->port_requestq) &&
+  if (!bidq_empty (component->instance_requestq) &&
       component->automaton != -1) {
-    bid_t bid = bidq_front (component->port_requestq);
-    bidq_pop_front (component->port_requestq);
+    bid_t bid = bidq_front (component->instance_requestq);
+    bidq_pop_front (component->instance_requestq);
 
     assert (buffer_size (bid) == sizeof (proxy_request_t));
     const proxy_request_t* proxy_request = buffer_read_ptr (bid);
 
-    assert (buffer_size (proxy_request->bid) == sizeof (port_instance_request_t));
-    const port_instance_request_t* request = buffer_read_ptr (proxy_request->bid);
+    assert (buffer_size (proxy_request->bid) == sizeof (instance_request_t));
+    const instance_request_t* request = buffer_read_ptr (proxy_request->bid);
 
-    if (request->port >= port_allocator_port_count (component->port_allocator)) {
+    if (request->port >= instance_allocator_port_count (component->instance_allocator)) {
       /* Requested port was out of bounds. */
-      assert (automan_proxy_send (-1,
-      				  port_instance_receipt_create (PORT_INSTANCE_REQUEST_DNE, -1),
-      				  proxy_request) == 0);
+      assert (automan_proxy_send_not_created (instance_receipt_create (INSTANCE_REQUEST_DNE, -1),
+					      proxy_request) == 0);
       return;
     }
     
-    if (!port_allocator_contains_free_instance (component->port_allocator, request->port)) {
-      /* Out of port instances. */
-      assert (automan_proxy_send (-1,
-      				  port_instance_receipt_create (PORT_INSTANCE_REQUEST_UNAVAILABLE, -1),
-      				  proxy_request) == 0);
+    if (!instance_allocator_contains_free_instance (component->instance_allocator, request->port)) {
+      /* Out of instances. */
+      assert (automan_proxy_send_not_created (instance_receipt_create (INSTANCE_REQUEST_UNAVAILABLE, -1),
+					      proxy_request) == 0);
       return;
     }
 
-    port_instance_t* port_instance = malloc (sizeof (port_instance_t));
-    port_instance->request = *proxy_request;
+    instance_t* instance = malloc (sizeof (instance_t));
+    instance->request = *proxy_request;
     /* Set the port. */
-    port_instance->port = request->port;
-    /* Set the port instance. */
-    port_instance->instance = port_allocator_get_free_instance (component->port_allocator, request->port);
-    /* Add a child for the port. */
+    instance->port = request->port;
+    /* Set the instance. */
+    instance->instance = instance_allocator_get_instance (component->instance_allocator, request->port);
+    /* Add a child for the instance. */
     assert (automan_declare (component->automan,
-			     &port_instance->declared,
-			     port_instance,
+			     &instance->declared,
+			     instance,
 			     NULL,
 			     NULL) == 0);
-    port_create_arg_init (&port_instance->create_arg,
-			  component->automaton,
-			  component->request_proxy,
-			  component->port_descriptors,
-			  port_allocator_input_message_count (component->port_allocator, request->port),
-			  port_allocator_output_message_count (component->port_allocator, request->port),
-			  component->component_id,
-			  port_instance->port,
-			  port_instance->instance);
+    instance_create_arg_init (&instance->create_arg,
+			      component->automaton,
+			      component->request_proxy,
+			      component->port_descriptors,
+			      instance_allocator_input_message_count (component->instance_allocator, request->port),
+			      instance_allocator_output_message_count (component->instance_allocator, request->port),
+			      component->component_id,
+			      instance->port,
+			      instance->instance);
     assert (automan_create (component->automan,
-			    &port_instance->aid,
-			    &port_descriptor,
-			    &port_instance->create_arg,
-			    component_port_created,
-			    port_instance) == 0);
+			    &instance->aid,
+			    &instance_descriptor,
+			    &instance->create_arg,
+			    component_instance_created,
+			    instance) == 0);
     
-    port_instance->next = component->port_instances;
-    component->port_instances = port_instance;
+    instance->next = component->instances;
+    component->instances = instance;
     
     /* rebuild_channel_summary_server (component); */
         
     buffer_decref (bid);
+
+    assert (schedule_internal (component_process_instance_requests, NULL) == 0);
   }
 }
 
 static input_t component_free_inputs[] = {
-  component_request_port_instance,
+  component_request_instance,
   NULL
 };
 
 static internal_t component_internals[] = {
-  component_process_port_requests,
+  component_process_instance_requests,
   NULL,
 };
 
