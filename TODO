@@ -1,3 +1,5 @@
+Use C++?
+
 table
 =====
 * Unit tests
@@ -21,6 +23,18 @@ automan
 
 * Code coverage tests ?
 * Test for memory leaks
+
+mftp
+====
+* Add fragment cache so requests can be answered locally
+* Factor out matcher and match_getter
+
+ccm
+===
+* Simple Channel Demo
+  * Find free ramp
+  * Find free display
+  * Build channel
 
 Add discovery for channels
 Create component containers

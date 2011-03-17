@@ -10,14 +10,17 @@
 
 static void file_server_callback (void* state, void* param, bid_t bid);
 
+static void file_server_announcement (void*, void*);
 static void file_server_announcement_alarm_in (void*, void*, bid_t);
 static bid_t file_server_announcement_alarm_out (void*, void*);
 static void file_server_announcement_alarm_composed (void*, void*, receipt_type_t);
 
+static void file_server_request (void*, void*);
 static void file_server_request_alarm_in (void*, void*, bid_t);
 static bid_t file_server_request_alarm_out (void*, void*);
 static void file_server_request_alarm_composed (void*, void*, receipt_type_t);
 
+static void file_server_fragment (void*, void*);
 static void file_server_fragment_alarm_in (void*, void*, bid_t);
 static bid_t file_server_fragment_alarm_out (void*, void*);
 static void file_server_fragment_alarm_composed (void*, void*, receipt_type_t);
@@ -26,6 +29,7 @@ static void file_server_announcement_in (void*, void*, bid_t);
 static void file_server_request_in (void*, void*, bid_t);
 static void file_server_fragment_in (void*, void*, bid_t);
 static bid_t file_server_message_out (void*, void*);
+static void file_server_message_out_composed (void*, void*, receipt_type_t);
 
 static void file_server_download_complete_composed (void*, void*, receipt_type_t);
 
@@ -34,7 +38,7 @@ static void file_server_download_complete_composed (void*, void*, receipt_type_t
 
 /* In seconds. */
 #define INIT_ANNOUNCE_INTERVAL 1
-#define MAX_ANNOUNCE_INTERVAL 8 /*4096*/
+#define MAX_ANNOUNCE_INTERVAL 4096
 #define REQUEST_INTERVAL 1
 
 /* In microseconds. */
@@ -250,7 +254,7 @@ file_server_create (const void* a)
 			   &file_server->msg_sender_proxy,
 			   msg_sender_proxy_message_in,
 			   NULL,
-			   NULL,
+			   file_server_message_out_composed,
 			   NULL) == 0);
 
   file_server->msg_receiver = arg->msg_receiver;
@@ -318,7 +322,7 @@ file_server_announcement_alarm_composed (void* state, void* param, receipt_type_
 
   if (file_server->announcement_alarm_in_composed &&
       file_server->announcement_alarm_out_composed) {
-    assert (schedule_output (file_server_announcement_alarm_out, NULL) == 0);
+    assert (schedule_internal (file_server_announcement, NULL) == 0);
   }
 }
 
@@ -331,7 +335,7 @@ file_server_request_alarm_composed (void* state, void* param, receipt_type_t rec
 
   if (file_server->request_alarm_in_composed &&
       file_server->request_alarm_out_composed) {
-    assert (schedule_output (file_server_request_alarm_out, NULL) == 0);
+    assert (schedule_internal (file_server_request, NULL) == 0);
   }
 }
 
@@ -344,7 +348,7 @@ file_server_fragment_alarm_composed (void* state, void* param, receipt_type_t re
 
   if (file_server->fragment_alarm_in_composed &&
       file_server->fragment_alarm_out_composed) {
-    assert (schedule_output (file_server_fragment_alarm_out, NULL) == 0);
+    assert (schedule_internal (file_server_fragment, NULL) == 0);
   }
 }
 
@@ -358,13 +362,13 @@ file_server_callback (void* state, void* param, bid_t bid)
 }
 
 static void
-file_server_announcement_alarm_in (void* state, void* param, bid_t bid)
+file_server_announcement (void* state, void* param)
 {
   file_server_t* file_server = state;
   assert (file_server != NULL);
 
   if (file_server->announce) {
-    if (file_server->next_announce < time (NULL)) {
+    if (file_server->next_announce <= time (NULL)) {
       /* Time to announce and we have all of the fragments. */
       bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
       mftp_Message_t* message = buffer_write_ptr (bid);
@@ -372,10 +376,16 @@ file_server_announcement_alarm_in (void* state, void* param, bid_t bid)
       bidq_push_back (file_server->bidq, bid);
       assert (schedule_output (file_server_message_out, NULL) == 0);
     }
-
+    
     /* Set the alarm again. */
     assert (schedule_output (file_server_announcement_alarm_out, NULL) == 0);
   }
+}
+
+static void
+file_server_announcement_alarm_in (void* state, void* param, bid_t bid)
+{
+  assert (schedule_internal (file_server_announcement, NULL) == 0);
 }
 
 static bid_t
@@ -394,7 +404,7 @@ file_server_announcement_alarm_out (void* state, void* param)
 }
 
 static void
-file_server_request_alarm_in (void* state, void* param, bid_t bid)
+file_server_request (void* state, void* param)
 {
   file_server_t* file_server = state;
   assert (file_server != NULL);
@@ -427,7 +437,12 @@ file_server_request_alarm_in (void* state, void* param, bid_t bid)
     /* Set the alarm again. */
     assert (schedule_output (file_server_request_alarm_out, NULL) == 0);
   }
+}
 
+static void
+file_server_request_alarm_in (void* state, void* param, bid_t bid)
+{
+  assert (schedule_internal (file_server_request, NULL) == 0);
 }
 
 static bid_t
@@ -443,7 +458,7 @@ file_server_request_alarm_out (void* state, void* param)
 }
 
 static void
-file_server_fragment_alarm_in (void* state, void* param, bid_t bid)
+file_server_fragment (void* state, void* param)
 {
   file_server_t* file_server = state;
   assert (file_server != NULL);
@@ -473,6 +488,12 @@ file_server_fragment_alarm_in (void* state, void* param, bid_t bid)
     /* Clear the request so we don't keep sending the same fragment. */
     bitset_clear (file_server->requests, file_server->request_idx);
   }
+}
+
+static void
+file_server_fragment_alarm_in (void* state, void* param, bid_t bid)
+{
+  assert (schedule_internal (file_server_fragment, NULL) == 0);
 }
 
 static bid_t
@@ -532,7 +553,7 @@ file_server_request_in (void* state, void* param, bid_t bid)
     }
 
     /* We might have fragments to send. */
-    assert (schedule_output (file_server_fragment_alarm_out, NULL) == 0);
+    assert (schedule_internal (file_server_fragment, NULL) == 0);
   }
 }
 
@@ -567,7 +588,7 @@ file_server_message_out (void* state, void* param)
   file_server_t* file_server = state;
   assert (file_server != NULL);
 
-  if (!bidq_empty (file_server->bidq)) {
+  if (file_server->message_out_composed && !bidq_empty (file_server->bidq)) {
     /* We have a message to send. */
     bid_t bid = bidq_front (file_server->bidq);
     bidq_pop_front (file_server->bidq);
@@ -577,6 +598,23 @@ file_server_message_out (void* state, void* param)
   else {
     /* No messages. */
     return -1;
+  }
+}
+
+static void
+file_server_message_out_composed (void* state, void* param, receipt_type_t receipt)
+{
+  file_server_t* file_server = state;
+  assert (file_server != NULL);
+
+  if (receipt == COMPOSED) {
+    assert (schedule_output (file_server_message_out, NULL) == 0);
+  }
+  else if (receipt == DECOMPOSED) {
+    /* Okay. */
+  }
+  else {
+    assert (0);
   }
 }
 
@@ -625,12 +663,20 @@ static input_t file_server_inputs[] = {
   file_server_fragment_in,
   NULL
 };
+
 static output_t file_server_outputs[] = {
   file_server_announcement_alarm_out,
   file_server_request_alarm_out,
   file_server_fragment_alarm_out,
   file_server_message_out,
   file_server_download_complete_out,
+  NULL
+};
+
+static internal_t file_server_internals[] = {
+  file_server_announcement,
+  file_server_request,
+  file_server_fragment,
   NULL
 };
 
@@ -641,4 +687,5 @@ descriptor_t file_server_descriptor = {
   .free_inputs = file_server_free_inputs,
   .inputs = file_server_inputs,
   .outputs = file_server_outputs,
+  .internals = file_server_internals,
 };

@@ -10,20 +10,13 @@
 
 static void matcher_callback (void* state, void* param, bid_t bid);
 
-static void matcher_match_alarm_in (void*, void*, bid_t);
-static bid_t matcher_match_alarm_out (void*, void*);
-static void matcher_match_alarm_composed (void*, void*, receipt_type_t);
-
 static void matcher_meta_download_complete (void* state, void* param, bid_t bid);
 static void matcher_query_download_complete (void* state, void* param, bid_t bid);
 
 static void matcher_announcement_in (void*, void*, bid_t);
 static void matcher_match_in (void*, void*, bid_t);
 static bid_t matcher_message_out (void*, void*);
-
-/* In seconds. */
-#define INIT_MATCH_INTERVAL 1
-#define MAX_MATCH_INTERVAL 16 /* 4096 */
+static void matcher_message_out_composed (void*, void*, receipt_type_t);
 
 typedef struct meta_item_struct meta_item_t;
 struct meta_item_struct {
@@ -47,14 +40,9 @@ struct query_item_struct {
 
 typedef struct match_item_struct match_item_t;
 struct match_item_struct {
-  bool declared;
-  bool alarm_in_composed;
-  bool alarm_out_composed;
   mftp_FileID_t meta_fileid;
   mftp_FileID_t query_fileid;
-  time_t next_match;
-  time_t match_interval;
-  aid_t match_alarm;
+  bool recent_match;
   match_item_t* next;
 };
 
@@ -130,7 +118,7 @@ matcher_create (const void* a)
 			   &matcher->msg_sender_proxy,
 			   msg_sender_proxy_message_in,
 			   NULL,
-			   NULL,
+			   matcher_message_out_composed,
 			   NULL) == 0);
 
   return matcher;
@@ -165,62 +153,6 @@ matcher_callback (void* state, void* param, bid_t bid)
   assert (matcher != NULL);
 
   automan_proxy_receive (matcher->automan, bid);
-}
-
-static void
-matcher_match_alarm_composed (void* state, void* param, receipt_type_t receipt)
-{
-  matcher_t* matcher = state;
-  assert (matcher != NULL);
-  assert (receipt == COMPOSED);
-
-  match_item_t* match = param;
-  assert (match != NULL);
-
-  if (match->alarm_in_composed &&
-      match->alarm_out_composed) {
-    assert (schedule_output (matcher_match_alarm_out, match) == 0);
-  }
-}
-
-static void
-matcher_match_alarm_in (void* state, void* param, bid_t bid)
-{
-  matcher_t* matcher = state;
-  assert (matcher != NULL);
-
-  match_item_t* match = param;
-  assert (match != NULL);
-
-  if (match->next_match < time (NULL)) {
-    /* Time to announce and we have all of the fragments. */
-    bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-    mftp_Message_t* message = buffer_write_ptr (bid);
-    mftp_Match_init (message, &match->meta_fileid, &match->query_fileid);
-    bidq_push_back (matcher->bidq, bid);
-    assert (schedule_output (matcher_message_out, NULL) == 0);
-  }
-
-  /* Set the alarm again. */
-  assert (schedule_output (matcher_match_alarm_out, match) == 0);
-}
-
-static bid_t
-matcher_match_alarm_out (void* state, void* param)
-{
-  matcher_t* matcher = state;
-  assert (matcher != NULL);
-
-  match_item_t* match = param;
-  assert (match != NULL);
-
-  /* Set the alarm. */
-  bid_t bid = buffer_alloc (sizeof (alarm_set_in_t));
-  alarm_set_in_t* in = buffer_write_ptr (bid);
-  in->secs = match->match_interval;
-  in->usecs = 0;
-
-  return bid;
 }
 
 void
@@ -274,8 +206,25 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       
       meta->next = matcher->metas;
       matcher->metas = meta;
-      
-      assert (schedule_system_output () == 0);
+    }
+
+    match_item_t* match;
+    for (match = matcher->matches;
+	 match != NULL;
+	 match = match->next) {
+      if (mftp_FileID_cmp (&match->meta_fileid, &meta->meta_fileid) == 0) {
+	if (match->recent_match) {
+	  /* We have seen a match recently.  Don't send but reset. */
+	  match->recent_match = false;
+	}
+	else {
+	  /* Send match for meta. */
+	  bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
+	  mftp_Message_t* message = buffer_write_ptr (bid);
+	  mftp_Match_init (message, &match->meta_fileid, &match->query_fileid);
+	  bidq_push_back (matcher->bidq, bid);
+	}
+      }
     }
   }
   else if (message->announcement.fileid.type == QUERY) {
@@ -319,11 +268,58 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
       
       query->next = matcher->queries;
       matcher->queries = query;
-      
-      assert (schedule_system_output () == 0);
+    }
+
+    match_item_t* match;
+    for (match = matcher->matches;
+	 match != NULL;
+	 match = match->next) {
+      if (mftp_FileID_cmp (&match->query_fileid, &query->query_fileid) == 0) {
+	if (match->recent_match) {
+	  /* We have seen a match recently.  Don't send but reset. */
+	  match->recent_match = false;
+	}
+	else {
+	  /* Send match for query. */
+	  bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
+	  mftp_Message_t* message = buffer_write_ptr (bid);
+	  mftp_Match_init (message, &match->meta_fileid, &match->query_fileid);
+	  bidq_push_back (matcher->bidq, bid);
+	}
+      }
     }
   }
 
+  /* Might have matches to send. */
+  assert (schedule_output (matcher_message_out, NULL) == 0);
+}
+
+static void
+add_match (matcher_t* matcher, const mftp_FileID_t* meta_fileid, const mftp_FileID_t* query_fileid)
+{
+  assert (matcher != NULL);
+  assert (meta_fileid != NULL);
+  assert (query_fileid != NULL);
+
+  /* Check that the match doesn't exist. */
+  match_item_t* match;
+  for (match = matcher->matches;
+       match != NULL &&
+	 !(mftp_FileID_cmp (meta_fileid, &match->meta_fileid) == 0 &&
+	   mftp_FileID_cmp (query_fileid, &match->query_fileid) == 0);
+       match = match->next)
+    ;;
+
+  if (match == NULL) {
+    match = malloc (sizeof (match_item_t));
+    
+    memcpy (&match->meta_fileid, meta_fileid, sizeof (mftp_FileID_t));
+    memcpy (&match->query_fileid, query_fileid, sizeof (mftp_FileID_t));
+    match->recent_match = false;
+    
+    match->next = matcher->matches;
+    matcher->matches = match;
+  }
 }
 
 void
@@ -337,78 +333,24 @@ matcher_match_in (void* state, void* param, bid_t bid)
   assert (message->header.type == MATCH);
 
   if (message->match.fileid1.type == META && message->match.fileid2.type == QUERY) {
-    match_item_t* ptr;
-    for (ptr = matcher->matches;
-	 ptr != NULL &&
-	   !(mftp_FileID_cmp (&message->match.fileid1, &ptr->meta_fileid) == 0 &&
-	     mftp_FileID_cmp (&message->match.fileid2, &ptr->query_fileid) == 0);
-	 ptr = ptr->next)
+    match_item_t* match;
+    for (match = matcher->matches;
+  	 match != NULL &&
+  	   !(mftp_FileID_cmp (&message->match.fileid1, &match->meta_fileid) == 0 &&
+  	     mftp_FileID_cmp (&message->match.fileid2, &match->query_fileid) == 0);
+  	 match = match->next)
       ;;
 
-    if (ptr != NULL) {
-      /* We already know about this match. */
-      ptr->next_match += ptr->match_interval;
-      ptr->match_interval *= 2;
-      if (ptr->match_interval > MAX_MATCH_INTERVAL) {
-      	ptr->match_interval = MAX_MATCH_INTERVAL;
-      }
+
+    if (match != NULL) {
+      /* We have seen a recent match. */
+      match->recent_match = true;
     }
     else {
-      /* TODO: Do something with a match we don't have. */	 
+      /* A new match. */
+      add_match (matcher, &message->match.fileid1, &message->match.fileid2);
     }
   }
-}
-
-static void
-add_match (matcher_t* matcher, mftp_FileID_t* meta_fileid, mftp_FileID_t* query_fileid)
-{
-  assert (matcher != NULL);
-  assert (meta_fileid != NULL);
-  assert (query_fileid != NULL);
-
-  match_item_t* match = malloc (sizeof (match_item_t));
-
-  assert (automan_declare (matcher->automan,
-			   &match->declared,
-			   match,
-			   NULL,
-			   NULL) == 0);
-
-  memcpy (&match->meta_fileid, meta_fileid, sizeof (mftp_FileID_t));
-  memcpy (&match->query_fileid, query_fileid, sizeof (mftp_FileID_t));
-  match->next_match = time (NULL);
-  match->match_interval = INIT_MATCH_INTERVAL;
-  assert (automan_create (matcher->automan,
-			  &match->match_alarm,
-			  &alarm_descriptor,
-			  NULL,
-			  NULL,
-			  NULL) == 0);
-  assert (automan_compose (matcher->automan,
-			   &match->alarm_in_composed,
-			   &match->match_alarm,
-			   alarm_alarm_out,
-			   NULL,
-			   &matcher->self,
-			   matcher_match_alarm_in,
-			   match,
-			   matcher_match_alarm_composed,
-			   match) == 0);
-  assert (automan_compose (matcher->automan,
-			   &match->alarm_out_composed,
-			   &matcher->self,
-			   matcher_match_alarm_out,
-			   match,
-			   &match->match_alarm,
-			   alarm_set_in,
-			   NULL,
-			   matcher_match_alarm_composed,
-			   match) == 0);
-
-  match->next = matcher->matches;
-  matcher->matches = match;
-      
-  assert (schedule_system_output () == 0);
 }
 
 static void
@@ -455,7 +397,7 @@ matcher_message_out (void* state, void* param)
   matcher_t* matcher = state;
   assert (matcher != NULL);
 
-  if (!bidq_empty (matcher->bidq)) {
+  if (matcher->message_out_composed && !bidq_empty (matcher->bidq)) {
     /* We have a message to send. */
     bid_t bid = bidq_front (matcher->bidq);
     bidq_pop_front (matcher->bidq);
@@ -468,13 +410,29 @@ matcher_message_out (void* state, void* param)
   }
 }
 
+static void
+matcher_message_out_composed (void* state, void* param, receipt_type_t receipt)
+{
+  matcher_t* matcher = state;
+  assert (matcher != NULL);
+
+  if (receipt == COMPOSED) {
+    assert (schedule_output (matcher_message_out, NULL) == 0);
+  }
+  else if (receipt == DECOMPOSED) {
+    /* Okay. */
+  }
+  else {
+    assert (0);
+  }
+}
+
 static input_t matcher_free_inputs[] = {
   matcher_callback,
   NULL
 };
 
 static input_t matcher_inputs[] = {
-  matcher_match_alarm_in,
   matcher_announcement_in,
   matcher_match_in,
   matcher_meta_download_complete,
@@ -483,7 +441,6 @@ static input_t matcher_inputs[] = {
 };
 
 static output_t matcher_outputs[] = {
-  matcher_match_alarm_out,
   matcher_message_out,
   NULL
 };
