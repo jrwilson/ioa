@@ -34,8 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) display$(EXEEXT) \
-	ramp$(EXEEXT)
+bin_PROGRAMS = main$(EXEEXT) thread_test$(EXEEXT) ramp$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -51,44 +50,23 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_display_OBJECTS = display_driver.$(OBJEXT) display.$(OBJEXT)
-display_OBJECTS = $(am_display_OBJECTS)
-display_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la
-display_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(display_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_main_OBJECTS = main.$(OBJEXT) composer.$(OBJEXT) trigger.$(OBJEXT) \
 	counter.$(OBJEXT)
 main_OBJECTS = $(am_main_OBJECTS)
-main_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la
-main_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(main_LDFLAGS) \
-	$(LDFLAGS) -o $@
+main_LDADD = $(LDADD)
+main_DEPENDENCIES = $(top_builddir)/libautoman/libautoman.la \
+	$(top_builddir)/libccm/libccm.la
 am_ramp_OBJECTS = ramp_driver.$(OBJEXT) ramp.$(OBJEXT) \
-	integer_display.$(OBJEXT) ramp_proxy.$(OBJEXT) \
-	integer_display_proxy.$(OBJEXT) component_manager.$(OBJEXT) \
-	bitset.$(OBJEXT) port_allocator.$(OBJEXT) port.$(OBJEXT) \
-	channel.$(OBJEXT)
+	ramp_proxy.$(OBJEXT)
 ramp_OBJECTS = $(am_ramp_OBJECTS)
-ramp_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libmftp/libmftp.la \
-	$(top_builddir)/libautoman/libautoman.la
-ramp_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ramp_LDFLAGS) \
-	$(LDFLAGS) -o $@
+ramp_LDADD = $(LDADD)
+ramp_DEPENDENCIES = $(top_builddir)/libautoman/libautoman.la \
+	$(top_builddir)/libccm/libccm.la
 am_thread_test_OBJECTS = thread_test.$(OBJEXT)
 thread_test_OBJECTS = $(am_thread_test_OBJECTS)
-thread_test_DEPENDENCIES = $(top_builddir)/libtable/libtable.la \
-	$(top_builddir)/libueioa/libueioa.la \
-	$(top_builddir)/libautoman/libautoman.la
-thread_test_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(thread_test_LDFLAGS) $(LDFLAGS) -o $@
+thread_test_LDADD = $(LDADD)
+thread_test_DEPENDENCIES = $(top_builddir)/libautoman/libautoman.la \
+	$(top_builddir)/libccm/libccm.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -102,10 +80,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(display_SOURCES) $(main_SOURCES) $(ramp_SOURCES) \
-	$(thread_test_SOURCES)
-DIST_SOURCES = $(display_SOURCES) $(main_SOURCES) $(ramp_SOURCES) \
-	$(thread_test_SOURCES)
+SOURCES = $(main_SOURCES) $(ramp_SOURCES) $(thread_test_SOURCES)
+DIST_SOURCES = $(main_SOURCES) $(ramp_SOURCES) $(thread_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -224,18 +200,10 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
+LDADD = $(top_builddir)/libautoman/libautoman.la $(top_builddir)/libccm/libccm.la 
 main_SOURCES = main.c composer.c trigger.c counter.c
-main_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
-main_LDFLAGS = -lpthread
 thread_test_SOURCES = thread_test.c
-thread_test_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
-thread_test_LDFLAGS = -lpthread
-display_SOURCES = display_driver.c display.c
-display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
-display_LDFLAGS = -lX11 -lpthread -ljpeg
-ramp_SOURCES = ramp_driver.c ramp.c integer_display.c ramp_proxy.c integer_display_proxy.c component_manager.c bitset.c port_allocator.c port.c channel.c
-ramp_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libmftp/libmftp.la $(top_builddir)/libautoman/libautoman.la
-ramp_LDFLAGS = -lpthread -ljson -lcrypto
+ramp_SOURCES = ramp_driver.c ramp.c ramp_proxy.c
 all: all-am
 
 .SUFFIXES:
@@ -313,18 +281,15 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-display$(EXEEXT): $(display_OBJECTS) $(display_DEPENDENCIES) 
-	@rm -f display$(EXEEXT)
-	$(display_LINK) $(display_OBJECTS) $(display_LDADD) $(LIBS)
 main$(EXEEXT): $(main_OBJECTS) $(main_DEPENDENCIES) 
 	@rm -f main$(EXEEXT)
-	$(main_LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
+	$(LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
 ramp$(EXEEXT): $(ramp_OBJECTS) $(ramp_DEPENDENCIES) 
 	@rm -f ramp$(EXEEXT)
-	$(ramp_LINK) $(ramp_OBJECTS) $(ramp_LDADD) $(LIBS)
+	$(LINK) $(ramp_OBJECTS) $(ramp_LDADD) $(LIBS)
 thread_test$(EXEEXT): $(thread_test_OBJECTS) $(thread_test_DEPENDENCIES) 
 	@rm -f thread_test$(EXEEXT)
-	$(thread_test_LINK) $(thread_test_OBJECTS) $(thread_test_LDADD) $(LIBS)
+	$(LINK) $(thread_test_OBJECTS) $(thread_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -332,18 +297,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bitset.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/channel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/component_manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/counter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display_driver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/integer_display.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/integer_display_proxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port_allocator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ramp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ramp_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ramp_proxy.Po@am__quote@
@@ -578,15 +534,23 @@ uninstall-am: uninstall-binPROGRAMS
 	uninstall-binPROGRAMS
 
 
-@WANT_CAMERA_TRUE@	bin_PROGRAMS += camera camera_display
+# integer_display.c integer_display_proxy.c component_manager.c bitset.c port_allocator.c port.c channel.c
 
-@WANT_CAMERA_TRUE@	camera_SOURCES = camera_driver.c camera.c
-@WANT_CAMERA_TRUE@	camera_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
-@WANT_CAMERA_TRUE@	camera_LDFLAGS = -lpthread
+# display_SOURCES = display_driver.c display.c
+# display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+# display_LDFLAGS = -lX11 -lpthread -ljpeg
 
-@WANT_CAMERA_TRUE@	camera_display_SOURCES = camera_display.c camera.c display.c
-@WANT_CAMERA_TRUE@	camera_display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
-@WANT_CAMERA_TRUE@	camera_display_LDFLAGS = -lX11 -lpthread -ljpeg
+# if WANT_CAMERA
+# 	bin_PROGRAMS += camera camera_display
+
+# 	camera_SOURCES = camera_driver.c camera.c
+# 	camera_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
+# 	camera_LDFLAGS = -lpthread
+
+# 	camera_display_SOURCES = camera_display.c camera.c display.c
+# 	camera_display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
+# 	camera_display_LDFLAGS = -lX11 -lpthread -ljpeg
+# endif
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

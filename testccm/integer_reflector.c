@@ -12,12 +12,32 @@ typedef struct {
   proxy_request_t request;
 } integer_reflector_proxy_t;
 
-static void integer_reflector_proxy_created (void*, void*, receipt_type_t);
-
 typedef struct {
   aid_t self;
   automan_t* automan;
 } integer_reflector_t;
+
+static void
+integer_reflector_proxy_created (void* state, void* param, receipt_type_t receipt)
+{
+  integer_reflector_t* integer_reflector = state;
+  assert (integer_reflector != NULL);
+  
+  integer_reflector_proxy_t* integer_reflector_proxy = param;
+  assert (integer_reflector_proxy != NULL);
+
+  if (receipt == CHILD_CREATED) {
+    integer_reflector_proxy->aid2 = integer_reflector_proxy->aid;
+    assert (automan_proxy_send_created (integer_reflector_proxy->aid, -1, &integer_reflector_proxy->request) == 0);
+  }
+  else if (receipt == CHILD_DESTROYED) {
+    assert (automan_rescind (integer_reflector->automan,
+			     &integer_reflector_proxy->declared) == 0);
+  }
+  else {
+    assert (0);
+  }
+}
 
 static void*
 integer_reflector_create (const void* arg)
@@ -96,28 +116,6 @@ integer_reflector_request_proxy (void* state, void* param, bid_t bid)
 			  NULL,
 			  integer_reflector_proxy_created,
 			  integer_reflector_proxy) == 0);
-}
-
-static void
-integer_reflector_proxy_created (void* state, void* param, receipt_type_t receipt)
-{
-  integer_reflector_t* integer_reflector = state;
-  assert (integer_reflector != NULL);
-  
-  integer_reflector_proxy_t* integer_reflector_proxy = param;
-  assert (integer_reflector_proxy != NULL);
-
-  if (receipt == CHILD_CREATED) {
-    integer_reflector_proxy->aid2 = integer_reflector_proxy->aid;
-    assert (automan_proxy_send_created (integer_reflector_proxy->aid, -1, &integer_reflector_proxy->request) == 0);
-  }
-  else if (receipt == CHILD_DESTROYED) {
-    assert (automan_rescind (integer_reflector->automan,
-			     &integer_reflector_proxy->declared) == 0);
-  }
-  else {
-    assert (0);
-  }
 }
 
 static input_t integer_reflector_free_inputs[] = {

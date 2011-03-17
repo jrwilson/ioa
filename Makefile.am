@@ -5,5 +5,4 @@ libueioa testueioa \
 libautoman testautoman \
 libmftp \
 libccm testccm \
-mftp
-# src .
+mftp src .

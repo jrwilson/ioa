@@ -1,33 +1,31 @@
 AM_CFLAGS = -Wall -I$(top_srcdir)/include
 
-bin_PROGRAMS = main thread_test display ramp
+LDADD = $(top_builddir)/libautoman/libautoman.la $(top_builddir)/libccm/libccm.la 
+
+bin_PROGRAMS = main thread_test ramp
 
 main_SOURCES = main.c composer.c trigger.c counter.c
-main_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
-main_LDFLAGS = -lpthread
 
 thread_test_SOURCES = thread_test.c
-thread_test_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
-thread_test_LDFLAGS = -lpthread
 
-display_SOURCES = display_driver.c display.c
-display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
-display_LDFLAGS = -lX11 -lpthread -ljpeg
+ramp_SOURCES = ramp_driver.c ramp.c ramp_proxy.c
 
-ramp_SOURCES = ramp_driver.c ramp.c integer_display.c ramp_proxy.c integer_display_proxy.c component_manager.c bitset.c port_allocator.c port.c channel.c
-ramp_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libmftp/libmftp.la $(top_builddir)/libautoman/libautoman.la
-ramp_LDFLAGS = -lpthread -ljson -lcrypto
+# integer_display.c integer_display_proxy.c component_manager.c bitset.c port_allocator.c port.c channel.c
 
-if WANT_CAMERA
-	bin_PROGRAMS += camera camera_display
+# display_SOURCES = display_driver.c display.c
+# display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la $(top_builddir)/libautoman/libautoman.la
+# display_LDFLAGS = -lX11 -lpthread -ljpeg
 
-	camera_SOURCES = camera_driver.c camera.c
-	camera_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
-	camera_LDFLAGS = -lpthread
+# if WANT_CAMERA
+# 	bin_PROGRAMS += camera camera_display
 
-	camera_display_SOURCES = camera_display.c camera.c display.c
-	camera_display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
-	camera_display_LDFLAGS = -lX11 -lpthread -ljpeg
-endif
+# 	camera_SOURCES = camera_driver.c camera.c
+# 	camera_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
+# 	camera_LDFLAGS = -lpthread
+
+# 	camera_display_SOURCES = camera_display.c camera.c display.c
+# 	camera_display_LDADD = $(top_builddir)/libtable/libtable.la $(top_builddir)/libueioa/libueioa.la
+# 	camera_display_LDFLAGS = -lX11 -lpthread -ljpeg
+# endif
 
 
