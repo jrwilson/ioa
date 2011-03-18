@@ -34,10 +34,10 @@ static void msg_sender_proxy_created (void* state, void* param, receipt_type_t r
 static void*
 msg_sender_create (const void* a)
 {
-  const msg_sender_create_arg_t* arg = a;
+  const msg_sender_create_arg_t* arg = (msg_sender_create_arg_t*)a;
   assert (arg != NULL);
 
-  msg_sender_t* msg_sender = malloc (sizeof (msg_sender_t));
+  msg_sender_t* msg_sender = (msg_sender_t*)malloc (sizeof (msg_sender_t));
 
   msg_sender->automan = automan_creat (msg_sender,
 				       &msg_sender->self);
@@ -67,11 +67,11 @@ msg_sender_create (const void* a)
 static void
 msg_sender_system_input (void* state, void* param, bid_t bid)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (msg_sender->automan, receipt);
 }
@@ -79,7 +79,7 @@ msg_sender_system_input (void* state, void* param, bid_t bid)
 static bid_t
 msg_sender_system_output (void* state, void* param)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
 
   return automan_action (msg_sender->automan);
@@ -88,13 +88,13 @@ msg_sender_system_output (void* state, void* param)
 void
 msg_sender_request_proxy (void* state, void* param, bid_t bid)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
 
   assert (buffer_size (bid) == sizeof (proxy_request_t));
-  const proxy_request_t* proxy_request = buffer_read_ptr (bid);
+  const proxy_request_t* proxy_request = (const proxy_request_t*)buffer_read_ptr (bid);
 
-  proxy_t* proxy = malloc (sizeof (proxy_t));
+  proxy_t* proxy = (proxy_t*)malloc (sizeof (proxy_t));
 
   proxy->proxy_request = *proxy_request;
 
@@ -124,10 +124,10 @@ msg_sender_request_proxy (void* state, void* param, bid_t bid)
 static void
 msg_sender_proxy_declared (void* state, void* param, receipt_type_t receipt)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
   
-  proxy_t* proxy = param;
+  proxy_t* proxy = (proxy_t*)param;
   assert (proxy != NULL);
   
   if (receipt == DECLARED) {
@@ -144,10 +144,10 @@ msg_sender_proxy_declared (void* state, void* param, receipt_type_t receipt)
 static void
 msg_sender_proxy_created (void* state, void* param, receipt_type_t receipt)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
 
-  proxy_t* proxy = param;
+  proxy_t* proxy = (proxy_t*)param;
   assert (proxy != NULL);
 
   if (receipt == CHILD_CREATED) {
@@ -169,11 +169,11 @@ msg_sender_proxy_created (void* state, void* param, receipt_type_t receipt)
 static void
 msg_sender_message_in (void* state, void* param, bid_t bid)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
 
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
 
   /* Calculate the size. */
   uint32_t size = sizeof (mftp_Header_t);
@@ -196,7 +196,7 @@ msg_sender_message_in (void* state, void* param, bid_t bid)
   }
 
   bid_t new_bid = buffer_alloc (size);
-  mftp_Message_t* new_message = buffer_write_ptr (new_bid);
+  mftp_Message_t* new_message = (mftp_Message_t*)buffer_write_ptr (new_bid);
   mftp_Message_hostToNet (new_message, message);
 
   /* Enqueue the item. */
@@ -208,7 +208,7 @@ msg_sender_message_in (void* state, void* param, bid_t bid)
 static bid_t
 msg_sender_packet_out (void* state, void* param)
 {
-  msg_sender_t* msg_sender = state;
+  msg_sender_t* msg_sender = (msg_sender_t*)state;
   assert (msg_sender != NULL);
 
   if (!bidq_empty (msg_sender->bidq)) {
@@ -230,10 +230,14 @@ static input_t msg_sender_inputs[] = { msg_sender_message_in, NULL };
 static output_t msg_sender_outputs[] = { msg_sender_packet_out, NULL };
 
 descriptor_t msg_sender_descriptor = {
-  .constructor = msg_sender_create,
-  .system_input = msg_sender_system_input,
-  .system_output = msg_sender_system_output,
-  .free_inputs = msg_sender_free_inputs,
-  .inputs = msg_sender_inputs,
-  .outputs = msg_sender_outputs,
+  msg_sender_create,
+  msg_sender_system_input,
+  msg_sender_system_output,
+  NULL,
+  NULL,
+  NULL,
+  msg_sender_free_inputs,
+  msg_sender_inputs,
+  msg_sender_outputs,
+  NULL
 };

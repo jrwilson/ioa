@@ -5,8 +5,8 @@
 static bool
 pi_aid_ptr_equal (const void* x0, const void* y0)
 {
-  const proxy_item_t* x = x0;
-  const proxy_item_t* y = y0;
+  const proxy_item_t* x = (const proxy_item_t*)x0;
+  const proxy_item_t* y = (const proxy_item_t*)y0;
 
   return x->aid_ptr == y->aid_ptr;
 }
@@ -14,8 +14,8 @@ pi_aid_ptr_equal (const void* x0, const void* y0)
 static bool
 pi_aid_equal (const void* x0, const void* y0)
 {
-  const proxy_item_t* x = x0;
-  const proxy_receipt_t* y = y0;
+  const proxy_item_t* x = (const proxy_item_t*)x0;
+  const proxy_receipt_t* y = (const proxy_receipt_t*)y0;
 
   return *x->aid_ptr == y->proxy_aid;
 }
@@ -27,12 +27,12 @@ pi_closed_aid_ptr (automan_t* automan,
   proxy_item_t key;
   key.aid_ptr = aid_ptr;
   
-  proxy_item_t* proxy_item = index_rfind_value (automan->pi_index,
-						index_rbegin (automan->pi_index),
-						index_rend (automan->pi_index),
-						pi_aid_ptr_equal,
-						&key,
-						NULL);
+  proxy_item_t* proxy_item = (proxy_item_t*)index_rfind_value (automan->pi_index,
+							       index_rbegin (automan->pi_index),
+							       index_rend (automan->pi_index),
+							       pi_aid_ptr_equal,
+							       &key,
+							       NULL);
 
   return proxy_item == NULL;
 }
@@ -47,7 +47,7 @@ pi_find_aid_ptr (automan_t* automan,
   proxy_item_t key;
   key.aid_ptr = aid_ptr;
   
-  return index_find_value (automan->pi_index,
+  return (proxy_item_t*)index_find_value (automan->pi_index,
 			   begin,
 			   end,
 			   pi_aid_ptr_equal,
@@ -83,7 +83,7 @@ proxy_request_create (bid_t bid,
 		      input_t callback_free_input)
 {
   bid_t b = buffer_alloc (sizeof (proxy_request_t));
-  proxy_request_t* proxy_request = buffer_write_ptr (b);
+  proxy_request_t* proxy_request = (proxy_request_t*)buffer_write_ptr (b);
   proxy_request->bid = bid;
   if (bid != -1) {
     buffer_add_child (b, bid);
@@ -101,7 +101,7 @@ pi_process (automan_t* automan)
 
     iterator_t iterator = index_begin (automan->pi_index);
     while (iterator_ne (iterator, index_end (automan->pi_index))) {
-      proxy_item_t* proxy_item = index_value (automan->pi_index, iterator);
+      proxy_item_t* proxy_item = (proxy_item_t*)index_value (automan->pi_index, iterator);
 
       if (*proxy_item->aid_ptr == -1) {
 	/* Request a proxy. */
@@ -181,7 +181,7 @@ automan_proxy_send_created (aid_t proxy_aid,
   assert (proxy_request != NULL);
 
   bid_t b = buffer_alloc (sizeof (proxy_receipt_t));
-  proxy_receipt_t* proxy_receipt = buffer_write_ptr (b);
+  proxy_receipt_t* proxy_receipt = (proxy_receipt_t*)buffer_write_ptr (b);
   proxy_receipt->type = PROXY_CREATED;
   proxy_receipt->proxy_aid = proxy_aid;
   proxy_receipt->bid = bid;
@@ -199,7 +199,7 @@ automan_proxy_send_not_created (bid_t bid,
   assert (proxy_request != NULL);
   
   bid_t b = buffer_alloc (sizeof (proxy_receipt_t));
-  proxy_receipt_t* proxy_receipt = buffer_write_ptr (b);
+  proxy_receipt_t* proxy_receipt = (proxy_receipt_t*)buffer_write_ptr (b);
   proxy_receipt->type = PROXY_NOT_CREATED;
   proxy_receipt->proxy_aid = -1;
   proxy_receipt->bid = bid;
@@ -218,7 +218,7 @@ automan_proxy_send_destroyed (aid_t aid,
   assert (proxy_request != NULL);
   
   bid_t b = buffer_alloc (sizeof (proxy_receipt_t));
-  proxy_receipt_t* proxy_receipt = buffer_write_ptr (b);
+  proxy_receipt_t* proxy_receipt = (proxy_receipt_t*)buffer_write_ptr (b);
   proxy_receipt->type = PROXY_DESTROYED;
   proxy_receipt->proxy_aid = aid;
   proxy_receipt->bid = -1;
@@ -233,7 +233,7 @@ automan_proxy_receive (automan_t* automan,
   assert (automan != NULL);
   assert (buffer_size (bid) == sizeof (proxy_receipt_t));
 
-  const proxy_receipt_t* proxy_receipt = buffer_read_ptr (bid);
+  const proxy_receipt_t* proxy_receipt = (const proxy_receipt_t*)buffer_read_ptr (bid);
 
   /* So we can play with the argument buffer. */
   buffer_incref (bid);

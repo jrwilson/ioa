@@ -28,7 +28,7 @@ typedef struct {
 static void*
 composer_create (const void* arg)
 {
-  composer_t* composer = malloc (sizeof (composer_t));
+  composer_t* composer = (composer_t*)malloc (sizeof (composer_t));
 
   composer->automan = automan_creat (composer,
 				     &composer->self);
@@ -95,11 +95,11 @@ static void
 composer_system_input (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
-  composer_t* composer = state;
+  composer_t* composer = (composer_t*)state;
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (composer->automan, receipt);
 }
@@ -107,14 +107,21 @@ composer_system_input (void* state, void* param, bid_t bid)
 static bid_t
 composer_system_output (void* state, void* param)
 {
-  composer_t* composer = state;
+  composer_t* composer = (composer_t*)state;
   assert (composer != NULL);
 
   return automan_action (composer->automan);
 }
 
 descriptor_t composer_descriptor = {
-  .constructor = composer_create,
-  .system_input = composer_system_input,
-  .system_output = composer_system_output,
+  composer_create,
+  composer_system_input,
+  composer_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL
 };

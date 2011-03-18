@@ -20,8 +20,8 @@ typedef struct {
 static bool
 receipt_entry_to_equal (const void* x0, const void* y0)
 {
-  const receipt_entry_t* x = x0;
-  const receipt_entry_t* y = y0;
+  const receipt_entry_t* x = (const receipt_entry_t*)x0;
+  const receipt_entry_t* y = (const receipt_entry_t*)y0;
 
   return x->to == y->to;
 }
@@ -29,22 +29,21 @@ receipt_entry_to_equal (const void* x0, const void* y0)
 static receipt_entry_t*
 receipt_entry_for_to (receipts_t* receipts, aid_t to, iterator_t* ptr)
 {
-  receipt_entry_t key = {
-    .to = to
-  };
+  receipt_entry_t key;
+  key.to = to;
 
-  return index_find_value (receipts->index,
-			   index_begin (receipts->index),
-			   index_end (receipts->index),
-			   receipt_entry_to_equal,
-			   &key,
-			   ptr);
+  return (receipt_entry_t*)index_find_value (receipts->index,
+					     index_begin (receipts->index),
+					     index_end (receipts->index),
+					     receipt_entry_to_equal,
+					     &key,
+					     ptr);
 }
 
 receipts_t*
 receipts_create (void)
 {
-  receipts_t* receipts = malloc (sizeof (receipts_t));
+  receipts_t* receipts = (receipts_t*)malloc (sizeof (receipts_t));
   pthread_rwlock_init (&receipts->lock, NULL);
   receipts->table = table_create (sizeof (receipt_entry_t));
   receipts->index = index_create_list (receipts->table);
@@ -366,9 +365,8 @@ receipts_purge_aid (receipts_t* receipts, aid_t to)
 {
   assert (receipts != NULL);
 
-  receipt_entry_t key = {
-    .to = to
-  };
+  receipt_entry_t key;
+  key.to = to;
 
   pthread_rwlock_wrlock (&receipts->lock);
   index_remove (receipts->index,

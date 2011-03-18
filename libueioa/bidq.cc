@@ -17,7 +17,7 @@ struct bidq_struct {
 bidq_t*
 bidq_create (void)
 {
-  bidq_t* bidq = malloc (sizeof (bidq_t));
+  bidq_t* bidq = (bidq_t*)malloc (sizeof (bidq_t));
   bidq->front = NULL;
   bidq->back = &bidq->front;
   return bidq;
@@ -28,7 +28,7 @@ bidq_push_back (bidq_t* bidq, bid_t bid)
 {
   assert (bidq != NULL);
 
-  queue_item_t* item = malloc (sizeof (queue_item_t));
+  queue_item_t* item = (queue_item_t*)malloc (sizeof (queue_item_t));
   item->bid = bid;
   item->next = NULL;
   *bidq->back = item;

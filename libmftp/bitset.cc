@@ -21,7 +21,7 @@ bitset_create (size_t capacity)
   assert (capacity > 0);
 
   size_t blocks = IDX_TO_BLOCK (capacity - 1) + 1;
-  bitset_t* bitset = malloc (sizeof (bitset_t) + sizeof (uint32_t) * blocks);
+  bitset_t* bitset = (bitset_t*)malloc (sizeof (bitset_t) + sizeof (uint32_t) * blocks);
   bitset->capacity = capacity;
   bitset->size = 0;
   memset (bitset->data, 0, sizeof (uint32_t) * blocks);

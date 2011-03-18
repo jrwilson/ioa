@@ -17,10 +17,10 @@ typedef struct {
 static void*
 udp_receiver_create (const void* a)
 {
-  const udp_receiver_create_arg_t* arg = a;
+  const udp_receiver_create_arg_t* arg = (const udp_receiver_create_arg_t*)a;
   assert (arg != NULL);
 
-  udp_receiver_t* udp_receiver = malloc (sizeof (udp_receiver_t));
+  udp_receiver_t* udp_receiver = (udp_receiver_t*)malloc (sizeof (udp_receiver_t));
   /* Create the socket. */
   if ((udp_receiver->fd = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
     perror ("socket");
@@ -71,12 +71,12 @@ udp_receiver_create (const void* a)
 static void
 udp_receiver_system_input (void* state, void* param, bid_t bid)
 {
-  udp_receiver_t* udp_receiver = state;
+  udp_receiver_t* udp_receiver = (udp_receiver_t*)state;
   assert (udp_receiver != NULL);
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
 
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
   if (receipt->type == SELF_CREATED) {
     assert (schedule_read_input (udp_receiver->fd) == 0);
   }
@@ -85,7 +85,7 @@ udp_receiver_system_input (void* state, void* param, bid_t bid)
 bid_t
 udp_receiver_packet_out (void* state, void* param)
 {
-  udp_receiver_t* udp_receiver = state;
+  udp_receiver_t* udp_receiver = (udp_receiver_t*)state;
   assert (udp_receiver != NULL);
 
   if (!bidq_empty (udp_receiver->bidq)) {
@@ -105,7 +105,7 @@ udp_receiver_packet_out (void* state, void* param)
 static void
 udp_receiver_read_input (void* state, void* param, bid_t b)
 {
-  udp_receiver_t* udp_receiver = state;
+  udp_receiver_t* udp_receiver = (udp_receiver_t*)state;
   assert (udp_receiver != NULL);
 
   /* Determine the number of bytes we can read. */
@@ -136,8 +136,14 @@ udp_receiver_read_input (void* state, void* param, bid_t b)
 static output_t udp_receiver_outputs[] = { udp_receiver_packet_out, NULL };
 
 descriptor_t udp_receiver_descriptor = {
-  .constructor = udp_receiver_create,
-  .system_input = udp_receiver_system_input,
-  .read_input = udp_receiver_read_input,
-  .outputs = udp_receiver_outputs,
+  udp_receiver_create,
+  udp_receiver_system_input,
+  NULL,
+  NULL,
+  udp_receiver_read_input,
+  NULL,
+  NULL,
+  NULL,
+  udp_receiver_outputs,
+  NULL
 };

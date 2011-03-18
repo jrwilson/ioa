@@ -68,8 +68,8 @@ typedef struct {
 static bool
 alarm_aid_equal (const void* x0, const void* y0)
 {
-  const alarm_t* x = x0;
-  const alarm_t* y = y0;
+  const alarm_t* x = (const alarm_t*)x0;
+  const alarm_t* y = (const alarm_t*)y0;
 
   return x->aid == y->aid;
 }
@@ -77,8 +77,8 @@ alarm_aid_equal (const void* x0, const void* y0)
 static bool
 alarm_lt (const void* x0, const void* y0)
 {
-  const alarm_t* x = x0;
-  const alarm_t* y = y0;
+  const alarm_t* x = (const alarm_t*)x0;
+  const alarm_t* y = (const alarm_t*)y0;
 
   if (x->tv.tv_sec != y->tv.tv_sec) {
     return x->tv.tv_sec < y->tv.tv_sec;
@@ -94,8 +94,8 @@ typedef struct {
 static bool
 fd_aid_equal (const void* x0, const void* y0)
 {
-  const fd_t* x = x0;
-  const fd_t* y = y0;
+  const fd_t* x = (const fd_t*)x0;
+  const fd_t* y = (const fd_t*)y0;
 
   return x->aid == y->aid;
 }
@@ -107,8 +107,8 @@ typedef struct {
 static void
 fdset_set (const void* e, void* a)
 {
-  const fd_t* fd = e;
-  fdset_t* fdset = a;
+  const fd_t* fd = (const fd_t*)e;
+  fdset_t* fdset = (fdset_t*)a;
 
   FD_SET (fd->fd, &fdset->fds);
 }
@@ -116,8 +116,8 @@ fdset_set (const void* e, void* a)
 static bool
 fdset_clear_read (const void* e, const void* a)
 {
-  const fd_t* fd = e;
-  const fdset_t* fdset = a;
+  const fd_t* fd = (const fd_t*)e;
+  const fdset_t* fdset = (const fdset_t*)a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
     runq_insert_read_input (runq, fd->aid);
@@ -132,8 +132,8 @@ fdset_clear_read (const void* e, const void* a)
 static bool
 fdset_clear_write (const void* e, const void* a)
 {
-  const fd_t* fd = e;
-  const fdset_t* fdset = a;
+  const fd_t* fd = (const fd_t*)e;
+  const fdset_t* fdset = (const fdset_t*)a;
 
   if (FD_ISSET (fd->fd, &fdset->fds)) {
     runq_insert_write_input (runq, fd->aid);
@@ -213,7 +213,7 @@ ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
       timeout_ptr = NULL;
     }
     else {
-      alarm_t* alarm = index_front (alarm_index);
+      alarm_t* alarm = (alarm_t*)index_front (alarm_index);
       alarm_t now;
       gettimeofday (&now.tv, NULL);
       if (alarm_lt (alarm, &now)) {
@@ -245,7 +245,7 @@ ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
     else {
       /* Process the timers. */
       while (!index_empty (alarm_index)) {
-	alarm_t* alarm = index_front (alarm_index);
+	alarm_t* alarm = (alarm_t*)index_front (alarm_index);
 	alarm_t now;
 	gettimeofday (&now.tv, NULL);
 	if (alarm_lt (alarm, &now)) {
@@ -295,28 +295,25 @@ ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
 		  tv.tv_usec -= 1000000;
 		}
 		/* Insert alarm. */
-		alarm_t key = {
-		  .aid = io.aid,
-		  .tv = tv,
-		};
+		alarm_t key;
+		key.aid = io.aid;
+		key.tv = tv;
 		index_insert_unique (alarm_index, alarm_aid_equal, &key);
 	      }
 	      break;
 	    case IO_WRITE:
 	      {
-		fd_t key = {
-		  .aid = io.aid,
-		  .fd = io.write.fd,
-		};
+		fd_t key;
+		key.aid = io.aid;
+		key.fd = io.write.fd;
 		index_insert_unique (write_index, fd_aid_equal, &key);
 	      }
 	      break;
 	    case IO_READ:
 	      {
-		fd_t key = {
-		  .aid = io.aid,
-		  .fd = io.read.fd,
-		};
+		fd_t key;
+		key.aid = io.aid;
+		key.fd = io.read.fd;
 		index_insert_unique (read_index, fd_aid_equal, &key);
 	      }
 	      break;

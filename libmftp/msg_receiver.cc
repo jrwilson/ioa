@@ -27,10 +27,10 @@ static void msg_receiver_packet_in (void* state, void* param, bid_t bid);
 static void*
 msg_receiver_create (const void* a)
 {
-  const msg_receiver_create_arg_t* arg = a;
+  const msg_receiver_create_arg_t* arg = (const msg_receiver_create_arg_t*)a;
   assert (arg != NULL);
 
-  msg_receiver_t* msg_receiver = malloc (sizeof (msg_receiver_t));
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)malloc (sizeof (msg_receiver_t));
 
   msg_receiver->automan = automan_creat (msg_receiver,
 					 &msg_receiver->self);
@@ -64,11 +64,11 @@ msg_receiver_create (const void* a)
 static void
 msg_receiver_system_input (void* state, void* param, bid_t bid)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (msg_receiver->automan, receipt);
 }
@@ -76,7 +76,7 @@ msg_receiver_system_input (void* state, void* param, bid_t bid)
 static bid_t
 msg_receiver_system_output (void* state, void* param)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
 
   return automan_action (msg_receiver->automan);
@@ -85,15 +85,15 @@ msg_receiver_system_output (void* state, void* param)
 static void
 msg_receiver_packet_in (void* state, void* param, bid_t bid)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
   assert (bid != -1);
 
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   uint32_t bytesRemaining = buffer_size (bid);
 
   bid_t new_bid = buffer_alloc (sizeof (mftp_Message_t));
-  mftp_Message_t* new_message = buffer_write_ptr (new_bid);
+  mftp_Message_t* new_message = (mftp_Message_t*)buffer_write_ptr (new_bid);
 
   if (mftp_Message_netToHost (new_message, message, bytesRemaining) == 0) {
     switch (new_message->header.type) {
@@ -124,7 +124,7 @@ msg_receiver_packet_in (void* state, void* param, bid_t bid)
 bid_t
 msg_receiver_announcement_out (void* state, void* param)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
 
   if (!bidq_empty (msg_receiver->announcements)) {
@@ -141,7 +141,7 @@ msg_receiver_announcement_out (void* state, void* param)
 bid_t
 msg_receiver_match_out (void* state, void* param)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
 
   if (!bidq_empty (msg_receiver->matches)) {
@@ -158,7 +158,7 @@ msg_receiver_match_out (void* state, void* param)
 bid_t
 msg_receiver_request_out (void* state, void* param)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
 
   if (!bidq_empty (msg_receiver->requests)) {
@@ -175,7 +175,7 @@ msg_receiver_request_out (void* state, void* param)
 bid_t
 msg_receiver_fragment_out (void* state, void* param)
 {
-  msg_receiver_t* msg_receiver = state;
+  msg_receiver_t* msg_receiver = (msg_receiver_t*)state;
   assert (msg_receiver != NULL);
 
   if (!bidq_empty (msg_receiver->fragments)) {
@@ -193,9 +193,14 @@ static input_t msg_receiver_inputs[] = { msg_receiver_packet_in, NULL };
 static output_t msg_receiver_outputs[] = { msg_receiver_announcement_out, msg_receiver_match_out, msg_receiver_request_out, msg_receiver_fragment_out, NULL };
 
 descriptor_t msg_receiver_descriptor = {
-  .constructor = msg_receiver_create,
-  .system_input = msg_receiver_system_input,
-  .system_output = msg_receiver_system_output,
-  .inputs = msg_receiver_inputs,
-  .outputs = msg_receiver_outputs,
+  msg_receiver_create,
+  msg_receiver_system_input,
+  msg_receiver_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  msg_receiver_inputs,
+  msg_receiver_outputs,
+  NULL,
 };

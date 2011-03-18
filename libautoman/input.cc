@@ -6,8 +6,8 @@ static bool
 ii_flag_ptr_equal (const void* x0,
 		   const void* y0)
 {
-  const input_item_t* x = x0;
-  const input_item_t* y = y0;
+  const input_item_t* x = (const input_item_t*)x0;
+  const input_item_t* y = (const input_item_t*)y0;
 
   return x->flag_ptr == y->flag_ptr;
 }
@@ -19,20 +19,20 @@ ii_find_flag_ptr (automan_t* automan,
   input_item_t key;
   key.flag_ptr = flag_ptr;
   
-  return index_find_value (automan->ii_index,
-			   index_begin (automan->ii_index),
-			   index_end (automan->ii_index),
-			   ii_flag_ptr_equal,
-			   &key,
-			   NULL);
+  return (input_item_t*)index_find_value (automan->ii_index,
+					  index_begin (automan->ii_index),
+					  index_end (automan->ii_index),
+					  ii_flag_ptr_equal,
+					  &key,
+					  NULL);
 }
 
 static bool
 ii_input_equal (const void* x0,
 		const void* y0)
 {
-  const input_item_t* x = x0;
-  const input_item_t* y = y0;
+  const input_item_t* x = (const input_item_t*)x0;
+  const input_item_t* y = (const input_item_t*)y0;
   
   return
     x->input == y->input &&
@@ -48,12 +48,12 @@ ii_find_input (automan_t* automan,
   key.input = input;
   key.in_param = in_param;
   
-  return index_find_value (automan->ii_index,
-			   index_begin (automan->ii_index),
-			   index_end (automan->ii_index),
-			   ii_input_equal,
-			   &key,
-			   NULL);
+  return (input_item_t*)index_find_value (automan->ii_index,
+					  index_begin (automan->ii_index),
+					  index_end (automan->ii_index),
+					  ii_input_equal,
+					  &key,
+					  NULL);
 }
 
 static void

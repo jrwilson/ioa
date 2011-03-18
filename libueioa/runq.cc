@@ -9,8 +9,8 @@
 static bool
 runnable_equal (const void* x0, const void* y0)
 {
-  const runnable_t* x = x0;
-  const runnable_t* y = y0;
+  const runnable_t* x = (const runnable_t*)x0;
+  const runnable_t* y = (const runnable_t*)y0;
   if (x->type != y->type) {
     return false;
   }
@@ -52,16 +52,16 @@ runnable_equal (const void* x0, const void* y0)
 static bool
 runnable_aid_equal (const void* x0, const void* y0)
 {
-  const runnable_t* x = x0;
-  const runnable_t* y = y0;
+  const runnable_t* x = (const runnable_t*)x0;
+  const runnable_t* y = (const runnable_t*)y0;
   return x->aid == y->aid;
 }
 
 static bool
 runnable_aid_param_equal (const void* x0, const void* y0)
 {
-  const runnable_t* x = x0;
-  const runnable_t* y = y0;
+  const runnable_t* x = (const runnable_t*)x0;
+  const runnable_t* y = (const runnable_t*)y0;
   return x->aid == y->aid && x->param == y->param;
 }
 
@@ -75,7 +75,7 @@ struct runq_struct {
 runq_t*
 runq_create (void)
 {
-  runq_t* runq = malloc (sizeof (runq_t));
+  runq_t* runq = (runq_t*)malloc (sizeof (runq_t));
   pthread_cond_init (&runq->cond, NULL);
   pthread_mutex_init (&runq->mutex, NULL);
   runq->table = table_create (sizeof (runnable_t));
@@ -134,11 +134,10 @@ runq_insert_system_input (runq_t* runq, aid_t aid)
   assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable = {
-    .type = SYSTEM_INPUT,
-    .aid = aid,
-    .param = NULL,
-  };
+  runnable_t runnable;
+  runnable.type = SYSTEM_INPUT;
+  runnable.aid = aid;
+  runnable.param = NULL;
   push (runq, &runnable);
 }
 
@@ -148,11 +147,11 @@ runq_insert_system_output (runq_t* runq, aid_t aid)
   assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable = {
-    .type = SYSTEM_OUTPUT,
-    .aid = aid,
-    .param = NULL,
-  };
+  runnable_t runnable;
+  runnable.type = SYSTEM_OUTPUT;
+  runnable.aid = aid;
+  runnable.param = NULL;
+
   push (runq, &runnable);
 }
 
@@ -162,11 +161,10 @@ runq_insert_alarm_input (runq_t* runq, aid_t aid)
   assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable = {
-    .type = ALARM_INPUT,
-    .aid = aid,
-    .param = NULL,
-  };
+  runnable_t runnable;
+  runnable.type = ALARM_INPUT;
+  runnable.aid = aid;
+  runnable.param = NULL;
   push (runq, &runnable);
 }
 
@@ -176,11 +174,10 @@ runq_insert_read_input (runq_t* runq, aid_t aid)
   assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable = {
-    .type = READ_INPUT,
-    .aid = aid,
-    .param = NULL,
-  };
+  runnable_t runnable;
+  runnable.type = READ_INPUT;
+  runnable.aid = aid;
+  runnable.param = NULL;
   push (runq, &runnable);
 }
 
@@ -190,11 +187,10 @@ runq_insert_write_input (runq_t* runq, aid_t aid)
   assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable = {
-    .type = WRITE_INPUT,
-    .aid = aid,
-    .param = NULL,
-  };
+  runnable_t runnable;
+  runnable.type = WRITE_INPUT;
+  runnable.aid = aid;
+  runnable.param = NULL;
   push (runq, &runnable);
 }
 
@@ -204,11 +200,10 @@ runq_insert_free_input (runq_t* runq, aid_t caller_aid, aid_t aid, input_t free_
   assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable = {
-    .type = FREE_INPUT,
-    .aid = aid,
-    .param = NULL,
-  };
+  runnable_t runnable;
+  runnable.type = FREE_INPUT;
+  runnable.aid = aid;
+  runnable.param = NULL;
   runnable.free_input.caller_aid = caller_aid;
   runnable.free_input.free_input = free_input;
   runnable.free_input.bid = bid;
@@ -222,11 +217,10 @@ runq_insert_output (runq_t* runq, aid_t aid, output_t output, void* param)
   assert (aid != -1);
   assert (output != NULL);
 
-  runnable_t runnable = {
-    .type = OUTPUT,
-    .aid = aid,
-    .param = param,
-  };
+  runnable_t runnable;
+  runnable.type = OUTPUT;
+  runnable.aid = aid;
+  runnable.param = param;
   runnable.output.output = output;
   push (runq, &runnable);
 }
@@ -238,11 +232,10 @@ runq_insert_internal (runq_t* runq, aid_t aid, internal_t internal, void* param)
   assert (aid != -1);
   assert (internal != NULL);
 
-  runnable_t runnable = {
-    .type = INTERNAL,
-    .aid = aid,
-    .param = param,
-  };
+  runnable_t runnable;
+  runnable.type = INTERNAL;
+  runnable.aid = aid;
+  runnable.param = param;
   runnable.internal.internal = internal;
   push (runq, &runnable);
 }
@@ -257,7 +250,7 @@ runq_pop (runq_t* runq, runnable_t* runnable)
   while (index_empty (runq->index)) {
     pthread_cond_wait (&runq->cond, &runq->mutex);
   }
-  runnable_t* r = index_front (runq->index);
+  runnable_t* r = (runnable_t*)index_front (runq->index);
   *runnable = *r;
   index_pop_front (runq->index);
   pthread_mutex_unlock (&runq->mutex);
@@ -268,9 +261,8 @@ runq_purge_aid (runq_t* runq, aid_t aid)
 {
   assert (runq != NULL);
 
-  runnable_t key = {
-    .aid = aid,
-  };
+  runnable_t key;
+  key.aid = aid;
   pthread_mutex_lock (&runq->mutex);
   index_remove (runq->index,
 		index_begin (runq->index),
@@ -285,10 +277,9 @@ runq_purge_aid_param (runq_t* runq, aid_t aid, void* param)
 {
   assert (runq != NULL);
 
-  runnable_t key = {
-    .aid = aid,
-    .param = param,
-  };
+  runnable_t key;
+  key.aid = aid;
+  key.param = param;
   pthread_mutex_lock (&runq->mutex);
   index_remove (runq->index,
 		index_begin (runq->index),

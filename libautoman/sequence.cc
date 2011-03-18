@@ -5,8 +5,8 @@
 static bool
 si_aid_ptr_equal (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const sequence_item_t* y = (const sequence_item_t*)y0;
 
   return x->aid_ptr == y->aid_ptr;
 }
@@ -14,8 +14,8 @@ si_aid_ptr_equal (const void* x0, const void* y0)
 static bool
 si_flag_ptr_equal (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const sequence_item_t* y = (const sequence_item_t*)y0;
 
   return x->flag_ptr == y->flag_ptr;
 }
@@ -23,8 +23,8 @@ si_flag_ptr_equal (const void* x0, const void* y0)
 bool
 si_child_destroyed_aid_equal (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const receipt_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const receipt_t* y = (const receipt_t*)y0;
 
   switch (x->order_type) {
   case COMPOSE:
@@ -44,8 +44,8 @@ si_child_destroyed_aid_equal (const void* x0, const void* y0)
 bool
 si_decomposed_input_equal (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const receipt_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const receipt_t* y = (const receipt_t*)y0;
 
   switch (x->order_type) {
   case CREATE:
@@ -68,8 +68,8 @@ si_decomposed_input_equal (const void* x0, const void* y0)
 static bool
 si_param_equal (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const sequence_item_t* y = (const sequence_item_t*)y0;
 
   switch (x->order_type) {
   case CREATE:
@@ -89,8 +89,8 @@ si_param_equal (const void* x0, const void* y0)
 static bool
 si_input_equal (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const sequence_item_t* y = (const sequence_item_t*)y0;
 
   switch (x->order_type) {
   case CREATE:
@@ -113,8 +113,8 @@ si_input_equal (const void* x0, const void* y0)
 static bool
 si_parameterized_composition (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const sequence_item_t* y = (const sequence_item_t*)y0;
 
   switch (x->order_type) {
   case CREATE:
@@ -134,8 +134,8 @@ si_parameterized_composition (const void* x0, const void* y0)
 static bool
 si_aid_composition (const void* x0, const void* y0)
 {
-  const sequence_item_t* x = x0;
-  const sequence_item_t* y = y0;
+  const sequence_item_t* x = (const sequence_item_t*)x0;
+  const sequence_item_t* y = (const sequence_item_t*)y0;
   
   switch (x->order_type) {
   case CREATE:
@@ -164,12 +164,12 @@ si_closed_aid_ptr (automan_t* automan,
   sequence_item_t key;
   key.aid_ptr = aid_ptr;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      si_aid_ptr_equal,
-						      &key,
-						      NULL);
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
+									index_rbegin (automan->si_index),
+									index_rend (automan->si_index),
+									si_aid_ptr_equal,
+									&key,
+									NULL);
 
   if (sequence_item != NULL) {
     /* Found one. */
@@ -196,12 +196,12 @@ si_open_aid_ptr_create (automan_t* automan,
   sequence_item_t key;
   key.aid_ptr = aid_ptr;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
-						      index_rbegin (automan->si_index),
-						      index_rend (automan->si_index),
-						      si_aid_ptr_equal,
-						      &key,
-						      NULL);
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
+									index_rbegin (automan->si_index),
+									index_rend (automan->si_index),
+									si_aid_ptr_equal,
+									&key,
+									NULL);
 
   if (sequence_item != NULL) {
     /* Found one. */
@@ -226,7 +226,7 @@ si_closed_flag_ptr (automan_t* automan,
   sequence_item_t key;
   key.flag_ptr = flag_ptr;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
 						      index_rbegin (automan->si_index),
 						      index_rend (automan->si_index),
 						      si_flag_ptr_equal,
@@ -253,7 +253,7 @@ si_open_flag_ptr_declare (automan_t* automan,
   sequence_item_t key;
   key.flag_ptr = flag_ptr;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
 						      index_rbegin (automan->si_index),
 						      index_rend (automan->si_index),
 						      si_flag_ptr_equal,
@@ -278,7 +278,7 @@ si_open_flag_ptr_compose (automan_t* automan,
   sequence_item_t key;
   key.flag_ptr = flag_ptr;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
 						      index_rbegin (automan->si_index),
 						      index_rend (automan->si_index),
 						      si_flag_ptr_equal,
@@ -303,7 +303,7 @@ si_closed_param (automan_t* automan,
   sequence_item_t key;
   key.declare.param = param;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
 						      index_rbegin (automan->si_index),
 						      index_rend (automan->si_index),
 						      si_param_equal,
@@ -328,7 +328,7 @@ si_open_param (automan_t* automan,
   sequence_item_t key;
   key.declare.param = param;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
 						      index_rbegin (automan->si_index),
 						      index_rend (automan->si_index),
 						      si_param_equal,
@@ -357,7 +357,7 @@ si_closed_input (automan_t* automan,
   key.compose.input = input;
   key.compose.in_param = in_param;
   
-  sequence_item_t* sequence_item = index_rfind_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_rfind_value (automan->si_index,
 						      index_rbegin (automan->si_index),
 						      index_rend (automan->si_index),
 						      si_input_equal,
@@ -508,7 +508,7 @@ si_param_declared (automan_t* automan,
   sequence_item_t key;
   key.declare.param = param;
   
-  sequence_item_t* sequence_item = index_find_value (automan->si_index,
+  sequence_item_t* sequence_item = (sequence_item_t*)index_find_value (automan->si_index,
 						     index_begin (automan->si_index),
 						     index_end (automan->si_index),
 						     si_param_equal,
@@ -534,7 +534,7 @@ si_find_flag_ptr (automan_t* automan,
   sequence_item_t key;
   key.flag_ptr = flag_ptr;
   
-  return index_find_value (automan->si_index,
+  return (sequence_item_t*)index_find_value (automan->si_index,
 			   begin,
 			   end,
 			   si_flag_ptr_equal,
@@ -550,7 +550,7 @@ si_rfind_flag_ptr (automan_t* automan,
   sequence_item_t key;
   key.flag_ptr = flag_ptr;
   
-  return index_rfind_value (automan->si_index,
+  return (sequence_item_t*)index_rfind_value (automan->si_index,
 			    index_rbegin (automan->si_index),
 			    index_rend (automan->si_index),
 			    si_flag_ptr_equal,
@@ -568,7 +568,7 @@ si_find_aid_ptr (automan_t* automan,
   sequence_item_t key;
   key.aid_ptr = aid_ptr;
   
-  return index_find_value (automan->si_index,
+  return (sequence_item_t*)index_find_value (automan->si_index,
 			   begin,
 			   end,
 			   si_aid_ptr_equal,
@@ -584,7 +584,7 @@ si_rfind_aid_ptr (automan_t* automan,
   sequence_item_t key;
   key.aid_ptr = aid_ptr;
   
-  return index_rfind_value (automan->si_index,
+  return (sequence_item_t*)index_rfind_value (automan->si_index,
 			    index_rbegin (automan->si_index),
 			    index_rend (automan->si_index),
 			    si_aid_ptr_equal,
@@ -603,7 +603,7 @@ si_find_composition_param (automan_t* automan,
   key.flag_ptr = flag_ptr;
   key.declare.param = param;
 
-  return index_find_value (automan->si_index,
+  return (sequence_item_t*)index_find_value (automan->si_index,
 			   begin,
 			   index_end (automan->si_index),
 			   si_parameterized_composition,
@@ -621,7 +621,7 @@ si_find_composition_aid (automan_t* automan,
   sequence_item_t key;
   key.aid_ptr = aid_ptr;
   
-  return index_find_value (automan->si_index,
+  return (sequence_item_t*)index_find_value (automan->si_index,
 			   begin,
 			   end,
 			   si_aid_composition,
@@ -638,7 +638,7 @@ si_process (automan_t* automan)
   for (iterator = index_begin (automan->si_index);
        iterator_ne (iterator, index_end (automan->si_index));
        iterator = index_advance (automan->si_index, iterator)) {
-    sequence_item_t* sequence_item = index_value (automan->si_index, iterator);
+    sequence_item_t* sequence_item = (sequence_item_t*)index_value (automan->si_index, iterator);
     switch (sequence_item->order_type) {
     case CREATE:
       {
@@ -1285,7 +1285,7 @@ automan_action (automan_t* automan)
     {
       if (si_process (automan)) {
 	bid_t bid = buffer_alloc (sizeof (order_t));
-	order_t* order = buffer_write_ptr (bid);
+	order_t* order = (order_t*)buffer_write_ptr (bid);
 	*order = automan->last_order;
 	automan->sequence_status = OUTSTANDING;
 	return bid;

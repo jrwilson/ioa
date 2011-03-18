@@ -107,7 +107,7 @@ automan_creat (void* state, aid_t* self_ptr)
   assert (state != NULL);
   assert (self_ptr != NULL);
 
-  automan_t* automan = malloc (sizeof (automan_t));
+  automan_t* automan = (automan_t*)malloc (sizeof (automan_t));
 
   automan->state = state;
   automan->self_ptr = self_ptr;
@@ -283,12 +283,12 @@ automan_apply (automan_t* automan,
 
 	/* Find the compose. */
 	iterator_t compose_pos;
-	sequence_item_t* compose = index_find_value (automan->si_index,
-						     index_begin (automan->si_index),
-						     index_end (automan->si_index),
-						     si_decomposed_input_equal,
-						     receipt,
-						     &compose_pos);
+	sequence_item_t* compose = (sequence_item_t*)index_find_value (automan->si_index,
+								       index_begin (automan->si_index),
+								       index_end (automan->si_index),
+								       si_decomposed_input_equal,
+								       receipt,
+								       &compose_pos);
 	assert (compose != NULL);
 	assert (compose->order_type == COMPOSE);
 	bool* flag_ptr = compose->flag_ptr;
@@ -394,12 +394,12 @@ automan_apply (automan_t* automan,
 
 	/* Find the create. */
 	iterator_t create_pos;
-	sequence_item_t* create = index_find_value (automan->si_index,
-						    index_begin (automan->si_index),
-						    index_end (automan->si_index),
-						    si_child_destroyed_aid_equal,
-						    receipt,
-						    &create_pos);
+	sequence_item_t* create = (sequence_item_t*)index_find_value (automan->si_index,
+								      index_begin (automan->si_index),
+								      index_end (automan->si_index),
+								      si_child_destroyed_aid_equal,
+								      receipt,
+								      &create_pos);
 	assert (create != NULL);
 	assert (create->order_type == CREATE);
 	aid_t* aid_ptr = create->aid_ptr;

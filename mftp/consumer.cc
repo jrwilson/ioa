@@ -18,7 +18,7 @@ print_fileid (const mftp_FileID_t* fileid)
 void
 consumer_announcement_in (void* state, void* param, bid_t bid)
 {
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == ANNOUNCEMENT);
 
   printf ("A ");
@@ -29,7 +29,7 @@ consumer_announcement_in (void* state, void* param, bid_t bid)
 void
 consumer_match_in (void* state, void* param, bid_t bid)
 {
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == MATCH);
 
   printf ("M ");
@@ -42,7 +42,7 @@ consumer_match_in (void* state, void* param, bid_t bid)
 void
 consumer_request_in (void* state, void* param, bid_t bid)
 {
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == REQUEST);
 
   printf ("R ");
@@ -53,7 +53,7 @@ consumer_request_in (void* state, void* param, bid_t bid)
 void
 consumer_fragment_in (void* state, void* param, bid_t bid)
 {
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == FRAGMENT);
 
   printf ("F ");
@@ -64,5 +64,14 @@ consumer_fragment_in (void* state, void* param, bid_t bid)
 static input_t consumer_inputs[] = { consumer_announcement_in, consumer_match_in, consumer_request_in, consumer_fragment_in, NULL };
 
 descriptor_t consumer_descriptor = {
-  .inputs = consumer_inputs,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  consumer_inputs,
+  NULL,
+  NULL
 };

@@ -114,8 +114,8 @@ typedef struct {
 static bool
 buffer_entry_bid_equal (const void* x0, const void* y0)
 {
-  const buffer_entry_t* x = x0;
-  const buffer_entry_t* y = y0;
+  const buffer_entry_t* x = (const buffer_entry_t*)x0;
+  const buffer_entry_t* y = (const buffer_entry_t*)y0;
   return x->bid == y->bid;
 }
 
@@ -124,16 +124,15 @@ buffer_entry_for_bid (buffers_t* buffers, bid_t bid, iterator_t* ptr)
 {
   assert (buffers != NULL);
 
-  buffer_entry_t key = {
-    .bid = bid
-  };
+  buffer_entry_t key;
+  key.bid = bid;
 
-  return index_find_value (buffers->buffer_index,
-			   index_begin (buffers->buffer_index),
-			   index_end (buffers->buffer_index),
-			   buffer_entry_bid_equal,
-			   &key,
-			   ptr);
+  return (buffer_entry_t*)index_find_value (buffers->buffer_index,
+					    index_begin (buffers->buffer_index),
+					    index_end (buffers->buffer_index),
+					    buffer_entry_bid_equal,
+					    &key,
+					    ptr);
 }
 
 typedef struct {
@@ -145,16 +144,16 @@ typedef struct {
 static bool
 buffer_ref_entry_aid_bid_equal (const void* x0, const void* y0)
 {
-  const buffer_ref_entry_t* x = x0;
-  const buffer_ref_entry_t* y = y0;
+  const buffer_ref_entry_t* x = (const buffer_ref_entry_t*)x0;
+  const buffer_ref_entry_t* y = (const buffer_ref_entry_t*)y0;
   return x->aid == y->aid && x->bid == y->bid;
 }
 
 static bool
 buffer_ref_entry_aid_equal (const void* x0, const void* y0)
 {
-  const buffer_ref_entry_t* x = x0;
-  const buffer_ref_entry_t* y = y0;
+  const buffer_ref_entry_t* x = (const buffer_ref_entry_t*)x0;
+  const buffer_ref_entry_t* y = (const buffer_ref_entry_t*)y0;
   return x->aid == y->aid;
 }
 
@@ -163,17 +162,16 @@ buffer_ref_entry_for_aid_bid (buffers_t* buffers, aid_t aid, bid_t bid, iterator
 {
   assert (buffers != NULL);
 
-  buffer_ref_entry_t key = {
-    .bid = bid,
-    .aid = aid
-  };
+  buffer_ref_entry_t key;
+  key.bid = bid;
+  key.aid = aid;
 
-  return index_find_value (buffers->buffer_ref_index,
-			   index_begin (buffers->buffer_ref_index),
-			   index_end (buffers->buffer_ref_index),
-			   buffer_ref_entry_aid_bid_equal, 
-			   &key,
-			   ptr);
+  return (buffer_ref_entry_t*)index_find_value (buffers->buffer_ref_index,
+						index_begin (buffers->buffer_ref_index),
+						index_end (buffers->buffer_ref_index),
+						buffer_ref_entry_aid_bid_equal, 
+						&key,
+						ptr);
 }
 
 typedef struct {
@@ -184,8 +182,8 @@ typedef struct {
 static bool
 buffer_edge_entry_parent_or_child_equal (const void* x0, const void* y0)
 {
-  const buffer_edge_entry_t* x = x0;
-  const buffer_edge_entry_t* y = y0;
+  const buffer_edge_entry_t* x = (const buffer_edge_entry_t*)x0;
+  const buffer_edge_entry_t* y = (const buffer_edge_entry_t*)y0;
   return
     x->parent == y->parent ||
     x->child == y->parent;
@@ -194,8 +192,8 @@ buffer_edge_entry_parent_or_child_equal (const void* x0, const void* y0)
 static bool
 buffer_edge_entry_parent_child_equal (const void* x0, const void* y0)
 {
-  const buffer_edge_entry_t* x = x0;
-  const buffer_edge_entry_t* y = y0;
+  const buffer_edge_entry_t* x = (const buffer_edge_entry_t*)x0;
+  const buffer_edge_entry_t* y = (const buffer_edge_entry_t*)y0;
   return
     x->parent == y->parent &&
     x->child == y->child;
@@ -206,12 +204,11 @@ buffer_edge_entry_for_parent_child (buffers_t* buffers, bid_t parent, bid_t chil
 {
   assert (buffers != NULL);
 
-  buffer_edge_entry_t key = {
-    .parent = parent,
-    .child = child,
-  };
+  buffer_edge_entry_t key;
+  key.parent = parent;
+  key.child = child;
 
-  return index_find_value (buffers->buffer_edge_index,
+  return (buffer_edge_entry_t*)index_find_value (buffers->buffer_edge_index,
 			   index_begin (buffers->buffer_edge_index),
 			   index_end (buffers->buffer_edge_index),
 			   buffer_edge_entry_parent_child_equal,
@@ -222,15 +219,15 @@ buffer_edge_entry_for_parent_child (buffers_t* buffers, bid_t parent, bid_t chil
 static bool
 bid_equal (const void* x0, const void* y0)
 {
-  const bid_t* x = x0;
-  const bid_t* y = y0;
+  const bid_t* x = (const bid_t*)x0;
+  const bid_t* y = (const bid_t*)y0;
   return *x == *y;
 }
 
 static void
 free_data (const void* e, void* ignored)
 {
-  const buffer_entry_t* buffer_entry = e;
+  const buffer_entry_t* buffer_entry = (const buffer_entry_t*)e;
   free (buffer_entry->data);
 }
 
@@ -258,25 +255,23 @@ allocate (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
   }
 
   /* Insert. */
-  buffer_entry_t entry = { 
-    .bid = bid,
-    .owner = owner,
-    .mode = READWRITE,
-    .size = size,
-    .alignment = alignment,
-    .data = data,
-    .ref_count = 1, /* Creator get's one reference. See next. */
-  };
+  buffer_entry_t entry;
+  entry.bid = bid;
+  entry.owner = owner;
+  entry.mode = READWRITE;
+  entry.size = size;
+  entry.alignment = alignment;
+  entry.data = data;
+  entry.ref_count = 1; /* Creator get's one reference. See next. */
 
   /* Create new entry. */
-  buffer_ref_entry_t key = {
-    .bid = bid,
-    .aid = owner,
-    .count = 1,
-  };
+  buffer_ref_entry_t key;
+  key.bid = bid;
+  key.aid = owner;
+  key.count = 1;
   index_insert (buffers->buffer_ref_index, &key);
 
-  return index_value (buffers->buffer_index, index_insert (buffers->buffer_index, &entry));
+  return (buffer_entry_t*)index_value (buffers->buffer_index, index_insert (buffers->buffer_index, &entry));
 }
 
 bid_t
@@ -438,8 +433,8 @@ typedef struct {
 static void
 insert_child_into_open (const void* value, void* a)
 {
-  const buffer_edge_entry_t* entry = value;
-  insert_arg_t* arg = a;
+  const buffer_edge_entry_t* entry = (const buffer_edge_entry_t*)value;
+  insert_arg_t* arg = (insert_arg_t*)a;
 
   if (entry->parent == arg->parent) {
     /* Insert into the open list. */
@@ -475,10 +470,9 @@ find_reachable_buffers (buffers_t* buffers, bid_t root_bid, index_t* target_inde
       index_insert (target_index, &bid);
 
       /* Insert all children into open. */
-      insert_arg_t arg = {
-	.buffers = buffers,
-	.parent = bid
-      };
+      insert_arg_t arg;
+      arg.buffers = buffers;
+      arg.parent = bid;
       index_for_each (buffers->buffer_edge_index,
 		      index_begin (buffers->buffer_edge_index),
 		      index_end (buffers->buffer_edge_index),
@@ -498,11 +492,10 @@ incref (buffers_t* buffers, bid_t bid, aid_t aid, size_t count)
   }
   else {
     /* Create new entry. */
-    buffer_ref_entry_t key = {
-      .bid = bid,
-      .aid = aid,
-      .count = count,
-    };
+    buffer_ref_entry_t key;
+    key.bid = bid;
+    key.aid = aid;
+    key.count = count;
     index_insert (buffers->buffer_ref_index, &key);
   }
 
@@ -524,7 +517,7 @@ static void
 incref_bid (const void* value, void* a)
 {
   bid_t bid = *(bid_t*)value;
-  incref_arg_t* arg = a;
+  incref_arg_t* arg = (incref_arg_t*)a;
 
   incref (arg->buffers, bid, arg->aid, arg->count);
 }
@@ -550,11 +543,10 @@ buffers_incref (buffers_t* buffers, aid_t aid, bid_t bid)
     find_reachable_buffers (buffers, bid, buffers->ref_closed_index);   
     
     /* Increment the reference count for all reachable. */
-    incref_arg_t arg = {
-      .buffers = buffers,
-      .aid = aid,
-      .count = 1
-    };
+    incref_arg_t arg;
+    arg.buffers = buffers;
+    arg.aid = aid;
+    arg.count = 1;
     index_for_each (buffers->ref_closed_index,
 		    index_begin (buffers->ref_closed_index),
 		    index_end (buffers->ref_closed_index),
@@ -571,9 +563,8 @@ remove_buffer_entry (buffers_t* buffers, buffer_entry_t* buffer_entry, iterator_
   assert (buffer_entry->ref_count == 0);
 
   /* Remove parent-child relationships. */
-  buffer_edge_entry_t key = {
-    .parent = buffer_entry->bid
-  };
+  buffer_edge_entry_t key;
+  key.parent = buffer_entry->bid;
 
   index_remove (buffers->buffer_edge_index,
 		index_begin (buffers->buffer_edge_index),
@@ -616,7 +607,7 @@ static void
 decref_bid (const void* value, void* a)
 {
   bid_t bid = *(bid_t*)value;
-  incref_arg_t* arg = a;
+  incref_arg_t* arg = (incref_arg_t*)a;
 
   decref (arg->buffers, bid, arg->aid, arg->count);
 }
@@ -632,11 +623,11 @@ decref_core (buffers_t* buffers, aid_t aid, bid_t root_bid)
     find_reachable_buffers (buffers, root_bid, buffers->ref_closed_index);   
 
     /* Decrement the reference count for all reachable. */
-    incref_arg_t arg = {
-      .buffers = buffers,
-      .aid = aid,
-      .count = 1
-    };
+    incref_arg_t arg;
+    arg.buffers = buffers;
+    arg.aid = aid;
+    arg.count = 1;
+
     index_for_each (buffers->ref_closed_index,
 		    index_begin (buffers->ref_closed_index),
 		    index_end (buffers->ref_closed_index),
@@ -664,7 +655,7 @@ static bool
 in_parent (const void* value, const void* arg)
 {
   bid_t bid = *(bid_t*)value;
-  const buffers_t* buffers = arg;
+  const buffers_t* buffers = (const buffers_t*)arg;
 
   return index_find_value (buffers->parent_reach_index,
   			   index_begin (buffers->parent_reach_index),
@@ -691,7 +682,7 @@ static void
 transfer2 (const void* value, void* a)
 {
   bid_t bid = *(bid_t*)value;
-  transfer_arg_t* arg = a;
+  transfer_arg_t* arg = (transfer_arg_t*)a;
 
   switch (arg->mode) {
   case TRANSFER:
@@ -707,8 +698,8 @@ transfer2 (const void* value, void* a)
 static void
 transfer1 (const void* value, void* a)
 {
-  const buffer_ref_entry_t* buffer_ref_entry = value;
-  transfer_arg_t* arg = a;
+  const buffer_ref_entry_t* buffer_ref_entry = (const buffer_ref_entry_t*)value;
+  transfer_arg_t* arg = (transfer_arg_t*)a;
 
   if (buffer_ref_entry->bid == arg->parent) {
     arg->aid = buffer_ref_entry->aid;
@@ -771,11 +762,10 @@ buffers_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 		      buffers);
 	
 	/* Transfer references from the parent to the child. */
-	transfer_arg_t arg = {
-	  .mode = TRANSFER,
-	  .buffers = buffers,
-	  .parent = parent
-	};
+	transfer_arg_t arg;
+	arg.mode = TRANSFER;
+	arg.buffers = buffers;
+	arg.parent = parent;
 	index_for_each (buffers->buffer_ref_index,
 			index_begin (buffers->buffer_ref_index),
 			index_end (buffers->buffer_ref_index),
@@ -783,10 +773,9 @@ buffers_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 			&arg);
       
 	/* Add to edge table. */
-	buffer_edge_entry_t edge_key = {
-	  .parent = parent,
-	  .child = child,
-	};
+	buffer_edge_entry_t edge_key;
+	edge_key.parent = parent;
+	edge_key.child = child;
 	index_insert (buffers->buffer_edge_index, &edge_key);
       }
     }
@@ -836,11 +825,10 @@ buffers_remove_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
 		    buffers);
 	
       /* Untransfer references from the parent to the child. */
-      transfer_arg_t arg = {
-	.mode = UNTRANSFER,
-	.buffers = buffers,
-	.parent = parent
-      };
+      transfer_arg_t arg;
+      arg.mode = UNTRANSFER;
+      arg.buffers = buffers;
+      arg.parent = parent;
       index_for_each (buffers->buffer_ref_index,
 		      index_begin (buffers->buffer_ref_index),
 		      index_end (buffers->buffer_ref_index),
@@ -860,8 +848,8 @@ typedef struct {
 static void
 null_aid (void* e, void* a)
 {
-  buffer_entry_t* buffer_entry = e;
-  null_arg_t* arg = a;
+  buffer_entry_t* buffer_entry = (buffer_entry_t*)e;
+  null_arg_t* arg = (null_arg_t*)a;
   
   if (buffer_entry->owner == arg->aid) {
     buffer_entry->owner = -1;
@@ -871,8 +859,8 @@ null_aid (void* e, void* a)
 static void
 dec_global (const void* e, void* a)
 {
-  const buffer_ref_entry_t* buffer_ref_entry = e;
-  null_arg_t* arg = a;
+  const buffer_ref_entry_t* buffer_ref_entry = (const buffer_ref_entry_t*)e;
+  null_arg_t* arg = (null_arg_t*)a;
 
   if (buffer_ref_entry->aid == arg->aid) {
     iterator_t buffer_entry_idx;
@@ -899,10 +887,9 @@ buffers_purge_aid (buffers_t* buffers, aid_t aid)
   pthread_rwlock_wrlock (&buffers->lock);
 
   /* Update the global counts. */
-  null_arg_t arg = {
-    .buffers = buffers,
-    .aid = aid
-  };
+  null_arg_t arg;
+  arg.buffers = buffers;
+  arg.aid = aid;
   index_for_each (buffers->buffer_ref_index,
 		  index_begin (buffers->buffer_ref_index),
 		  index_end (buffers->buffer_ref_index),
@@ -910,9 +897,8 @@ buffers_purge_aid (buffers_t* buffers, aid_t aid)
 		  &arg);
 
   /* Remove the reference entries. */
-  buffer_ref_entry_t key = {
-    .aid = aid
-  };
+  buffer_ref_entry_t key;
+  key.aid = aid;
   index_remove (buffers->buffer_ref_index,
 		index_begin (buffers->buffer_ref_index),
 		index_end (buffers->buffer_ref_index),
@@ -938,14 +924,13 @@ typedef struct {
 static void
 dup_edge (const void* e, void* a)
 {
-  const buffer_edge_entry_t* entry = e;
-  edge_arg_t* arg = a;
+  const buffer_edge_entry_t* entry = (const buffer_edge_entry_t*)e;
+  edge_arg_t* arg = (edge_arg_t*)a;
 
   if (entry->parent == arg->old_parent) {
-    buffer_edge_entry_t key = {
-      .parent = arg->new_parent,
-      .child = entry->child
-    };
+    buffer_edge_entry_t key;
+    key.parent = arg->new_parent;
+    key.child = entry->child;
     index_insert (arg->buffers->buffer_edge_index, &key);
   }
 }
@@ -992,11 +977,10 @@ buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid, size_t size)
 	      (buffer_entry->size < new_entry->size) ? buffer_entry->size : new_entry->size);
       
       /* Copy parent child relationships. */
-      edge_arg_t arg = {
-	.buffers = buffers,
-	.old_parent = buffer_entry->bid,
-	.new_parent = new_entry->bid
-      };
+      edge_arg_t arg;
+      arg.buffers = buffers;
+      arg.old_parent = buffer_entry->bid;
+      arg.new_parent = new_entry->bid;
       index_for_each (buffers->buffer_edge_index,
 		      index_begin (buffers->buffer_edge_index),
 		      index_end (buffers->buffer_edge_index),
@@ -1019,7 +1003,7 @@ buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid, size_t size)
 buffers_t*
 buffers_create (void)
 {
-  buffers_t* buffers = malloc (sizeof (buffers_t));
+  buffers_t* buffers = (buffers_t*)malloc (sizeof (buffers_t));
 
   buffers->next_bid = 0;
   pthread_rwlock_init (&buffers->lock, NULL);

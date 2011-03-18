@@ -65,12 +65,12 @@ typedef struct {
 static void*
 matcher_create (const void* a)
 {
-  const matcher_create_arg_t* arg = a;
+  const matcher_create_arg_t* arg = (const matcher_create_arg_t*)a;
   assert (arg != NULL);
   assert (arg->msg_sender != -1);
   assert (arg->msg_receiver != -1);
 
-  matcher_t* matcher = malloc (sizeof (matcher_t));
+  matcher_t* matcher = (matcher_t*)malloc (sizeof (matcher_t));
   matcher->bidq = bidq_create ();
   matcher->metas = NULL;
   matcher->queries = NULL;
@@ -128,11 +128,11 @@ static void
 matcher_system_input (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (matcher->automan, receipt);
 }
@@ -140,7 +140,7 @@ matcher_system_input (void* state, void* param, bid_t bid)
 static bid_t
 matcher_system_output (void* state, void* param)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
   return automan_action (matcher->automan);
@@ -149,7 +149,7 @@ matcher_system_output (void* state, void* param)
 static void
 matcher_callback (void* state, void* param, bid_t bid)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
   automan_proxy_receive (matcher->automan, bid);
@@ -158,11 +158,11 @@ matcher_callback (void* state, void* param, bid_t bid)
 void
 matcher_announcement_in (void* state, void* param, bid_t bid)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == ANNOUNCEMENT);
 
   if (message->announcement.fileid.type == META) {
@@ -173,7 +173,7 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
     
     if (meta == NULL) {
       /* Add it to the list. */
-      meta = malloc (sizeof (meta_item_t));
+      meta = (meta_item_t*)malloc (sizeof (meta_item_t));
       
       assert (automan_declare (matcher->automan,
 			       &meta->declared,
@@ -220,7 +220,7 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
 	else {
 	  /* Send match for meta. */
 	  bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-	  mftp_Message_t* message = buffer_write_ptr (bid);
+	  mftp_Message_t* message = (mftp_Message_t*)buffer_write_ptr (bid);
 	  mftp_Match_init (message, &match->meta_fileid, &match->query_fileid);
 	  bidq_push_back (matcher->bidq, bid);
 	}
@@ -235,7 +235,7 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
     
     if (query == NULL) {
       /* Add it to the list. */
-      query = malloc (sizeof (query_item_t));
+      query = (query_item_t*)malloc (sizeof (query_item_t));
       
       assert (automan_declare (matcher->automan,
 			       &query->declared,
@@ -282,7 +282,7 @@ matcher_announcement_in (void* state, void* param, bid_t bid)
 	else {
 	  /* Send match for query. */
 	  bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-	  mftp_Message_t* message = buffer_write_ptr (bid);
+	  mftp_Message_t* message = (mftp_Message_t*)buffer_write_ptr (bid);
 	  mftp_Match_init (message, &match->meta_fileid, &match->query_fileid);
 	  bidq_push_back (matcher->bidq, bid);
 	}
@@ -311,7 +311,7 @@ add_match (matcher_t* matcher, const mftp_FileID_t* meta_fileid, const mftp_File
     ;;
 
   if (match == NULL) {
-    match = malloc (sizeof (match_item_t));
+    match = (match_item_t*)malloc (sizeof (match_item_t));
     
     memcpy (&match->meta_fileid, meta_fileid, sizeof (mftp_FileID_t));
     memcpy (&match->query_fileid, query_fileid, sizeof (mftp_FileID_t));
@@ -325,11 +325,11 @@ add_match (matcher_t* matcher, const mftp_FileID_t* meta_fileid, const mftp_File
 void
 matcher_match_in (void* state, void* param, bid_t bid)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == MATCH);
 
   if (message->match.fileid1.type == META && message->match.fileid2.type == QUERY) {
@@ -356,10 +356,10 @@ matcher_match_in (void* state, void* param, bid_t bid)
 static void
 matcher_meta_download_complete (void* state, void* param, bid_t bid)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
-  meta_item_t* meta = param;
+  meta_item_t* meta = (meta_item_t*)param;
   assert (meta != NULL);
 
   query_item_t* query;
@@ -375,10 +375,10 @@ matcher_meta_download_complete (void* state, void* param, bid_t bid)
 static void
 matcher_query_download_complete (void* state, void* param, bid_t bid)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
-  query_item_t* query = param;
+  query_item_t* query = (query_item_t*)param;
   assert (query != NULL);
 
   meta_item_t* meta;
@@ -394,7 +394,7 @@ matcher_query_download_complete (void* state, void* param, bid_t bid)
 bid_t
 matcher_message_out (void* state, void* param)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
   if (matcher->message_out_composed && !bidq_empty (matcher->bidq)) {
@@ -413,7 +413,7 @@ matcher_message_out (void* state, void* param)
 static void
 matcher_message_out_composed (void* state, void* param, receipt_type_t receipt)
 {
-  matcher_t* matcher = state;
+  matcher_t* matcher = (matcher_t*)state;
   assert (matcher != NULL);
 
   if (receipt == COMPOSED) {
@@ -446,10 +446,14 @@ static output_t matcher_outputs[] = {
 };
 
 descriptor_t matcher_descriptor = {
-  .constructor = matcher_create,
-  .system_input = matcher_system_input,
-  .system_output = matcher_system_output,
-  .free_inputs = matcher_free_inputs,
-  .inputs = matcher_inputs,
-  .outputs = matcher_outputs,
+  matcher_create,
+  matcher_system_input,
+  matcher_system_output,
+  NULL,
+  NULL,
+  NULL,
+  matcher_free_inputs,
+  matcher_inputs,
+  matcher_outputs,
+  NULL
 };

@@ -15,6 +15,7 @@ AM_CONDITIONAL(WANT_CAMERA, test "$enable_camera" = yes)
 AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_LN_S
@@ -25,7 +26,7 @@ AC_PROG_MAKE_SET
 #AC_CHECK_LIB([X11], [main])
 # FIXME: Replace `main' with a function in `-ljpeg':
 #AC_CHECK_LIB([jpeg], [main])
-AC_SEARCH_LIBS([pthread_self], [pthread])
+AC_SEARCH_LIBS([pthread_key_create], [pthread])
 AC_SEARCH_LIBS([uuid_clear], [uuid])
 AC_SEARCH_LIBS([MD5], [crypto])
 AC_SEARCH_LIBS([json_object_new_object], [json])

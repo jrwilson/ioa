@@ -26,7 +26,7 @@ typedef void (*clear_t) (void*, table_t*);
 
 struct index_struct {
   index_t* next;
-  void* this;
+  void* ths;
   table_t* table;
   destroy_t destroy;
   new_capacity_t new_capacity;
@@ -86,7 +86,7 @@ static size_t
 free_remove (table_t* table)
 {
   assert (table != NULL);
-  assert (table->free_head != -1);
+  assert (table->free_head != size_t(-1));
 
   size_t entry = table->free_head;
   table->free_head = table->entries[entry].next;
@@ -108,7 +108,7 @@ insert (table_t* table, size_t next_entry, const void* value)
     else {
       table->capacity = 1;
     }
-    table->entries = realloc (table->entries, table->capacity * sizeof (entry_t));
+    table->entries = (entry_t*)realloc (table->entries, table->capacity * sizeof (entry_t));
     table->values = realloc (table->values, table->capacity * table->value_size);
     
     for (; old_capacity < table->capacity; ++old_capacity) {
@@ -119,7 +119,7 @@ insert (table_t* table, size_t next_entry, const void* value)
     index_t* index;
     for (index = table->indices; index != NULL; index = index->next) {
       assert (index->new_capacity != NULL);
-      index->new_capacity (index->this, index->table);
+      index->new_capacity (index->ths, index->table);
     }
   }
   
@@ -135,7 +135,7 @@ insert (table_t* table, size_t next_entry, const void* value)
   table->entries[entry].next = next_entry;
   
   /* Update next entry's prev pointer. */
-  if (next_entry != -1) {
+  if (next_entry != size_t(-1)) {
     prev_entry = table->entries[next_entry].prev;
     table->entries[next_entry].prev = entry;
   }
@@ -148,7 +148,7 @@ insert (table_t* table, size_t next_entry, const void* value)
   table->entries[entry].prev = prev_entry;
   
   /* Upate the previous entry's next pointer. */
-  if (prev_entry != -1) {
+  if (prev_entry != size_t(-1)) {
     table->entries[prev_entry].next = entry;
   }
   else {
@@ -168,11 +168,11 @@ erase (table_t* table, size_t entry)
 
   size_t next = table->entries[entry].next;
 
-  if (table->entries[entry].prev != -1) {
+  if (table->entries[entry].prev != size_t(-1)) {
     table->entries[table->entries[entry].prev].next = table->entries[entry].next;
   }
 
-  if (table->entries[entry].next != -1) {
+  if (table->entries[entry].next != size_t(-1)) {
     table->entries[table->entries[entry].next].prev = table->entries[entry].prev;
   }
 
@@ -209,7 +209,7 @@ clear (table_t* table)
   }
   else {
     /* Remove individually. */
-    while (table->used_head != -1) {
+    while (table->used_head != size_t(-1)) {
       erase (table, table->used_head);
     }
   }
@@ -221,7 +221,7 @@ table_create (size_t value_size)
 {
   assert (value_size > 0);
 
-  table_t* table = malloc (sizeof (table_t));
+  table_t* table = (table_t*)malloc (sizeof (table_t));
   table->used_head = -1;
   table->used_tail = -1;
   table->free_head = -1;
@@ -243,7 +243,7 @@ table_destroy (table_t* table)
   while (table->indices != NULL) {
     index_t* temp = table->indices;
     table->indices = temp->next;
-    temp->destroy (temp->this, table);
+    temp->destroy (temp->ths, table);
     free (temp);
   }
 
@@ -258,7 +258,7 @@ index_destroy (index_t* index)
   assert (index != NULL);
   assert (index->destroy != NULL);
 
-  index->destroy (index->this, index->table);
+  index->destroy (index->ths, index->table);
 
   index_t** ptr;
   for (ptr = &index->table->indices;
@@ -276,46 +276,19 @@ index_destroy (index_t* index)
  **************/
 
 static void
-list_destroy (void* this, table_t* table)
+list_destroy (void* ths, table_t* table)
 {
   assert (table != NULL);
 }
 
 static void
-list_new_capacity (void* this, table_t* table)
+list_new_capacity (void* ths, table_t* table)
 {
   assert (table != NULL);
 }
 
 static size_t
-list_advance (void* this, table_t* table, size_t iterator)
-{
-  assert (table != NULL);
-  assert (is_used (table, iterator));
-
-  return table->entries[iterator].next;
-}
-
-static size_t
-list_retreat (void* this, table_t* table, size_t iterator)
-{
-  assert (table != NULL);
-  assert (is_used (table, iterator));
-
-  return table->entries[iterator].prev;
-}
-
-static size_t
-list_radvance (void* this, table_t* table, size_t iterator)
-{
-  assert (table != NULL);
-  assert (is_used (table, iterator));
-
-  return table->entries[iterator].prev;
-}
-
-static size_t
-list_rretreat (void* this, table_t* table, size_t iterator)
+list_advance (void* ths, table_t* table, size_t iterator)
 {
   assert (table != NULL);
   assert (is_used (table, iterator));
@@ -324,7 +297,34 @@ list_rretreat (void* this, table_t* table, size_t iterator)
 }
 
 static size_t
-list_begin (void* this, table_t* table)
+list_retreat (void* ths, table_t* table, size_t iterator)
+{
+  assert (table != NULL);
+  assert (is_used (table, iterator));
+
+  return table->entries[iterator].prev;
+}
+
+static size_t
+list_radvance (void* ths, table_t* table, size_t iterator)
+{
+  assert (table != NULL);
+  assert (is_used (table, iterator));
+
+  return table->entries[iterator].prev;
+}
+
+static size_t
+list_rretreat (void* ths, table_t* table, size_t iterator)
+{
+  assert (table != NULL);
+  assert (is_used (table, iterator));
+
+  return table->entries[iterator].next;
+}
+
+static size_t
+list_begin (void* ths, table_t* table)
 {
   assert (table != NULL);
 
@@ -332,7 +332,7 @@ list_begin (void* this, table_t* table)
 }
 
 static size_t
-list_rbegin (void* this, table_t* table)
+list_rbegin (void* ths, table_t* table)
 {
   assert (table != NULL);
 
@@ -340,7 +340,7 @@ list_rbegin (void* this, table_t* table)
 }
 
 static void*
-list_front (void* this, table_t* table)
+list_front (void* ths, table_t* table)
 {
   assert (table != NULL);
   assert (is_used (table, table->used_head));
@@ -349,7 +349,7 @@ list_front (void* this, table_t* table)
 }
 
 static void*
-list_back (void* this, table_t* table)
+list_back (void* ths, table_t* table)
 {
   assert (table != NULL);
   assert (is_used (table, table->used_tail));
@@ -358,7 +358,7 @@ list_back (void* this, table_t* table)
 }
 
 static void*
-list_at (void* this, table_t* table, size_t pos)
+list_at (void* ths, table_t* table, size_t pos)
 {
   assert (table != NULL);
 
@@ -382,7 +382,7 @@ list_at (void* this, table_t* table, size_t pos)
 }
 
 static void
-list_insert (void* this, table_t* table, size_t iterator)
+list_insert (void* ths, table_t* table, size_t iterator)
 {
   assert (table != NULL);
 
@@ -391,7 +391,7 @@ list_insert (void* this, table_t* table, size_t iterator)
 }
 
 static void
-list_erase (void* this, table_t* table, size_t iterator)
+list_erase (void* ths, table_t* table, size_t iterator)
 {
   assert (table != NULL);
 
@@ -400,13 +400,13 @@ list_erase (void* this, table_t* table, size_t iterator)
 }
 
 static void
-list_clear (void* this, table_t* table)
+list_clear (void* ths, table_t* table)
 {
   assert (table != NULL);
 
   /* Do nothing. */
-  assert (table->used_head == -1);
-  assert (table->used_tail == -1);
+  assert (table->used_head == size_t(-1));
+  assert (table->used_tail == size_t(-1));
   assert (table->size == 0);
 }
 
@@ -415,8 +415,8 @@ index_create_list (table_t* table)
 {
   assert (table != NULL);
 
-  index_t* index = malloc (sizeof (index_t));
-  index->this = NULL;
+  index_t* index = (index_t*)malloc (sizeof (index_t));
+  index->ths = NULL;
   index->table = table;
   index->destroy = list_destroy;
   index->new_capacity = list_new_capacity;
@@ -460,9 +460,9 @@ typedef struct {
 } ordered_list_t;
 
 static void
-ordered_list_destroy (void* this, table_t* table)
+ordered_list_destroy (void* ths, table_t* table)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
@@ -470,52 +470,19 @@ ordered_list_destroy (void* this, table_t* table)
 }
 
 static void
-ordered_list_new_capacity (void* this, table_t* table)
+ordered_list_new_capacity (void* ths, table_t* table)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
-  ordered_list->entries = realloc (ordered_list->entries, table->capacity * sizeof (ordered_list_entry_t));
+  ordered_list->entries = (ordered_list_entry_t*)realloc (ordered_list->entries, table->capacity * sizeof (ordered_list_entry_t));
 }
 
 static size_t
-ordered_list_advance (void* this, table_t* table, size_t iterator)
+ordered_list_advance (void* ths, table_t* table, size_t iterator)
 {
-  ordered_list_t* ordered_list = this;
-  assert (ordered_list != NULL);
-  assert (table != NULL);
-  assert (is_used (table, iterator));
-
-  return ordered_list->entries[iterator].next;
-}
-
-static size_t
-ordered_list_retreat (void* this, table_t* table, size_t iterator)
-{
-  ordered_list_t* ordered_list = this;
-  assert (ordered_list != NULL);
-  assert (table != NULL);
-  assert (is_used (table, iterator));
-
-  return ordered_list->entries[iterator].prev;
-}
-
-static size_t
-ordered_list_radvance (void* this, table_t* table, size_t iterator)
-{
-  ordered_list_t* ordered_list = this;
-  assert (ordered_list != NULL);
-  assert (table != NULL);
-  assert (is_used (table, iterator));
-
-  return ordered_list->entries[iterator].prev;
-}
-
-static size_t
-ordered_list_rretreat (void* this, table_t* table, size_t iterator)
-{
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
   assert (is_used (table, iterator));
@@ -524,9 +491,42 @@ ordered_list_rretreat (void* this, table_t* table, size_t iterator)
 }
 
 static size_t
-ordered_list_begin (void* this, table_t* table)
+ordered_list_retreat (void* ths, table_t* table, size_t iterator)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
+  assert (ordered_list != NULL);
+  assert (table != NULL);
+  assert (is_used (table, iterator));
+
+  return ordered_list->entries[iterator].prev;
+}
+
+static size_t
+ordered_list_radvance (void* ths, table_t* table, size_t iterator)
+{
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
+  assert (ordered_list != NULL);
+  assert (table != NULL);
+  assert (is_used (table, iterator));
+
+  return ordered_list->entries[iterator].prev;
+}
+
+static size_t
+ordered_list_rretreat (void* ths, table_t* table, size_t iterator)
+{
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
+  assert (ordered_list != NULL);
+  assert (table != NULL);
+  assert (is_used (table, iterator));
+
+  return ordered_list->entries[iterator].next;
+}
+
+static size_t
+ordered_list_begin (void* ths, table_t* table)
+{
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
@@ -534,9 +534,9 @@ ordered_list_begin (void* this, table_t* table)
 }
 
 static size_t
-ordered_list_rbegin (void* this, table_t* table)
+ordered_list_rbegin (void* ths, table_t* table)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
@@ -544,9 +544,9 @@ ordered_list_rbegin (void* this, table_t* table)
 }
 
 static void*
-ordered_list_front (void* this, table_t* table)
+ordered_list_front (void* ths, table_t* table)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
   assert (is_used (table, ordered_list->head));
@@ -555,9 +555,9 @@ ordered_list_front (void* this, table_t* table)
 }
 
 static void*
-ordered_list_back (void* this, table_t* table)
+ordered_list_back (void* ths, table_t* table)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
   assert (is_used (table, ordered_list->tail));
@@ -566,9 +566,9 @@ ordered_list_back (void* this, table_t* table)
 }
 
 static void*
-ordered_list_at (void* this, table_t* table, size_t pos)
+ordered_list_at (void* ths, table_t* table, size_t pos)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
@@ -592,16 +592,16 @@ ordered_list_at (void* this, table_t* table, size_t pos)
 }
 
 static void
-ordered_list_insert (void* this, table_t* table, size_t entry)
+ordered_list_insert (void* ths, table_t* table, size_t entry)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
   assert (is_used (table, entry));
 
   size_t next_entry;
   for (next_entry = ordered_list->head;
-       next_entry != -1 &&
+       next_entry != size_t(-1) &&
    	 !ordered_list->predicate (IDX_TO_VALUE (table, entry), IDX_TO_VALUE (table, next_entry));
        next_entry = ordered_list->entries[next_entry].next)
     ;;
@@ -612,7 +612,7 @@ ordered_list_insert (void* this, table_t* table, size_t entry)
   ordered_list->entries[entry].next = next_entry;
   
   /* Update next entry's prev pointer. */
-  if (next_entry != -1) {
+  if (next_entry != size_t(-1)) {
     prev_entry = ordered_list->entries[next_entry].prev;
     ordered_list->entries[next_entry].prev = entry;
   }
@@ -625,7 +625,7 @@ ordered_list_insert (void* this, table_t* table, size_t entry)
   ordered_list->entries[entry].prev = prev_entry;
   
   /* Upate the previous entry's next pointer. */
-  if (prev_entry != -1) {
+  if (prev_entry != size_t(-1)) {
     ordered_list->entries[prev_entry].next = entry;
   }
   else {
@@ -634,17 +634,17 @@ ordered_list_insert (void* this, table_t* table, size_t entry)
 }
 
 static void
-ordered_list_erase (void* this, table_t* table, size_t entry)
+ordered_list_erase (void* ths, table_t* table, size_t entry)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
-  if (ordered_list->entries[entry].prev != -1) {
+  if (ordered_list->entries[entry].prev != size_t(-1)) {
     ordered_list->entries[ordered_list->entries[entry].prev].next = ordered_list->entries[entry].next;
   }
   
-  if (ordered_list->entries[entry].next != -1) {
+  if (ordered_list->entries[entry].next != size_t(-1)) {
     ordered_list->entries[ordered_list->entries[entry].next].prev = ordered_list->entries[entry].prev;
   }
   
@@ -658,9 +658,9 @@ ordered_list_erase (void* this, table_t* table, size_t entry)
 }
 
 static void
-ordered_list_clear (void* this, table_t* table)
+ordered_list_clear (void* ths, table_t* table)
 {
-  ordered_list_t* ordered_list = this;
+  ordered_list_t* ordered_list = (ordered_list_t*)ths;
   assert (ordered_list != NULL);
   assert (table != NULL);
 
@@ -674,14 +674,14 @@ index_create_ordered_list (table_t* table, predicate_t predicate)
   assert (table != NULL);
   assert (predicate != NULL);
 
-  ordered_list_t* ordered_list = malloc (sizeof (ordered_list_t));
+  ordered_list_t* ordered_list = (ordered_list_t*)malloc (sizeof (ordered_list_t));
   ordered_list->head = -1;
   ordered_list->tail = -1;
   ordered_list->entries = NULL;
   ordered_list->predicate = predicate;
 
-  index_t* index = malloc (sizeof (index_t));
-  index->this = ordered_list;
+  index_t* index = (index_t*)malloc (sizeof (index_t));
+  index->ths = ordered_list;
   index->table = table;
   index->destroy = ordered_list_destroy;
   index->new_capacity = ordered_list_new_capacity;
@@ -714,7 +714,7 @@ index_advance (index_t* index, iterator_t iterator)
   assert (index != NULL);
   assert (index->advance != NULL);
 
-  iterator.pos = index->advance (index->this, index->table, iterator.pos);
+  iterator.pos = index->advance (index->ths, index->table, iterator.pos);
   return iterator;
 }
 
@@ -724,7 +724,7 @@ index_retreat (index_t* index, iterator_t iterator)
   assert (index != NULL);
   assert (index->retreat != NULL);
 
-  iterator.pos = index->retreat (index->this, index->table, iterator.pos);
+  iterator.pos = index->retreat (index->ths, index->table, iterator.pos);
   return iterator;
 }
 
@@ -734,7 +734,7 @@ index_radvance (index_t* index, riterator_t iterator)
   assert (index != NULL);
   assert (index->advance != NULL);
 
-  iterator.pos = index->radvance (index->this, index->table, iterator.pos);
+  iterator.pos = index->radvance (index->ths, index->table, iterator.pos);
   return iterator;
 }
 
@@ -744,7 +744,7 @@ index_rretreat (index_t* index, riterator_t iterator)
   assert (index != NULL);
   assert (index->retreat != NULL);
 
-  iterator.pos = index->rretreat (index->this, index->table, iterator.pos);
+  iterator.pos = index->rretreat (index->ths, index->table, iterator.pos);
   return iterator;
 }
 
@@ -754,9 +754,8 @@ index_begin (index_t* index)
   assert (index != NULL);
   assert (index->begin != NULL);
 
-  iterator_t iterator = {
-    .pos = index->begin (index->this, index->table),
-  };
+  iterator_t iterator;
+  iterator.pos = index->begin (index->ths, index->table);
 
   return iterator;
 }
@@ -766,9 +765,8 @@ index_end (index_t* index)
 {
   assert (index != NULL);
 
-  iterator_t iterator = {
-    .pos = -1,
-  };
+  iterator_t iterator;
+  iterator.pos = -1;
 
   return iterator;
 }
@@ -779,9 +777,8 @@ index_rbegin (index_t* index)
   assert (index != NULL);
   assert (index->rbegin != NULL);
 
-  riterator_t iterator = {
-    .pos = index->rbegin (index->this, index->table),
-  };
+  riterator_t iterator;
+  iterator.pos = index->rbegin (index->ths, index->table);
 
   return iterator;
 }
@@ -791,9 +788,8 @@ index_rend (index_t* index)
 {
   assert (index != NULL);
 
-  riterator_t iterator = {
-    .pos = -1,
-  };
+  riterator_t iterator;
+  iterator.pos = -1;
 
   return iterator;
 }
@@ -820,7 +816,7 @@ index_front (index_t* index)
   assert (index != NULL);
   assert (index->front != NULL);
 
-  return index->front (index->this, index->table);
+  return index->front (index->ths, index->table);
 }
 
 void*
@@ -829,7 +825,7 @@ index_back (index_t* index)
   assert (index != NULL);
   assert (index->back != NULL);
 
-  return index->back (index->this, index->table);
+  return index->back (index->ths, index->table);
 }
 
 void*
@@ -857,7 +853,7 @@ index_at (index_t* index, size_t pos)
   assert (index->at != NULL);
   assert (pos < index->table->size);
 
-  return index->at (index->this, index->table, pos);
+  return index->at (index->ths, index->table, pos);
 }
 
 void
@@ -872,7 +868,7 @@ index_push_front (index_t* index, const void* value)
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->insert != NULL);
-    index->insert (index->this, index->table, iterator);
+    index->insert (index->ths, index->table, iterator);
   }
 }
 
@@ -888,7 +884,7 @@ index_pop_front (index_t* index)
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->erase != NULL);
-    index->erase (index->this, index->table, iterator.pos);
+    index->erase (index->ths, index->table, iterator.pos);
   }
 }
 
@@ -904,7 +900,7 @@ index_push_back (index_t* index, const void* value)
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->insert != NULL);
-    index->insert (index->this, index->table, iterator);
+    index->insert (index->ths, index->table, iterator);
   }
 }
 
@@ -920,7 +916,7 @@ index_pop_back (index_t* index)
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->erase != NULL);
-    index->erase (index->this, index->table, iterator.pos);
+    index->erase (index->ths, index->table, iterator.pos);
   }
 }
 
@@ -928,7 +924,7 @@ iterator_t
 index_insert_before (index_t* index, iterator_t iterator, const void* value)
 {
   assert (index != NULL);
-  assert (iterator.pos == -1 || is_used (index->table, iterator.pos));
+  assert (iterator.pos == size_t(-1) || is_used (index->table, iterator.pos));
   assert (value != NULL);
 
   /* Insert the value into the table. */
@@ -937,7 +933,7 @@ index_insert_before (index_t* index, iterator_t iterator, const void* value)
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->insert != NULL);
-    index->insert (index->this, index->table, iterator.pos);
+    index->insert (index->ths, index->table, iterator.pos);
   }
 
   return iterator;
@@ -952,14 +948,13 @@ index_insert (index_t* index, const void* value)
   /* Currently equivalent to push back. */
 
   /* Insert the value into the table. */
-  iterator_t iterator = {
-    .pos = insert (index->table, -1, value),
-  };
+  iterator_t iterator;
+  iterator.pos = insert (index->table, -1, value);
 
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->insert != NULL);
-    index->insert (index->this, index->table, iterator.pos);
+    index->insert (index->ths, index->table, iterator.pos);
   }
   
   return iterator;
@@ -972,14 +967,13 @@ index_erase (index_t* index, iterator_t iterator)
   assert (is_used (index->table, iterator.pos));
 
   /* Erase the value. */
-  iterator_t iter = {
-    .pos = erase (index->table, iterator.pos),
-  };
+  iterator_t iter;
+  iter.pos = erase (index->table, iterator.pos);
 
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->erase != NULL);
-    index->erase (index->this, index->table, iterator.pos);
+    index->erase (index->ths, index->table, iterator.pos);
   }
 
   return iter;
@@ -996,7 +990,7 @@ index_clear (index_t* index)
   /* Tell the indices about it. */
   for (index = index->table->indices; index != NULL; index = index->next) {
     assert (index->clear != NULL);
-    index->clear (index->this, index->table);
+    index->clear (index->ths, index->table);
   }
 
 }
@@ -1030,11 +1024,11 @@ riterator_reverse (index_t* index, riterator_t riterator)
 {
   assert (index != NULL);
 
-  if (riterator.pos != -1) {
+  if (riterator.pos != size_t(-1)) {
     assert (is_used (index->table, riterator.pos));
-    iterator_t iterator = {
-      .pos = riterator.pos,
-    };
+    iterator_t iterator;
+    iterator.pos = riterator.pos;
+
     return iterator;
   }
   else {

@@ -86,13 +86,13 @@ typedef struct {
 static void*
 file_server_create (const void* a)
 {
-  const file_server_create_arg_t* arg = a;
+  const file_server_create_arg_t* arg = (const file_server_create_arg_t*)a;
   assert (arg != NULL);
   assert (arg->file != NULL);
   assert (arg->msg_sender != -1);
   assert (arg->msg_receiver != -1);
 
-  file_server_t* file_server = malloc (sizeof (file_server_t));
+  file_server_t* file_server = (file_server_t*)malloc (sizeof (file_server_t));
   file_server->file = arg->file;
   file_server->announce = arg->announce;
   file_server->download = arg->download;
@@ -295,11 +295,11 @@ static void
 file_server_system_input (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (file_server->automan, receipt);
 }
@@ -307,7 +307,7 @@ file_server_system_input (void* state, void* param, bid_t bid)
 static bid_t
 file_server_system_output (void* state, void* param)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   return automan_action (file_server->automan);
@@ -316,7 +316,7 @@ file_server_system_output (void* state, void* param)
 static void
 file_server_announcement_alarm_composed (void* state, void* param, receipt_type_t receipt)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
   assert (receipt == COMPOSED);
 
@@ -329,7 +329,7 @@ file_server_announcement_alarm_composed (void* state, void* param, receipt_type_
 static void
 file_server_request_alarm_composed (void* state, void* param, receipt_type_t receipt)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
   assert (receipt == COMPOSED);
 
@@ -342,7 +342,7 @@ file_server_request_alarm_composed (void* state, void* param, receipt_type_t rec
 static void
 file_server_fragment_alarm_composed (void* state, void* param, receipt_type_t receipt)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
   assert (receipt == COMPOSED);
 
@@ -355,7 +355,7 @@ file_server_fragment_alarm_composed (void* state, void* param, receipt_type_t re
 static void
 file_server_callback (void* state, void* param, bid_t bid)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   automan_proxy_receive (file_server->automan, bid);
@@ -364,14 +364,14 @@ file_server_callback (void* state, void* param, bid_t bid)
 static void
 file_server_announcement (void* state, void* param)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   if (file_server->announce) {
     if (file_server->next_announce <= time (NULL)) {
       /* Time to announce and we have all of the fragments. */
       bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-      mftp_Message_t* message = buffer_write_ptr (bid);
+      mftp_Message_t* message = (mftp_Message_t*)buffer_write_ptr (bid);
       mftp_Announcement_init (message, &file_server->file->fileid);
       bidq_push_back (file_server->bidq, bid);
       assert (schedule_output (file_server_message_out, NULL) == 0);
@@ -392,11 +392,11 @@ static bid_t
 file_server_announcement_alarm_out (void* state, void* param)
 {
   assert (state != NULL);
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
 
   /* Set the alarm. */
   bid_t bid = buffer_alloc (sizeof (alarm_set_in_t));
-  alarm_set_in_t* in = buffer_write_ptr (bid);
+  alarm_set_in_t* in = (alarm_set_in_t*)buffer_write_ptr (bid);
   in->secs = file_server->announcement_interval;
   in->usecs = 0;
 
@@ -406,7 +406,7 @@ file_server_announcement_alarm_out (void* state, void* param)
 static void
 file_server_request (void* state, void* param)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   if (!bitset_full (file_server->fragments)) {
@@ -424,7 +424,7 @@ file_server_request (void* state, void* param)
 
     /* Form the request. */
     bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-    mftp_Message_t* message = buffer_write_ptr (bid);
+    mftp_Message_t* message = (mftp_Message_t*)buffer_write_ptr (bid);
     uint32_t offset = FRAGMENT_TO_OFFSET (start_fragment);
     uint32_t size = (stop_fragment - start_fragment) * FRAGMENT_SIZE;
     if (offset + size > file_server->file->fileid.size) {
@@ -450,7 +450,7 @@ file_server_request_alarm_out (void* state, void* param)
 {
   /* Set the alarm. */
   bid_t bid = buffer_alloc (sizeof (alarm_set_in_t));
-  alarm_set_in_t* in = buffer_write_ptr (bid);
+  alarm_set_in_t* in = (alarm_set_in_t*)buffer_write_ptr (bid);
   in->secs = REQUEST_INTERVAL;
   in->usecs = 0;
 
@@ -460,7 +460,7 @@ file_server_request_alarm_out (void* state, void* param)
 static void
 file_server_fragment (void* state, void* param)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   if (!bitset_empty (file_server->requests)) {
@@ -472,7 +472,7 @@ file_server_fragment (void* state, void* param)
 
     /* Form the fragment. */
     bid_t bid = buffer_alloc (sizeof (mftp_Message_t));
-    mftp_Message_t* message = buffer_write_ptr (bid);
+    mftp_Message_t* message = (mftp_Message_t*)buffer_write_ptr (bid);
     uint32_t offset = FRAGMENT_TO_OFFSET (file_server->request_idx);
     uint32_t size = file_server->file->fileid.size - offset;
     if (size > FRAGMENT_SIZE) {
@@ -501,7 +501,7 @@ file_server_fragment_alarm_out (void* state, void* param)
 {
   /* Set the alarm. */
   bid_t bid = buffer_alloc (sizeof (alarm_set_in_t));
-  alarm_set_in_t* in = buffer_write_ptr (bid);
+  alarm_set_in_t* in = (alarm_set_in_t*)buffer_write_ptr (bid);
   in->secs = 0;
   in->usecs = FRAGMENT_INTERVAL;
 
@@ -511,11 +511,11 @@ file_server_fragment_alarm_out (void* state, void* param)
 void
 file_server_announcement_in (void* state, void* param, bid_t bid)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == ANNOUNCEMENT);
 
   if (mftp_FileID_cmp (&file_server->file->fileid, &message->announcement.fileid) == 0) {
@@ -533,11 +533,11 @@ file_server_announcement_in (void* state, void* param, bid_t bid)
 void
 file_server_request_in (void* state, void* param, bid_t bid)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == REQUEST);
 
   if (mftp_FileID_cmp (&file_server->file->fileid, &message->request.fileid) == 0) {
@@ -560,11 +560,11 @@ file_server_request_in (void* state, void* param, bid_t bid)
 void
 file_server_fragment_in (void* state, void* param, bid_t bid)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == FRAGMENT);
 
   if (mftp_FileID_cmp (&file_server->file->fileid, &message->fragment.fileid) == 0) {
@@ -585,7 +585,7 @@ file_server_fragment_in (void* state, void* param, bid_t bid)
 bid_t
 file_server_message_out (void* state, void* param)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   if (file_server->message_out_composed && !bidq_empty (file_server->bidq)) {
@@ -604,7 +604,7 @@ file_server_message_out (void* state, void* param)
 static void
 file_server_message_out_composed (void* state, void* param, receipt_type_t receipt)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   if (receipt == COMPOSED) {
@@ -621,7 +621,7 @@ file_server_message_out_composed (void* state, void* param, receipt_type_t recei
 static void
 file_server_download_complete_composed (void* state, void* param, receipt_type_t receipt)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   assert (schedule_output (file_server_download_complete_out, NULL) == 0);
@@ -630,7 +630,7 @@ file_server_download_complete_composed (void* state, void* param, receipt_type_t
 bid_t
 file_server_download_complete_out (void* state, void* param)
 {
-  file_server_t* file_server = state;
+  file_server_t* file_server = (file_server_t*)state;
   assert (file_server != NULL);
 
   if (file_server->download &&
@@ -681,11 +681,14 @@ static internal_t file_server_internals[] = {
 };
 
 descriptor_t file_server_descriptor = {
-  .constructor = file_server_create,
-  .system_input = file_server_system_input,
-  .system_output = file_server_system_output,
-  .free_inputs = file_server_free_inputs,
-  .inputs = file_server_inputs,
-  .outputs = file_server_outputs,
-  .internals = file_server_internals,
+  file_server_create,
+  file_server_system_input,
+  file_server_system_output,
+  NULL,
+  NULL,
+  NULL,
+  file_server_free_inputs,
+  file_server_inputs,
+  file_server_outputs,
+  file_server_internals,
 };

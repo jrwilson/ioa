@@ -4,5 +4,6 @@ libtable \
 libueioa testueioa \
 libautoman testautoman \
 libmftp \
-libccm testccm \
-mftp src .
+mftp
+#libccm testccm
+# src .

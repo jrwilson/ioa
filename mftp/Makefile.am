@@ -1,13 +1,13 @@
-AM_CFLAGS = -Wall -I$(top_srcdir)/include
+AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 
 LDADD = $(top_builddir)/libmftp/libmftp.la
 
 bin_PROGRAMS = main share match get
 
-main_SOURCES = main.c composer.c consumer.c
+main_SOURCES = main.cc composer.cc consumer.cc
 
-share_SOURCES = share.c matcher.c
+share_SOURCES = share.cc matcher.cc
 
-match_SOURCES = match.c matcher.c
+match_SOURCES = match.cc matcher.cc
 
-get_SOURCES = get.c matcher.c match_getter.c
+get_SOURCES = get.cc matcher.cc match_getter.cc

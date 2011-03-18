@@ -6,8 +6,8 @@ static bool
 oi_flag_ptr_equal (const void* x0,
 		   const void* y0)
 {
-  const output_item_t* x = x0;
-  const output_item_t* y = y0;
+  const output_item_t* x = (const output_item_t*)x0;
+  const output_item_t* y = (const output_item_t*)y0;
 
   return x->flag_ptr == y->flag_ptr;
 }
@@ -19,20 +19,20 @@ oi_find_flag_ptr (automan_t* automan,
   output_item_t key;
   key.flag_ptr = flag_ptr;
   
-  return index_find_value (automan->oi_index,
-			   index_begin (automan->oi_index),
-			   index_end (automan->oi_index),
-			   oi_flag_ptr_equal,
-			   &key,
-			   NULL);
+  return (output_item_t*)index_find_value (automan->oi_index,
+					   index_begin (automan->oi_index),
+					   index_end (automan->oi_index),
+					   oi_flag_ptr_equal,
+					   &key,
+					   NULL);
 }
 
 static bool
 oi_output_equal (const void* x0,
 		 const void* y0)
 {
-  const output_item_t* x = x0;
-  const output_item_t* y = y0;
+  const output_item_t* x = (const output_item_t*)x0;
+  const output_item_t* y = (const output_item_t*)y0;
   
   return
     x->output == y->output &&
@@ -48,12 +48,12 @@ oi_find_output (automan_t* automan,
   key.output = output;
   key.out_param = out_param;
   
-  return index_find_value (automan->oi_index,
-			   index_begin (automan->oi_index),
-			   index_end (automan->oi_index),
-			   oi_output_equal,
-			   &key,
-			   NULL);
+  return (output_item_t*)index_find_value (automan->oi_index,
+					   index_begin (automan->oi_index),
+					   index_end (automan->oi_index),
+					   oi_output_equal,
+					   &key,
+					   NULL);
 }
 
 static void

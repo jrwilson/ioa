@@ -12,7 +12,7 @@ typedef struct {
 static void*
 alarm_create (const void* arg)
 {
-  alarm_t* alarm = malloc (sizeof (alarm_t));
+  alarm_t* alarm = (alarm_t*)malloc (sizeof (alarm_t));
   alarm->set = false;
   alarm->expired = false;
 
@@ -22,11 +22,11 @@ alarm_create (const void* arg)
 void
 alarm_set_in (void* state, void* param, bid_t bid)
 {
-  alarm_t* alarm = state;
+  alarm_t* alarm = (alarm_t*)state;
   assert (alarm != NULL);
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (alarm_set_in_t));
-  const alarm_set_in_t* in = buffer_read_ptr (bid);
+  const alarm_set_in_t* in = (const alarm_set_in_t*)buffer_read_ptr (bid);
 
   if (!alarm->set) {
     assert (schedule_alarm_input (in->secs, in->usecs) == 0);
@@ -37,7 +37,7 @@ alarm_set_in (void* state, void* param, bid_t bid)
 static void
 alarm_alarm_input (void* state, void* param, bid_t bid)
 {
-  alarm_t* alarm = state;
+  alarm_t* alarm = (alarm_t*)state;
   assert (alarm != NULL);
 
   assert (alarm->set);
@@ -48,7 +48,7 @@ alarm_alarm_input (void* state, void* param, bid_t bid)
 bid_t
 alarm_alarm_out (void* state, void* param)
 {
-  alarm_t* alarm = state;
+  alarm_t* alarm = (alarm_t*)state;
   assert (alarm != NULL);
 
   if (alarm->expired) {
@@ -71,8 +71,14 @@ static output_t alarm_outputs[] = {
 };
 
 descriptor_t alarm_descriptor = {
-  .constructor = alarm_create,
-  .alarm_input = alarm_alarm_input,
-  .inputs = alarm_inputs,
-  .outputs = alarm_outputs,
+  alarm_create,
+  NULL,
+  NULL,
+  alarm_alarm_input,
+  NULL,
+  NULL,
+  NULL,
+  alarm_inputs,
+  alarm_outputs,
+  NULL
 };

@@ -48,13 +48,13 @@ typedef struct {
 static void*
 match_getter_create (const void* a)
 {
-  const match_getter_create_arg_t* arg = a;
+  const match_getter_create_arg_t* arg = (const match_getter_create_arg_t*)a;
   assert (arg != NULL);
   assert (arg->query != NULL);
   assert (arg->msg_sender != -1);
   assert (arg->msg_receiver != -1);
 
-  match_getter_t* match_getter = malloc (sizeof (match_getter_t));
+  match_getter_t* match_getter = (match_getter_t*)malloc (sizeof (match_getter_t));
   match_getter->query = arg->query;
   match_getter->metas = NULL;
 
@@ -81,11 +81,11 @@ static void
 match_getter_system_input (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
-  match_getter_t* match_getter = state;
+  match_getter_t* match_getter = (match_getter_t*)state;
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (match_getter->automan, receipt);
 }
@@ -93,7 +93,7 @@ match_getter_system_input (void* state, void* param, bid_t bid)
 static bid_t
 match_getter_system_output (void* state, void* param)
 {
-  match_getter_t* match_getter = state;
+  match_getter_t* match_getter = (match_getter_t*)state;
   assert (match_getter != NULL);
 
   return automan_action (match_getter->automan);
@@ -102,11 +102,11 @@ match_getter_system_output (void* state, void* param)
 void
 match_getter_match_in (void* state, void* param, bid_t bid)
 {
-  match_getter_t* match_getter = state;
+  match_getter_t* match_getter = (match_getter_t*)state;
   assert (match_getter != NULL);
 
   assert (buffer_size (bid) == sizeof (mftp_Message_t));
-  const mftp_Message_t* message = buffer_read_ptr (bid);
+  const mftp_Message_t* message = (const mftp_Message_t*)buffer_read_ptr (bid);
   assert (message->header.type == MATCH);
 
   if (message->match.fileid1.type == META && message->match.fileid2.type == QUERY) {
@@ -123,7 +123,7 @@ match_getter_match_in (void* state, void* param, bid_t bid)
       if (meta == NULL) {
         /* New meta file. */
 	/* Add it to the list. */
-	meta = malloc (sizeof (meta_item_t));
+	meta = (meta_item_t*)malloc (sizeof (meta_item_t));
 	
 	meta->meta_aid = -1;
 	meta->file_aid = -1;
@@ -169,10 +169,10 @@ match_getter_match_in (void* state, void* param, bid_t bid)
 static void
 match_getter_meta_download_complete (void* state, void* param, bid_t bid)
 {
-  match_getter_t* match_getter = state;
+  match_getter_t* match_getter = (match_getter_t*)state;
   assert (match_getter != NULL);
 
-  meta_item_t* meta = param;
+  meta_item_t* meta = (meta_item_t*)param;
   assert (meta != NULL);
 
   /* Match again. */
@@ -215,14 +215,14 @@ match_getter_meta_download_complete (void* state, void* param, bid_t bid)
 static void
 match_getter_file_download_complete (void* state, void* param, bid_t bid)
 {
-  match_getter_t* match_getter = state;
+  match_getter_t* match_getter = (match_getter_t*)state;
   assert (match_getter != NULL);
 
-  meta_item_t* meta = param;
+  meta_item_t* meta = (meta_item_t*)param;
   assert (meta != NULL);
 
   /* Form the filename. */
-  char* filename = malloc (match_getter->query->fileid.size + 1 + 2*HASH_SIZE + 1);
+  char* filename = (char*)malloc (match_getter->query->fileid.size + 1 + 2*HASH_SIZE + 1);
   char* ptr = filename;
   memcpy (ptr, match_getter->query->data, match_getter->query->fileid.size);
   ptr += match_getter->query->fileid.size;
@@ -243,7 +243,7 @@ match_getter_file_download_complete (void* state, void* param, bid_t bid)
     exit (EXIT_FAILURE);
   }
 
-  if (write (fd, meta->file_arg.file->data, meta->file_fileid.size) != meta->file_fileid.size) {
+  if (write (fd, meta->file_arg.file->data, meta->file_fileid.size) != ssize_t(meta->file_fileid.size)) {
     perror ("write");
     exit (EXIT_FAILURE);
   }
@@ -264,8 +264,14 @@ static input_t match_getter_inputs[] = {
 };
 
 descriptor_t match_getter_descriptor = {
-  .constructor = match_getter_create,
-  .system_input = match_getter_system_input,
-  .system_output = match_getter_system_output,
-  .inputs = match_getter_inputs,
+  match_getter_create,
+  match_getter_system_input,
+  match_getter_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  match_getter_inputs,
+  NULL,
+  NULL
 };

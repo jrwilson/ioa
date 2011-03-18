@@ -52,8 +52,8 @@ typedef struct {
 static bool
 automaton_entry_aid_equal (const void* x0, const void* y0)
 {
-  const automaton_entry_t* x = x0;
-  const automaton_entry_t* y = y0;
+  const automaton_entry_t* x = (const automaton_entry_t*)x0;
+  const automaton_entry_t* y = (const automaton_entry_t*)y0;
   return x->aid == y->aid;
 }
 
@@ -62,23 +62,22 @@ automaton_entry_for_aid (automata_t* automata, aid_t aid, iterator_t* ptr)
 {
   assert (automata != NULL);
 
-  automaton_entry_t key = {
-    .aid = aid
-  };
+  automaton_entry_t key;
+  key.aid = aid;
 
-  return index_find_value (automata->automaton_index,
-			   index_begin (automata->automaton_index),
-			   index_end (automata->automaton_index),
-			   automaton_entry_aid_equal,
-			   &key,
-			   ptr);
+  return (automaton_entry_t*)index_find_value (automata->automaton_index,
+					       index_begin (automata->automaton_index),
+					       index_end (automata->automaton_index),
+					       automaton_entry_aid_equal,
+					       &key,
+					       ptr);
 }
 
 static bool
 automaton_entry_parent_equal (const void* x0, const void* y0)
 {
-  const automaton_entry_t* x = x0;
-  const automaton_entry_t* y = y0;
+  const automaton_entry_t* x = (const automaton_entry_t*)x0;
+  const automaton_entry_t* y = (const automaton_entry_t*)y0;
   return x->parent == y->parent;
 }
 
@@ -87,16 +86,15 @@ automaton_entry_for_parent (automata_t* automata, aid_t aid, iterator_t* ptr)
 {
   assert (automata != NULL);
 
-  automaton_entry_t key = {
-    .parent = aid
-  };
+  automaton_entry_t key;
+  key.parent = aid;
 
-  return index_find_value (automata->automaton_index,
-			   index_begin (automata->automaton_index),
-			   index_end (automata->automaton_index),
-			   automaton_entry_parent_equal,
-			   &key,
-			   ptr);
+  return (automaton_entry_t*)index_find_value (automata->automaton_index,
+					       index_begin (automata->automaton_index),
+					       index_end (automata->automaton_index),
+					       automaton_entry_parent_equal,
+					       &key,
+					       ptr);
 }
 
 typedef struct {
@@ -107,8 +105,8 @@ typedef struct {
 static bool
 input_entry_aid_input_equal (const void* x0, const void* y0)
 {
-  const input_entry_t* x = x0;
-  const input_entry_t* y = y0;
+  const input_entry_t* x = (const input_entry_t*)x0;
+  const input_entry_t* y = (const input_entry_t*)y0;
 
   return x->aid == y->aid && x->input == y->input;
 }
@@ -116,8 +114,8 @@ input_entry_aid_input_equal (const void* x0, const void* y0)
 static bool
 input_entry_aid_equal (const void* x0, const void* y0)
 {
-  const input_entry_t* x = x0;
-  const input_entry_t* y = y0;
+  const input_entry_t* x = static_cast<const input_entry_t*>(x0);
+  const input_entry_t* y = static_cast<const input_entry_t*>(y0);
 
   return x->aid == y->aid;
 }
@@ -127,17 +125,16 @@ free_input_entry_for_aid_input (automata_t* automata, aid_t aid, input_t input)
 {
   assert (automata != NULL);
 
-  input_entry_t key = {
-    .aid = aid,
-    .input = input
-  };
+  input_entry_t key;
+  key.aid = aid;
+  key.input = input;
   
-  return index_find_value (automata->free_input_index,
-			   index_begin (automata->free_input_index),
-			   index_end (automata->free_input_index),
-			   input_entry_aid_input_equal,
-			   &key,
-			   NULL);
+  return (input_entry_t*)index_find_value (automata->free_input_index,
+					   index_begin (automata->free_input_index),
+					   index_end (automata->free_input_index),
+					   input_entry_aid_input_equal,
+					   &key,
+					   NULL);
 }
 
 static input_entry_t*
@@ -145,17 +142,16 @@ input_entry_for_aid_input (automata_t* automata, aid_t aid, input_t input)
 {
   assert (automata != NULL);
 
-  input_entry_t key = {
-    .aid = aid,
-    .input = input
-  };
+  input_entry_t key;
+  key.aid = aid;
+  key.input = input;
   
-  return index_find_value (automata->input_index,
-			   index_begin (automata->input_index),
-			   index_end (automata->input_index),
-			   input_entry_aid_input_equal,
-			   &key,
-			   NULL);
+  return (input_entry_t*)index_find_value (automata->input_index,
+					   index_begin (automata->input_index),
+					   index_end (automata->input_index),
+					   input_entry_aid_input_equal,
+					   &key,
+					   NULL);
 }
 
 typedef struct {
@@ -166,8 +162,8 @@ typedef struct {
 static bool
 output_entry_aid_output_equal (const void* x0, const void* y0)
 {
-  const output_entry_t* x = x0;
-  const output_entry_t* y = y0;
+  const output_entry_t* x = static_cast<const output_entry_t*>(x0);
+  const output_entry_t* y = static_cast<const output_entry_t*>(y0);
 
   return x->aid == y->aid && x->output == y->output;
 }
@@ -175,8 +171,8 @@ output_entry_aid_output_equal (const void* x0, const void* y0)
 static bool
 output_entry_aid_equal (const void* x0, const void* y0)
 {
-  const output_entry_t* x = x0;
-  const output_entry_t* y = y0;
+  const output_entry_t* x = static_cast<const output_entry_t*>(x0);
+  const output_entry_t* y = static_cast<const output_entry_t*>(y0);
 
   return x->aid == y->aid;
 }
@@ -186,17 +182,16 @@ output_entry_for_aid_output (automata_t* automata, aid_t aid, output_t output)
 {
   assert (automata != NULL);
 
-  output_entry_t key = {
-    .aid = aid,
-    .output = output
-  };
+  output_entry_t key;
+  key.aid = aid;
+  key.output = output;
   
-  return index_find_value (automata->output_index,
-			   index_begin (automata->output_index),
-			   index_end (automata->output_index),
-			   output_entry_aid_output_equal,
-			   &key,
-			   NULL);
+  return (output_entry_t*)index_find_value (automata->output_index,
+					    index_begin (automata->output_index),
+					    index_end (automata->output_index),
+					    output_entry_aid_output_equal,
+					    &key,
+					    NULL);
 }
 
 typedef struct {
@@ -207,8 +202,8 @@ typedef struct {
 static bool
 internal_entry_aid_internal_equal (const void* x0, const void* y0)
 {
-  const internal_entry_t* x = x0;
-  const internal_entry_t* y = y0;
+  const internal_entry_t* x = static_cast<const internal_entry_t*>(x0);
+  const internal_entry_t* y = static_cast<const internal_entry_t*>(y0);
 
   return x->aid == y->aid && x->internal == y->internal;
 }
@@ -216,8 +211,8 @@ internal_entry_aid_internal_equal (const void* x0, const void* y0)
 static bool
 internal_entry_aid_equal (const void* x0, const void* y0)
 {
-  const internal_entry_t* x = x0;
-  const internal_entry_t* y = y0;
+  const internal_entry_t* x = static_cast<const internal_entry_t*>(x0);
+  const internal_entry_t* y = static_cast<const internal_entry_t*>(y0);
 
   return x->aid == y->aid;
 }
@@ -227,29 +222,28 @@ internal_entry_for_aid_internal (automata_t* automata, aid_t aid, internal_t int
 {
   assert (automata != NULL);
 
-  internal_entry_t key = {
-    .aid = aid,
-    .internal = internal
-  };
+  internal_entry_t key;
+  key.aid = aid;
+  key.internal = internal;
   
-  return index_find_value (automata->internal_index,
-			   index_begin (automata->internal_index),
-			   index_end (automata->internal_index),
-			   internal_entry_aid_internal_equal,
-			   &key,
-			   NULL);
+  return (internal_entry_t*)index_find_value (automata->internal_index,
+					      index_begin (automata->internal_index),
+					      index_end (automata->internal_index),
+					      internal_entry_aid_internal_equal,
+					      &key,
+					      NULL);
 }
 
 typedef struct {
-  const aid_t aid;
-  const void* param;
+  aid_t aid;
+  void* param;
 } param_entry_t;
 
 static bool
 param_entry_aid_equal (const void* x0, const void* y0)
 {
-  const param_entry_t* x = x0;
-  const param_entry_t* y = y0;
+  const param_entry_t* x = static_cast<const param_entry_t*>(x0);
+  const param_entry_t* y = static_cast<const param_entry_t*>(y0);
 
   return x->aid == y->aid;
 }
@@ -257,8 +251,8 @@ param_entry_aid_equal (const void* x0, const void* y0)
 static bool
 param_entry_aid_param_equal (const void* x0, const void* y0)
 {
-  const param_entry_t* x = x0;
-  const param_entry_t* y = y0;
+  const param_entry_t* x = static_cast<const param_entry_t*>(x0);
+  const param_entry_t* y = static_cast<const param_entry_t*>(y0);
 
   return
     x->aid == y->aid &&
@@ -270,17 +264,16 @@ param_entry_for_aid_param (automata_t* automata, aid_t aid, void* param)
 {
   assert (automata != NULL);
   
-  param_entry_t key = {
-    .aid = aid,
-    .param = param,
-  };
+  param_entry_t key;
+  key.aid = aid;
+  key.param = param;
   
-  return index_find_value (automata->param_index,
-			   index_begin (automata->param_index),
-			   index_end (automata->param_index),
-			   param_entry_aid_param_equal,
-			   &key,
-			   NULL);
+  return (param_entry_t*)index_find_value (automata->param_index,
+					   index_begin (automata->param_index),
+					   index_end (automata->param_index),
+					   param_entry_aid_param_equal,
+					   &key,
+					   NULL);
 }
 
 
@@ -297,8 +290,8 @@ typedef struct {
 static bool
 composition_entry_in_aid_input_in_param_equal (const void* x0, const void* y0)
 {
-  const composition_entry_t* x = x0;
-  const composition_entry_t* y = y0;
+  const composition_entry_t* x = (const composition_entry_t*)x0;
+  const composition_entry_t* y = (const composition_entry_t*)y0;
 
   return
     x->in_aid == y->in_aid &&
@@ -309,8 +302,8 @@ composition_entry_in_aid_input_in_param_equal (const void* x0, const void* y0)
 static bool
 composition_sorted (const void* x0, const void* y0)
 {
-  const composition_entry_t* x = x0;
-  const composition_entry_t* y = y0;
+  const composition_entry_t* x = (const composition_entry_t*)x0;
+  const composition_entry_t* y = (const composition_entry_t*)y0;
 
   if (x->out_aid != y->out_aid) {
     return x->out_aid < y->out_aid;
@@ -325,25 +318,24 @@ composition_entry_for_in_aid_input_in_param (automata_t* automata, aid_t in_aid,
 {
   assert (automata != NULL);
   
-  composition_entry_t key = {
-    .in_aid = in_aid,
-    .input = input,
-    .in_param = in_param,
-  };
+  composition_entry_t key;
+  key.in_aid = in_aid;
+  key.input = input;
+  key.in_param = in_param;
   
-  return index_find_value (automata->composition_index,
-			   index_begin (automata->composition_index),
-			   index_end (automata->composition_index),
-			   composition_entry_in_aid_input_in_param_equal,
-			   &key,
-			   ptr);
+  return (composition_entry_t*)index_find_value (automata->composition_index,
+						 index_begin (automata->composition_index),
+						 index_end (automata->composition_index),
+						 composition_entry_in_aid_input_in_param_equal,
+						 &key,
+						 ptr);
 }
 
 static bool
 composition_entry_out_aid_output_out_param_in_aid_equal (const void* x0, const void* y0)
 {
-  const composition_entry_t* x = x0;
-  const composition_entry_t* y = y0;
+  const composition_entry_t* x = (const composition_entry_t*)x0;
+  const composition_entry_t* y = (const composition_entry_t*)y0;
 
   return
     x->out_aid == y->out_aid &&
@@ -357,26 +349,25 @@ composition_entry_for_out_aid_output_out_param_in_aid (automata_t* automata, aid
 {
   assert (automata != NULL);
   
-  composition_entry_t key = {
-    .out_aid = out_aid,
-    .output = output,
-    .out_param = out_param,
-    .in_aid = in_aid,
-  };
+  composition_entry_t key;
+  key.out_aid = out_aid;
+  key.output = output;
+  key.out_param = out_param;
+  key.in_aid = in_aid;
   
-  return index_find_value (automata->composition_index,
-			   index_begin (automata->composition_index),
-			   index_end (automata->composition_index),
-			   composition_entry_out_aid_output_out_param_in_aid_equal,
-			   &key,
-			   NULL);
+  return (composition_entry_t*)index_find_value (automata->composition_index,
+						 index_begin (automata->composition_index),
+						 index_end (automata->composition_index),
+						 composition_entry_out_aid_output_out_param_in_aid_equal,
+						 &key,
+						 NULL);
 }
 
 static bool
 composition_entry_any_param_equal (const void* x0, const void* y0)
 {
-  const composition_entry_t* x = x0;
-  const composition_entry_t* y = y0;
+  const composition_entry_t* x = (const composition_entry_t*)x0;
+  const composition_entry_t* y = (const composition_entry_t*)y0;
 
   return
     (x->out_aid == y->out_aid && x->out_param == y->out_param) ||
@@ -386,8 +377,8 @@ composition_entry_any_param_equal (const void* x0, const void* y0)
 static bool
 composition_entry_any_aid_equal (const void* x0, const void* y0)
 {
-  const composition_entry_t* x = x0;
-  const composition_entry_t* y = y0;
+  const composition_entry_t* x = (const composition_entry_t*)x0;
+  const composition_entry_t* y = (const composition_entry_t*)y0;
 
   return
     x->aid == y->aid ||
@@ -422,19 +413,18 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t pa
     set_current_aid (automata, -1);
     
     /* Insert the automaton. */
-    pthread_mutex_t* lock = malloc (sizeof (pthread_mutex_t));
+    pthread_mutex_t* lock = (pthread_mutex_t*)malloc (sizeof (pthread_mutex_t));
     pthread_mutex_init (lock, NULL);
-    automaton_entry_t entry = {
-      .aid = aid,
-      .parent = parent,
-      .state = state,
-      .lock = lock,
-      .system_input = descriptor->system_input,
-      .system_output = descriptor->system_output,
-      .alarm_input = descriptor->alarm_input,
-      .read_input = descriptor->read_input,
-      .write_input = descriptor->write_input,
-    };
+    automaton_entry_t entry;
+    entry.aid = aid;
+    entry.parent = parent;
+    entry.state = state;
+    entry.lock = lock;
+    entry.system_input = descriptor->system_input;
+    entry.system_output = descriptor->system_output;
+    entry.alarm_input = descriptor->alarm_input;
+    entry.read_input = descriptor->read_input;
+    entry.write_input = descriptor->write_input;
     index_insert (automata->automaton_index, &entry);
 
     size_t idx;
@@ -442,10 +432,9 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t pa
     /* Insert the free inputs. */
     if (descriptor->free_inputs != NULL) {
       for (idx = 0; descriptor->free_inputs[idx] != NULL; ++idx) {
-	input_entry_t entry = {
-	  .aid = aid,
-	  .input = descriptor->free_inputs[idx],
-	};
+	input_entry_t entry;
+	entry.aid = aid;
+	entry.input = descriptor->free_inputs[idx];
 	index_insert_unique (automata->free_input_index, input_entry_aid_input_equal, &entry);
       }
     }
@@ -453,10 +442,9 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t pa
     /* Insert the inputs. */
     if (descriptor->inputs != NULL) {
       for (idx = 0; descriptor->inputs[idx] != NULL; ++idx) {
-	input_entry_t entry = {
-	  .aid = aid,
-	  .input = descriptor->inputs[idx],
-	};
+	input_entry_t entry;
+	entry.aid = aid;
+	entry.input = descriptor->inputs[idx];
 	index_insert_unique (automata->input_index, input_entry_aid_input_equal, &entry);
       }
     }
@@ -464,10 +452,9 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t pa
     /* Insert the outputs. */
     if (descriptor->outputs != NULL) {
       for (idx = 0; descriptor->outputs[idx] != NULL; ++idx) {
-	output_entry_t entry = {
-	  .aid = aid,
-	  .output = descriptor->outputs[idx],
-	};
+	output_entry_t entry;
+	entry.aid = aid;
+	entry.output = descriptor->outputs[idx];
 	index_insert_unique (automata->output_index, output_entry_aid_output_equal, &entry);
       }
     }
@@ -475,20 +462,18 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t pa
     /* Insert the internals. */
     if (descriptor->internals != NULL) {
       for (idx = 0; descriptor->internals[idx] != NULL; ++idx) {
-	internal_entry_t entry = {
-	  .aid = aid,
-	  .internal = descriptor->internals[idx],
-	};
+	internal_entry_t entry;
+	entry.aid = aid;
+	entry.internal = descriptor->internals[idx];
 	index_insert_unique (automata->internal_index, internal_entry_aid_internal_equal, &entry);
       }
     }
 
-    /* Delcare the NULL parameter. */
+    /* Declare the NULL parameter. */
     {
-      param_entry_t entry = {
-	.aid = aid,
-	.param = NULL,
-      };
+      param_entry_t entry;
+      entry.aid = aid;
+      entry.param = NULL;
       index_insert (automata->param_index, &entry);
     }
     
@@ -516,16 +501,15 @@ create (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t pa
 }
 
 static void
-declare (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t aid, const void* param)
+declare (automata_t* automata, receipts_t* receipts, runq_t* runq, const aid_t aid, void* param)
 {
   assert (automata != NULL);
   assert (receipts != NULL);
   assert (runq != NULL);
 
-  param_entry_t entry = {
-    .aid = aid,
-    .param = param,
-  };
+  param_entry_t entry;
+  entry.aid = aid;
+  entry.param = param;
   index_insert_unique (automata->param_index, param_entry_aid_param_equal, &entry);
 
   receipts_push_declared (receipts, aid);
@@ -576,15 +560,14 @@ compose (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, ai
   }
   else {
     /* Compose. */
-    composition_entry_t entry = {
-      .aid = aid,
-      .out_aid = out_aid,
-      .output = output,
-      .out_param = out_param,
-      .in_aid = in_aid,
-      .input = input,
-      .in_param = in_param,
-    };
+    composition_entry_t entry;
+    entry.aid = aid;
+    entry.out_aid = out_aid;
+    entry.output = output;
+    entry.out_param = out_param;
+    entry.in_aid = in_aid;
+    entry.input = input;
+    entry.in_param = in_param;
     index_insert (automata->composition_index, &entry);
     
     receipts_push_composed (receipts, aid);
@@ -642,8 +625,8 @@ typedef struct {
 static void
 rescind_decompose (const void* e, void* a)
 {
-  const composition_entry_t* entry = e;
-  rescind_decompose_arg_t* arg = a;
+  const composition_entry_t* entry = (const composition_entry_t*)e;
+  rescind_decompose_arg_t* arg = (rescind_decompose_arg_t*)a;
 
   if ((entry->in_aid == arg->aid && entry->in_param == arg->param) ||
       (entry->out_aid == arg->aid && entry->out_param == arg->param)) {
@@ -669,10 +652,9 @@ rescind (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, vo
   assert (runq != NULL);
 
   /* Params. */
-  param_entry_t param_key = {
-    .aid = aid,
-    .param = param,
-  };
+  param_entry_t param_key;
+  param_key.aid = aid;
+  param_key.param = param;
   index_remove (automata->param_index,
   		index_begin (automata->param_index),
   		index_end (automata->param_index),
@@ -683,24 +665,22 @@ rescind (automata_t* automata, receipts_t* receipts, runq_t* runq, aid_t aid, vo
   runq_insert_system_input (runq, aid);
 
   /* Compositions. */
-  rescind_decompose_arg_t arg = {
-    .aid = aid,
-    .param = param,
-    .receipts = receipts,
-    .runq = runq
-  };
+  rescind_decompose_arg_t arg;
+  arg.aid = aid;
+  arg.param = param;
+  arg.receipts = receipts;
+  arg.runq = runq;
   index_for_each (automata->param_index,
   		  index_begin (automata->param_index),
   		  index_end (automata->param_index),
   		  rescind_decompose,
   		  &arg);
 
-  composition_entry_t composition_key = {
-    .out_aid = aid,
-    .out_param = param,
-    .in_aid = aid,
-    .in_param = param,
-  };
+  composition_entry_t composition_key;
+  composition_key.out_aid = aid;
+  composition_key.out_param = param;
+  composition_key.in_aid = aid;
+  composition_key.in_param = param;
   index_remove (automata->composition_index,
   		index_begin (automata->composition_index),
   		index_end (automata->composition_index),
@@ -720,8 +700,8 @@ typedef struct {
 static void
 destroy_decompose (const void* e, void* a)
 {
-  const composition_entry_t* entry = e;
-  destroy_decompose_arg_t* arg = a;
+  const composition_entry_t* entry = (const composition_entry_t*)e;
+  destroy_decompose_arg_t* arg = (destroy_decompose_arg_t*)a;
 
   if (arg->aid == entry->aid ||
       arg->aid == entry->in_aid ||
@@ -758,9 +738,8 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
   index_erase (automata->automaton_index, iterator);
 
   /* Free inputs. */
-  input_entry_t input_key = {
-    .aid = aid
-  };
+  input_entry_t input_key;
+  input_key.aid = aid;
   index_remove (automata->free_input_index,
 		index_begin (automata->free_input_index),
 		index_end (automata->free_input_index),
@@ -775,9 +754,8 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
 		&input_key);
 
   /* Outputs. */
-  output_entry_t output_key = {
-    .aid = aid
-  };
+  output_entry_t output_key;
+  output_key.aid = aid;
   index_remove (automata->output_index,
 		index_begin (automata->output_index),
 		index_end (automata->output_index),
@@ -785,9 +763,8 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
 		&output_key);
 
   /* Internals. */
-  internal_entry_t internal_key = {
-    .aid = aid
-  };
+  internal_entry_t internal_key;
+  internal_key.aid = aid;
   index_remove (automata->internal_index,
 		index_begin (automata->internal_index),
 		index_end (automata->internal_index),
@@ -795,9 +772,8 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
 		&internal_key);
 
   /* Params. */
-  param_entry_t param_key = {
-    .aid = aid
-  };
+  param_entry_t param_key;
+  param_key.aid = aid;
   index_remove (automata->param_index,
 		index_begin (automata->param_index),
 		index_end (automata->param_index),
@@ -805,20 +781,18 @@ destroy_r (automata_t* automata, receipts_t* receipts, runq_t* runq, buffers_t* 
 		&param_key);
 
   /* Compositions. */
-  destroy_decompose_arg_t arg = {
-    .aid = aid,
-    .receipts = receipts,
-    .runq = runq
-  };
+  destroy_decompose_arg_t arg;
+  arg.aid = aid;
+  arg.receipts = receipts;
+  arg.runq = runq;
   index_for_each (automata->composition_index,
 		  index_begin (automata->composition_index),
 		  index_end (automata->composition_index),
 		  destroy_decompose,
 		  &arg);
 
-  composition_entry_t composition_key = {
-    .aid = aid
-  };
+  composition_entry_t composition_key;
+  composition_key.aid = aid;
   index_remove (automata->composition_index,
   		index_begin (automata->composition_index),
   		index_end (automata->composition_index),
@@ -902,7 +876,7 @@ automata_system_input_exec (automata_t* automata, receipts_t* receipts, runq_t* 
 
       /* Prepare the buffer. */
       bid_t bid = buffers_alloc (buffers, -1, sizeof (receipt_t));
-      receipt_t* r = buffers_write_ptr (buffers, -1, bid);
+      receipt_t* r = (receipt_t*)buffers_write_ptr (buffers, -1, bid);
       *r = receipt;
       /* Change owner to make read-only. */
       buffers_change_owner (buffers, aid, bid);
@@ -1126,8 +1100,8 @@ typedef struct {
 static void
 output_lock (const void* e, void* a)
 {
-  const composition_entry_t* composition_entry = e;
-  output_arg_t* arg = a;
+  const composition_entry_t* composition_entry = (const composition_entry_t*)e;
+  output_arg_t* arg = (output_arg_t*)a;
 
   if (composition_entry->out_aid == arg->out_aid && composition_entry->output == arg->output) {
     if (!arg->output_done && arg->out_aid < composition_entry->in_aid) {
@@ -1142,8 +1116,8 @@ output_lock (const void* e, void* a)
 static void
 output_exec (const void* e, void* a)
 {
-  const composition_entry_t* composition_entry = e;
-  output_arg_t* arg = a;
+  const composition_entry_t* composition_entry = (const composition_entry_t*)e;
+  output_arg_t* arg = (output_arg_t*)a;
 
   if (composition_entry->out_aid == arg->out_aid && composition_entry->output == arg->output) {
     automaton_entry_t* in_entry = automaton_entry_for_aid (arg->automata, composition_entry->in_aid, NULL);
@@ -1158,8 +1132,8 @@ output_exec (const void* e, void* a)
 static void
 output_unlock (const void* e, void* a)
 {
-  const composition_entry_t* composition_entry = e;
-  output_arg_t* arg = a;
+  const composition_entry_t* composition_entry = (const composition_entry_t*)e;
+  output_arg_t* arg = (output_arg_t*)a;
 
   if (composition_entry->out_aid == arg->out_aid && composition_entry->output == arg->output) {
     if (!arg->output_done && arg->out_aid < composition_entry->in_aid) {
@@ -1189,14 +1163,13 @@ automata_output_exec (automata_t* automata, buffers_t* buffers, aid_t out_aid, o
 
     automaton_entry_t* out_entry = automaton_entry_for_aid (automata, out_aid, NULL);
 
-    output_arg_t arg = {
-      .automata = automata,
-      .buffers = buffers,
-      .out_entry = out_entry,
-      .out_aid = out_aid,
-      .output = output,
-      .output_done = false,
-    };
+    output_arg_t arg;
+    arg.automata = automata;
+    arg.buffers = buffers;
+    arg.out_entry = out_entry;
+    arg.out_aid = out_aid;
+    arg.output = output;
+    arg.output_done = false;
 
     /* Lock the automata in order. */
     index_for_each (automata->composition_index,
@@ -1352,7 +1325,7 @@ automata_internal_exists (automata_t* automata, aid_t aid, internal_t internal, 
 automata_t*
 automata_create (void)
 {
-  automata_t* automata = malloc (sizeof (automata_t));
+  automata_t* automata = (automata_t*)malloc (sizeof (automata_t));
 
   pthread_key_create (&automata->current_aid, NULL);
   pthread_rwlock_init (&automata->lock, NULL);
@@ -1380,7 +1353,7 @@ automata_create (void)
 static void
 free_state_and_lock (void* e, void* ignored)
 {
-  automaton_entry_t* entry = e;
+  automaton_entry_t* entry = (automaton_entry_t*)e;
 
   free (entry->state);
   pthread_mutex_destroy (entry->lock);

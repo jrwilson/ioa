@@ -163,7 +163,7 @@ ramp_integer_out (void* state, void* param)
 
   bid_t bid = buffer_alloc (sizeof (int));
   int* ptr = buffer_write_ptr (bid);
-  *ptr = htonl (ramp->x);
+  *ptr = ramp->x;
 
   assert (schedule_alarm_input (1, 0) == 0);
   return bid;

@@ -42,12 +42,12 @@ typedef struct {
 static void*
 composer_create (const void* a)
 {
-  const composer_create_arg_t* arg = a;
+  const composer_create_arg_t* arg = (composer_create_arg_t*)a;
   assert (arg != NULL);
   assert (arg->file != NULL);
   assert (arg->file != NULL);
 
-  composer_t* composer = malloc (sizeof (composer_t));
+  composer_t* composer = (composer_t*)malloc (sizeof (composer_t));
 
   composer->automan = automan_creat (composer,
 				     &composer->self);
@@ -82,11 +82,11 @@ static void
 composer_system_input (void* state, void* param, bid_t bid)
 {
   assert (state != NULL);
-  composer_t* composer = state;
+  composer_t* composer = (composer_t*)state;
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   automan_apply (composer->automan, receipt);
 }
@@ -94,7 +94,7 @@ composer_system_input (void* state, void* param, bid_t bid)
 static bid_t
 composer_system_output (void* state, void* param)
 {
-  composer_t* composer = state;
+  composer_t* composer = (composer_t*)state;
   assert (composer != NULL);
 
   return automan_action (composer->automan);
@@ -103,7 +103,7 @@ composer_system_output (void* state, void* param)
 static void
 composer_sender_receiver_created (void* state, void* param, receipt_type_t receipt)
 {
-  composer_t* composer = state;
+  composer_t* composer = (composer_t*)state;
   assert (composer != NULL);
   assert (receipt == CHILD_CREATED);
 
@@ -140,9 +140,16 @@ composer_sender_receiver_created (void* state, void* param, receipt_type_t recei
 }
 
 descriptor_t composer_descriptor = {
-  .constructor = composer_create,
-  .system_input = composer_system_input,
-  .system_output = composer_system_output,
+  composer_create,
+  composer_system_input,
+  composer_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL
 };
 
 
@@ -180,20 +187,20 @@ main (int argc, char* argv[])
   }
 
   length = stat_buf.st_size;
-  content = malloc (length);
+  content = (char*)malloc (length);
   if (content == NULL) {
     perror ("malloc");
     exit (EXIT_FAILURE);
   }
 
-  if (read (fd, content, length) != length) {
+  if (read (fd, content, length) != ssize_t(length)) {
     perror ("read");
     exit (EXIT_FAILURE);
   }
 
   arg.file = mftp_File_create_buffer (content, length, FILEC);
 
-  content = realloc (content, sizeof (mftp_FileID_t) + strlen (nicename));
+  content = (char*)realloc (content, sizeof (mftp_FileID_t) + strlen (nicename));
   if (content == NULL) {
     perror ("realloc");
     exit (EXIT_FAILURE);

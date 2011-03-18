@@ -18,10 +18,10 @@ typedef struct {
 static void*
 udp_sender_create (const void* a)
 {
-  const udp_sender_create_arg_t* arg = a;
+  const udp_sender_create_arg_t* arg = (const udp_sender_create_arg_t*)a;
   assert (arg != NULL);
 
-  udp_sender_t* udp_sender = malloc (sizeof (udp_sender_t));
+  udp_sender_t* udp_sender = (udp_sender_t*)malloc (sizeof (udp_sender_t));
   /* Create the socket. */
   if ((udp_sender->fd = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
     perror ("socket");
@@ -55,7 +55,7 @@ udp_sender_create (const void* a)
 void
 udp_sender_packet_in (void* state, void* param, bid_t bid)
 {
-  udp_sender_t* udp_sender = state;
+  udp_sender_t* udp_sender = (udp_sender_t*)state;
   assert (udp_sender != NULL);
   assert (bid != -1);
 
@@ -69,7 +69,7 @@ udp_sender_packet_in (void* state, void* param, bid_t bid)
 static void
 udp_sender_write_input (void* state, void* param, bid_t bid)
 {
-  udp_sender_t* udp_sender = state;
+  udp_sender_t* udp_sender = (udp_sender_t*)state;
   assert (udp_sender != NULL);
 
   if (!bidq_empty (udp_sender->bidq)) {
@@ -78,7 +78,7 @@ udp_sender_write_input (void* state, void* param, bid_t bid)
 
     /* Send the item. */
     ssize_t bytes_sent = sendto (udp_sender->fd, buffer_read_ptr (bid), buffer_size (bid), 0, (struct sockaddr*)&udp_sender->dest, udp_sender->dest_len);
-    if (bytes_sent != buffer_size (bid)) {
+    if (bytes_sent != ssize_t(buffer_size (bid))) {
       perror ("sendto");
     }
 
@@ -92,7 +92,14 @@ udp_sender_write_input (void* state, void* param, bid_t bid)
 static input_t udp_sender_inputs[] = { udp_sender_packet_in, NULL };
 
 descriptor_t udp_sender_descriptor = {
-  .constructor = udp_sender_create,
-  .write_input = udp_sender_write_input,
-  .inputs = udp_sender_inputs,
+  udp_sender_create,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  udp_sender_write_input,
+  NULL,
+  udp_sender_inputs,
+  NULL,
+  NULL
 };

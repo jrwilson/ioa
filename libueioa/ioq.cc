@@ -11,8 +11,8 @@
 static bool
 io_equal (const void* x0, const void* y0)
 {
-  const io_t* x = x0;
-  const io_t* y = y0;
+  const io_t* x = (const io_t*)x0;
+  const io_t* y = (const io_t*)y0;
   if (x->type != y->type) {
     return false;
   }
@@ -58,7 +58,7 @@ struct ioq_struct {
 ioq_t*
 ioq_create (void)
 {
-  ioq_t* ioq = malloc (sizeof (ioq_t));
+  ioq_t* ioq = (ioq_t*)malloc (sizeof (ioq_t));
   pthread_mutex_init (&ioq->mutex, NULL);
   if (pipe (ioq->pipes) != 0) {
     perror ("pipe");
@@ -129,10 +129,9 @@ ioq_insert_alarm (ioq_t* ioq, aid_t aid, time_t secs, suseconds_t usecs)
   assert (aid != -1);
   assert (usecs >= 0 && usecs <= 999999);
 
-  io_t io = {
-    .type = IO_ALARM,
-    .aid = aid
-  };
+  io_t io;
+  io.type = IO_ALARM;
+  io.aid = aid;
   io.alarm.tv.tv_sec = secs;
   io.alarm.tv.tv_usec = usecs;
 
@@ -145,10 +144,9 @@ ioq_insert_write (ioq_t* ioq, aid_t aid, int fd)
   assert (ioq != NULL);
   assert (aid != -1);
 
-  io_t io = {
-    .type = IO_WRITE,
-    .aid = aid
-  };
+  io_t io;
+  io.type = IO_WRITE;
+  io.aid = aid;
   io.write.fd = fd;
 
   push (ioq, &io);
@@ -160,10 +158,9 @@ ioq_insert_read (ioq_t* ioq, aid_t aid, int fd)
   assert (ioq != NULL);
   assert (aid != -1);
 
-  io_t io = {
-    .type = IO_READ,
-    .aid = aid
-  };
+  io_t io;
+  io.type = IO_READ;
+  io.aid = aid;
   io.read.fd = fd;
 
   push (ioq, &io);
@@ -236,7 +233,7 @@ ioq_pop (ioq_t* ioq, io_t* io)
   assert (io != NULL);
 
   pthread_mutex_lock (&ioq->mutex);
-  io_t* r = index_front (ioq->index);
+  io_t* r = (io_t*)index_front (ioq->index);
   *io = *r;
   index_pop_front (ioq->index);
   pthread_mutex_unlock (&ioq->mutex);
