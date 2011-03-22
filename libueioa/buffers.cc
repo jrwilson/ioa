@@ -1,10 +1,7 @@
-#include "buffers.h"
+#include "buffers.hh"
 
-#include <pthread.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
 #include <algorithm>
+#include <cstring>
 
 /*
   Buffers
@@ -76,38 +73,30 @@
 
  */
 
-Buffers::Buffers () :
-  m_next_bid (0),
-  m_buffer_index (m_buffer_table),
-  m_buffer_ref_index (m_buffer_ref_table),
-  m_buffer_edge_index (m_buffer_edge_table)
+buffers::buffers () :
+  m_next_bid (0)
 {
   pthread_rwlock_init (&m_lock, NULL);
 }
 
-class FreeData {
-public:
-  void operator() (const buffer_entry_t& x) const {
-    free (x.data);
-  }
-};
-
-Buffers::~Buffers ()
+buffers::~buffers ()
 {
-  std::for_each (m_buffer_index.begin (),
-		 m_buffer_index.end (),
-		 FreeData ());
+  std::for_each (m_buffer_entries.begin (),
+		 m_buffer_entries.end (),
+		 free_data ());
   pthread_rwlock_destroy (&m_lock);
 }
 
 bool
-Buffers::buffer_exists (bid_t bid) const
+buffers::buffer_exists (bid_t bid) const
 {
-  return m_buffer_index.find_if (BufferEntryBidEqual (bid)) != m_buffer_index.end ();
+  return std::find_if (m_buffer_entries.begin (),
+		       m_buffer_entries.end (),
+		       buffer_entry_bid_equal (bid)) != m_buffer_entries.end ();
 }
 
-Buffers::BufferIndexType::const_iterator
-Buffers::allocate (aid_t owner, size_t size, size_t alignment)
+buffers::buffer_list::const_iterator
+buffers::allocate (aid_t owner, size_t size, size_t alignment)
 {
   /* Find a bid. */
   do {
@@ -130,7 +119,7 @@ Buffers::allocate (aid_t owner, size_t size, size_t alignment)
   }
 
   /* Insert. */
-  buffer_entry_t entry;
+  buffer_entry entry;
   entry.bid = bid;
   entry.owner = owner;
   entry.mode = READWRITE;
@@ -140,53 +129,55 @@ Buffers::allocate (aid_t owner, size_t size, size_t alignment)
   entry.ref_count = 1; /* Creator get's one reference. See next. */
 
   /* Create new entry. */
-  buffer_ref_entry_t key;
+  buffer_ref_entry key;
   key.bid = bid;
   key.aid = owner;
   key.count = 1;
-  m_buffer_ref_index.insert (key);
+  m_buffer_ref_entries.push_back (key);
 
-  return m_buffer_index.insert (entry);
+  return m_buffer_entries.insert (m_buffer_entries.end (), entry);
 }
 
 bid_t
-Buffers::alloc (aid_t owner, size_t size)
+buffers::alloc (aid_t owner, size_t size)
 {
   /*
    * NO CHECK IF AID EXISTS.
    */
 
   pthread_rwlock_wrlock (&m_lock);
-  BufferIndexType::const_iterator pos = allocate (owner, size, 0);
+  buffer_list::const_iterator pos = allocate (owner, size, 0);
   pthread_rwlock_unlock (&m_lock);
 
   return pos->bid;
 }
 
 bid_t
-Buffers::alloc_aligned (aid_t owner, size_t size, size_t alignment)
+buffers::alloc_aligned (aid_t owner, size_t size, size_t alignment)
 {
   /*
    * NO CHECK IF AID EXISTS.
    */
 
   pthread_rwlock_wrlock (&m_lock);
-  BufferIndexType::const_iterator pos = allocate (owner, size, alignment);
+  buffer_list::const_iterator pos = allocate (owner, size, alignment);
   pthread_rwlock_unlock (&m_lock);
 
   return pos->bid;
 }
 
 void*
-Buffers::write_ptr (aid_t aid, bid_t bid)
+buffers::write_ptr (aid_t aid, bid_t bid)
 {
   void* ptr;
 
   pthread_rwlock_rdlock (&m_lock);
   /* Lookup. */
-  BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  buffer_list::const_iterator pos = std::find_if (m_buffer_entries.begin (),
+						  m_buffer_entries.end (),
+						  buffer_entry_bid_equal (bid));
   /* Only for the owner between creation and the first reference. */
-  if (pos != m_buffer_index.end () && pos->owner == aid && pos->mode == READWRITE) {
+  if (pos != m_buffer_entries.end () && pos->owner == aid && pos->mode == READWRITE) {
     /* READWRITE implies ref_count == 1. */
     assert (pos->ref_count == 1);
     ptr = pos->data;
@@ -200,24 +191,30 @@ Buffers::write_ptr (aid_t aid, bid_t bid)
 }
 
 bool
-Buffers::owner_or_reference (aid_t aid, bid_t bid) const
+buffers::owner_or_reference (aid_t aid, bid_t bid) const
 {
-  BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
-  BufferRefIndexType::const_iterator ref_pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
+  buffer_list::const_iterator pos = std::find_if (m_buffer_entries.begin (),
+						  m_buffer_entries.end (),
+						  buffer_entry_bid_equal (bid));
+  buffer_ref_list::const_iterator ref_pos = std::find_if (m_buffer_ref_entries.begin (),
+							  m_buffer_ref_entries.end (),
+							  buffer_ref_entry_aid_bid_equal (aid, bid));
   return
-    (pos != m_buffer_index.end () && pos->owner == aid) ||
-    (ref_pos != m_buffer_ref_index.end ());
+    (pos != m_buffer_entries.end () && pos->owner == aid) ||
+    (ref_pos != m_buffer_ref_entries.end ());
 }
 
 const void*
-Buffers::read_ptr (aid_t aid, bid_t bid)
+buffers::read_ptr (aid_t aid, bid_t bid)
 {
   void* ptr;
 
   pthread_rwlock_rdlock (&m_lock);
   /* Only for the owner or if they have a reference. */
   if (owner_or_reference (aid, bid)) {
-    BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+    buffer_list::const_iterator pos = std::find_if (m_buffer_entries.begin (),
+						    m_buffer_entries.end (),
+						    buffer_entry_bid_equal (bid));
     ptr = pos->data;
   }
   else {
@@ -229,14 +226,16 @@ Buffers::read_ptr (aid_t aid, bid_t bid)
 }
 
 size_t
-Buffers::size (aid_t aid, bid_t bid)
+buffers::size (aid_t aid, bid_t bid)
 {
   size_t size;
 
   pthread_rwlock_rdlock (&m_lock);
   /* Owner or have a reference. */
   if (owner_or_reference (aid, bid)) {
-    BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+    buffer_list::const_iterator pos = std::find_if (m_buffer_entries.begin (),
+						    m_buffer_entries.end (),
+						    buffer_entry_bid_equal (bid));
     size = pos->size;
   }
   else {
@@ -247,75 +246,35 @@ Buffers::size (aid_t aid, bid_t bid)
   return size;
 }
 
-/* size_t */
-/* buffers_ref_count (buffers_t* buffers, aid_t aid, bid_t bid) */
-/* { */
-/*   assert (buffers != NULL); */
-
-/*   /\* Lookup. *\/ */
-/*   buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL); */
-/*   buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL); */
-/*   /\* Owner or have a reference. *\/ */
-/*   if ((buffer_entry != NULL && buffer_entry->owner == aid) || */
-/*       (buffer_ref_entry != NULL)) { */
-/*     return buffer_ref_entry->count; */
-/*   } */
-/*   else { */
-/*     return 0; */
-/*   } */
-/* } */
-
-// bool
-// Buffers::exists (aid_t aid, bid_t bid)
-// {
-//   pthread_rwlock_wrlock (&m_lock);
-//   bool retval = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid)) != m_buffer_ref_index.end ();
-//   pthread_rwlock_unlock (&m_lock);
-//   return retval;
-// }
+bool
+buffers::exists (aid_t aid, bid_t bid)
+{
+  pthread_rwlock_wrlock (&m_lock);
+  bool retval = std::find_if (m_buffer_ref_entries.begin (),
+			      m_buffer_ref_entries.end (),
+			      buffer_ref_entry_aid_bid_equal (aid, bid)) != m_buffer_ref_entries.end ();
+  pthread_rwlock_unlock (&m_lock);
+  return retval;
+}
 
 void
-Buffers::change_owner (aid_t aid, bid_t bid)
+buffers::change_owner (aid_t aid, bid_t bid)
 {
   /*
    * NO CHECK IF AID EXISTS.
    */
   pthread_rwlock_wrlock (&m_lock);
-  BufferIndexType::iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
-  assert (pos != m_buffer_index.end ());
+  buffer_list::iterator pos = std::find_if (m_buffer_entries.begin (),
+					    m_buffer_entries.end (),
+					    buffer_entry_bid_equal (bid));
+  assert (pos != m_buffer_entries.end ());
   pos->owner = aid;
   pos->mode = READONLY;
   pthread_rwlock_unlock (&m_lock);
 }
 
-// typedef struct {
-//   buffers_t* buffers;
-//   bid_t parent;
-// } insert_arg_t;
-
-// static void
-// insert_child_into_open (const void* value, void* a)
-// {
-//   const buffer_edge_entry_t* entry = (const buffer_edge_entry_t*)value;
-//   insert_arg_t* arg = (insert_arg_t*)a;
-
-//   if (entry->parent == arg->parent) {
-//     /* Insert into the open list. */
-//     index_insert (arg->m_reachable_open_index, &entry->child);
-//   }
-// }
-
-class InsertChild {
-private:
-  std::set<bid_t>& m_open_list;
-public:
-  InsertChild (std::set<bid_t>& open_list) :
-    m_open_list (open_list) { }
-  void operator() (const buffer_edge_entry_t& x) { m_open_list.insert (x.child); }
-};
-
 void
-Buffers::find_reachable_buffers (bid_t root_bid, std::set<bid_t>& closed_list) const
+buffers::find_reachable_buffers (bid_t root_bid, std::set<bid_t>& closed_list) const
 {
   /* We have an open list of buffers and we have a closed list of buffers. */
   std::set<bid_t> open_list;
@@ -339,39 +298,46 @@ Buffers::find_reachable_buffers (bid_t root_bid, std::set<bid_t>& closed_list) c
       closed_list.insert (pos2, bid);
 
       /* Insert all children into open. */
-      m_buffer_edge_index.for_each_if (BufferEdgeEntryParentEqual (bid), InsertChild (open_list));
+      std::for_each (m_buffer_edge_entries.begin (),
+		     m_buffer_edge_entries.end (),
+		     insert_child (bid, open_list));
+      // m_buffer_edge_entries.for_each_if (BufferEdgeEntryParentEqual (bid), InsertChild (open_list));
     }
   }
 }
 
 void
-Buffers::incref (bid_t bid, aid_t aid, size_t count)
+buffers::incref (bid_t bid, aid_t aid, size_t count)
 {
   assert (buffer_exists (bid));
 
-  BufferRefIndexType::iterator pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
-  if (pos != m_buffer_ref_index.end ()) {
+  buffer_ref_list::iterator pos = std::find_if (m_buffer_ref_entries.begin (),
+						m_buffer_ref_entries.end (),
+						buffer_ref_entry_aid_bid_equal (aid, bid));
+  if (pos != m_buffer_ref_entries.end ()) {
     /* Increment reference count. */
     pos->count += count;
   }
   else {
     /* Create new entry. */
-    buffer_ref_entry_t key;
+    buffer_ref_entry key;
     key.bid = bid;
     key.aid = aid;
     key.count = count;
-    m_buffer_ref_index.insert (key);
+    m_buffer_ref_entries.push_back (key);
   }
 
   /* Increment the global reference count. */
-  BufferIndexType::iterator pos2 = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  buffer_list::iterator pos2 = std::find_if (m_buffer_entries.begin (),
+					     m_buffer_entries.end (),
+					     buffer_entry_bid_equal (bid));
   pos2->ref_count += count;
   /* Buffer becomes READONLY the first time (and any subsequent time) it is referenced. */
   pos2->mode = READONLY;
 }
 
 void
-Buffers::incref (aid_t aid, bid_t bid)
+buffers::incref (aid_t aid, bid_t bid)
 {
   /*
    * NO CHECK IF AID EXISTS.
@@ -390,43 +356,56 @@ Buffers::incref (aid_t aid, bid_t bid)
     /* Increment the reference count for all reachable. */
     std::for_each (children.begin (),
 		   children.end (),
-		   Incref (*this, aid, 1));
+		   incref_bid (*this, aid, 1));
   }
 
   pthread_rwlock_unlock (&m_lock);
 }
 
 void
-Buffers::remove_buffer_entry (BufferIndexType::iterator& pos)
+buffers::remove_buffer_entry (buffer_list::iterator& pos)
 {
   assert (pos->ref_count == 0);
 
   /* Remove parent-child relationships. */
-  m_buffer_edge_index.remove_if (BufferEdgeEntryParentOrChildEqual (pos->bid));
+  buffer_edge_list::iterator edge_pos = m_buffer_edge_entries.begin ();
+  while (edge_pos != m_buffer_edge_entries.end ()) {
+    if (edge_pos->parent == pos->bid ||
+	edge_pos->child == pos->bid) {
+      edge_pos = m_buffer_edge_entries.erase (edge_pos);
+    }
+    else {
+      ++edge_pos;
+    }
+  }
   
   /* Free the data. */
   free (pos->data);
   
   /* Remove. */
-  m_buffer_index.erase (pos);
+  m_buffer_entries.erase (pos);
 }
 
 void
-Buffers::decref (bid_t bid, aid_t aid, size_t count)
+buffers::decref (bid_t bid, aid_t aid, size_t count)
 {
   assert (buffer_exists (bid));
 
-  BufferRefIndexType::iterator pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
+  buffer_ref_list::iterator pos = std::find_if (m_buffer_ref_entries.begin (),
+						m_buffer_ref_entries.end (),
+						buffer_ref_entry_aid_bid_equal (aid, bid));
 
   /* Decrement reference count. */
   pos->count -= count;
   if (pos->count == 0) {
     /* Remove. */
-    m_buffer_ref_index.erase (pos);
+    m_buffer_ref_entries.erase (pos);
   }
   
   /* Decrement the global reference count. */
-  BufferIndexType::iterator pos2 = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  buffer_list::iterator pos2 = std::find_if (m_buffer_entries.begin (),
+					     m_buffer_entries.end (),
+					     buffer_entry_bid_equal (bid));
   pos2->ref_count -= count;
 
   if (pos2->ref_count == 0) {
@@ -435,11 +414,13 @@ Buffers::decref (bid_t bid, aid_t aid, size_t count)
 }
 
 void
-Buffers::decref_core (aid_t aid, bid_t root_bid)
+buffers::decref_core (aid_t aid, bid_t root_bid)
 {
-  BufferRefIndexType::const_iterator pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, root_bid));
+  buffer_ref_list::const_iterator pos = std::find_if (m_buffer_ref_entries.begin (),
+						      m_buffer_ref_entries.end (),
+						      buffer_ref_entry_aid_bid_equal (aid, root_bid));
   /* Must have a reference. */
-  if (pos != m_buffer_ref_index.end ()) {
+  if (pos != m_buffer_ref_entries.end ()) {
 
     /* Find all reachable children. */
     std::set<bid_t> children;
@@ -449,12 +430,12 @@ Buffers::decref_core (aid_t aid, bid_t root_bid)
     /* Decrement the reference count for all reachable. */
     std::for_each (children.begin (),
 		   children.end (),
-		   Decref (*this, aid, 1));
+		   decref_bid (*this, aid, 1));
   }
 }
 
 void
-Buffers::decref (aid_t aid, bid_t root_bid)
+buffers::decref (aid_t aid, bid_t root_bid)
 {
   /*
    * NO CHECK IF AID EXISTS.
@@ -466,7 +447,7 @@ Buffers::decref (aid_t aid, bid_t root_bid)
 }
 
 void
-Buffers::add_child (aid_t aid, bid_t parent, bid_t child)
+buffers::add_child (aid_t aid, bid_t parent, bid_t child)
 {
   /*
    * NO CHECK IF AID EXISTS.
@@ -474,20 +455,28 @@ Buffers::add_child (aid_t aid, bid_t parent, bid_t child)
 
   pthread_rwlock_wrlock (&m_lock);
 
-  BufferEdgeIndexType::const_iterator edge_pos = m_buffer_edge_index.find_if (BufferEdgeEntryParentChildEqual (parent, child));
-  if (edge_pos == m_buffer_edge_index.end ()) {
+  buffer_edge_list::const_iterator edge_pos = std::find_if (m_buffer_edge_entries.begin (),
+							    m_buffer_edge_entries.end (),
+							    buffer_edge_entry_parent_child_equal (parent, child));
+  if (edge_pos == m_buffer_edge_entries.end ()) {
     /* Edge doesn't exist. */
 
-    BufferIndexType::const_iterator parent_pos = m_buffer_index.find_if (BufferEntryBidEqual (parent));
-    BufferIndexType::const_iterator child_pos = m_buffer_index.find_if (BufferEntryBidEqual (child));
+    buffer_list::const_iterator parent_pos = std::find_if (m_buffer_entries.begin (),
+							   m_buffer_entries.end (),
+							   buffer_entry_bid_equal (parent));
+    buffer_list::const_iterator child_pos = std::find_if (m_buffer_entries.begin (),
+							  m_buffer_entries.end (),
+							  buffer_entry_bid_equal (child));
     
-    BufferRefIndexType::const_iterator child_ref_pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, child));
+    buffer_ref_list::const_iterator child_ref_pos = std::find_if (m_buffer_ref_entries.begin (),
+								  m_buffer_ref_entries.end (),
+								  buffer_ref_entry_aid_bid_equal (aid, child));
   
     /* Parent and child must exist, parent must be READWRITE. */
     if ((parent != child) &&
-	(parent_pos != m_buffer_index.end () && parent_pos->owner == aid && parent_pos->mode == READWRITE) &&
-	(child_pos != m_buffer_index.end ()) &&
-	(child_pos->owner == aid || child_ref_pos != m_buffer_ref_index.end ())) {
+	(parent_pos != m_buffer_entries.end () && parent_pos->owner == aid && parent_pos->mode == READWRITE) &&
+	(child_pos != m_buffer_entries.end ()) &&
+	(child_pos->owner == aid || child_ref_pos != m_buffer_ref_entries.end ())) {
       /* READWRITE implies ref_count == 1. */
       assert (parent_pos->ref_count == 1);
 
@@ -511,13 +500,15 @@ Buffers::add_child (aid_t aid, bid_t parent, bid_t child)
 			     std::back_inserter (children));
 	
 	/* Transfer references from the parent to the child. */
-	m_buffer_ref_index.for_each_if (BufferRefEntryBidEqual (parent), Transfer1 (*this, children));
+	std::for_each (m_buffer_ref_entries.begin (),
+		       m_buffer_ref_entries.end (),
+		       transfer1 (*this, parent, children));
 
 	/* Add to edge table. */
-	buffer_edge_entry_t edge_key;
+	buffer_edge_entry edge_key;
 	edge_key.parent = parent;
 	edge_key.child = child;
-	m_buffer_edge_index.insert (edge_key);
+	m_buffer_edge_entries.push_back (edge_key);
       }
     }
   }
@@ -526,7 +517,7 @@ Buffers::add_child (aid_t aid, bid_t parent, bid_t child)
 }
 
 void
-Buffers::remove_child (aid_t aid, bid_t parent, bid_t child)
+buffers::remove_child (aid_t aid, bid_t parent, bid_t child)
 {
   /*
    * NO CHECK IF AID EXISTS.
@@ -534,12 +525,16 @@ Buffers::remove_child (aid_t aid, bid_t parent, bid_t child)
 
   pthread_rwlock_wrlock (&m_lock);
 
-  BufferEdgeIndexType::const_iterator edge_pos = m_buffer_edge_index.find_if (BufferEdgeEntryParentChildEqual (parent, child));
-  if (edge_pos != m_buffer_edge_index.end ()) {
+  buffer_edge_list::iterator edge_pos = std::find_if (m_buffer_edge_entries.begin (),
+						      m_buffer_edge_entries.end (),
+						      buffer_edge_entry_parent_child_equal (parent, child));
+  if (edge_pos != m_buffer_edge_entries.end ()) {
     /* Edge does exist. */
 
-    BufferIndexType::const_iterator parent_pos = m_buffer_index.find_if (BufferEntryBidEqual (parent));    
-    assert (parent_pos != m_buffer_index.end ());
+    buffer_list::const_iterator parent_pos = std::find_if (m_buffer_entries.begin (),
+							   m_buffer_entries.end (),
+							   buffer_entry_bid_equal (parent));
+    assert (parent_pos != m_buffer_entries.end ());
     
     /* Parent must be READWRITE. */
     if (parent_pos->owner == aid && parent_pos->mode == READWRITE) {
@@ -547,7 +542,7 @@ Buffers::remove_child (aid_t aid, bid_t parent, bid_t child)
       assert (parent_pos->ref_count == 1);
 
       /* Remove the edge from the table. */
-      m_buffer_edge_index.erase (edge_pos);
+      m_buffer_edge_entries.erase (edge_pos);
 
       /* Find buffers reachable from the child. */
       std::set<bid_t> reachable_from_child;
@@ -566,22 +561,17 @@ Buffers::remove_child (aid_t aid, bid_t parent, bid_t child)
 			   std::back_inserter (children));
       
       /* Untransfer references from the parent to the child. */
-      m_buffer_ref_index.for_each_if (BufferRefEntryBidEqual (parent), Untransfer1 (*this, children));
+      std::for_each (m_buffer_ref_entries.begin (),
+		     m_buffer_ref_entries.end (),
+		     untransfer1 (*this, parent, children));
     }    
   }
 
   pthread_rwlock_unlock (&m_lock);
 }
 
-class NullAid {
-public:
-  void operator() (buffer_entry_t& x) const {
-    x.owner = -1;
-  }
-};
-
 void
-Buffers::purge_aid (aid_t aid)
+buffers::purge_aid (aid_t aid)
 {
   /*
    * NO CHECK IF AID EXISTS.
@@ -589,20 +579,38 @@ Buffers::purge_aid (aid_t aid)
 
   pthread_rwlock_wrlock (&m_lock);
 
-  /* Update the global counts. */
-  m_buffer_ref_index.for_each_if (BufferRefEntryAidEqual (aid), DecGlobal (*this));
 
-  /* Remove the reference entries. */
-  m_buffer_ref_index.remove_if (BufferRefEntryAidEqual (aid));
+  buffer_ref_list::iterator ref_pos = m_buffer_ref_entries.begin ();
+  while (ref_pos != m_buffer_ref_entries.end ()) {
+    if (ref_pos->aid == aid) {
+      /* Update the global counts. */
+      buffer_list::iterator pos = std::find_if (m_buffer_entries.begin (),
+						m_buffer_entries.end (),
+						buffer_entry_bid_equal (ref_pos->bid));
+      assert (pos != m_buffer_entries.end ());
+      pos->ref_count -= ref_pos->count;
+      if (pos->ref_count == 0) {
+  	remove_buffer_entry (pos);
+      }
+
+      /* Remove the reference entry. */
+      ref_pos = m_buffer_ref_entries.erase (ref_pos);
+    }
+    else {
+      ++ref_pos;
+    }
+  }
 
   /* Remove owners. */
-  m_buffer_index.for_each_if (BufferEntryOwnerEqual (aid), NullAid ());
-
+  std::for_each (m_buffer_entries.begin (),
+		 m_buffer_entries.end (),
+		 null_aid (aid));
+  
   pthread_rwlock_unlock (&m_lock);
 }
 
 bid_t
-Buffers::dup (aid_t aid, bid_t bid, size_t size)
+buffers::dup (aid_t aid, bid_t bid, size_t size)
 {
   /*
    * NO CHECK IF AID EXISTS.
@@ -612,11 +620,15 @@ Buffers::dup (aid_t aid, bid_t bid, size_t size)
 
   bid_t retval;
 
-  BufferRefIndexType::const_iterator buffer_ref_pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
+  buffer_ref_list::const_iterator buffer_ref_pos = std::find_if (m_buffer_ref_entries.begin (),
+								 m_buffer_ref_entries.end (),
+								 buffer_ref_entry_aid_bid_equal (aid, bid));
   /* Must have a reference. */
-  if (buffer_ref_pos != m_buffer_ref_index.end ()) {
-    BufferIndexType::iterator buffer_pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
-    assert (buffer_pos != m_buffer_index.end ());
+  if (buffer_ref_pos != m_buffer_ref_entries.end ()) {
+    buffer_list::iterator buffer_pos = std::find_if (m_buffer_entries.begin (),
+						     m_buffer_entries.end (),
+						     buffer_entry_bid_equal (bid));
+    assert (buffer_pos != m_buffer_entries.end ());
 
     if (buffer_pos->ref_count == 1) {
       /*
@@ -633,7 +645,7 @@ Buffers::dup (aid_t aid, bid_t bid, size_t size)
     }
     else {
       /* Allocate a new buffer with the new size. */
-      BufferIndexType::const_iterator new_pos = allocate (aid, size, buffer_pos->alignment);
+      buffer_list::const_iterator new_pos = allocate (aid, size, buffer_pos->alignment);
       retval = new_pos->bid;
       
       /* Copy the data. */
@@ -642,7 +654,9 @@ Buffers::dup (aid_t aid, bid_t bid, size_t size)
 	      (buffer_pos->size < new_pos->size) ? buffer_pos->size : new_pos->size);
       
       /* Copy parent child relationships. */
-      m_buffer_edge_index.for_each_if (BufferEdgeEntryParentEqual (buffer_pos->bid), DuplicateEdge (*this, new_pos->bid));
+      std::for_each (m_buffer_edge_entries.begin (),
+		     m_buffer_edge_entries.end (),
+		     duplicate_edge (*this, buffer_pos->bid, new_pos->bid));
 
       /* Decrement the reference count. */
       decref_core (aid, bid);

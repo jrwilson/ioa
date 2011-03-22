@@ -270,7 +270,7 @@ automata::rescind (Receipts& receipts, Runq& runq, aid_t aid, void* param)
 }
 
 void
-automata::destroy_r (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid)
+automata::destroy_r (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid)
 {
   /* Children. */
   automaton_list::const_iterator child_pos;
@@ -397,7 +397,7 @@ automata::destroy_r (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid
   /* Receipts. */
   receipts.purge_aid (aid);
   
-  /* Buffers. */
+  /* buffers. */
   buffers.purge_aid (aid);
 
   if (parent != -1) {
@@ -407,7 +407,7 @@ automata::destroy_r (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid
 }
 
 void
-automata::destroy (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid, aid_t target)
+automata::destroy (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid, aid_t target)
 {
   automaton_list::const_iterator pos = std::find_if (m_automaton_entries.begin (),
 						     m_automaton_entries.end (),
@@ -441,7 +441,7 @@ automata::create_automaton (Receipts& receipts, Runq& runq, const descriptor_t* 
 }
 
 void
-automata::system_input_exec (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid)
+automata::system_input_exec (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);
@@ -484,7 +484,7 @@ automata::system_input_exec (Receipts& receipts, Runq& runq, Buffers& buffers, a
 }
 
 void
-automata::system_output_exec (Receipts& receipts, Runq& runq, Ioq& ioq, Buffers& buffers, aid_t aid)
+automata::system_output_exec (Receipts& receipts, Runq& runq, Ioq& ioq, buffers& buffers, aid_t aid)
 {
   /* Acquire the write lock. */
   pthread_rwlock_wrlock (&m_lock);
@@ -545,7 +545,7 @@ automata::system_output_exec (Receipts& receipts, Runq& runq, Ioq& ioq, Buffers&
 }
 
 void
-automata::alarm_input_exec (Buffers& buffers, aid_t aid)
+automata::alarm_input_exec (buffers& buffers, aid_t aid)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);
@@ -574,7 +574,7 @@ automata::alarm_input_exec (Buffers& buffers, aid_t aid)
 }
 
 void
-automata::read_input_exec (Buffers& buffers, aid_t aid)
+automata::read_input_exec (buffers& buffers, aid_t aid)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);
@@ -603,7 +603,7 @@ automata::read_input_exec (Buffers& buffers, aid_t aid)
 }
 
 void
-automata::write_input_exec (Buffers& buffers, aid_t aid)
+automata::write_input_exec (buffers& buffers, aid_t aid)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);
@@ -632,7 +632,7 @@ automata::write_input_exec (Buffers& buffers, aid_t aid)
 }
 
 void
-automata::free_input_exec (Buffers& buffers, aid_t caller_aid, aid_t aid, input_t free_input, bid_t bid)
+automata::free_input_exec (buffers& buffers, aid_t caller_aid, aid_t aid, input_t free_input, bid_t bid)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);
@@ -658,7 +658,7 @@ automata::free_input_exec (Buffers& buffers, aid_t caller_aid, aid_t aid, input_
 }
 
 void
-automata::output_exec (Buffers& buffers, aid_t out_aid, output_t output, void* out_param)
+automata::output_exec (buffers& buffers, aid_t out_aid, output_t output, void* out_param)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);

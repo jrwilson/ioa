@@ -6,7 +6,7 @@
 #include "runq.h"
 #include "ioq.h"
 #include "receipts.h"
-#include "buffers.h"
+#include "buffers.hh"
 
 class automata {
  public:
@@ -15,13 +15,13 @@ class automata {
 
   void create_automaton (Receipts&, Runq&, const descriptor_t*, const void*);
   
-  void system_input_exec (Receipts&, Runq&, Buffers&, aid_t);
-  void system_output_exec (Receipts&, Runq&, Ioq&, Buffers&, aid_t);
-  void alarm_input_exec (Buffers&, aid_t);
-  void read_input_exec (Buffers&, aid_t);
-  void write_input_exec (Buffers&, aid_t);
-  void free_input_exec (Buffers&, aid_t, aid_t, input_t, bid_t);
-  void output_exec (Buffers&, aid_t, output_t, void*);
+  void system_input_exec (Receipts&, Runq&, buffers&, aid_t);
+  void system_output_exec (Receipts&, Runq&, Ioq&, buffers&, aid_t);
+  void alarm_input_exec (buffers&, aid_t);
+  void read_input_exec (buffers&, aid_t);
+  void write_input_exec (buffers&, aid_t);
+  void free_input_exec (buffers&, aid_t, aid_t, input_t, bid_t);
+  void output_exec (buffers&, aid_t, output_t, void*);
   void internal_exec (aid_t, internal_t, void*);
 
   aid_t get_current_aid ();
@@ -225,8 +225,8 @@ class automata {
   void compose (Receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param);
   void decompose (Receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param);
   void rescind (Receipts& receipts, Runq& runq, aid_t aid, void* param);
-  void destroy_r (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid);
-  void destroy (Receipts& receipts, Runq& runq, Buffers& buffers, aid_t aid, aid_t target);
+  void destroy_r (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid);
+  void destroy (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid, aid_t target);
 
   class output_lock {
   private:
@@ -262,13 +262,13 @@ class automata {
   class output_execute {
   private:
     automata& m_automata;
-    Buffers& m_buffers;
+    buffers& m_buffers;
     const aid_t m_out_aid;
     const output_t m_output;
     const void* m_out_param;
     const bid_t m_bid;
   public:
-    output_execute (automata& automata, Buffers& buffers, const aid_t& out_aid, const output_t& output, const void* out_param, const bid_t& bid) :
+    output_execute (automata& automata, buffers& buffers, const aid_t& out_aid, const output_t& output, const void* out_param, const bid_t& bid) :
       m_automata (automata),
       m_buffers (buffers),
       m_out_aid (out_aid),
