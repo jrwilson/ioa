@@ -5,53 +5,50 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "ioq.hh"
 #include "runq.hh"
 #include "automata.hh"
 #include "receipts.hh"
-#include "table.hh"
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #define MAX_THREADS 128
 
-static Ioq ioq;
-static Runq runq;
-static Automata automata;
-static Buffers buffers;
-static Receipts receipts;
+static ioq ioq;
+static runq runq;
+static automata automata;
+static buffers buffers;
+static receipts receipts;
 
 static void*
 thread_func (void* arg)
 {
   for (;;) {
-    runnable_t runnable;
-    runq.pop (&runnable);
+    runq::runnable runnable = runq.pop ();
     switch (runnable.type) {
-    case SYSTEM_INPUT:
+    case runq::SYSTEM_INPUT:
       automata.system_input_exec (receipts, runq, buffers, runnable.aid);
       break;
-    case SYSTEM_OUTPUT:
+    case runq::SYSTEM_OUTPUT:
       automata.system_output_exec (receipts, runq, ioq, buffers, runnable.aid);
       break;
-    case ALARM_INPUT:
+    case runq::ALARM_INPUT:
       automata.alarm_input_exec (buffers, runnable.aid);
       break;
-    case READ_INPUT:
+    case runq::READ_INPUT:
       automata.read_input_exec (buffers, runnable.aid);
       break;
-    case WRITE_INPUT:
+    case runq::WRITE_INPUT:
       automata.write_input_exec (buffers, runnable.aid);
       break;
-    case FREE_INPUT:
+    case runq::FREE_INPUT:
       automata.free_input_exec (buffers, runnable.free_input.caller_aid, runnable.aid, runnable.free_input.free_input, runnable.free_input.bid);
       break;
-    case OUTPUT:
+    case runq::OUTPUT:
       automata.output_exec (buffers, runnable.aid, runnable.output.output, runnable.param);
       break;
-    case INTERNAL:
+    case runq::INTERNAL:
       automata.internal_exec (runnable.aid, runnable.internal.internal, runnable.param);
       break;
     }
@@ -60,90 +57,67 @@ thread_func (void* arg)
   pthread_exit (NULL);
 }
 
-typedef struct {
+bool operator< (const struct timeval& x, const struct timeval& y)
+{
+  if (x.tv_sec != y.tv_sec) {
+    return x.tv_sec < y.tv_sec;
+  }
+  return x.tv_usec < y.tv_usec;
+}
+
+struct alarm_t {
   aid_t aid;
   struct timeval tv;
-} alarm_t;
-
-static bool
-alarm_aid_equal (const void* x0, const void* y0)
-{
-  const alarm_t* x = (const alarm_t*)x0;
-  const alarm_t* y = (const alarm_t*)y0;
-
-  return x->aid == y->aid;
-}
-
-static bool
-alarm_lt (const void* x0, const void* y0)
-{
-  const alarm_t* x = (const alarm_t*)x0;
-  const alarm_t* y = (const alarm_t*)y0;
-
-  if (x->tv.tv_sec != y->tv.tv_sec) {
-    return x->tv.tv_sec < y->tv.tv_sec;
+  alarm_t (const aid_t& _aid, const struct timeval& _tv) :
+    aid (_aid),
+    tv (_tv) { }
+  bool operator< (const alarm_t& x) const {
+    return tv < x.tv;
   }
-  return x->tv.tv_usec < y->tv.tv_usec;
-}
+};
+    
+class alarm_aid_equal {
+private:
+  const aid_t m_aid;
+public:
+  alarm_aid_equal (const aid_t& aid) :
+    m_aid (aid) { }
+  bool operator () (const alarm_t& alarm) const {
+    return m_aid == alarm.aid;
+  }
+};
 
-typedef struct {
+struct fd_t {
   aid_t aid;
   int fd;
-} fd_t;
+  fd_t (const aid_t& _aid, const int& _fd) :
+    aid (_aid),
+    fd (_fd) { }
+};
 
-static bool
-fd_aid_equal (const void* x0, const void* y0)
-{
-  const fd_t* x = (const fd_t*)x0;
-  const fd_t* y = (const fd_t*)y0;
-
-  return x->aid == y->aid;
-}
+class fd_aid_equal {
+private:
+  const aid_t m_aid;
+public:
+  fd_aid_equal (const aid_t& aid) :
+    m_aid (aid) { }
+  bool operator() (const fd_t& x) const {
+    return m_aid == x.aid;
+  }
+};
 
 typedef struct {
   fd_set fds;
 } fdset_t;
 
-static void
-fdset_set (const void* e, void* a)
-{
-  const fd_t* fd = (const fd_t*)e;
-  fdset_t* fdset = (fdset_t*)a;
-
-  FD_SET (fd->fd, &fdset->fds);
-}
-
-static bool
-fdset_clear_read (const void* e, const void* a)
-{
-  const fd_t* fd = (const fd_t*)e;
-  const fdset_t* fdset = (const fdset_t*)a;
-
-  if (FD_ISSET (fd->fd, &fdset->fds)) {
-    runq.insert_read_input (fd->aid);
-    /* FD_CLR (fd->fd, &fdset->fds); */
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-
-static bool
-fdset_clear_write (const void* e, const void* a)
-{
-  const fd_t* fd = (const fd_t*)e;
-  const fdset_t* fdset = (const fdset_t*)a;
-
-  if (FD_ISSET (fd->fd, &fdset->fds)) {
-    runq.insert_write_input (fd->aid);
-    /* FD_CLR (fd->fd, &fdset->fds); */
-    return true;
-  }
-  else {
-    return false;
-  }
-}
+class fdset_set {
+private:
+  fdset_t& m_fdset;
+public:
+  fdset_set (fdset_t& fdset) :
+    m_fdset (fdset) { }
+  void operator() (const fd_t& fd) const { FD_SET (fd.fd, &m_fdset.fds); }
+};
 
 void
 ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
@@ -166,158 +140,166 @@ ueioa_run (const descriptor_t* descriptor, const void* arg, int thread_count)
   }
 
   /* Start the I/O thread. */
-  // int interrupt = ioq.interrupt_fd (ioq);
-  // fdset_t read_arg;
-  // FD_ZERO (&read_arg.fds);
-  // fdset_t write_arg;
-  // FD_ZERO (&write_arg.fds);
-  // struct timeval timeout;
-  // io_t io;
-  // table* alarm_table = new table (sizeof (alarm_t));
-  // index_t* alarm_index = index_create_ordered_list (alarm_table, alarm_lt);
-  // table* write_table = new table (sizeof (fd_t));
-  // index_t* write_index = index_create_list (write_table);
-  // table* read_table = new table (sizeof (fd_t));
-  // index_t* read_index = index_create_list (read_table);
+  int interrupt = ioq.interrupt_fd ();
+  fdset_t read_arg;
+  FD_ZERO (&read_arg.fds);
+  fdset_t write_arg;
+  FD_ZERO (&write_arg.fds);
+  struct timeval timeout;
+  std::set<alarm_t> alarm_index;
+  std::list<fd_t> write_index;
+  std::list<fd_t> read_index;
 
-  // for (;;) {
-  //   FD_ZERO (&read_arg.fds);
-  //   FD_ZERO (&write_arg.fds);
+  for (;;) {
+    FD_ZERO (&read_arg.fds);
+    FD_ZERO (&write_arg.fds);
 
-  //   /* Add the interrupt. */
-  //   FD_SET (interrupt, &read_arg.fds);
+    /* Add the interrupt. */
+    FD_SET (interrupt, &read_arg.fds);
 
-  //   /* Initialize the reads. */
-  //   index_for_each (read_index,
-  // 		    index_begin (read_index),
-  // 		    index_end (read_index),
-  // 		    fdset_set,
-  // 		    &read_arg);
+    /* Initialize the reads. */
+    std::for_each (read_index.begin (),
+		   read_index.end (),
+		   fdset_set (read_arg));
 
-  //   /* Initialize the writes. */
-  //   index_for_each (write_index,
-  // 		    index_begin (write_index),
-  // 		    index_end (write_index),
-  // 		    fdset_set,
-  // 		    &write_arg);
+    /* Initialize the writes. */
+    std::for_each (write_index.begin (),
+		   write_index.end (),
+		   fdset_set (write_arg));
 
-  //   /* Initialize the timeout. */
-  //   struct timeval* timeout_ptr;
-  //   if (index_empty (alarm_index)) {
-  //     /* Wait forever. */
-  //     timeout_ptr = NULL;
-  //   }
-  //   else {
-  //     alarm_t* alarm = (alarm_t*)index_front (alarm_index);
-  //     alarm_t now;
-  //     gettimeofday (&now.tv, NULL);
-  //     if (alarm_lt (alarm, &now)) {
-  // 	/* In the past so poll. */
-  // 	timeout.tv_sec = 0;
-  // 	timeout.tv_usec = 0;
-  //     }
-  //     else {
-  // 	/* Make relative. */
-  // 	timeout.tv_sec = alarm->tv.tv_sec;
-  // 	timeout.tv_usec = alarm->tv.tv_usec;
+    /* Initialize the timeout. */
+    struct timeval* timeout_ptr;
+    if (alarm_index.empty ()) {
+      /* Wait forever. */
+      timeout_ptr = NULL;
+    }
+    else {
+      std::set<alarm_t>::const_iterator pos = alarm_index.begin ();
+      struct timeval now;
+      gettimeofday (&now, NULL);
+      if (pos->tv < now) {
+  	/* In the past so poll. */
+  	timeout.tv_sec = 0;
+  	timeout.tv_usec = 0;
+      }
+      else {
+  	/* Make relative. */
+  	timeout.tv_sec = pos->tv.tv_sec;
+  	timeout.tv_usec = pos->tv.tv_usec;
 
-  // 	if (timeout.tv_usec < now.tv.tv_usec) {
-  // 	  /* Borrow. */
-  // 	  --timeout.tv_sec;
-  // 	  timeout.tv_usec += 1000000;
-  // 	}
-  // 	timeout.tv_sec -= now.tv.tv_sec;
-  // 	timeout.tv_usec -= now.tv.tv_usec;
-  //     }
-  //     timeout_ptr = &timeout;
-  //   }
+  	if (timeout.tv_usec < now.tv_usec) {
+  	  /* Borrow. */
+  	  --timeout.tv_sec;
+  	  timeout.tv_usec += 1000000;
+  	}
+  	timeout.tv_sec -= now.tv_sec;
+  	timeout.tv_usec -= now.tv_usec;
+      }
+      timeout_ptr = &timeout;
+    }
 
-  //   int res = select (FD_SETSIZE, &read_arg.fds, &write_arg.fds, NULL, timeout_ptr);
-  //   if (res < 0) {
-  //     perror ("select");
-  //     exit (EXIT_FAILURE);
-  //   }
-  //   else {
-  //     /* Process the timers. */
-  //     while (!index_empty (alarm_index)) {
-  // 	alarm_t* alarm = (alarm_t*)index_front (alarm_index);
-  // 	alarm_t now;
-  // 	gettimeofday (&now.tv, NULL);
-  // 	if (alarm_lt (alarm, &now)) {
-  // 	  runq_insert_alarm_input (runq, alarm->aid);
-  // 	  index_pop_front (alarm_index);
-  // 	}
-  // 	else {
-  // 	  break;
-  // 	}
-  //     }
+    int res = select (FD_SETSIZE, &read_arg.fds, &write_arg.fds, NULL, timeout_ptr);
+    if (res < 0) {
+      perror ("select");
+      exit (EXIT_FAILURE);
+    }
+    else {
+      /* Process the timers. */
+      while (!alarm_index.empty ()) {
+	std::set<alarm_t>::const_iterator pos = alarm_index.begin ();
+  	struct timeval now;
+  	gettimeofday (&now, NULL);
+  	if (pos->tv < now) {
+  	  runq.insert_alarm_input (pos->aid);
+  	  alarm_index.erase (pos);
+  	}
+  	else {
+  	  break;
+  	}
+      }
 
-  //     if (res > 0) {
-  // 	/* Process the file descriptors. */
-  // 	index_remove (read_index,
-  // 		      index_begin (read_index),
-  // 		      index_end (read_index),
-  // 		      fdset_clear_read,
-  // 		      &read_arg);
+      if (res > 0) {
+  	/* Process the file descriptors. */
+	std::list<fd_t>::iterator pos;
+	pos = read_index.begin ();
+	while (pos != read_index.end ()) {
+	  if (FD_ISSET (pos->fd, &read_arg.fds)) {
+	    runq.insert_read_input (pos->aid);
+	    /* FD_CLR (fd->fd, &fdset->fds); */
+	    pos = read_index.erase (pos);
+	  }
+	  else {
+	    ++pos;
+	  }
+	}
 
-  // 	index_remove (write_index,
-  // 		      index_begin (write_index),
-  // 		      index_end (write_index),
-  // 		      fdset_clear_write,
-  // 		      &write_arg);
+	pos = write_index.begin ();
+	while (pos != write_index.end ()) {
+	  if (FD_ISSET (pos->fd, &write_arg.fds)) {
+	    runq.insert_write_input (pos->aid);
+	    /* FD_CLR (fd->fd, &fdset->fds); */
+	    pos = write_index.erase (pos);
+	  }
+	  else {
+	    ++pos;
+	  }
+	}
 
-  // 	if (FD_ISSET (interrupt, &read_arg.fds)) {
-  // 	  char c;
-  // 	  assert (read (interrupt, &c, 1) == 1);
-  // 	  if (!ioq_empty (ioq)) {
-  // 	    /* Pushing an I/O operation writes to the file descriptor.
-  // 	       However, the push might not actually do anything if it is a duplicate.
-  // 	       Consequently, one must check that the queue is not empty.
-  // 	    */
-  // 	    ioq_pop (ioq, &io);
+  	if (FD_ISSET (interrupt, &read_arg.fds)) {
+  	  char c;
+  	  assert (read (interrupt, &c, 1) == 1);
+  	  if (!ioq.empty ()) {
+  	    /* Pushing an I/O operation writes to the file descriptor.
+  	       However, the push might not actually do anything if it is a duplicate.
+  	       Consequently, one must check that the queue is not empty.
+  	    */
+	    ioq::io io = ioq.pop ();
 	    
-  // 	    switch (io.type) {
-  // 	    case IO_ALARM:
-  // 	      {
-  // 		/* Get the current time. */
-  // 		struct timeval tv;
-  // 		gettimeofday (&tv, NULL);
-  // 		/* Add the requested interval. */
-  // 		tv.tv_sec += io.alarm.tv.tv_sec;
-  // 		tv.tv_usec += io.alarm.tv.tv_usec;
-  // 		if (tv.tv_usec > 999999) {
-  // 		  ++tv.tv_sec;
-  // 		  tv.tv_usec -= 1000000;
-  // 		}
-  // 		/* Insert alarm. */
-  // 		alarm_t key;
-  // 		key.aid = io.aid;
-  // 		key.tv = tv;
-  // 		index_insert_unique (alarm_index, alarm_aid_equal, &key);
-  // 	      }
-  // 	      break;
-  // 	    case IO_WRITE:
-  // 	      {
-  // 		fd_t key;
-  // 		key.aid = io.aid;
-  // 		key.fd = io.write.fd;
-  // 		index_insert_unique (write_index, fd_aid_equal, &key);
-  // 	      }
-  // 	      break;
-  // 	    case IO_READ:
-  // 	      {
-  // 		fd_t key;
-  // 		key.aid = io.aid;
-  // 		key.fd = io.read.fd;
-  // 		index_insert_unique (read_index, fd_aid_equal, &key);
-  // 	      }
-  // 	      break;
-  // 	    }
-  // 	  }
-  // 	}
-  //     }
-  //   }
-  // }
+  	    switch (io.type) {
+  	    case ioq::IO_ALARM:
+  	      {
+  		/* Get the current time. */
+  		struct timeval tv;
+  		gettimeofday (&tv, NULL);
+  		/* Add the requested interval. */
+  		tv.tv_sec += io.alarm.tv.tv_sec;
+  		tv.tv_usec += io.alarm.tv.tv_usec;
+  		if (tv.tv_usec > 999999) {
+  		  ++tv.tv_sec;
+  		  tv.tv_usec -= 1000000;
+  		}
+  		/* Insert alarm. */
+		if (std::find_if (alarm_index.begin (),
+				  alarm_index.end (),
+				  alarm_aid_equal (io.aid)) == alarm_index.end ()) {
+		  alarm_index.insert (alarm_t (io.aid, tv));
+		}
+  	      }
+  	      break;
+  	    case ioq::IO_WRITE:
+  	      {
+		if (std::find_if (write_index.begin (),
+				  write_index.end (),
+				  fd_aid_equal (io.aid)) == write_index.end ()) {
+		  write_index.push_back (fd_t (io.aid, io.write.fd));
+		}
+  	      }
+  	      break;
+  	    case ioq::IO_READ:
+  	      {
+		if (std::find_if (read_index.begin (),
+				  read_index.end (),
+				  fd_aid_equal (io.aid)) == read_index.end ()) {
+		  read_index.push_back (fd_t (io.aid, io.read.fd));
+		}
+  	      }
+  	      break;
+  	    }
+  	  }
+  	}
+      }
+    }
+  }
 
   /* This code is never reached. */
   for (idx = 0; idx < thread_count; ++idx) {

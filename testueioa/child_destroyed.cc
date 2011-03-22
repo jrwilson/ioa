@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
     /* Good. */
@@ -18,7 +18,16 @@ child_system_input (void* state, void* param, bid_t bid)
 }
 
 descriptor_t child_descriptor = {
-  .system_input = child_system_input,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 typedef enum {
@@ -37,7 +46,7 @@ typedef struct {
 static void*
 child_destroyed_create (const void* arg)
 {
-  child_destroyed_t* child_destroyed = malloc (sizeof (child_destroyed_t));
+  child_destroyed_t* child_destroyed = (child_destroyed_t*)malloc (sizeof (child_destroyed_t));
   child_destroyed->state = START;
 
   return child_destroyed;
@@ -46,12 +55,12 @@ child_destroyed_create (const void* arg)
 static void
 child_destroyed_system_input (void* state, void* param, bid_t bid)
 {
-  child_destroyed_t* child_destroyed = state;
+  child_destroyed_t* child_destroyed = (child_destroyed_t*)state;
   assert (child_destroyed != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (child_destroyed->state) {
   case START:
@@ -93,11 +102,11 @@ child_destroyed_system_input (void* state, void* param, bid_t bid)
 static bid_t
 child_destroyed_system_output (void* state, void* param)
 {
-  child_destroyed_t* child_destroyed = state;
+  child_destroyed_t* child_destroyed = (child_destroyed_t*)state;
   assert (child_destroyed != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (child_destroyed->state) {
   case START:
@@ -125,9 +134,16 @@ child_destroyed_system_output (void* state, void* param)
 }
 
 descriptor_t child_destroyed_descriptor = {
-  .constructor = child_destroyed_create,
-  .system_input = child_destroyed_system_input,
-  .system_output = child_destroyed_system_output,
+  child_destroyed_create,
+  child_destroyed_system_input,
+  child_destroyed_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

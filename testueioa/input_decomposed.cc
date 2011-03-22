@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED ||
       receipt->type == OUTPUT_COMPOSED ||
@@ -39,9 +39,16 @@ static input_t child_inputs[] = { child_input, NULL };
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .system_input = child_system_input,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_inputs,
+  child_outputs,
+  NULL,
 };
 
 
@@ -66,7 +73,7 @@ typedef struct {
 static void*
 input_decomposed_create (const void* arg)
 {
-  input_decomposed_t* input_decomposed = malloc (sizeof (input_decomposed_t));
+  input_decomposed_t* input_decomposed = (input_decomposed_t*)malloc (sizeof (input_decomposed_t));
   input_decomposed->state = START;
 
   return input_decomposed;
@@ -75,12 +82,12 @@ input_decomposed_create (const void* arg)
 static void
 input_decomposed_system_input (void* state, void* param, bid_t bid)
 {
-  input_decomposed_t* input_decomposed = state;
+  input_decomposed_t* input_decomposed = (input_decomposed_t*)state;
   assert (input_decomposed != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (input_decomposed->state) {
   case START:
@@ -147,11 +154,11 @@ input_decomposed_system_input (void* state, void* param, bid_t bid)
 static bid_t
 input_decomposed_system_output (void* state, void* param)
 {
-  input_decomposed_t* input_decomposed = state;
+  input_decomposed_t* input_decomposed = (input_decomposed_t*)state;
   assert (input_decomposed != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (input_decomposed->state) {
   case START:
@@ -195,9 +202,16 @@ input_decomposed_system_output (void* state, void* param)
 }
 
 descriptor_t input_decomposed_descriptor = {
-  .constructor = input_decomposed_create,
-  .system_input = input_decomposed_system_input,
-  .system_output = input_decomposed_system_output,
+  input_decomposed_create,
+  input_decomposed_system_input,
+  input_decomposed_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

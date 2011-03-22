@@ -13,7 +13,7 @@ schedule_internal_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
     assert (schedule_internal (schedule_internal_internal, NULL) == 0);
@@ -27,8 +27,16 @@ schedule_internal_system_input (void* state, void* param, bid_t bid)
 static internal_t schedule_internal_internals[] = { schedule_internal_internal, NULL };
 
 descriptor_t schedule_internal_descriptor = {
-  .system_input = schedule_internal_system_input,
-  .internals = schedule_internal_internals,
+  NULL,
+  schedule_internal_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  schedule_internal_internals,
 };
 
 int

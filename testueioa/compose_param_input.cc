@@ -17,7 +17,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED ||
       receipt->type == OUTPUT_COMPOSED ||
@@ -38,8 +38,16 @@ child_output (void* state, void* param)
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .system_input = child_system_input,
-  .outputs = child_outputs,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_outputs,
+  NULL,
 };
 
 
@@ -76,7 +84,7 @@ typedef struct {
 static void*
 compose_param_input_create (const void* arg)
 {
-  compose_param_input_t* compose_param_input = malloc (sizeof (compose_param_input_t));
+  compose_param_input_t* compose_param_input = (compose_param_input_t*)malloc (sizeof (compose_param_input_t));
   compose_param_input->state = START;
 
   return compose_param_input;
@@ -91,12 +99,12 @@ compose_param_input_input (void* state, void* param, bid_t bid)
 static void
 compose_param_input_system_input (void* state, void* param, bid_t bid)
 {
-  compose_param_input_t* compose_param_input = state;
+  compose_param_input_t* compose_param_input = (compose_param_input_t*)state;
   assert (compose_param_input != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (compose_param_input->state) {
   case START:
@@ -222,11 +230,11 @@ compose_param_input_system_input (void* state, void* param, bid_t bid)
 static bid_t
 compose_param_input_system_output (void* state, void* param)
 {
-  compose_param_input_t* compose_param_input = state;
+  compose_param_input_t* compose_param_input = (compose_param_input_t*)state;
   assert (compose_param_input != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (compose_param_input->state) {
   case START:
@@ -258,7 +266,7 @@ compose_param_input_system_output (void* state, void* param)
     break;
   case DECLARE2_UNSENT:
     /* Send a declare order. */
-    compose_param_input->param2 = malloc (sizeof (int));
+    compose_param_input->param2 = (int*)malloc (sizeof (int));
     order_declare_init (order, compose_param_input->param2);
     compose_param_input->state = DECLARE2_SENT;
     break;
@@ -267,7 +275,7 @@ compose_param_input_system_output (void* state, void* param)
     break;
   case DECLARE3_UNSENT:
     /* Send a declare order. */
-    compose_param_input->param3 = malloc (sizeof (int));
+    compose_param_input->param3 = (int*)malloc (sizeof (int));
     order_declare_init (order, compose_param_input->param3);
     compose_param_input->state = DECLARE3_SENT;
     break;
@@ -306,10 +314,16 @@ compose_param_input_system_output (void* state, void* param)
 static input_t compose_param_input_inputs[] = { compose_param_input_input, NULL };
 
 descriptor_t compose_param_input_descriptor = {
-  .constructor = compose_param_input_create,
-  .system_input = compose_param_input_system_input,
-  .system_output = compose_param_input_system_output,
-  .inputs = compose_param_input_inputs,
+  compose_param_input_create,
+  compose_param_input_system_input,
+  compose_param_input_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  compose_param_input_inputs,
+  NULL,
+  NULL,
 };
 
 int

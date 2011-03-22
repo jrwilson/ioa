@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED ||
       receipt->type == OUTPUT_COMPOSED ||
@@ -35,16 +35,16 @@ static input_t child_inputs[] = { child_input, NULL };
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .constructor = NULL,
-  .system_input = child_system_input,
-  .system_output = NULL,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
-  .internals = NULL,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_inputs,
+  child_outputs,
+  NULL,
 };
 
 
@@ -67,7 +67,7 @@ typedef struct {
 static void*
 composed_create (const void* arg)
 {
-  composed_t* composed = malloc (sizeof (composed_t));
+  composed_t* composed = (composed_t*)malloc (sizeof (composed_t));
   composed->state = START;
 
   return composed;
@@ -76,12 +76,12 @@ composed_create (const void* arg)
 static void
 composed_system_input (void* state, void* param, bid_t bid)
 {
-  composed_t* composed = state;
+  composed_t* composed = (composed_t*)state;
   assert (composed != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (composed->state) {
   case START:
@@ -136,11 +136,11 @@ composed_system_input (void* state, void* param, bid_t bid)
 static bid_t
 composed_system_output (void* state, void* param)
 {
-  composed_t* composed = state;
+  composed_t* composed = (composed_t*)state;
   assert (composed != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (composed->state) {
   case START:
@@ -176,16 +176,16 @@ composed_system_output (void* state, void* param)
 }
 
 descriptor_t composed_descriptor = {
-  .constructor = composed_create,
-  .system_input = composed_system_input,
-  .system_output = composed_system_output,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+  composed_create,
+  composed_system_input,
+  composed_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

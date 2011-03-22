@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED ||
       receipt->type == OUTPUT_COMPOSED ||
@@ -35,9 +35,16 @@ static input_t child_inputs[] = { child_input, NULL };
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .system_input = child_system_input,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_inputs,
+  child_outputs,
+  NULL,
 };
 
 
@@ -62,7 +69,7 @@ typedef struct {
 static void*
 decomposed_create (const void* arg)
 {
-  decomposed_t* decomposed = malloc (sizeof (decomposed_t));
+  decomposed_t* decomposed = (decomposed_t*)malloc (sizeof (decomposed_t));
   decomposed->state = START;
 
   return decomposed;
@@ -71,12 +78,12 @@ decomposed_create (const void* arg)
 static void
 decomposed_system_input (void* state, void* param, bid_t bid)
 {
-  decomposed_t* decomposed = state;
+  decomposed_t* decomposed = (decomposed_t*)state;
   assert (decomposed != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (decomposed->state) {
   case START:
@@ -143,11 +150,11 @@ decomposed_system_input (void* state, void* param, bid_t bid)
 static bid_t
 decomposed_system_output (void* state, void* param)
 {
-  decomposed_t* decomposed = state;
+  decomposed_t* decomposed = (decomposed_t*)state;
   assert (decomposed != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (decomposed->state) {
   case START:
@@ -191,9 +198,16 @@ decomposed_system_output (void* state, void* param)
 }
 
 descriptor_t decomposed_descriptor = {
-  .constructor = decomposed_create,
-  .system_input = decomposed_system_input,
-  .system_output = decomposed_system_output,
+  decomposed_create,
+  decomposed_system_input,
+  decomposed_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

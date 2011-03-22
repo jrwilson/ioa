@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
     /* Good. */
@@ -32,18 +32,17 @@ child_output (void* state, void* param)
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .constructor = NULL,
-  .system_input = child_system_input,
-  .system_output = NULL,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = child_outputs,
-  .internals = NULL,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_outputs,
+  NULL,
 };
-
 
 typedef enum {
   START,
@@ -64,7 +63,7 @@ typedef struct {
 static void*
 input_dne_create (const void* arg)
 {
-  input_dne_t* input_dne = malloc (sizeof (input_dne_t));
+  input_dne_t* input_dne = (input_dne_t*)malloc (sizeof (input_dne_t));
   input_dne->state = START;
 
   return input_dne;
@@ -73,12 +72,12 @@ input_dne_create (const void* arg)
 static void
 input_dne_system_input (void* state, void* param, bid_t bid)
 {
-  input_dne_t* input_dne = state;
+  input_dne_t* input_dne = (input_dne_t*)state;
   assert (input_dne != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (input_dne->state) {
   case START:
@@ -133,11 +132,11 @@ input_dne_system_input (void* state, void* param, bid_t bid)
 static bid_t
 input_dne_system_output (void* state, void* param)
 {
-  input_dne_t* input_dne = state;
+  input_dne_t* input_dne = (input_dne_t*)state;
   assert (input_dne != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (input_dne->state) {
   case START:
@@ -173,16 +172,16 @@ input_dne_system_output (void* state, void* param)
 }
 
 descriptor_t input_dne_descriptor = {
-  .constructor = input_dne_create,
-  .system_input = input_dne_system_input,
-  .system_output = input_dne_system_output,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+  input_dne_create,
+  input_dne_system_input,
+  input_dne_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

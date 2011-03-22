@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED ||
       receipt->type == OUTPUT_COMPOSED ||
@@ -41,16 +41,16 @@ static input_t child_inputs[] = { child_input1, child_input2, NULL };
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .constructor = NULL,
-  .system_input = child_system_input,
-  .system_output = NULL,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
-  .internals = NULL,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_inputs,
+  child_outputs,
+  NULL,
 };
 
 
@@ -75,7 +75,7 @@ typedef struct {
 static void*
 output_unavailable_create (const void* arg)
 {
-  output_unavailable_t* output_unavailable = malloc (sizeof (output_unavailable_t));
+  output_unavailable_t* output_unavailable = (output_unavailable_t*)malloc (sizeof (output_unavailable_t));
   output_unavailable->state = START;
 
   return output_unavailable;
@@ -84,12 +84,12 @@ output_unavailable_create (const void* arg)
 static void
 output_unavailable_system_input (void* state, void* param, bid_t bid)
 {
-  output_unavailable_t* output_unavailable = state;
+  output_unavailable_t* output_unavailable = (output_unavailable_t*)state;
   assert (output_unavailable != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (output_unavailable->state) {
   case START:
@@ -156,11 +156,11 @@ output_unavailable_system_input (void* state, void* param, bid_t bid)
 static bid_t
 output_unavailable_system_output (void* state, void* param)
 {
-  output_unavailable_t* output_unavailable = state;
+  output_unavailable_t* output_unavailable = (output_unavailable_t*)state;
   assert (output_unavailable != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (output_unavailable->state) {
   case START:
@@ -204,16 +204,16 @@ output_unavailable_system_output (void* state, void* param)
 }
 
 descriptor_t output_unavailable_descriptor = {
-  .constructor = output_unavailable_create,
-  .system_input = output_unavailable_system_input,
-  .system_output = output_unavailable_system_output,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+  output_unavailable_create,
+  output_unavailable_system_input,
+  output_unavailable_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

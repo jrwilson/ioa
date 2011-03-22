@@ -16,7 +16,7 @@ typedef struct {
 static void*
 child_create (const void* arg)
 {
-  child_t* child = malloc (sizeof (child_t));
+  child_t* child = (child_t*)malloc (sizeof (child_t));
   child->state = CUNSENT;
 
   return child;
@@ -25,12 +25,12 @@ child_create (const void* arg)
 static void
 child_system_input (void* state, void* param, bid_t bid)
 {
-  child_t* child = state;
+  child_t* child = (child_t*)state;
   assert (child != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
   
   switch (child->state) {
   case CUNSENT:
@@ -56,11 +56,11 @@ child_system_input (void* state, void* param, bid_t bid)
 static bid_t
 child_system_output (void* state, void* param)
 {
-  child_t* child = state;
+  child_t* child = (child_t*)state;
   assert (child != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
   /* Try to destroy the parent. */
   order_destroy_init (order, parent_aid);
   child->state = CSENT;
@@ -69,9 +69,16 @@ child_system_output (void* state, void* param)
 }
 
 descriptor_t child_descriptor = {
-  .constructor = child_create,
-  .system_input = child_system_input,
-  .system_output = child_system_output,
+  child_create,
+  child_system_input,
+  child_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 typedef enum {
@@ -86,7 +93,7 @@ typedef struct {
 static void*
 not_owner_create (const void* arg)
 {
-  not_owner_t* not_owner = malloc (sizeof (not_owner_t));
+  not_owner_t* not_owner = (not_owner_t*)malloc (sizeof (not_owner_t));
   not_owner->state = UNSENT;
 
   return not_owner;
@@ -95,12 +102,12 @@ not_owner_create (const void* arg)
 static void
 not_owner_system_input (void* state, void* param, bid_t bid)
 {
-  not_owner_t* not_owner = state;
+  not_owner_t* not_owner = (not_owner_t*)state;
   assert (not_owner != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (not_owner->state) {
   case UNSENT:
@@ -126,11 +133,11 @@ not_owner_system_input (void* state, void* param, bid_t bid)
 static bid_t
 not_owner_system_output (void* state, void* param)
 {
-  not_owner_t* not_owner = state;
+  not_owner_t* not_owner = (not_owner_t*)state;
   assert (not_owner != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
   /* Send a create order. */
   order_create_init (order, &child_descriptor, NULL);
   not_owner->state = SENT;
@@ -139,9 +146,16 @@ not_owner_system_output (void* state, void* param)
 }
 
 descriptor_t not_owner_descriptor = {
-  .constructor = not_owner_create,
-  .system_input = not_owner_system_input,
-  .system_output = not_owner_system_output,
+  not_owner_create,
+  not_owner_system_input,
+  not_owner_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

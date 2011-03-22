@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED ||
       receipt->type == OUTPUT_COMPOSED ||
@@ -35,9 +35,16 @@ static input_t child_inputs[] = { child_input, NULL };
 static output_t child_outputs[] = { child_output, NULL };
 
 descriptor_t child_descriptor = {
-  .system_input = child_system_input,
-  .inputs = child_inputs,
-  .outputs = child_outputs,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  child_inputs,
+  child_outputs,
+  NULL,
 };
 
 
@@ -57,7 +64,7 @@ typedef struct {
 static void*
 same_compose_create (const void* arg)
 {
-  same_compose_t* same_compose = malloc (sizeof (same_compose_t));
+  same_compose_t* same_compose = (same_compose_t*)malloc (sizeof (same_compose_t));
   same_compose->state = START;
 
   return same_compose;
@@ -66,12 +73,12 @@ same_compose_create (const void* arg)
 static void
 same_compose_system_input (void* state, void* param, bid_t bid)
 {
-  same_compose_t* same_compose = state;
+  same_compose_t* same_compose = (same_compose_t*)state;
   assert (same_compose != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (same_compose->state) {
   case START:
@@ -113,11 +120,11 @@ same_compose_system_input (void* state, void* param, bid_t bid)
 static bid_t
 same_compose_system_output (void* state, void* param)
 {
-  same_compose_t* same_compose = state;
+  same_compose_t* same_compose = (same_compose_t*)state;
   assert (same_compose != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (same_compose->state) {
   case START:
@@ -145,9 +152,16 @@ same_compose_system_output (void* state, void* param)
 }
 
 descriptor_t same_compose_descriptor = {
-  .constructor = same_compose_create,
-  .system_input = same_compose_system_input,
-  .system_output = same_compose_system_output,
+  same_compose_create,
+  same_compose_system_input,
+  same_compose_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

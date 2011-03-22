@@ -17,7 +17,7 @@ typedef struct {
 static void*
 rescinded_create (const void* arg)
 {
-  rescinded_t* rescinded = malloc (sizeof (rescinded_t));
+  rescinded_t* rescinded = (rescinded_t*)malloc (sizeof (rescinded_t));
   rescinded->state = START;
 
   return rescinded;
@@ -26,12 +26,12 @@ rescinded_create (const void* arg)
 static void
 rescinded_system_input (void* state, void* param, bid_t bid)
 {
-  rescinded_t* rescinded = state;
+  rescinded_t* rescinded = (rescinded_t*)state;
   assert (rescinded != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (rescinded->state) {
   case START:
@@ -72,11 +72,11 @@ rescinded_system_input (void* state, void* param, bid_t bid)
 static bid_t
 rescinded_system_output (void* state, void* param)
 {
-  rescinded_t* rescinded = state;
+  rescinded_t* rescinded = (rescinded_t*)state;
   assert (rescinded != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
 
   switch (rescinded->state) {
   case START:
@@ -104,9 +104,16 @@ rescinded_system_output (void* state, void* param)
 }
 
 descriptor_t rescinded_descriptor = {
-  .constructor = rescinded_create,
-  .system_input = rescinded_system_input,
-  .system_output = rescinded_system_output,
+  rescinded_create,
+  rescinded_system_input,
+  rescinded_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int
