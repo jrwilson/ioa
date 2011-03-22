@@ -1,37 +1,11 @@
-#include "ioq.h"
+#include "ioq.hh"
 
-#include <assert.h>
-#include <pthread.h>
-#include <stdlib.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <algorithm>
 
-#include "table.hh"
-
-bool
-Io::operator== (const Io& io) const
-{
-  if (type != io.type) {
-    return false;
-  }
-  if (aid != io.aid) {
-    return false;
-  }
-  switch (type) {
-  case IO_ALARM:
-  case IO_WRITE:
-  case IO_READ:
-    return true;
-    break;
-  }
-
-  /* Not reached. */
-  assert (0);
-  return true;
-}
-
-Ioq::Ioq () :
-  m_index (m_table)
+ioq::ioq ()
 {
   pthread_mutex_init (&m_mutex, NULL);
   if (pipe (m_pipes) != 0) {
@@ -40,54 +14,58 @@ Ioq::Ioq () :
   }
 }
 
-Ioq::~Ioq ()
+ioq::~ioq ()
 {
   pthread_mutex_destroy (&m_mutex);  
 }
 
 int
-Ioq::interrupt_fd ()
+ioq::interrupt_fd ()
 {
   return m_pipes[0];
 }
 
 size_t
-Ioq::size ()
+ioq::size ()
 {
   size_t retval;
   pthread_mutex_lock (&m_mutex);
-  retval = m_index.size ();
+  retval = m_ios.size ();
   pthread_mutex_unlock (&m_mutex);
   return retval;
 }
 
 bool
-Ioq::empty ()
+ioq::empty ()
 {
   bool retval;
   pthread_mutex_lock (&m_mutex);
-  retval = m_index.empty ();
+  retval = m_ios.empty ();
   pthread_mutex_unlock (&m_mutex);
   return retval;
 }
 
 void
-Ioq::push (const Io& io)
+ioq::push (const io& io)
 {
   pthread_mutex_lock (&m_mutex);
-  m_index.insert_unique (io);
+  if (std::find (m_ios.begin (),
+		 m_ios.end (),
+		 io) == m_ios.end ()) {
+    m_ios.push_back (io);
+  }
   pthread_mutex_unlock (&m_mutex);
   char c = 0;
   assert (write (m_pipes[1], &c, 1) == 1);
 }
 
 void
-Ioq::insert_alarm (aid_t aid, time_t secs, suseconds_t usecs)
+ioq::insert_alarm (aid_t aid, time_t secs, suseconds_t usecs)
 {
   assert (aid != -1);
   assert (usecs >= 0 && usecs <= 999999);
 
-  Io io;
+  io io;
   io.type = IO_ALARM;
   io.aid = aid;
   io.alarm.tv.tv_sec = secs;
@@ -97,11 +75,11 @@ Ioq::insert_alarm (aid_t aid, time_t secs, suseconds_t usecs)
 }
 
 void
-Ioq::insert_write (aid_t aid, int fd)
+ioq::insert_write (aid_t aid, int fd)
 {
   assert (aid != -1);
 
-  Io io;
+  io io;
   io.type = IO_WRITE;
   io.aid = aid;
   io.write.fd = fd;
@@ -110,11 +88,11 @@ Ioq::insert_write (aid_t aid, int fd)
 }
 
 void
-Ioq::insert_read (aid_t aid, int fd)
+ioq::insert_read (aid_t aid, int fd)
 {
   assert (aid != -1);
 
-  Io io;
+  io io;
   io.type = IO_READ;
   io.aid = aid;
   io.read.fd = fd;
@@ -122,12 +100,12 @@ Ioq::insert_read (aid_t aid, int fd)
   push (io);
 }
 
-Io
-Ioq::pop ()
+ioq::io
+ioq::pop ()
 {
   pthread_mutex_lock (&m_mutex);
-  Io r = m_index.front ();
-  m_index.pop_front ();
+  io r = m_ios.front ();
+  m_ios.pop_front ();
   pthread_mutex_unlock (&m_mutex);
   return r;
 }

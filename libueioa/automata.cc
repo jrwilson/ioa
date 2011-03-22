@@ -484,7 +484,7 @@ automata::system_input_exec (Receipts& receipts, Runq& runq, buffers& buffers, a
 }
 
 void
-automata::system_output_exec (Receipts& receipts, Runq& runq, Ioq& ioq, buffers& buffers, aid_t aid)
+automata::system_output_exec (Receipts& receipts, Runq& runq, ioq& ioq, buffers& buffers, aid_t aid)
 {
   /* Acquire the write lock. */
   pthread_rwlock_wrlock (&m_lock);

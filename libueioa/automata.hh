@@ -4,7 +4,7 @@
 #include <ueioa.h>
 
 #include "runq.h"
-#include "ioq.h"
+#include "ioq.hh"
 #include "receipts.h"
 #include "buffers.hh"
 
@@ -16,7 +16,7 @@ class automata {
   void create_automaton (Receipts&, Runq&, const descriptor_t*, const void*);
   
   void system_input_exec (Receipts&, Runq&, buffers&, aid_t);
-  void system_output_exec (Receipts&, Runq&, Ioq&, buffers&, aid_t);
+  void system_output_exec (Receipts&, Runq&, ioq&, buffers&, aid_t);
   void alarm_input_exec (buffers&, aid_t);
   void read_input_exec (buffers&, aid_t);
   void write_input_exec (buffers&, aid_t);
