@@ -3,16 +3,26 @@
 
 #include <pthread.h>
 #include <ueioa.h>
+#include <list>
 
-typedef struct {
-  aid_t to;
-  receipt_t receipt;
-} receipt_entry_t;
-
-class Receipts {
+class receipts {
  public:
-  Receipts ();
-  ~Receipts ();
+  struct receipt {
+    aid_t to;
+    receipt_t receipt;
+  };
+
+  class receipt_entry_to_equal {
+  private:
+    const aid_t m_to;
+  public:
+    receipt_entry_to_equal (const aid_t to) :
+      m_to (to) { }
+    bool operator() (const receipt& receipt_entry) { return m_to == receipt_entry.to; }
+  };
+  
+  receipts ();
+  ~receipts ();
 
   void push_bad_order (aid_t);
   
@@ -49,10 +59,10 @@ class Receipts {
  private:
   
   pthread_rwlock_t m_lock;
-  typedef std::list<receipt_entry_t> ReceiptList;
-  ReceiptList m_receipts;
+  typedef std::list<receipt> receipt_list;
+  receipt_list m_receipts;
 
-  void push (receipt_entry_t& receipt);
+  void push (const receipt& receipt);
 };
 
 #endif /* __receipts_h__ */

@@ -27,7 +27,7 @@ automata::set_current_aid (aid_t aid)
 }
 
 void
-automata::create (Receipts& receipts, Runq& runq, const aid_t parent, const descriptor_t* descriptor, const void* arg)
+automata::create (receipts& receipts, Runq& runq, const aid_t parent, const descriptor_t* descriptor, const void* arg)
 {
   if (descriptor != NULL) {
 
@@ -124,7 +124,7 @@ automata::create (Receipts& receipts, Runq& runq, const aid_t parent, const desc
 }
 
 void
-automata::declare (Receipts& receipts, Runq& runq, const aid_t aid, void* param)
+automata::declare (receipts& receipts, Runq& runq, const aid_t aid, void* param)
 {
   m_param_entries.insert (param_entry (aid, param));
 
@@ -133,7 +133,7 @@ automata::declare (Receipts& receipts, Runq& runq, const aid_t aid, void* param)
 }
 
 void
-automata::compose (Receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
+automata::compose (receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   if (m_output_entries.find (output_entry (out_aid, output)) == m_output_entries.end () ||
       m_param_entries.find (param_entry (out_aid, out_param)) == m_param_entries.end ()) {
@@ -198,7 +198,7 @@ automata::compose (Receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, out
 }
 
 void
-automata::decompose (Receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
+automata::decompose (receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param)
 {
   /* Look up the composition.
      We only need to use the input since it must be unique.
@@ -229,7 +229,7 @@ automata::decompose (Receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, o
 }
 
 void
-automata::rescind (Receipts& receipts, Runq& runq, aid_t aid, void* param)
+automata::rescind (receipts& receipts, Runq& runq, aid_t aid, void* param)
 {
   /* Params. */
 
@@ -270,7 +270,7 @@ automata::rescind (Receipts& receipts, Runq& runq, aid_t aid, void* param)
 }
 
 void
-automata::destroy_r (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid)
+automata::destroy_r (receipts& receipts, Runq& runq, buffers& buffers, aid_t aid)
 {
   /* Children. */
   automaton_list::const_iterator child_pos;
@@ -407,7 +407,7 @@ automata::destroy_r (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid
 }
 
 void
-automata::destroy (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid, aid_t target)
+automata::destroy (receipts& receipts, Runq& runq, buffers& buffers, aid_t aid, aid_t target)
 {
   automaton_list::const_iterator pos = std::find_if (m_automaton_entries.begin (),
 						     m_automaton_entries.end (),
@@ -429,7 +429,7 @@ automata::destroy (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid, 
 }
 
 void
-automata::create_automaton (Receipts& receipts, Runq& runq, const descriptor_t* descriptor, const void* arg)
+automata::create_automaton (receipts& receipts, Runq& runq, const descriptor_t* descriptor, const void* arg)
 {
   /* Acquire the write lock. */
   pthread_rwlock_wrlock (&m_lock);
@@ -441,7 +441,7 @@ automata::create_automaton (Receipts& receipts, Runq& runq, const descriptor_t* 
 }
 
 void
-automata::system_input_exec (Receipts& receipts, Runq& runq, buffers& buffers, aid_t aid)
+automata::system_input_exec (receipts& receipts, Runq& runq, buffers& buffers, aid_t aid)
 {
   /* Acquire the read lock. */
   pthread_rwlock_rdlock (&m_lock);
@@ -484,7 +484,7 @@ automata::system_input_exec (Receipts& receipts, Runq& runq, buffers& buffers, a
 }
 
 void
-automata::system_output_exec (Receipts& receipts, Runq& runq, ioq& ioq, buffers& buffers, aid_t aid)
+automata::system_output_exec (receipts& receipts, Runq& runq, ioq& ioq, buffers& buffers, aid_t aid)
 {
   /* Acquire the write lock. */
   pthread_rwlock_wrlock (&m_lock);
