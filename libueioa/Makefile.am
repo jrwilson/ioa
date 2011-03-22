@@ -3,7 +3,6 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libueioa.la
 libueioa_la_SOURCES = \
 automata.cc \
-bidq.cc \
 buffers.cc \
 ioq.cc \
 order.cc \

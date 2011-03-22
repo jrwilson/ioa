@@ -4,239 +4,189 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include "table.h"
+#include "table.hh"
 
-struct receipts_struct {
-  pthread_rwlock_t lock;
-  table_t* table;
-  index_t* index;
+class ReceiptEntryToEqual {
+private:
+  const aid_t m_to;
+public:
+  ReceiptEntryToEqual (const aid_t to) :
+    m_to (to) { }
+  bool operator() (const receipt_entry_t& receipt_entry) { return m_to == receipt_entry.to; }
 };
 
-typedef struct {
-  aid_t to;
-  receipt_t receipt;
-} receipt_entry_t;
+// static receipt_entry_t*
+// receipt_entry_for_to (receipts_t* receipts, aid_t to, iterator_t* ptr)
+// {
+//   receipt_entry_t key;
+//   key.to = to;
 
-static bool
-receipt_entry_to_equal (const void* x0, const void* y0)
+//   return (receipt_entry_t*)index_find_value (receipts->index,
+// 					     index_begin (receipts->index),
+// 					     index_end (receipts->index),
+// 					     receipt_entry_to_equal,
+// 					     &key,
+// 					     ptr);
+// }
+
+Receipts::Receipts (void) :
+  m_index (m_table)
 {
-  const receipt_entry_t* x = (const receipt_entry_t*)x0;
-  const receipt_entry_t* y = (const receipt_entry_t*)y0;
-
-  return x->to == y->to;
+  pthread_rwlock_init (&m_lock, NULL);
 }
 
-static receipt_entry_t*
-receipt_entry_for_to (receipts_t* receipts, aid_t to, iterator_t* ptr)
+Receipts::~Receipts (void)
 {
-  receipt_entry_t key;
-  key.to = to;
-
-  return (receipt_entry_t*)index_find_value (receipts->index,
-					     index_begin (receipts->index),
-					     index_end (receipts->index),
-					     receipt_entry_to_equal,
-					     &key,
-					     ptr);
-}
-
-receipts_t*
-receipts_create (void)
-{
-  receipts_t* receipts = (receipts_t*)malloc (sizeof (receipts_t));
-  pthread_rwlock_init (&receipts->lock, NULL);
-  receipts->table = table_create (sizeof (receipt_entry_t));
-  receipts->index = index_create_list (receipts->table);
-  return receipts;
+  pthread_rwlock_destroy (&m_lock);
 }
 
 void
-receipts_destroy (receipts_t* receipts)
+Receipts::push (receipt_entry_t& receipt)
 {
-  assert (receipts != NULL);
-
-  pthread_rwlock_destroy (&receipts->lock);
-  table_destroy (receipts->table);
-  free (receipts);
-}
-
-static void
-push (receipts_t* receipts, receipt_entry_t* receipt)
-{
-  assert (receipts != NULL);
-  assert (receipt != NULL);
-  pthread_rwlock_wrlock (&receipts->lock);
-  index_push_back (receipts->index, receipt);
-  pthread_rwlock_unlock (&receipts->lock);
+  pthread_rwlock_wrlock (&m_lock);
+  m_index.push_back (receipt);
+  pthread_rwlock_unlock (&m_lock);
 }
 
 void
-receipts_push_bad_order (receipts_t* receipts, aid_t to)
+Receipts::push_bad_order ( aid_t to)
 {
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = BAD_ORDER;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_self_created (receipts_t* receipts, aid_t to, aid_t self)
+Receipts::push_self_created ( aid_t to, aid_t self)
 {
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = SELF_CREATED;
   receipt.receipt.self_created.self = self;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_child_created (receipts_t* receipts, aid_t to, aid_t child)
+Receipts::push_child_created ( aid_t to, aid_t child)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = CHILD_CREATED;
   receipt.receipt.child_created.child = child;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_bad_descriptor (receipts_t* receipts, aid_t to)
+Receipts::push_bad_descriptor ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = BAD_DESCRIPTOR;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_declared (receipts_t* receipts, aid_t to)
+Receipts::push_declared ( aid_t to)
 {
- assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = DECLARED;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_output_dne (receipts_t* receipts, aid_t to)
+Receipts::push_output_dne ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = OUTPUT_DNE;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_input_dne (receipts_t* receipts, aid_t to)
+Receipts::push_input_dne ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = INPUT_DNE;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_output_unavailable (receipts_t* receipts, aid_t to)
+Receipts::push_output_unavailable ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = OUTPUT_UNAVAILABLE;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_input_unavailable (receipts_t* receipts, aid_t to)
+Receipts::push_input_unavailable ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = INPUT_UNAVAILABLE;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_composed (receipts_t* receipts, aid_t to)
+Receipts::push_composed ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = COMPOSED;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_input_composed (receipts_t* receipts, aid_t to, input_t input, void* in_param)
+Receipts::push_input_composed ( aid_t to, input_t input, void* in_param)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = INPUT_COMPOSED;
   receipt.receipt.input_composed.input = input;
   receipt.receipt.input_composed.in_param = in_param;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_output_composed (receipts_t* receipts, aid_t to, output_t output, void* out_param)
+Receipts::push_output_composed ( aid_t to, output_t output, void* out_param)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = OUTPUT_COMPOSED;
   receipt.receipt.output_composed.output = output;
   receipt.receipt.output_composed.out_param = out_param;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_not_composed (receipts_t* receipts, aid_t to)
+Receipts::push_not_composed ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = NOT_COMPOSED;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t in_aid, input_t input, void*  in_param)
+Receipts::push_decomposed ( aid_t to, aid_t in_aid, input_t input, void*  in_param)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = DECOMPOSED;
@@ -244,135 +194,111 @@ receipts_push_decomposed (receipts_t* receipts, aid_t to, aid_t in_aid, input_t 
   receipt.receipt.decomposed.input = input;
   receipt.receipt.decomposed.in_param = in_param;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_input_decomposed (receipts_t* receipts, aid_t to, input_t input, void* in_param)
+Receipts::push_input_decomposed ( aid_t to, input_t input, void* in_param)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = INPUT_DECOMPOSED;
   receipt.receipt.input_decomposed.input = input;
   receipt.receipt.input_decomposed.in_param = in_param;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_output_decomposed (receipts_t* receipts, aid_t to, output_t output, void* out_param)
+Receipts::push_output_decomposed ( aid_t to, output_t output, void* out_param)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = OUTPUT_DECOMPOSED;
   receipt.receipt.output_decomposed.output = output;
   receipt.receipt.output_decomposed.out_param = out_param;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_rescinded (receipts_t* receipts, aid_t to)
+Receipts::push_rescinded ( aid_t to)
 {
- assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = RESCINDED;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_automaton_dne (receipts_t* receipts, aid_t to)
+Receipts::push_automaton_dne ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = AUTOMATON_DNE;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_not_owner (receipts_t* receipts, aid_t to)
+Receipts::push_not_owner ( aid_t to)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = NOT_OWNER;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 void
-receipts_push_child_destroyed (receipts_t* receipts, aid_t to, aid_t child)
+Receipts::push_child_destroyed ( aid_t to, aid_t child)
 { 
-  assert (receipts != NULL);
-
   receipt_entry_t receipt;
   receipt.to = to;
   receipt.receipt.type = CHILD_DESTROYED;
   receipt.receipt.child_destroyed.child = child;
 
-  push (receipts, &receipt);
+  push (receipt);
 }
 
 int
-receipts_pop (receipts_t* receipts, aid_t to, receipt_t* receipt)
+Receipts::pop (aid_t to, receipt_t* receipt)
 {
-  assert (receipts != NULL);
   assert (receipt != NULL);
 
   int retval = -1;
 
-  pthread_rwlock_wrlock (&receipts->lock);
-  iterator_t iterator;
-  receipt_entry_t* r = receipt_entry_for_to (receipts, to, &iterator);
-  if (r != NULL) {
-    *receipt = r->receipt;
-    index_erase (receipts->index, iterator);
+  pthread_rwlock_wrlock (&m_lock);
+  IndexType::const_iterator pos = std::find_if (m_index.begin (), m_index.end (), ReceiptEntryToEqual (to));
+  if (pos != m_index.end ()) {
+    *receipt = pos->receipt;
+    m_index.erase (pos);
     retval = 0;
   }
   else {
     retval = -1;
   }
-  pthread_rwlock_unlock (&receipts->lock);
+  pthread_rwlock_unlock (&m_lock);
 
   return retval;
 }
 
 bool
-receipts_empty (receipts_t* receipts, aid_t to)
+Receipts::empty ( aid_t to)
 { 
-  assert (receipts != NULL);
-
-  pthread_rwlock_wrlock (&receipts->lock);
-  bool retval = receipt_entry_for_to (receipts, to, NULL) == NULL;
-  pthread_rwlock_unlock (&receipts->lock);
+  pthread_rwlock_wrlock (&m_lock);
+  IndexType::const_iterator pos = std::find_if (m_index.begin (), m_index.end (), ReceiptEntryToEqual (to));
+  bool retval = pos == m_index.end ();
+  pthread_rwlock_unlock (&m_lock);
 
   return retval;
 }
 
 void
-receipts_purge_aid (receipts_t* receipts, aid_t to)
+Receipts::purge_aid ( aid_t to)
 {
-  assert (receipts != NULL);
-
-  receipt_entry_t key;
-  key.to = to;
-
-  pthread_rwlock_wrlock (&receipts->lock);
-  index_remove (receipts->index,
-		index_begin (receipts->index),
-		index_end (receipts->index),
-		receipt_entry_to_equal,
-		&key);
-  pthread_rwlock_unlock (&receipts->lock);
+  pthread_rwlock_wrlock (&m_lock);
+  m_index.remove_if (ReceiptEntryToEqual (to));
+  pthread_rwlock_unlock (&m_lock);
 }

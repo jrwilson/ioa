@@ -226,11 +226,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
-libtable \
-libueioa testueioa \
-libautoman testautoman \
-libmftp \
-mftp
+libueioa testueioa
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -726,6 +722,10 @@ uninstall-am:
 	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
 	ps ps-am tags tags-recursive uninstall uninstall-am
 
+
+#libautoman testautoman \
+#libmftp \
+#mftp
 #libccm testccm
 # src .
 

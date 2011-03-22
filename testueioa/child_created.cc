@@ -7,7 +7,7 @@ child_system_input (void* state, void* param, bid_t bid)
 {
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   if (receipt->type == SELF_CREATED) {
     /* Good. */
@@ -18,18 +18,17 @@ child_system_input (void* state, void* param, bid_t bid)
 }
 
 descriptor_t child_descriptor = {
-  .constructor = NULL,
-  .system_input = child_system_input,
-  .system_output = NULL,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+  NULL,
+  child_system_input,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
-
 
 typedef enum {
   UNSENT,
@@ -43,7 +42,7 @@ typedef struct {
 static void*
 child_created_create (const void* arg)
 {
-  child_created_t* child_created = malloc (sizeof (child_created_t));
+  child_created_t* child_created = (child_created_t*)malloc (sizeof (child_created_t));
   child_created->state = UNSENT;
 
   return child_created;
@@ -52,12 +51,12 @@ child_created_create (const void* arg)
 static void
 child_created_system_input (void* state, void* param, bid_t bid)
 {
-  child_created_t* child_created = state;
+  child_created_t* child_created = (child_created_t*)state;
   assert (child_created != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (child_created->state) {
   case UNSENT:
@@ -82,11 +81,11 @@ child_created_system_input (void* state, void* param, bid_t bid)
 static bid_t
 child_created_system_output (void* state, void* param)
 {
-  child_created_t* child_created = state;
+  child_created_t* child_created = (child_created_t*)state;
   assert (child_created != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
   /* Send a create order. */
   order_create_init (order, &child_descriptor, NULL);
   child_created->state = SENT;
@@ -95,16 +94,16 @@ child_created_system_output (void* state, void* param)
 }
 
 descriptor_t child_created_descriptor = {
-  .constructor = child_created_create,
-  .system_input = child_created_system_input,
-  .system_output = child_created_system_output,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+  child_created_create,
+  child_created_system_input,
+  child_created_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

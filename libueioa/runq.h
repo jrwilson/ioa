@@ -1,6 +1,8 @@
 #ifndef __runq_h__
 #define __runq_h__
 
+#include <pthread.h>
+#include <list>
 #include <ueioa.h>
 
 typedef enum {
@@ -14,7 +16,8 @@ typedef enum {
   INTERNAL,
 } runnable_type_t;
 
-typedef struct {
+class Runnable {
+ public:
   runnable_type_t type;
   aid_t aid;
   void* param;
@@ -31,27 +34,38 @@ typedef struct {
       internal_t internal;
     } internal;
   };
-} runnable_t;
 
-typedef struct runq_struct runq_t;
+  bool operator== (const Runnable&) const;
+};
 
-runq_t* runq_create (void);
-void runq_destroy (runq_t*);
+class Runq {
+ public:
+  Runq ();
+  ~Runq ();
 
-size_t runq_size (runq_t*);
-bool runq_empty (runq_t*);
+  size_t size ();
+  bool empty ();
+  
+  void insert_system_input (aid_t);
+  void insert_system_output (aid_t);
+  void insert_alarm_input (aid_t);
+  void insert_read_input (aid_t);
+  void insert_write_input (aid_t);
+  void insert_free_input (aid_t, aid_t, input_t, bid_t);
+  void insert_output (aid_t, output_t, void*);
+  void insert_internal (aid_t, internal_t, void*);
+  
+  Runnable pop ();
+  void purge_aid (aid_t);
+  void purge_aid_param (aid_t, void*);
 
-void runq_insert_system_input (runq_t*, aid_t);
-void runq_insert_system_output (runq_t*, aid_t);
-void runq_insert_alarm_input (runq_t*, aid_t);
-void runq_insert_read_input (runq_t*, aid_t);
-void runq_insert_write_input (runq_t*, aid_t);
-void runq_insert_free_input (runq_t*, aid_t, aid_t, input_t, bid_t);
-void runq_insert_output (runq_t*, aid_t, output_t, void*);
-void runq_insert_internal (runq_t*, aid_t, internal_t, void*);
-
-void runq_pop (runq_t*, runnable_t*);
-void runq_purge_aid (runq_t*, aid_t);
-void runq_purge_aid_param (runq_t*, aid_t, void*);
+ private:
+  pthread_cond_t m_cond;
+  pthread_mutex_t m_mutex;
+  typedef std::list<Runnable> RunnableList;
+  RunnableList m_runnables;
+  
+  void push (const Runnable& runnable);
+};
 
 #endif /* __runq_h__ */

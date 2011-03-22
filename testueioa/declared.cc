@@ -14,7 +14,7 @@ typedef struct {
 static void*
 declared_create (const void* arg)
 {
-  declared_t* declared = malloc (sizeof (declared_t));
+  declared_t* declared = (declared_t*)malloc (sizeof (declared_t));
   declared->state = UNSENT;
 
   return declared;
@@ -23,12 +23,12 @@ declared_create (const void* arg)
 static void
 declared_system_input (void* state, void* param, bid_t bid)
 {
-  declared_t* declared = state;
+  declared_t* declared = (declared_t*)state;
   assert (declared != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (declared->state) {
   case UNSENT:
@@ -53,11 +53,11 @@ declared_system_input (void* state, void* param, bid_t bid)
 static bid_t
 declared_system_output (void* state, void* param)
 {
-  declared_t* declared = state;
+  declared_t* declared = (declared_t*)state;
   assert (declared != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
   /* Declare a parameter. */
   order_declare_init (order, (void*)567);
   declared->state = SENT;
@@ -66,16 +66,16 @@ declared_system_output (void* state, void* param)
 }
 
 descriptor_t declared_descriptor = {
-  .constructor = declared_create,
-  .system_input = declared_system_input,
-  .system_output = declared_system_output,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+  declared_create,
+  declared_system_input,
+  declared_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

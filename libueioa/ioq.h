@@ -10,7 +10,8 @@ typedef enum {
   IO_READ
 } io_type_t;
 
-typedef struct {
+class Io {
+ public:
   io_type_t type;
   aid_t aid;
   union {
@@ -24,23 +25,32 @@ typedef struct {
       int fd;
     } read;
   };
-} io_t;
+  bool operator== (const Io& io) const;
+};
 
-typedef struct ioq_struct ioq_t;
+class Ioq {
+ public:
+  Ioq ();
+  ~Ioq ();
 
-ioq_t* ioq_create (void);
-void ioq_destroy (ioq_t*);
+  int interrupt_fd ();
+  size_t size ();
+  bool empty ();
+  
+  void insert_alarm (aid_t, time_t, suseconds_t);
+  void insert_write (aid_t, int);
+  void insert_read (aid_t, int);
+  
+  Io pop ();
 
-int ioq_interrupt_fd (ioq_t*);
-size_t ioq_size (ioq_t*);
-bool ioq_empty (ioq_t*);
+ private:
+  pthread_mutex_t m_mutex;
+  int m_pipes[2];
+  typedef std::list<Io> IoList;
+  IoList m_ios;
 
-void ioq_insert_alarm (ioq_t*, aid_t, time_t, suseconds_t);
-void ioq_insert_write (ioq_t*, aid_t, int);
-void ioq_insert_read (ioq_t*, aid_t, int);
+  void push (const Io& io);
 
-void ioq_pop (ioq_t*, io_t*);
-/* void ioq_purge_aid (ioq_t*, aid_t); */
-/* void ioq_purge_aid_param (ioq_t*, aid_t, void*); */
+};
 
 #endif /* __ioq_h__ */

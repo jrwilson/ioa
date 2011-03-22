@@ -4,24 +4,22 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include "table.h"
+#include "table.hh"
 
-static bool
-runnable_equal (const void* x0, const void* y0)
+bool
+Runnable::operator== (const Runnable& runnable) const
 {
-  const runnable_t* x = (const runnable_t*)x0;
-  const runnable_t* y = (const runnable_t*)y0;
-  if (x->type != y->type) {
+  if (type != runnable.type) {
     return false;
   }
-  if (x->aid != y->aid) {
+  if (aid != runnable.aid) {
     return false;
   }
-  if (x->param != y->param) {
+  if (param != runnable.param) {
     return false;
   }
 
-  switch (x->type) {
+  switch (type) {
   case SYSTEM_INPUT:
   case SYSTEM_OUTPUT:
   case ALARM_INPUT:
@@ -31,15 +29,15 @@ runnable_equal (const void* x0, const void* y0)
     break;
   case FREE_INPUT:
     return
-      x->free_input.caller_aid == y->free_input.caller_aid &&
-      x->free_input.free_input == y->free_input.free_input &&
-      x->free_input.bid == y->free_input.bid;
+      free_input.caller_aid == runnable.free_input.caller_aid &&
+      free_input.free_input == runnable.free_input.free_input &&
+      free_input.bid == runnable.free_input.bid;
     break;
   case OUTPUT:
-    return x->output.output == y->output.output;
+    return output.output == runnable.output.output;
     break;
   case INTERNAL:
-    return x->internal.internal == y->internal.internal;
+    return internal.internal == runnable.internal.internal;
     break;
   }
 
@@ -48,243 +46,202 @@ runnable_equal (const void* x0, const void* y0)
   return true;
 }
 
-
-static bool
-runnable_aid_equal (const void* x0, const void* y0)
-{
-  const runnable_t* x = (const runnable_t*)x0;
-  const runnable_t* y = (const runnable_t*)y0;
-  return x->aid == y->aid;
-}
-
-static bool
-runnable_aid_param_equal (const void* x0, const void* y0)
-{
-  const runnable_t* x = (const runnable_t*)x0;
-  const runnable_t* y = (const runnable_t*)y0;
-  return x->aid == y->aid && x->param == y->param;
-}
-
-struct runq_struct {
-  pthread_cond_t cond;
-  pthread_mutex_t mutex;
-  table_t* table;
-  index_t* index;
+class RunnableAidEqual {
+private:
+  const aid_t m_aid;
+public:
+  RunnableAidEqual (const aid_t aid) :
+    m_aid (aid) { }
+  bool operator() (const Runnable& runnable) { return m_aid == runnable.aid; }
 };
 
-runq_t*
-runq_create (void)
+class RunnableAidParamEqual {
+private:
+  const aid_t m_aid;
+  const void* m_param;
+public:
+  RunnableAidParamEqual (const aid_t aid, const void* param) :
+    m_aid (aid),
+    m_param (param) { }
+  bool operator() (const Runnable& runnable)
+  {
+    return
+      m_aid == runnable.aid &&
+      m_param == runnable.param;
+  }
+};
+
+Runq::Runq (void) :
+  m_index (m_table)
 {
-  runq_t* runq = (runq_t*)malloc (sizeof (runq_t));
-  pthread_cond_init (&runq->cond, NULL);
-  pthread_mutex_init (&runq->mutex, NULL);
-  runq->table = table_create (sizeof (runnable_t));
-  runq->index = index_create_list (runq->table);
-  return runq;
+  pthread_cond_init (&m_cond, NULL);
+  pthread_mutex_init (&m_mutex, NULL);
 }
 
-void
-runq_destroy (runq_t* runq)
+Runq::~Runq (void)
 {
-  assert (runq != NULL);
-  pthread_cond_destroy (&runq->cond);
-  pthread_mutex_destroy (&runq->mutex);
-  table_destroy (runq->table);
-  free (runq);
+  pthread_cond_destroy (&m_cond);
+  pthread_mutex_destroy (&m_mutex);
 }
 
 size_t
-runq_size (runq_t* runq)
+Runq::size (void)
 {
-  assert (runq != NULL);
   size_t retval;
-  pthread_mutex_lock (&runq->mutex);
-  retval = index_size (runq->index);
-  pthread_mutex_unlock (&runq->mutex);
+  pthread_mutex_lock (&m_mutex);
+  retval = m_index.size ();
+  pthread_mutex_unlock (&m_mutex);
   return retval;
 }
 
 bool
-runq_empty (runq_t* runq)
+Runq::empty (void)
 {
-  assert (runq != NULL);
   bool retval;
-  pthread_mutex_lock (&runq->mutex);
-  retval = index_empty (runq->index);
-  pthread_mutex_unlock (&runq->mutex);
+  pthread_mutex_lock (&m_mutex);
+  retval = m_index.empty ();
+  pthread_mutex_unlock (&m_mutex);
   return retval;
 }
 
-
-
-static void
-push (runq_t* runq, runnable_t* runnable)
+void
+Runq::push (const Runnable& runnable)
 {
-  assert (runq != NULL);
-  assert (runnable != NULL);
-  pthread_mutex_lock (&runq->mutex);
-  index_insert_unique (runq->index, runnable_equal, runnable);
-  pthread_cond_broadcast (&runq->cond);
-  pthread_mutex_unlock (&runq->mutex);
+  pthread_mutex_lock (&m_mutex);
+  m_index.insert_unique (runnable);
+  pthread_cond_broadcast (&m_cond);
+  pthread_mutex_unlock (&m_mutex);
 }
 
 void
-runq_insert_system_input (runq_t* runq, aid_t aid)
+Runq::insert_system_input (aid_t aid)
 {
-  assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = SYSTEM_INPUT;
   runnable.aid = aid;
   runnable.param = NULL;
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_system_output (runq_t* runq, aid_t aid)
+Runq::insert_system_output (aid_t aid)
 {
-  assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = SYSTEM_OUTPUT;
   runnable.aid = aid;
   runnable.param = NULL;
 
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_alarm_input (runq_t* runq, aid_t aid)
+Runq::insert_alarm_input (aid_t aid)
 {
-  assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = ALARM_INPUT;
   runnable.aid = aid;
   runnable.param = NULL;
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_read_input (runq_t* runq, aid_t aid)
+Runq::insert_read_input (aid_t aid)
 {
-  assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = READ_INPUT;
   runnable.aid = aid;
   runnable.param = NULL;
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_write_input (runq_t* runq, aid_t aid)
+Runq::insert_write_input (aid_t aid)
 {
-  assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = WRITE_INPUT;
   runnable.aid = aid;
   runnable.param = NULL;
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_free_input (runq_t* runq, aid_t caller_aid, aid_t aid, input_t free_input, bid_t bid)
+Runq::insert_free_input (aid_t caller_aid, aid_t aid, input_t free_input, bid_t bid)
 {
-  assert (runq != NULL);
   assert (aid != -1);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = FREE_INPUT;
   runnable.aid = aid;
   runnable.param = NULL;
   runnable.free_input.caller_aid = caller_aid;
   runnable.free_input.free_input = free_input;
   runnable.free_input.bid = bid;
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_output (runq_t* runq, aid_t aid, output_t output, void* param)
+Runq::insert_output (aid_t aid, output_t output, void* param)
 {
-  assert (runq != NULL);
   assert (aid != -1);
   assert (output != NULL);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = OUTPUT;
   runnable.aid = aid;
   runnable.param = param;
   runnable.output.output = output;
-  push (runq, &runnable);
+  push (runnable);
 }
 
 void
-runq_insert_internal (runq_t* runq, aid_t aid, internal_t internal, void* param)
+Runq::insert_internal (aid_t aid, internal_t internal, void* param)
 {
-  assert (runq != NULL);
   assert (aid != -1);
   assert (internal != NULL);
 
-  runnable_t runnable;
+  Runnable runnable;
   runnable.type = INTERNAL;
   runnable.aid = aid;
   runnable.param = param;
   runnable.internal.internal = internal;
-  push (runq, &runnable);
+  push (runnable);
 }
 
-void
-runq_pop (runq_t* runq, runnable_t* runnable)
+Runnable
+Runq::pop (void)
 {
-  assert (runq != NULL);
-  assert (runnable != NULL);
-
-  pthread_mutex_lock (&runq->mutex);
-  while (index_empty (runq->index)) {
-    pthread_cond_wait (&runq->cond, &runq->mutex);
+  pthread_mutex_lock (&m_mutex);
+  while (m_index.empty ()) {
+    pthread_cond_wait (&m_cond, &m_mutex);
   }
-  runnable_t* r = (runnable_t*)index_front (runq->index);
-  *runnable = *r;
-  index_pop_front (runq->index);
-  pthread_mutex_unlock (&runq->mutex);
+  Runnable retval = m_index.front ();
+  m_index.pop_front ();
+  pthread_mutex_unlock (&m_mutex);
+  return retval;
 }
 
 void
-runq_purge_aid (runq_t* runq, aid_t aid)
+Runq::purge_aid (aid_t aid)
 {
-  assert (runq != NULL);
-
-  runnable_t key;
-  key.aid = aid;
-  pthread_mutex_lock (&runq->mutex);
-  index_remove (runq->index,
-		index_begin (runq->index),
-		index_end (runq->index),
-		runnable_aid_equal,
-		&key);
-  pthread_mutex_unlock (&runq->mutex);
+  pthread_mutex_lock (&m_mutex);
+  m_index.remove_if (RunnableAidEqual (aid));
+  pthread_mutex_unlock (&m_mutex);
 }
 
 void
-runq_purge_aid_param (runq_t* runq, aid_t aid, void* param)
+Runq::purge_aid_param (aid_t aid, void* param)
 {
-  assert (runq != NULL);
-
-  runnable_t key;
-  key.aid = aid;
-  key.param = param;
-  pthread_mutex_lock (&runq->mutex);
-  index_remove (runq->index,
-		index_begin (runq->index),
-		index_end (runq->index),
-		runnable_aid_param_equal,
-		&key);
-  pthread_mutex_unlock (&runq->mutex);
+  pthread_mutex_lock (&m_mutex);
+  m_index.remove_if (RunnableAidParamEqual (aid, param));
+  pthread_mutex_unlock (&m_mutex);
 }

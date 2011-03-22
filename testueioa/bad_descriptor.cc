@@ -14,7 +14,7 @@ typedef struct {
 static void*
 bad_descriptor_create (const void* arg)
 {
-  bad_descriptor_t* bad_descriptor = malloc (sizeof (bad_descriptor_t));
+  bad_descriptor_t* bad_descriptor = (bad_descriptor_t*)malloc (sizeof (bad_descriptor_t));
   bad_descriptor->state = UNSENT;
 
   return bad_descriptor;
@@ -23,12 +23,12 @@ bad_descriptor_create (const void* arg)
 static void
 bad_descriptor_system_input (void* state, void* param, bid_t bid)
 {
-  bad_descriptor_t* bad_descriptor = state;
+  bad_descriptor_t* bad_descriptor = (bad_descriptor_t*)state;
   assert (bad_descriptor != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
   switch (bad_descriptor->state) {
   case UNSENT:
@@ -53,11 +53,11 @@ bad_descriptor_system_input (void* state, void* param, bid_t bid)
 static bid_t
 bad_descriptor_system_output (void* state, void* param)
 {
-  bad_descriptor_t* bad_descriptor = state;
+  bad_descriptor_t* bad_descriptor = (bad_descriptor_t*)state;
   assert (bad_descriptor != NULL);
 
   bid_t bid = buffer_alloc (sizeof (order_t));
-  order_t* order = buffer_write_ptr (bid);
+  order_t* order = (order_t*)buffer_write_ptr (bid);
   /* Send a create order. */
   order_create_init (order, NULL, NULL);
   bad_descriptor->state = SENT;
@@ -66,16 +66,16 @@ bad_descriptor_system_output (void* state, void* param)
 }
 
 descriptor_t bad_descriptor_descriptor = {
-  .constructor = bad_descriptor_create,
-  .system_input = bad_descriptor_system_input,
-  .system_output = bad_descriptor_system_output,
-  .alarm_input = NULL,
-  .read_input = NULL,
-  .write_input = NULL,
-  .free_inputs = NULL,
-  .inputs = NULL,
-  .outputs = NULL,
-  .internals = NULL,
+   bad_descriptor_create,
+   bad_descriptor_system_input,
+   bad_descriptor_system_output,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
 };
 
 int

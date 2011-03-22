@@ -4,27 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
-#include "table.h"
-
-struct buffers_struct {
-  pthread_rwlock_t lock;
-  bid_t next_bid;  
-  table_t* buffer_table;
-  index_t* buffer_index;
-  table_t* buffer_ref_table;
-  index_t* buffer_ref_index;
-  table_t* buffer_edge_table;
-  index_t* buffer_edge_index;
-  table_t* reachable_open_table;
-  index_t* reachable_open_index;
-  table_t* ref_closed_table;
-  index_t* ref_closed_index;
-  table_t* parent_reach_table;
-  index_t* parent_reach_index;
-  table_t* child_reach_table;
-  index_t* child_reach_index;
-};
+#include <algorithm>
 
 /*
   Buffers
@@ -96,153 +76,48 @@ struct buffers_struct {
 
  */
 
-typedef enum {
-  READWRITE,
-  READONLY,
-} buffer_mode_t;
-
-typedef struct {
-  bid_t bid;
-  aid_t owner;
-  buffer_mode_t mode;
-  size_t size;
-  size_t alignment;
-  void* data;
-  size_t ref_count;
-} buffer_entry_t;
-
-static bool
-buffer_entry_bid_equal (const void* x0, const void* y0)
+Buffers::Buffers () :
+  m_next_bid (0),
+  m_buffer_index (m_buffer_table),
+  m_buffer_ref_index (m_buffer_ref_table),
+  m_buffer_edge_index (m_buffer_edge_table)
 {
-  const buffer_entry_t* x = (const buffer_entry_t*)x0;
-  const buffer_entry_t* y = (const buffer_entry_t*)y0;
-  return x->bid == y->bid;
+  pthread_rwlock_init (&m_lock, NULL);
 }
 
-static buffer_entry_t*
-buffer_entry_for_bid (buffers_t* buffers, bid_t bid, iterator_t* ptr)
+class FreeData {
+public:
+  void operator() (const buffer_entry_t& x) const {
+    free (x.data);
+  }
+};
+
+Buffers::~Buffers ()
 {
-  assert (buffers != NULL);
-
-  buffer_entry_t key;
-  key.bid = bid;
-
-  return (buffer_entry_t*)index_find_value (buffers->buffer_index,
-					    index_begin (buffers->buffer_index),
-					    index_end (buffers->buffer_index),
-					    buffer_entry_bid_equal,
-					    &key,
-					    ptr);
+  std::for_each (m_buffer_index.begin (),
+		 m_buffer_index.end (),
+		 FreeData ());
+  pthread_rwlock_destroy (&m_lock);
 }
 
-typedef struct {
-  aid_t aid;
-  bid_t bid;
-  size_t count;
-} buffer_ref_entry_t;
-
-static bool
-buffer_ref_entry_aid_bid_equal (const void* x0, const void* y0)
+bool
+Buffers::buffer_exists (bid_t bid) const
 {
-  const buffer_ref_entry_t* x = (const buffer_ref_entry_t*)x0;
-  const buffer_ref_entry_t* y = (const buffer_ref_entry_t*)y0;
-  return x->aid == y->aid && x->bid == y->bid;
+  return m_buffer_index.find_if (BufferEntryBidEqual (bid)) != m_buffer_index.end ();
 }
 
-static bool
-buffer_ref_entry_aid_equal (const void* x0, const void* y0)
-{
-  const buffer_ref_entry_t* x = (const buffer_ref_entry_t*)x0;
-  const buffer_ref_entry_t* y = (const buffer_ref_entry_t*)y0;
-  return x->aid == y->aid;
-}
-
-static buffer_ref_entry_t*
-buffer_ref_entry_for_aid_bid (buffers_t* buffers, aid_t aid, bid_t bid, iterator_t* ptr)
-{
-  assert (buffers != NULL);
-
-  buffer_ref_entry_t key;
-  key.bid = bid;
-  key.aid = aid;
-
-  return (buffer_ref_entry_t*)index_find_value (buffers->buffer_ref_index,
-						index_begin (buffers->buffer_ref_index),
-						index_end (buffers->buffer_ref_index),
-						buffer_ref_entry_aid_bid_equal, 
-						&key,
-						ptr);
-}
-
-typedef struct {
-  bid_t parent;
-  bid_t child;
-} buffer_edge_entry_t;
-
-static bool
-buffer_edge_entry_parent_or_child_equal (const void* x0, const void* y0)
-{
-  const buffer_edge_entry_t* x = (const buffer_edge_entry_t*)x0;
-  const buffer_edge_entry_t* y = (const buffer_edge_entry_t*)y0;
-  return
-    x->parent == y->parent ||
-    x->child == y->parent;
-}
-
-static bool
-buffer_edge_entry_parent_child_equal (const void* x0, const void* y0)
-{
-  const buffer_edge_entry_t* x = (const buffer_edge_entry_t*)x0;
-  const buffer_edge_entry_t* y = (const buffer_edge_entry_t*)y0;
-  return
-    x->parent == y->parent &&
-    x->child == y->child;
-}
-
-static buffer_edge_entry_t*
-buffer_edge_entry_for_parent_child (buffers_t* buffers, bid_t parent, bid_t child, iterator_t* ptr)
-{
-  assert (buffers != NULL);
-
-  buffer_edge_entry_t key;
-  key.parent = parent;
-  key.child = child;
-
-  return (buffer_edge_entry_t*)index_find_value (buffers->buffer_edge_index,
-			   index_begin (buffers->buffer_edge_index),
-			   index_end (buffers->buffer_edge_index),
-			   buffer_edge_entry_parent_child_equal,
-			   &key,
-			   ptr);
-}
-
-static bool
-bid_equal (const void* x0, const void* y0)
-{
-  const bid_t* x = (const bid_t*)x0;
-  const bid_t* y = (const bid_t*)y0;
-  return *x == *y;
-}
-
-static void
-free_data (const void* e, void* ignored)
-{
-  const buffer_entry_t* buffer_entry = (const buffer_entry_t*)e;
-  free (buffer_entry->data);
-}
-
-static buffer_entry_t*
-allocate (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
+Buffers::BufferIndexType::const_iterator
+Buffers::allocate (aid_t owner, size_t size, size_t alignment)
 {
   /* Find a bid. */
   do {
-    ++buffers->next_bid;
-    if (buffers->next_bid < 0) {
-      buffers->next_bid = 0;
+    ++m_next_bid;
+    if (m_next_bid < 0) {
+      m_next_bid = 0;
     }
-  } while (buffer_entry_for_bid (buffers, buffers->next_bid, NULL) != NULL);
+  } while (buffer_exists (m_next_bid));
 
-  bid_t bid = buffers->next_bid;
+  bid_t bid = m_next_bid;
 
   void* data = NULL;
   if (size > 0) {
@@ -269,113 +144,105 @@ allocate (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
   key.bid = bid;
   key.aid = owner;
   key.count = 1;
-  index_insert (buffers->buffer_ref_index, &key);
+  m_buffer_ref_index.insert (key);
 
-  return (buffer_entry_t*)index_value (buffers->buffer_index, index_insert (buffers->buffer_index, &entry));
+  return m_buffer_index.insert (entry);
 }
 
 bid_t
-buffers_alloc (buffers_t* buffers, aid_t owner, size_t size)
+Buffers::alloc (aid_t owner, size_t size)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  buffer_entry_t* buffer_entry;
-  pthread_rwlock_wrlock (&buffers->lock);
-  buffer_entry = allocate (buffers, owner, size, 0);
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
+  BufferIndexType::const_iterator pos = allocate (owner, size, 0);
+  pthread_rwlock_unlock (&m_lock);
 
-  return buffer_entry->bid;
+  return pos->bid;
 }
 
 bid_t
-buffers_alloc_aligned (buffers_t* buffers, aid_t owner, size_t size, size_t alignment)
+Buffers::alloc_aligned (aid_t owner, size_t size, size_t alignment)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  buffer_entry_t* buffer_entry;
-  pthread_rwlock_wrlock (&buffers->lock);
-  buffer_entry = allocate (buffers, owner, size, alignment);
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
+  BufferIndexType::const_iterator pos = allocate (owner, size, alignment);
+  pthread_rwlock_unlock (&m_lock);
 
-  return buffer_entry->bid;
+  return pos->bid;
 }
 
 void*
-buffers_write_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
+Buffers::write_ptr (aid_t aid, bid_t bid)
 {
-  assert (buffers != NULL);
-
   void* ptr;
 
-  pthread_rwlock_rdlock (&buffers->lock);
+  pthread_rwlock_rdlock (&m_lock);
   /* Lookup. */
-  buffer_entry_t* entry = buffer_entry_for_bid (buffers, bid, NULL);
+  BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
   /* Only for the owner between creation and the first reference. */
-  if (entry != NULL && entry->owner == aid && entry->mode == READWRITE) {
+  if (pos != m_buffer_index.end () && pos->owner == aid && pos->mode == READWRITE) {
     /* READWRITE implies ref_count == 1. */
-    assert (entry->ref_count == 1);
-    ptr = entry->data;
+    assert (pos->ref_count == 1);
+    ptr = pos->data;
   }
   else {
     ptr = NULL;
   }
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 
   return ptr;
 }
 
-const void*
-buffers_read_ptr (buffers_t* buffers, aid_t aid, bid_t bid)
+bool
+Buffers::owner_or_reference (aid_t aid, bid_t bid) const
 {
-  assert (buffers != NULL);
+  BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  BufferRefIndexType::const_iterator ref_pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
+  return
+    (pos != m_buffer_index.end () && pos->owner == aid) ||
+    (ref_pos != m_buffer_ref_index.end ());
+}
 
+const void*
+Buffers::read_ptr (aid_t aid, bid_t bid)
+{
   void* ptr;
 
-  pthread_rwlock_rdlock (&buffers->lock);
-  /* Lookup. */
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
+  pthread_rwlock_rdlock (&m_lock);
   /* Only for the owner or if they have a reference. */
-  if ((buffer_entry != NULL && buffer_entry->owner == aid) ||
-      (buffer_ref_entry != NULL)) {
-    ptr = buffer_entry->data;
+  if (owner_or_reference (aid, bid)) {
+    BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+    ptr = pos->data;
   }
   else {
     ptr = NULL;
   }
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 
   return ptr;
 }
 
 size_t
-buffers_size (buffers_t* buffers, aid_t aid, bid_t bid)
+Buffers::size (aid_t aid, bid_t bid)
 {
-  assert (buffers != NULL);
-
   size_t size;
 
-  pthread_rwlock_rdlock (&buffers->lock);
-  /* Lookup. */
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
+  pthread_rwlock_rdlock (&m_lock);
   /* Owner or have a reference. */
-  if ((buffer_entry != NULL && buffer_entry->owner == aid) ||
-      (buffer_ref_entry != NULL)) {
-    size = buffer_entry->size;
+  if (owner_or_reference (aid, bid)) {
+    BufferIndexType::const_iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+    size = pos->size;
   }
   else {
     size = 0;
   }
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 
   return size;
 }
@@ -398,97 +265,94 @@ buffers_size (buffers_t* buffers, aid_t aid, bid_t bid)
 /*   } */
 /* } */
 
-bool
-buffers_exists (buffers_t* buffers, aid_t aid, bid_t bid)
-{
-  assert (buffers != NULL);
-
-  pthread_rwlock_wrlock (&buffers->lock);
-  bool retval = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL) != NULL;
-  pthread_rwlock_unlock (&buffers->lock);
-  return retval;
-}
+// bool
+// Buffers::exists (aid_t aid, bid_t bid)
+// {
+//   pthread_rwlock_wrlock (&m_lock);
+//   bool retval = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid)) != m_buffer_ref_index.end ();
+//   pthread_rwlock_unlock (&m_lock);
+//   return retval;
+// }
 
 void
-buffers_change_owner (buffers_t* buffers, aid_t aid, bid_t bid)
+Buffers::change_owner (aid_t aid, bid_t bid)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
-  pthread_rwlock_wrlock (&buffers->lock);
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  assert (buffer_entry != NULL);
-  buffer_entry->owner = aid;
-  buffer_entry->mode = READONLY;
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
+  BufferIndexType::iterator pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  assert (pos != m_buffer_index.end ());
+  pos->owner = aid;
+  pos->mode = READONLY;
+  pthread_rwlock_unlock (&m_lock);
 }
 
-typedef struct {
-  buffers_t* buffers;
-  bid_t parent;
-} insert_arg_t;
+// typedef struct {
+//   buffers_t* buffers;
+//   bid_t parent;
+// } insert_arg_t;
 
-static void
-insert_child_into_open (const void* value, void* a)
-{
-  const buffer_edge_entry_t* entry = (const buffer_edge_entry_t*)value;
-  insert_arg_t* arg = (insert_arg_t*)a;
+// static void
+// insert_child_into_open (const void* value, void* a)
+// {
+//   const buffer_edge_entry_t* entry = (const buffer_edge_entry_t*)value;
+//   insert_arg_t* arg = (insert_arg_t*)a;
 
-  if (entry->parent == arg->parent) {
-    /* Insert into the open list. */
-    index_insert (arg->buffers->reachable_open_index, &entry->child);
-  }
-}
+//   if (entry->parent == arg->parent) {
+//     /* Insert into the open list. */
+//     index_insert (arg->m_reachable_open_index, &entry->child);
+//   }
+// }
 
-static void
-find_reachable_buffers (buffers_t* buffers, bid_t root_bid, index_t* target_index)
+class InsertChild {
+private:
+  std::set<bid_t>& m_open_list;
+public:
+  InsertChild (std::set<bid_t>& open_list) :
+    m_open_list (open_list) { }
+  void operator() (const buffer_edge_entry_t& x) { m_open_list.insert (x.child); }
+};
+
+void
+Buffers::find_reachable_buffers (bid_t root_bid, std::set<bid_t>& closed_list) const
 {
   /* We have an open list of buffers and we have a closed list of buffers. */
-  index_clear (buffers->reachable_open_index);
-  index_clear (target_index);
+  std::set<bid_t> open_list;
+  closed_list.clear ();
   
   /* Seed the open list. */
-  index_insert (buffers->reachable_open_index, &root_bid);
-  
-  while (!index_empty (buffers->reachable_open_index)) {
+  open_list.insert (root_bid);
+   
+  while (!open_list.empty ()) {
     /* Pop from open. */
-    iterator_t idx = index_begin (buffers->reachable_open_index);
-    bid_t bid = *(bid_t*)index_value (buffers->reachable_open_index, idx);
-    index_erase (buffers->reachable_open_index, idx);
-    
-    if (index_find_value (target_index,
-			  index_begin (target_index),
-			  index_end (target_index),
-			  bid_equal,
-			  &bid,
-			  NULL) == NULL) {
+    std::set<bid_t>::const_iterator pos = open_list.begin ();
+    bid_t bid = *pos;
+    open_list.erase (pos);
+
+    std::set<bid_t>::const_iterator pos2 = closed_list.find (bid);
+
+    if (pos2 == closed_list.end ()) {
       /* Not in closed list. */
       
       /* Push to closed. */
-      index_insert (target_index, &bid);
+      closed_list.insert (pos2, bid);
 
       /* Insert all children into open. */
-      insert_arg_t arg;
-      arg.buffers = buffers;
-      arg.parent = bid;
-      index_for_each (buffers->buffer_edge_index,
-		      index_begin (buffers->buffer_edge_index),
-		      index_end (buffers->buffer_edge_index),
-		      insert_child_into_open,
-		      &arg);
+      m_buffer_edge_index.for_each_if (BufferEdgeEntryParentEqual (bid), InsertChild (open_list));
     }
   }
 }
 
-static void
-incref (buffers_t* buffers, bid_t bid, aid_t aid, size_t count)
+void
+Buffers::incref (bid_t bid, aid_t aid, size_t count)
 {
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
-  if (buffer_ref_entry != NULL) {
+  assert (buffer_exists (bid));
+
+  BufferRefIndexType::iterator pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
+  if (pos != m_buffer_ref_index.end ()) {
     /* Increment reference count. */
-    buffer_ref_entry->count += count;
+    pos->count += count;
   }
   else {
     /* Create new entry. */
@@ -496,555 +360,299 @@ incref (buffers_t* buffers, bid_t bid, aid_t aid, size_t count)
     key.bid = bid;
     key.aid = aid;
     key.count = count;
-    index_insert (buffers->buffer_ref_index, &key);
+    m_buffer_ref_index.insert (key);
   }
 
   /* Increment the global reference count. */
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  assert (buffer_entry != NULL);
-  buffer_entry->ref_count += count;
+  BufferIndexType::iterator pos2 = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  pos2->ref_count += count;
   /* Buffer becomes READONLY the first time (and any subsequent time) it is referenced. */
-  buffer_entry->mode = READONLY;
-}
-
-typedef struct {
-  buffers_t* buffers;
-  aid_t aid;
-  size_t count;
-} incref_arg_t;
-
-static void
-incref_bid (const void* value, void* a)
-{
-  bid_t bid = *(bid_t*)value;
-  incref_arg_t* arg = (incref_arg_t*)a;
-
-  incref (arg->buffers, bid, arg->aid, arg->count);
+  pos2->mode = READONLY;
 }
 
 void
-buffers_incref (buffers_t* buffers, aid_t aid, bid_t bid)
+Buffers::incref (aid_t aid, bid_t bid)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  pthread_rwlock_wrlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
 
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
   /* Must be owner or already have a reference. */
-  if ((buffer_entry != NULL && buffer_entry->owner == aid) ||
-      (buffer_ref_entry != NULL)) {
-    
+  if (owner_or_reference (aid, bid)) {
+
     /* Find all reachable children. */
-    find_reachable_buffers (buffers, bid, buffers->ref_closed_index);   
+    std::set<bid_t> children;
+
+    find_reachable_buffers (bid, children);
     
     /* Increment the reference count for all reachable. */
-    incref_arg_t arg;
-    arg.buffers = buffers;
-    arg.aid = aid;
-    arg.count = 1;
-    index_for_each (buffers->ref_closed_index,
-		    index_begin (buffers->ref_closed_index),
-		    index_end (buffers->ref_closed_index),
-		    incref_bid,
-		    &arg);
+    std::for_each (children.begin (),
+		   children.end (),
+		   Incref (*this, aid, 1));
   }
 
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 }
 
-static void
-remove_buffer_entry (buffers_t* buffers, buffer_entry_t* buffer_entry, iterator_t buffer_entry_idx)
+void
+Buffers::remove_buffer_entry (BufferIndexType::iterator& pos)
 {
-  assert (buffer_entry->ref_count == 0);
+  assert (pos->ref_count == 0);
 
   /* Remove parent-child relationships. */
-  buffer_edge_entry_t key;
-  key.parent = buffer_entry->bid;
-
-  index_remove (buffers->buffer_edge_index,
-		index_begin (buffers->buffer_edge_index),
-		index_end (buffers->buffer_edge_index),
-		buffer_edge_entry_parent_or_child_equal,
-		&key);
+  m_buffer_edge_index.remove_if (BufferEdgeEntryParentOrChildEqual (pos->bid));
   
   /* Free the data. */
-  free (buffer_entry->data);
+  free (pos->data);
   
   /* Remove. */
-  index_erase (buffers->buffer_index, buffer_entry_idx);
+  m_buffer_index.erase (pos);
 }
 
-static void
-decref (buffers_t* buffers, bid_t bid, aid_t aid, size_t count)
+void
+Buffers::decref (bid_t bid, aid_t aid, size_t count)
 {
-  iterator_t buffer_ref_entry_idx;
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, &buffer_ref_entry_idx);
-  
+  assert (buffer_exists (bid));
+
+  BufferRefIndexType::iterator pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
+
   /* Decrement reference count. */
-  buffer_ref_entry->count -= count;
-  if (buffer_ref_entry->count == 0) {
+  pos->count -= count;
+  if (pos->count == 0) {
     /* Remove. */
-    index_erase (buffers->buffer_ref_index, buffer_ref_entry_idx);
+    m_buffer_ref_index.erase (pos);
   }
   
   /* Decrement the global reference count. */
-  iterator_t buffer_entry_idx;
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, &buffer_entry_idx);
-  assert (buffer_entry != NULL);
-  buffer_entry->ref_count -= count;
+  BufferIndexType::iterator pos2 = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+  pos2->ref_count -= count;
 
-  if (buffer_entry->ref_count == 0) {
-    remove_buffer_entry (buffers, buffer_entry, buffer_entry_idx);
+  if (pos2->ref_count == 0) {
+    remove_buffer_entry (pos2);
   }
 }
 
-static void
-decref_bid (const void* value, void* a)
+void
+Buffers::decref_core (aid_t aid, bid_t root_bid)
 {
-  bid_t bid = *(bid_t*)value;
-  incref_arg_t* arg = (incref_arg_t*)a;
-
-  decref (arg->buffers, bid, arg->aid, arg->count);
-}
-
-static void
-decref_core (buffers_t* buffers, aid_t aid, bid_t root_bid)
-{
-  buffer_ref_entry_t* root_buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, root_bid, NULL);
+  BufferRefIndexType::const_iterator pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, root_bid));
   /* Must have a reference. */
-  if (root_buffer_ref_entry != NULL) {
+  if (pos != m_buffer_ref_index.end ()) {
 
     /* Find all reachable children. */
-    find_reachable_buffers (buffers, root_bid, buffers->ref_closed_index);   
+    std::set<bid_t> children;
+
+    find_reachable_buffers (root_bid, children);   
 
     /* Decrement the reference count for all reachable. */
-    incref_arg_t arg;
-    arg.buffers = buffers;
-    arg.aid = aid;
-    arg.count = 1;
-
-    index_for_each (buffers->ref_closed_index,
-		    index_begin (buffers->ref_closed_index),
-		    index_end (buffers->ref_closed_index),
-		    decref_bid,
-		    &arg);
-
+    std::for_each (children.begin (),
+		   children.end (),
+		   Decref (*this, aid, 1));
   }
 }
 
 void
-buffers_decref (buffers_t* buffers, aid_t aid, bid_t root_bid)
+Buffers::decref (aid_t aid, bid_t root_bid)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  pthread_rwlock_wrlock (&buffers->lock);
-  decref_core (buffers, aid, root_bid);
-  pthread_rwlock_unlock (&buffers->lock);
-}
-
-static bool
-in_parent (const void* value, const void* arg)
-{
-  bid_t bid = *(bid_t*)value;
-  const buffers_t* buffers = (const buffers_t*)arg;
-
-  return index_find_value (buffers->parent_reach_index,
-  			   index_begin (buffers->parent_reach_index),
-  			   index_end (buffers->parent_reach_index),
-  			   bid_equal,
-  			   &bid,
-  			   NULL) != NULL;
-}
-
-typedef enum {
-  TRANSFER,
-  UNTRANSFER
-} transfer_mode_t;
-
-typedef struct {
-  transfer_mode_t mode;
-  buffers_t* buffers;
-  bid_t parent;
-  aid_t aid;
-  size_t count;
-} transfer_arg_t;
-
-static void
-transfer2 (const void* value, void* a)
-{
-  bid_t bid = *(bid_t*)value;
-  transfer_arg_t* arg = (transfer_arg_t*)a;
-
-  switch (arg->mode) {
-  case TRANSFER:
-    incref (arg->buffers, bid, arg->aid, arg->count);
-    break;
-  case UNTRANSFER:
-    decref (arg->buffers, bid, arg->aid, arg->count);
-    break;
-  }
-
-}
-
-static void
-transfer1 (const void* value, void* a)
-{
-  const buffer_ref_entry_t* buffer_ref_entry = (const buffer_ref_entry_t*)value;
-  transfer_arg_t* arg = (transfer_arg_t*)a;
-
-  if (buffer_ref_entry->bid == arg->parent) {
-    arg->aid = buffer_ref_entry->aid;
-    arg->count = buffer_ref_entry->count;
-    index_for_each (arg->buffers->child_reach_index,
-		    index_begin (arg->buffers->child_reach_index),
-		    index_end (arg->buffers->child_reach_index),
-		    transfer2,
-		    arg);
-
-  }
+  pthread_rwlock_wrlock (&m_lock);
+  decref_core (aid, root_bid);
+  pthread_rwlock_unlock (&m_lock);
 }
 
 void
-buffers_add_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
+Buffers::add_child (aid_t aid, bid_t parent, bid_t child)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  pthread_rwlock_wrlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
 
-  buffer_edge_entry_t* edge_entry = buffer_edge_entry_for_parent_child (buffers, parent, child, NULL);
-  if (edge_entry == NULL) {
+  BufferEdgeIndexType::const_iterator edge_pos = m_buffer_edge_index.find_if (BufferEdgeEntryParentChildEqual (parent, child));
+  if (edge_pos == m_buffer_edge_index.end ()) {
     /* Edge doesn't exist. */
 
-    buffer_entry_t* parent_entry = buffer_entry_for_bid (buffers, parent, NULL);
-    buffer_entry_t* child_entry = buffer_entry_for_bid (buffers, child, NULL);
-    buffer_ref_entry_t* child_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, child, NULL);
+    BufferIndexType::const_iterator parent_pos = m_buffer_index.find_if (BufferEntryBidEqual (parent));
+    BufferIndexType::const_iterator child_pos = m_buffer_index.find_if (BufferEntryBidEqual (child));
+    
+    BufferRefIndexType::const_iterator child_ref_pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, child));
   
     /* Parent and child must exist, parent must be READWRITE. */
     if ((parent != child) &&
-	(parent_entry != NULL && parent_entry->owner == aid && parent_entry->mode == READWRITE) &&
-	(child_entry != NULL) &&
-	(child_entry->owner == aid || child_ref_entry != NULL)) {
+	(parent_pos != m_buffer_index.end () && parent_pos->owner == aid && parent_pos->mode == READWRITE) &&
+	(child_pos != m_buffer_index.end ()) &&
+	(child_pos->owner == aid || child_ref_pos != m_buffer_ref_index.end ())) {
       /* READWRITE implies ref_count == 1. */
-      assert (parent_entry->ref_count == 1);
+      assert (parent_pos->ref_count == 1);
 
       /* Find buffers reachable from the child. */
-      find_reachable_buffers (buffers, child, buffers->child_reach_index);
+      std::set<bid_t> reachable_from_child;
+      find_reachable_buffers (child, reachable_from_child);
       
-      if (index_find_value (buffers->child_reach_index,
-			    index_begin (buffers->child_reach_index),
-			    index_end (buffers->child_reach_index),
-			    bid_equal,
-			    &parent,
-			    NULL) == NULL) {
+      if (reachable_from_child.count (parent) == 0) {
         /* Parent is not reachable from child so we have avoided a cycle. */
 	
 	/* Find the buffers reachable from the parent. */
-	find_reachable_buffers (buffers, parent, buffers->parent_reach_index);
-	
-	/* Remove the parent set from the child set. */
-	index_remove (buffers->child_reach_index,
-		      index_begin (buffers->child_reach_index),
-		      index_end (buffers->child_reach_index),
-		      in_parent,
-		      buffers);
+	std::set<bid_t> reachable_from_parent;
+	find_reachable_buffers (parent, reachable_from_parent);
+
+	/* Remove the child set from the parent. */
+	std::vector<bid_t> children;
+	std::set_difference (reachable_from_parent.begin (),
+			     reachable_from_parent.end (),
+			     reachable_from_child.begin (),
+			     reachable_from_child.end (),
+			     std::back_inserter (children));
 	
 	/* Transfer references from the parent to the child. */
-	transfer_arg_t arg;
-	arg.mode = TRANSFER;
-	arg.buffers = buffers;
-	arg.parent = parent;
-	index_for_each (buffers->buffer_ref_index,
-			index_begin (buffers->buffer_ref_index),
-			index_end (buffers->buffer_ref_index),
-			transfer1,
-			&arg);
-      
+	m_buffer_ref_index.for_each_if (BufferRefEntryBidEqual (parent), Transfer1 (*this, children));
+
 	/* Add to edge table. */
 	buffer_edge_entry_t edge_key;
 	edge_key.parent = parent;
 	edge_key.child = child;
-	index_insert (buffers->buffer_edge_index, &edge_key);
+	m_buffer_edge_index.insert (edge_key);
       }
     }
   }
 
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 }
 
 void
-buffers_remove_child (buffers_t* buffers, aid_t aid, bid_t parent, bid_t child)
+Buffers::remove_child (aid_t aid, bid_t parent, bid_t child)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  pthread_rwlock_wrlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
 
-  iterator_t edge_entry_idx;
-  buffer_edge_entry_t* edge_entry = buffer_edge_entry_for_parent_child (buffers, parent, child, &edge_entry_idx);
-  if (edge_entry != NULL) {
+  BufferEdgeIndexType::const_iterator edge_pos = m_buffer_edge_index.find_if (BufferEdgeEntryParentChildEqual (parent, child));
+  if (edge_pos != m_buffer_edge_index.end ()) {
     /* Edge does exist. */
-    
-    buffer_entry_t* parent_entry = buffer_entry_for_bid (buffers, parent, NULL);
-    assert (parent_entry != NULL);
+
+    BufferIndexType::const_iterator parent_pos = m_buffer_index.find_if (BufferEntryBidEqual (parent));    
+    assert (parent_pos != m_buffer_index.end ());
     
     /* Parent must be READWRITE. */
-    if (parent_entry->owner == aid && parent_entry->mode == READWRITE) {
+    if (parent_pos->owner == aid && parent_pos->mode == READWRITE) {
       /* READWRITE implies ref_count == 1. */
-      assert (parent_entry->ref_count == 1);
+      assert (parent_pos->ref_count == 1);
 
       /* Remove the edge from the table. */
-      index_erase (buffers->buffer_edge_index, edge_entry_idx);
-      
+      m_buffer_edge_index.erase (edge_pos);
+
       /* Find buffers reachable from the child. */
-      find_reachable_buffers (buffers, child, buffers->child_reach_index);
-      
+      std::set<bid_t> reachable_from_child;
+      find_reachable_buffers (child, reachable_from_child);
+
       /* Find the buffers reachable from the parent. */
-      find_reachable_buffers (buffers, parent, buffers->parent_reach_index);
-	
-      /* Remove the parent set from the child set. */
-      index_remove (buffers->child_reach_index,
-		    index_begin (buffers->child_reach_index),
-		    index_end (buffers->child_reach_index),
-		    in_parent,
-		    buffers);
-	
+      std::set<bid_t> reachable_from_parent;
+      find_reachable_buffers (parent, reachable_from_parent);
+
+      /* Remove the child set from the parent. */
+      std::vector<bid_t> children;
+      std::set_difference (reachable_from_parent.begin (),
+			   reachable_from_parent.end (),
+			   reachable_from_child.begin (),
+			   reachable_from_child.end (),
+			   std::back_inserter (children));
+      
       /* Untransfer references from the parent to the child. */
-      transfer_arg_t arg;
-      arg.mode = UNTRANSFER;
-      arg.buffers = buffers;
-      arg.parent = parent;
-      index_for_each (buffers->buffer_ref_index,
-		      index_begin (buffers->buffer_ref_index),
-		      index_end (buffers->buffer_ref_index),
-		      transfer1,
-		      &arg);      
+      m_buffer_ref_index.for_each_if (BufferRefEntryBidEqual (parent), Untransfer1 (*this, children));
     }    
   }
 
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 }
 
-typedef struct {
-  buffers_t* buffers;
-  aid_t aid;
-} null_arg_t;
-
-static void
-null_aid (void* e, void* a)
-{
-  buffer_entry_t* buffer_entry = (buffer_entry_t*)e;
-  null_arg_t* arg = (null_arg_t*)a;
-  
-  if (buffer_entry->owner == arg->aid) {
-    buffer_entry->owner = -1;
+class NullAid {
+public:
+  void operator() (buffer_entry_t& x) const {
+    x.owner = -1;
   }
-}
-
-static void
-dec_global (const void* e, void* a)
-{
-  const buffer_ref_entry_t* buffer_ref_entry = (const buffer_ref_entry_t*)e;
-  null_arg_t* arg = (null_arg_t*)a;
-
-  if (buffer_ref_entry->aid == arg->aid) {
-    iterator_t buffer_entry_idx;
-    buffer_entry_t* buffer_entry = buffer_entry_for_bid (arg->buffers, buffer_ref_entry->bid, &buffer_entry_idx);
-    assert (buffer_entry != NULL);
-    buffer_entry->ref_count -= buffer_ref_entry->count;
-
-    if (buffer_entry->ref_count == 0) {
-      remove_buffer_entry (arg->buffers, buffer_entry, buffer_entry_idx);
-    }
-    
-  }
-}
+};
 
 void
-buffers_purge_aid (buffers_t* buffers, aid_t aid)
+Buffers::purge_aid (aid_t aid)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  pthread_rwlock_wrlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
 
   /* Update the global counts. */
-  null_arg_t arg;
-  arg.buffers = buffers;
-  arg.aid = aid;
-  index_for_each (buffers->buffer_ref_index,
-		  index_begin (buffers->buffer_ref_index),
-		  index_end (buffers->buffer_ref_index),
-		  dec_global,
-		  &arg);
+  m_buffer_ref_index.for_each_if (BufferRefEntryAidEqual (aid), DecGlobal (*this));
 
   /* Remove the reference entries. */
-  buffer_ref_entry_t key;
-  key.aid = aid;
-  index_remove (buffers->buffer_ref_index,
-		index_begin (buffers->buffer_ref_index),
-		index_end (buffers->buffer_ref_index),
-		buffer_ref_entry_aid_equal,
-		&key);
+  m_buffer_ref_index.remove_if (BufferRefEntryAidEqual (aid));
 
   /* Remove owners. */
-  index_transform (buffers->buffer_index,
-		   index_begin (buffers->buffer_index),
-		   index_end (buffers->buffer_index),
-		   null_aid,
-		   &arg);
+  m_buffer_index.for_each_if (BufferEntryOwnerEqual (aid), NullAid ());
 
-  pthread_rwlock_unlock (&buffers->lock);
-}
-
-typedef struct {
-  buffers_t* buffers;
-  bid_t old_parent;
-  bid_t new_parent;
-} edge_arg_t;
-
-static void
-dup_edge (const void* e, void* a)
-{
-  const buffer_edge_entry_t* entry = (const buffer_edge_entry_t*)e;
-  edge_arg_t* arg = (edge_arg_t*)a;
-
-  if (entry->parent == arg->old_parent) {
-    buffer_edge_entry_t key;
-    key.parent = arg->new_parent;
-    key.child = entry->child;
-    index_insert (arg->buffers->buffer_edge_index, &key);
-  }
+  pthread_rwlock_unlock (&m_lock);
 }
 
 bid_t
-buffers_dup (buffers_t* buffers, aid_t aid, bid_t bid, size_t size)
+Buffers::dup (aid_t aid, bid_t bid, size_t size)
 {
-  assert (buffers != NULL);
-
   /*
    * NO CHECK IF AID EXISTS.
    */
 
-  pthread_rwlock_wrlock (&buffers->lock);
+  pthread_rwlock_wrlock (&m_lock);
 
   bid_t retval;
 
-  buffer_entry_t* buffer_entry = buffer_entry_for_bid (buffers, bid, NULL);
-  buffer_ref_entry_t* buffer_ref_entry = buffer_ref_entry_for_aid_bid (buffers, aid, bid, NULL);
+  BufferRefIndexType::const_iterator buffer_ref_pos = m_buffer_ref_index.find_if (BufferRefEntryAidBidEqual (aid, bid));
   /* Must have a reference. */
-  if (buffer_ref_entry != NULL) {
+  if (buffer_ref_pos != m_buffer_ref_index.end ()) {
+    BufferIndexType::iterator buffer_pos = m_buffer_index.find_if (BufferEntryBidEqual (bid));
+    assert (buffer_pos != m_buffer_index.end ());
 
-    if (buffer_entry->ref_count == 1) {
+    if (buffer_pos->ref_count == 1) {
       /*
 	This aid holds the only reference.
 	Instead of allocating and copying, we can just change the owner and mode.
       */
-      buffer_entry->owner = aid;
-      buffer_entry->mode = READWRITE;
-      if (size != buffer_entry->size) {
-	buffer_entry->size = size;
-	buffer_entry->data = realloc (buffer_entry->data, size);
+      buffer_pos->owner = aid;
+      buffer_pos->mode = READWRITE;
+      if (size != buffer_pos->size) {
+	buffer_pos->size = size;
+	buffer_pos->data = realloc (buffer_pos->data, size);
       }
       retval = bid;
     }
     else {
       /* Allocate a new buffer with the new size. */
-      buffer_entry_t* new_entry = allocate (buffers, aid, size, buffer_entry->alignment);
-      retval = new_entry->bid;
+      BufferIndexType::const_iterator new_pos = allocate (aid, size, buffer_pos->alignment);
+      retval = new_pos->bid;
       
       /* Copy the data. */
-      memcpy (new_entry->data,
-	      buffer_entry->data,
-	      (buffer_entry->size < new_entry->size) ? buffer_entry->size : new_entry->size);
+      memcpy (new_pos->data,
+	      buffer_pos->data,
+	      (buffer_pos->size < new_pos->size) ? buffer_pos->size : new_pos->size);
       
       /* Copy parent child relationships. */
-      edge_arg_t arg;
-      arg.buffers = buffers;
-      arg.old_parent = buffer_entry->bid;
-      arg.new_parent = new_entry->bid;
-      index_for_each (buffers->buffer_edge_index,
-		      index_begin (buffers->buffer_edge_index),
-		      index_end (buffers->buffer_edge_index),
-		      dup_edge,
-		      &arg);
+      m_buffer_edge_index.for_each_if (BufferEdgeEntryParentEqual (buffer_pos->bid), DuplicateEdge (*this, new_pos->bid));
 
       /* Decrement the reference count. */
-      decref_core (buffers, aid, bid);
+      decref_core (aid, bid);
     }
   }
   else {
     retval = -1;
   }
 
-  pthread_rwlock_unlock (&buffers->lock);
+  pthread_rwlock_unlock (&m_lock);
 
   return retval;
-}
-
-buffers_t*
-buffers_create (void)
-{
-  buffers_t* buffers = (buffers_t*)malloc (sizeof (buffers_t));
-
-  buffers->next_bid = 0;
-  pthread_rwlock_init (&buffers->lock, NULL);
-
-  buffers->buffer_table = table_create (sizeof (buffer_entry_t));
-  buffers->buffer_index = index_create_list (buffers->buffer_table);
-  buffers->buffer_ref_table = table_create (sizeof (buffer_ref_entry_t));
-  buffers->buffer_ref_index = index_create_list (buffers->buffer_ref_table);
-  buffers->buffer_edge_table = table_create (sizeof (buffer_edge_entry_t));
-  buffers->buffer_edge_index = index_create_list (buffers->buffer_edge_table);
-  buffers->reachable_open_table = table_create (sizeof (bid_t));
-  buffers->reachable_open_index = index_create_list (buffers->reachable_open_table);
-  buffers->ref_closed_table = table_create (sizeof (bid_t));
-  buffers->ref_closed_index = index_create_list (buffers->ref_closed_table);
-  buffers->parent_reach_table = table_create (sizeof (bid_t));
-  buffers->parent_reach_index = index_create_list (buffers->parent_reach_table);
-  buffers->child_reach_table = table_create (sizeof (bid_t));
-  buffers->child_reach_index = index_create_list (buffers->child_reach_table);
-
-  return buffers;
-}
-
-void
-buffers_destroy (buffers_t* buffers)
-{
-  assert (buffers != NULL);
-
-  table_destroy (buffers->child_reach_table);
-  table_destroy (buffers->parent_reach_table);
-  table_destroy (buffers->reachable_open_table);
-  table_destroy (buffers->ref_closed_table);
-  table_destroy (buffers->buffer_edge_table);
-  table_destroy (buffers->buffer_ref_table);
-  index_for_each (buffers->buffer_index,
-		  index_begin (buffers->buffer_index),
-		  index_end (buffers->buffer_index),
-		  free_data,
-		  NULL);
-  table_destroy (buffers->buffer_table);
-
-  pthread_rwlock_destroy (&buffers->lock);
-
-  free (buffers);
 }

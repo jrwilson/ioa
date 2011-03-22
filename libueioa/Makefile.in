@@ -71,8 +71,8 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_DEPENDENCIES = $(top_builddir)/libtable/libtable.la
-am_libueioa_la_OBJECTS = automata.lo bidq.lo buffers.lo ioq.lo \
-	order.lo receipts.lo runq.lo ueioa.lo
+am_libueioa_la_OBJECTS = automata.lo buffers.lo ioq.lo order.lo \
+	receipts.lo runq.lo ueioa.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -215,7 +215,6 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libueioa.la
 libueioa_la_SOURCES = \
 automata.cc \
-bidq.cc \
 buffers.cc \
 ioq.cc \
 order.cc \
@@ -299,7 +298,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automata.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bidq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order.Plo@am__quote@

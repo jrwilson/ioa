@@ -114,17 +114,17 @@ automan_creat (void* state, aid_t* self_ptr)
   *self_ptr = -1;
 
   automan->sequence_status = NORMAL;
-  automan->si_table = table_create (sizeof (sequence_item_t));
+  automan->si_table = new table (sizeof (sequence_item_t));
   automan->si_index = index_create_list (automan->si_table);
 
-  automan->ii_table = table_create (sizeof (input_item_t));
+  automan->ii_table = new table (sizeof (input_item_t));
   automan->ii_index = index_create_list (automan->ii_table);
 
-  automan->oi_table = table_create (sizeof (output_item_t));
+  automan->oi_table = new table (sizeof (output_item_t));
   automan->oi_index = index_create_list (automan->oi_table);
 
   automan->proxy_status = NORMAL;
-  automan->pi_table = table_create (sizeof (proxy_item_t));
+  automan->pi_table = new table (sizeof (proxy_item_t));
   automan->pi_index = index_create_list (automan->pi_table);
 
   return automan;

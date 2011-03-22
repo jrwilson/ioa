@@ -33,20 +33,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = schedule_system_output$(EXEEXT) bad_order$(EXEEXT) \
-	self_created$(EXEEXT) child_created$(EXEEXT) \
-	bad_descriptor$(EXEEXT) declared$(EXEEXT) output_dne$(EXEEXT) \
-	input_dne$(EXEEXT) output_unavailable$(EXEEXT) \
-	input_unavailable$(EXEEXT) composed$(EXEEXT) \
-	input_composed$(EXEEXT) output_composed$(EXEEXT) \
-	not_composed$(EXEEXT) decomposed$(EXEEXT) \
-	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
-	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) schedule_alarm_input$(EXEEXT) \
-	schedule_read_input$(EXEEXT) schedule_write_input$(EXEEXT) \
-	schedule_free_input$(EXEEXT) schedule_output$(EXEEXT) \
-	schedule_internal$(EXEEXT) same_compose$(EXEEXT) \
-	compose_param_input$(EXEEXT)
+TESTS = schedule_system_output$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = testueioa
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -61,186 +48,27 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = schedule_system_output$(EXEEXT) bad_order$(EXEEXT) \
-	self_created$(EXEEXT) child_created$(EXEEXT) \
-	bad_descriptor$(EXEEXT) declared$(EXEEXT) output_dne$(EXEEXT) \
-	input_dne$(EXEEXT) output_unavailable$(EXEEXT) \
-	input_unavailable$(EXEEXT) composed$(EXEEXT) \
-	input_composed$(EXEEXT) output_composed$(EXEEXT) \
-	not_composed$(EXEEXT) decomposed$(EXEEXT) \
-	input_decomposed$(EXEEXT) output_decomposed$(EXEEXT) \
-	rescinded$(EXEEXT) automaton_dne$(EXEEXT) not_owner$(EXEEXT) \
-	child_destroyed$(EXEEXT) schedule_alarm_input$(EXEEXT) \
-	schedule_read_input$(EXEEXT) schedule_write_input$(EXEEXT) \
-	schedule_free_input$(EXEEXT) schedule_output$(EXEEXT) \
-	schedule_internal$(EXEEXT) same_compose$(EXEEXT) \
-	compose_param_input$(EXEEXT)
-am_automaton_dne_OBJECTS = automaton_dne.$(OBJEXT)
-automaton_dne_OBJECTS = $(am_automaton_dne_OBJECTS)
-automaton_dne_LDADD = $(LDADD)
-automaton_dne_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_bad_descriptor_OBJECTS = bad_descriptor.$(OBJEXT)
-bad_descriptor_OBJECTS = $(am_bad_descriptor_OBJECTS)
-bad_descriptor_LDADD = $(LDADD)
-bad_descriptor_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_bad_order_OBJECTS = bad_order.$(OBJEXT)
-bad_order_OBJECTS = $(am_bad_order_OBJECTS)
-bad_order_LDADD = $(LDADD)
-bad_order_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_child_created_OBJECTS = child_created.$(OBJEXT)
-child_created_OBJECTS = $(am_child_created_OBJECTS)
-child_created_LDADD = $(LDADD)
-child_created_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_child_destroyed_OBJECTS = child_destroyed.$(OBJEXT)
-child_destroyed_OBJECTS = $(am_child_destroyed_OBJECTS)
-child_destroyed_LDADD = $(LDADD)
-child_destroyed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_compose_param_input_OBJECTS = compose_param_input.$(OBJEXT)
-compose_param_input_OBJECTS = $(am_compose_param_input_OBJECTS)
-compose_param_input_LDADD = $(LDADD)
-compose_param_input_DEPENDENCIES =  \
-	$(top_builddir)/libueioa/libueioa.la
-am_composed_OBJECTS = composed.$(OBJEXT)
-composed_OBJECTS = $(am_composed_OBJECTS)
-composed_LDADD = $(LDADD)
-composed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_declared_OBJECTS = declared.$(OBJEXT)
-declared_OBJECTS = $(am_declared_OBJECTS)
-declared_LDADD = $(LDADD)
-declared_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_decomposed_OBJECTS = decomposed.$(OBJEXT)
-decomposed_OBJECTS = $(am_decomposed_OBJECTS)
-decomposed_LDADD = $(LDADD)
-decomposed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_input_composed_OBJECTS = input_composed.$(OBJEXT)
-input_composed_OBJECTS = $(am_input_composed_OBJECTS)
-input_composed_LDADD = $(LDADD)
-input_composed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_input_decomposed_OBJECTS = input_decomposed.$(OBJEXT)
-input_decomposed_OBJECTS = $(am_input_decomposed_OBJECTS)
-input_decomposed_LDADD = $(LDADD)
-input_decomposed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_input_dne_OBJECTS = input_dne.$(OBJEXT)
-input_dne_OBJECTS = $(am_input_dne_OBJECTS)
-input_dne_LDADD = $(LDADD)
-input_dne_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_input_unavailable_OBJECTS = input_unavailable.$(OBJEXT)
-input_unavailable_OBJECTS = $(am_input_unavailable_OBJECTS)
-input_unavailable_LDADD = $(LDADD)
-input_unavailable_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_not_composed_OBJECTS = not_composed.$(OBJEXT)
-not_composed_OBJECTS = $(am_not_composed_OBJECTS)
-not_composed_LDADD = $(LDADD)
-not_composed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_not_owner_OBJECTS = not_owner.$(OBJEXT)
-not_owner_OBJECTS = $(am_not_owner_OBJECTS)
-not_owner_LDADD = $(LDADD)
-not_owner_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_output_composed_OBJECTS = output_composed.$(OBJEXT)
-output_composed_OBJECTS = $(am_output_composed_OBJECTS)
-output_composed_LDADD = $(LDADD)
-output_composed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_output_decomposed_OBJECTS = output_decomposed.$(OBJEXT)
-output_decomposed_OBJECTS = $(am_output_decomposed_OBJECTS)
-output_decomposed_LDADD = $(LDADD)
-output_decomposed_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_output_dne_OBJECTS = output_dne.$(OBJEXT)
-output_dne_OBJECTS = $(am_output_dne_OBJECTS)
-output_dne_LDADD = $(LDADD)
-output_dne_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_output_unavailable_OBJECTS = output_unavailable.$(OBJEXT)
-output_unavailable_OBJECTS = $(am_output_unavailable_OBJECTS)
-output_unavailable_LDADD = $(LDADD)
-output_unavailable_DEPENDENCIES =  \
-	$(top_builddir)/libueioa/libueioa.la
-am_rescinded_OBJECTS = rescinded.$(OBJEXT)
-rescinded_OBJECTS = $(am_rescinded_OBJECTS)
-rescinded_LDADD = $(LDADD)
-rescinded_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_same_compose_OBJECTS = same_compose.$(OBJEXT)
-same_compose_OBJECTS = $(am_same_compose_OBJECTS)
-same_compose_LDADD = $(LDADD)
-same_compose_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_schedule_alarm_input_OBJECTS = schedule_alarm_input.$(OBJEXT)
-schedule_alarm_input_OBJECTS = $(am_schedule_alarm_input_OBJECTS)
-schedule_alarm_input_LDADD = $(LDADD)
-schedule_alarm_input_DEPENDENCIES =  \
-	$(top_builddir)/libueioa/libueioa.la
-am_schedule_free_input_OBJECTS = schedule_free_input.$(OBJEXT)
-schedule_free_input_OBJECTS = $(am_schedule_free_input_OBJECTS)
-schedule_free_input_LDADD = $(LDADD)
-schedule_free_input_DEPENDENCIES =  \
-	$(top_builddir)/libueioa/libueioa.la
-am_schedule_internal_OBJECTS = schedule_internal.$(OBJEXT)
-schedule_internal_OBJECTS = $(am_schedule_internal_OBJECTS)
-schedule_internal_LDADD = $(LDADD)
-schedule_internal_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_schedule_output_OBJECTS = schedule_output.$(OBJEXT)
-schedule_output_OBJECTS = $(am_schedule_output_OBJECTS)
-schedule_output_LDADD = $(LDADD)
-schedule_output_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
-am_schedule_read_input_OBJECTS = schedule_read_input.$(OBJEXT)
-schedule_read_input_OBJECTS = $(am_schedule_read_input_OBJECTS)
-schedule_read_input_LDADD = $(LDADD)
-schedule_read_input_DEPENDENCIES =  \
-	$(top_builddir)/libueioa/libueioa.la
+am__EXEEXT_1 = schedule_system_output$(EXEEXT)
 am_schedule_system_output_OBJECTS = schedule_system_output.$(OBJEXT)
 schedule_system_output_OBJECTS = $(am_schedule_system_output_OBJECTS)
 schedule_system_output_LDADD = $(LDADD)
 schedule_system_output_DEPENDENCIES =  \
 	$(top_builddir)/libueioa/libueioa.la
-am_schedule_write_input_OBJECTS = schedule_write_input.$(OBJEXT)
-schedule_write_input_OBJECTS = $(am_schedule_write_input_OBJECTS)
-schedule_write_input_LDADD = $(LDADD)
-schedule_write_input_DEPENDENCIES =  \
-	$(top_builddir)/libueioa/libueioa.la
-am_self_created_OBJECTS = self_created.$(OBJEXT)
-self_created_OBJECTS = $(am_self_created_OBJECTS)
-self_created_LDADD = $(LDADD)
-self_created_DEPENDENCIES = $(top_builddir)/libueioa/libueioa.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
-	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(compose_param_input_SOURCES) \
-	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
-	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
-	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
-	$(not_composed_SOURCES) $(not_owner_SOURCES) \
-	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
-	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
-	$(rescinded_SOURCES) $(same_compose_SOURCES) \
-	$(schedule_alarm_input_SOURCES) $(schedule_free_input_SOURCES) \
-	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
-	$(schedule_read_input_SOURCES) \
-	$(schedule_system_output_SOURCES) \
-	$(schedule_write_input_SOURCES) $(self_created_SOURCES)
-DIST_SOURCES = $(automaton_dne_SOURCES) $(bad_descriptor_SOURCES) \
-	$(bad_order_SOURCES) $(child_created_SOURCES) \
-	$(child_destroyed_SOURCES) $(compose_param_input_SOURCES) \
-	$(composed_SOURCES) $(declared_SOURCES) $(decomposed_SOURCES) \
-	$(input_composed_SOURCES) $(input_decomposed_SOURCES) \
-	$(input_dne_SOURCES) $(input_unavailable_SOURCES) \
-	$(not_composed_SOURCES) $(not_owner_SOURCES) \
-	$(output_composed_SOURCES) $(output_decomposed_SOURCES) \
-	$(output_dne_SOURCES) $(output_unavailable_SOURCES) \
-	$(rescinded_SOURCES) $(same_compose_SOURCES) \
-	$(schedule_alarm_input_SOURCES) $(schedule_free_input_SOURCES) \
-	$(schedule_internal_SOURCES) $(schedule_output_SOURCES) \
-	$(schedule_read_input_SOURCES) \
-	$(schedule_system_output_SOURCES) \
-	$(schedule_write_input_SOURCES) $(self_created_SOURCES)
+SOURCES = $(schedule_system_output_SOURCES)
+DIST_SOURCES = $(schedule_system_output_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -365,41 +193,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = -Wall -I$(top_srcdir)/include
+AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 LDADD = $(top_builddir)/libueioa/libueioa.la
-schedule_system_output_SOURCES = schedule_system_output.c
-bad_order_SOURCES = bad_order.c
-self_created_SOURCES = self_created.c
-child_created_SOURCES = child_created.c
-bad_descriptor_SOURCES = bad_descriptor.c
-declared_SOURCES = declared.c
-output_dne_SOURCES = output_dne.c
-input_dne_SOURCES = input_dne.c
-output_unavailable_SOURCES = output_unavailable.c
-input_unavailable_SOURCES = input_unavailable.c
-composed_SOURCES = composed.c
-input_composed_SOURCES = input_composed.c
-output_composed_SOURCES = output_composed.c
-not_composed_SOURCES = not_composed.c
-decomposed_SOURCES = decomposed.c
-input_decomposed_SOURCES = input_decomposed.c
-output_decomposed_SOURCES = output_decomposed.c
-rescinded_SOURCES = rescinded.c
-automaton_dne_SOURCES = automaton_dne.c
-not_owner_SOURCES = not_owner.c
-child_destroyed_SOURCES = child_destroyed.c
-schedule_alarm_input_SOURCES = schedule_alarm_input.c
-schedule_read_input_SOURCES = schedule_read_input.c
-schedule_write_input_SOURCES = schedule_write_input.c
-schedule_free_input_SOURCES = schedule_free_input.c
-schedule_output_SOURCES = schedule_output.c
-schedule_internal_SOURCES = schedule_internal.c
-same_compose_SOURCES = same_compose.c
-compose_param_input_SOURCES = compose_param_input.c
+schedule_system_output_SOURCES = schedule_system_output.cc
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
+.SUFFIXES: .cc .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -439,93 +239,9 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-automaton_dne$(EXEEXT): $(automaton_dne_OBJECTS) $(automaton_dne_DEPENDENCIES) 
-	@rm -f automaton_dne$(EXEEXT)
-	$(LINK) $(automaton_dne_OBJECTS) $(automaton_dne_LDADD) $(LIBS)
-bad_descriptor$(EXEEXT): $(bad_descriptor_OBJECTS) $(bad_descriptor_DEPENDENCIES) 
-	@rm -f bad_descriptor$(EXEEXT)
-	$(LINK) $(bad_descriptor_OBJECTS) $(bad_descriptor_LDADD) $(LIBS)
-bad_order$(EXEEXT): $(bad_order_OBJECTS) $(bad_order_DEPENDENCIES) 
-	@rm -f bad_order$(EXEEXT)
-	$(LINK) $(bad_order_OBJECTS) $(bad_order_LDADD) $(LIBS)
-child_created$(EXEEXT): $(child_created_OBJECTS) $(child_created_DEPENDENCIES) 
-	@rm -f child_created$(EXEEXT)
-	$(LINK) $(child_created_OBJECTS) $(child_created_LDADD) $(LIBS)
-child_destroyed$(EXEEXT): $(child_destroyed_OBJECTS) $(child_destroyed_DEPENDENCIES) 
-	@rm -f child_destroyed$(EXEEXT)
-	$(LINK) $(child_destroyed_OBJECTS) $(child_destroyed_LDADD) $(LIBS)
-compose_param_input$(EXEEXT): $(compose_param_input_OBJECTS) $(compose_param_input_DEPENDENCIES) 
-	@rm -f compose_param_input$(EXEEXT)
-	$(LINK) $(compose_param_input_OBJECTS) $(compose_param_input_LDADD) $(LIBS)
-composed$(EXEEXT): $(composed_OBJECTS) $(composed_DEPENDENCIES) 
-	@rm -f composed$(EXEEXT)
-	$(LINK) $(composed_OBJECTS) $(composed_LDADD) $(LIBS)
-declared$(EXEEXT): $(declared_OBJECTS) $(declared_DEPENDENCIES) 
-	@rm -f declared$(EXEEXT)
-	$(LINK) $(declared_OBJECTS) $(declared_LDADD) $(LIBS)
-decomposed$(EXEEXT): $(decomposed_OBJECTS) $(decomposed_DEPENDENCIES) 
-	@rm -f decomposed$(EXEEXT)
-	$(LINK) $(decomposed_OBJECTS) $(decomposed_LDADD) $(LIBS)
-input_composed$(EXEEXT): $(input_composed_OBJECTS) $(input_composed_DEPENDENCIES) 
-	@rm -f input_composed$(EXEEXT)
-	$(LINK) $(input_composed_OBJECTS) $(input_composed_LDADD) $(LIBS)
-input_decomposed$(EXEEXT): $(input_decomposed_OBJECTS) $(input_decomposed_DEPENDENCIES) 
-	@rm -f input_decomposed$(EXEEXT)
-	$(LINK) $(input_decomposed_OBJECTS) $(input_decomposed_LDADD) $(LIBS)
-input_dne$(EXEEXT): $(input_dne_OBJECTS) $(input_dne_DEPENDENCIES) 
-	@rm -f input_dne$(EXEEXT)
-	$(LINK) $(input_dne_OBJECTS) $(input_dne_LDADD) $(LIBS)
-input_unavailable$(EXEEXT): $(input_unavailable_OBJECTS) $(input_unavailable_DEPENDENCIES) 
-	@rm -f input_unavailable$(EXEEXT)
-	$(LINK) $(input_unavailable_OBJECTS) $(input_unavailable_LDADD) $(LIBS)
-not_composed$(EXEEXT): $(not_composed_OBJECTS) $(not_composed_DEPENDENCIES) 
-	@rm -f not_composed$(EXEEXT)
-	$(LINK) $(not_composed_OBJECTS) $(not_composed_LDADD) $(LIBS)
-not_owner$(EXEEXT): $(not_owner_OBJECTS) $(not_owner_DEPENDENCIES) 
-	@rm -f not_owner$(EXEEXT)
-	$(LINK) $(not_owner_OBJECTS) $(not_owner_LDADD) $(LIBS)
-output_composed$(EXEEXT): $(output_composed_OBJECTS) $(output_composed_DEPENDENCIES) 
-	@rm -f output_composed$(EXEEXT)
-	$(LINK) $(output_composed_OBJECTS) $(output_composed_LDADD) $(LIBS)
-output_decomposed$(EXEEXT): $(output_decomposed_OBJECTS) $(output_decomposed_DEPENDENCIES) 
-	@rm -f output_decomposed$(EXEEXT)
-	$(LINK) $(output_decomposed_OBJECTS) $(output_decomposed_LDADD) $(LIBS)
-output_dne$(EXEEXT): $(output_dne_OBJECTS) $(output_dne_DEPENDENCIES) 
-	@rm -f output_dne$(EXEEXT)
-	$(LINK) $(output_dne_OBJECTS) $(output_dne_LDADD) $(LIBS)
-output_unavailable$(EXEEXT): $(output_unavailable_OBJECTS) $(output_unavailable_DEPENDENCIES) 
-	@rm -f output_unavailable$(EXEEXT)
-	$(LINK) $(output_unavailable_OBJECTS) $(output_unavailable_LDADD) $(LIBS)
-rescinded$(EXEEXT): $(rescinded_OBJECTS) $(rescinded_DEPENDENCIES) 
-	@rm -f rescinded$(EXEEXT)
-	$(LINK) $(rescinded_OBJECTS) $(rescinded_LDADD) $(LIBS)
-same_compose$(EXEEXT): $(same_compose_OBJECTS) $(same_compose_DEPENDENCIES) 
-	@rm -f same_compose$(EXEEXT)
-	$(LINK) $(same_compose_OBJECTS) $(same_compose_LDADD) $(LIBS)
-schedule_alarm_input$(EXEEXT): $(schedule_alarm_input_OBJECTS) $(schedule_alarm_input_DEPENDENCIES) 
-	@rm -f schedule_alarm_input$(EXEEXT)
-	$(LINK) $(schedule_alarm_input_OBJECTS) $(schedule_alarm_input_LDADD) $(LIBS)
-schedule_free_input$(EXEEXT): $(schedule_free_input_OBJECTS) $(schedule_free_input_DEPENDENCIES) 
-	@rm -f schedule_free_input$(EXEEXT)
-	$(LINK) $(schedule_free_input_OBJECTS) $(schedule_free_input_LDADD) $(LIBS)
-schedule_internal$(EXEEXT): $(schedule_internal_OBJECTS) $(schedule_internal_DEPENDENCIES) 
-	@rm -f schedule_internal$(EXEEXT)
-	$(LINK) $(schedule_internal_OBJECTS) $(schedule_internal_LDADD) $(LIBS)
-schedule_output$(EXEEXT): $(schedule_output_OBJECTS) $(schedule_output_DEPENDENCIES) 
-	@rm -f schedule_output$(EXEEXT)
-	$(LINK) $(schedule_output_OBJECTS) $(schedule_output_LDADD) $(LIBS)
-schedule_read_input$(EXEEXT): $(schedule_read_input_OBJECTS) $(schedule_read_input_DEPENDENCIES) 
-	@rm -f schedule_read_input$(EXEEXT)
-	$(LINK) $(schedule_read_input_OBJECTS) $(schedule_read_input_LDADD) $(LIBS)
 schedule_system_output$(EXEEXT): $(schedule_system_output_OBJECTS) $(schedule_system_output_DEPENDENCIES) 
 	@rm -f schedule_system_output$(EXEEXT)
-	$(LINK) $(schedule_system_output_OBJECTS) $(schedule_system_output_LDADD) $(LIBS)
-schedule_write_input$(EXEEXT): $(schedule_write_input_OBJECTS) $(schedule_write_input_DEPENDENCIES) 
-	@rm -f schedule_write_input$(EXEEXT)
-	$(LINK) $(schedule_write_input_OBJECTS) $(schedule_write_input_LDADD) $(LIBS)
-self_created$(EXEEXT): $(self_created_OBJECTS) $(self_created_DEPENDENCIES) 
-	@rm -f self_created$(EXEEXT)
-	$(LINK) $(self_created_OBJECTS) $(self_created_LDADD) $(LIBS)
+	$(CXXLINK) $(schedule_system_output_OBJECTS) $(schedule_system_output_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -533,56 +249,28 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automaton_dne.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_descriptor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bad_order.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_created.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/child_destroyed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compose_param_input.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/composed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/declared.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decomposed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_composed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_decomposed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_dne.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_unavailable.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_composed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/not_owner.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_composed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_decomposed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_dne.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output_unavailable.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rescinded.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/same_compose.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_alarm_input.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_free_input.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_internal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_output.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_read_input.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_system_output.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule_write_input.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/self_created.Po@am__quote@
 
-.c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+.cc.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+.cc.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.c.lo:
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+.cc.lo:
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -882,6 +570,62 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am
 
+
+# bad_order_SOURCES = bad_order.cc
+
+# self_created_SOURCES = self_created.cc
+
+# child_created_SOURCES = child_created.cc
+
+# bad_descriptor_SOURCES = bad_descriptor.cc
+
+# declared_SOURCES = declared.cc
+
+# output_dne_SOURCES = output_dne.cc
+
+# input_dne_SOURCES = input_dne.cc
+
+# output_unavailable_SOURCES = output_unavailable.cc
+
+# input_unavailable_SOURCES = input_unavailable.cc
+
+# composed_SOURCES = composed.cc
+
+# input_composed_SOURCES = input_composed.cc
+
+# output_composed_SOURCES = output_composed.cc
+
+# not_composed_SOURCES = not_composed.cc
+
+# decomposed_SOURCES = decomposed.cc
+
+# input_decomposed_SOURCES = input_decomposed.cc
+
+# output_decomposed_SOURCES = output_decomposed.cc
+
+# rescinded_SOURCES = rescinded.cc
+
+# automaton_dne_SOURCES = automaton_dne.cc
+
+# not_owner_SOURCES = not_owner.cc
+
+# child_destroyed_SOURCES = child_destroyed.cc
+
+# schedule_alarm_input_SOURCES = schedule_alarm_input.cc
+
+# schedule_read_input_SOURCES = schedule_read_input.cc
+
+# schedule_write_input_SOURCES = schedule_write_input.cc
+
+# schedule_free_input_SOURCES = schedule_free_input.cc
+
+# schedule_output_SOURCES = schedule_output.cc
+
+# schedule_internal_SOURCES = schedule_internal.cc
+
+# same_compose_SOURCES = same_compose.cc
+
+# compose_param_input_SOURCES = compose_param_input.cc
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -2,7 +2,7 @@
 #define __decls_h__
 
 #include <automan.h>
-#include <table.h>
+#include <table.hh>
 
 typedef enum {
   NORMAL,
@@ -69,18 +69,18 @@ struct automan_struct {
   status_t sequence_status;
   order_t last_order;
   sequence_item_t last_sequence;
-  table_t* si_table;
+  table* si_table;
   index_t* si_index;
 
-  table_t* ii_table;
+  table* ii_table;
   index_t* ii_index;
 
-  table_t* oi_table;
+  table* oi_table;
   index_t* oi_index;
 
   status_t proxy_status;
   proxy_item_t last_proxy;
-  table_t* pi_table;
+  table* pi_table;
   index_t* pi_index;
 };
 
