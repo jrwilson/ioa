@@ -6,10 +6,10 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "ioq.h"
-#include "runq.h"
-#include "automata.h"
-#include "receipts.h"
+#include "ioq.hh"
+#include "runq.hh"
+#include "automata.hh"
+#include "receipts.hh"
 #include "table.hh"
 
 #include <stdio.h>

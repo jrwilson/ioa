@@ -11,15 +11,6 @@ class receipts {
     aid_t to;
     receipt_t receipt;
   };
-
-  class receipt_entry_to_equal {
-  private:
-    const aid_t m_to;
-  public:
-    receipt_entry_to_equal (const aid_t to) :
-      m_to (to) { }
-    bool operator() (const receipt& receipt_entry) { return m_to == receipt_entry.to; }
-  };
   
   receipts ();
   ~receipts ();
@@ -57,6 +48,15 @@ class receipts {
   void purge_aid (aid_t);
 
  private:
+
+  class receipt_entry_to_equal {
+  private:
+    const aid_t m_to;
+  public:
+    receipt_entry_to_equal (const aid_t to) :
+      m_to (to) { }
+    bool operator() (const receipt& receipt_entry) { return m_to == receipt_entry.to; }
+  };
   
   pthread_rwlock_t m_lock;
   typedef std::list<receipt> receipt_list;

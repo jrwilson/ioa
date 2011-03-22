@@ -3,7 +3,7 @@
 
 #include <ueioa.h>
 
-#include "runq.h"
+#include "runq.hh"
 #include "ioq.hh"
 #include "receipts.hh"
 #include "buffers.hh"
@@ -13,10 +13,10 @@ class automata {
   automata ();
   ~automata ();
 
-  void create_automaton (receipts&, Runq&, const descriptor_t*, const void*);
+  void create_automaton (receipts&, runq&, const descriptor_t*, const void*);
   
-  void system_input_exec (receipts&, Runq&, buffers&, aid_t);
-  void system_output_exec (receipts&, Runq&, ioq&, buffers&, aid_t);
+  void system_input_exec (receipts&, runq&, buffers&, aid_t);
+  void system_output_exec (receipts&, runq&, ioq&, buffers&, aid_t);
   void alarm_input_exec (buffers&, aid_t);
   void read_input_exec (buffers&, aid_t);
   void write_input_exec (buffers&, aid_t);
@@ -220,13 +220,13 @@ class automata {
 
   void set_current_aid (aid_t aid);
 
-  void create (receipts& receipts, Runq& runq, const aid_t parent, const descriptor_t* descriptor, const void* arg);
-  void declare (receipts& receipts, Runq& runq, const aid_t aid, void* param);
-  void compose (receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param);
-  void decompose (receipts& receipts, Runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param);
-  void rescind (receipts& receipts, Runq& runq, aid_t aid, void* param);
-  void destroy_r (receipts& receipts, Runq& runq, buffers& buffers, aid_t aid);
-  void destroy (receipts& receipts, Runq& runq, buffers& buffers, aid_t aid, aid_t target);
+  void create (receipts& receipts, runq& runq, const aid_t parent, const descriptor_t* descriptor, const void* arg);
+  void declare (receipts& receipts, runq& runq, const aid_t aid, void* param);
+  void compose (receipts& receipts, runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param);
+  void decompose (receipts& receipts, runq& runq, aid_t aid, aid_t out_aid, output_t output, void* out_param, aid_t in_aid, input_t input, void* in_param);
+  void rescind (receipts& receipts, runq& runq, aid_t aid, void* param);
+  void destroy_r (receipts& receipts, runq& runq, buffers& buffers, aid_t aid);
+  void destroy (receipts& receipts, runq& runq, buffers& buffers, aid_t aid, aid_t target);
 
   class output_lock {
   private:
