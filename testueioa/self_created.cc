@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <ueioa.h>
+#include <ueioa.hh>
 
 static void
 self_created_system_input (void* state, void* param, bid_t bid)

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <ueioa.h>
+#include <ueioa.hh>
 
 typedef struct {
   int pipes[2];

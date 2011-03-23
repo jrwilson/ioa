@@ -88,10 +88,10 @@
   Handlers associated with create/destroy and compose/decompose may be called with out regards to a sequence operation if an externally controlled automaton is destroyed.
 */
 
-#include "decls.h"
+#include "automan.hh"
 
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <algorithm>
 
 /******************************************************************************************
  * PRIVATE FUNCTIONS
@@ -101,70 +101,49 @@
  * PUBLIC FUNCTIONS
  ******************************************************************************************/
 
-automan_t*
-automan_creat (void* state, aid_t* self_ptr)
+automan::automan (void* state, aid_t* self_ptr) :
+  m_state (state),
+  m_self_ptr (self_ptr),
+  m_sequence_status (NORMAL),
+  m_proxy_status (NORMAL)
 {
   assert (state != NULL);
   assert (self_ptr != NULL);
 
-  automan_t* automan = (automan_t*)malloc (sizeof (automan_t));
-
-  automan->state = state;
-  automan->self_ptr = self_ptr;
   *self_ptr = -1;
-
-  automan->sequence_status = NORMAL;
-  automan->si_table = new table (sizeof (sequence_item_t));
-  automan->si_index = index_create_list (automan->si_table);
-
-  automan->ii_table = new table (sizeof (input_item_t));
-  automan->ii_index = index_create_list (automan->ii_table);
-
-  automan->oi_table = new table (sizeof (output_item_t));
-  automan->oi_index = index_create_list (automan->oi_table);
-
-  automan->proxy_status = NORMAL;
-  automan->pi_table = new table (sizeof (proxy_item_t));
-  automan->pi_index = index_create_list (automan->pi_table);
-
-  return automan;
 }
 
 void
-automan_apply (automan_t* automan,
-	       const receipt_t* receipt)
+automan::apply (const receipt_t& receipt)
 {
-  assert (automan != NULL);
-  assert (receipt != NULL);
-
   bool something_changed = false;
 
-  switch (receipt->type) {
+  switch (receipt.type) {
   case BAD_ORDER:
     /* We should never give a bad order. */
     assert (0);
     break;
   case SELF_CREATED:
     {
-      *automan->self_ptr = receipt->self_created.self;
+      *m_self_ptr = receipt.self_created.self;
       something_changed = true;
 
       /* Fire the proxies. */
-      pi_process (automan);
+      pi_process ();
     }
     break;
   case CHILD_CREATED:
     {
-      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == CREATE);
-      assert (automan->last_sequence.order_type == CREATE);
+      assert (m_sequence_status == OUTSTANDING && m_last_order.type == CREATE);
+      assert (m_last_sequence.order_type == CREATE);
 
-      *automan->last_sequence.aid_ptr = receipt->child_created.child;
-      if (automan->last_sequence.handler != NULL) {
-	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
+      *m_last_sequence.aid_ptr = receipt.child_created.child;
+      if (m_last_sequence.handler != NULL) {
+	m_last_sequence.handler (m_state, m_last_sequence.hparam, receipt.type);
       }
 
       something_changed = true;
-      automan->sequence_status = NORMAL;
+      m_sequence_status = NORMAL;
     }
     break;
   case BAD_DESCRIPTOR:
@@ -174,13 +153,13 @@ automan_apply (automan_t* automan,
     break;
   case DECLARED:
     {
-      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == DECLARE);
-      *automan->last_sequence.flag_ptr = true;
-      if (automan->last_sequence.handler != NULL) {
-	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
+      assert (m_sequence_status == OUTSTANDING && m_last_order.type == DECLARE);
+      *m_last_sequence.flag_ptr = true;
+      if (m_last_sequence.handler != NULL) {
+	m_last_sequence.handler (m_state, m_last_sequence.hparam, receipt.type);
       }
       something_changed = true;
-      automan->sequence_status = NORMAL;
+      m_sequence_status = NORMAL;
     }
     break;
   case OUTPUT_DNE:
@@ -188,38 +167,38 @@ automan_apply (automan_t* automan,
   case OUTPUT_UNAVAILABLE:
   case INPUT_UNAVAILABLE:
     {
-      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == COMPOSE);
+      assert (m_sequence_status == OUTSTANDING && m_last_order.type == COMPOSE);
 
-      si_balance_compose (automan, automan->last_sequence.flag_ptr);
-      si_decompose_flag_ptr (automan, automan->last_sequence.flag_ptr, receipt->type);
+      si_balance_compose (m_last_sequence.flag_ptr);
+      si_decompose_flag_ptr (m_last_sequence.flag_ptr, receipt.type);
 
       something_changed = true;
-      automan->sequence_status = NORMAL;
+      m_sequence_status = NORMAL;
     }
     break;
   case COMPOSED:
     {
-      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == COMPOSE);
-      *automan->last_sequence.flag_ptr = true;
-      if (automan->last_sequence.handler != NULL) {
-	automan->last_sequence.handler (automan->state, automan->last_sequence.hparam, receipt->type);
+      assert (m_sequence_status == OUTSTANDING && m_last_order.type == COMPOSE);
+      *m_last_sequence.flag_ptr = true;
+      if (m_last_sequence.handler != NULL) {
+	m_last_sequence.handler (m_state, m_last_sequence.hparam, receipt.type);
       }
       something_changed = true;
-      automan->sequence_status = NORMAL;
+      m_sequence_status = NORMAL;
     }
     break;
   case INPUT_COMPOSED:
     {
       /* Look up the input. */
-      input_item_t* input_item = ii_find_input (automan,
-						receipt->input_composed.input,
-						receipt->input_composed.in_param);
-      if (input_item != NULL) {
+      ii_list::iterator pos = std::find_if (m_ii_index.begin (),
+					    m_ii_index.end (),
+					    ii_input_equal (receipt.input_composed.input, receipt.input_composed.in_param));
+      if (pos != m_ii_index.end ()) {
 	/* We are tracking.  Set the flag to true. */
-	*input_item->flag_ptr = true;
+	*(pos->flag_ptr) = true;
 	/* Call the handler. */
-	if (input_item->handler != NULL) {
-	  input_item->handler (automan->state, input_item->hparam, receipt->type);
+	if (pos->handler != NULL) {
+	  pos->handler (m_state, pos->hparam, receipt.type);
 	}
       }
     }
@@ -227,15 +206,16 @@ automan_apply (automan_t* automan,
   case OUTPUT_COMPOSED:
     {
       /* Look up the output. */
-      output_item_t* output_item = oi_find_output (automan,
-						   receipt->output_composed.output,
-						   receipt->output_composed.out_param);
-      if (output_item != NULL) {
+      oi_list::iterator pos = std::find_if (m_oi_index.begin (),
+					    m_oi_index.end (),
+					    oi_output_equal (receipt.output_composed.output, receipt.output_composed.out_param));
+
+      if (pos != m_oi_index.end ()) {
 	/* We are tracking.  Set the flag to true. */
-	*output_item->flag_ptr = true;
+	*(pos->flag_ptr) = true;
 	/* Call the handler. */
-	if (output_item->handler != NULL) {
-	  output_item->handler (automan->state, output_item->hparam, receipt->type);
+	if (pos->handler != NULL) {
+	  pos->handler (m_state, pos->hparam, receipt.type);
 	}
       }
     }
@@ -268,33 +248,29 @@ automan_apply (automan_t* automan,
 	 If a child dies, ueioa might send DECOMPOSED events before the CHILD_DESTROYED.
 	 To maintain a good sequence, we will pretend as though the user ordered the decompose by inserting a decompose order if necessary.
       */
-      if (automan->sequence_status == OUTSTANDING &&
-	  automan->last_order.type == DECOMPOSE &&
-	  *automan->last_sequence.compose.in_aid_ptr == receipt->decomposed.in_aid &&
-	  automan->last_sequence.compose.input == receipt->decomposed.input &&
-	  automan->last_sequence.compose.in_param == receipt->decomposed.in_param) {
+      if (m_sequence_status == OUTSTANDING &&
+	  m_last_order.type == DECOMPOSE &&
+	  *m_last_sequence.compose.in_aid_ptr == receipt.decomposed.in_aid &&
+	  m_last_sequence.compose.input == receipt.decomposed.input &&
+	  m_last_sequence.compose.in_param == receipt.decomposed.in_param) {
 	/* Decomposed intentionally. */
-	si_decompose_flag_ptr (automan, automan->last_sequence.flag_ptr, receipt->type);
+	si_decompose_flag_ptr (m_last_sequence.flag_ptr, receipt.type);
 	something_changed = true;
-	automan->sequence_status = NORMAL;
+	m_sequence_status = NORMAL;
       }
       else {
 	/* Decomposed unintentionally. */
 
 	/* Find the compose. */
-	iterator_t compose_pos;
-	sequence_item_t* compose = (sequence_item_t*)index_find_value (automan->si_index,
-								       index_begin (automan->si_index),
-								       index_end (automan->si_index),
-								       si_decomposed_input_equal,
-								       receipt,
-								       &compose_pos);
-	assert (compose != NULL);
-	assert (compose->order_type == COMPOSE);
-	bool* flag_ptr = compose->flag_ptr;
+	si_list::iterator compose_pos = std::find_if (m_si_index.begin (),
+						      m_si_index.end (),
+						      si_decomposed_input_equal (receipt));
+	assert (compose_pos != m_si_index.end ());
+	assert (compose_pos->order_type == COMPOSE);
+	bool* flag_ptr = compose_pos->flag_ptr;
 
-	si_balance_compose (automan, flag_ptr);
-	si_decompose_flag_ptr (automan, flag_ptr, receipt->type);
+	si_balance_compose (flag_ptr);
+	si_decompose_flag_ptr (flag_ptr, receipt.type);
 
 	something_changed = true;
       }
@@ -303,15 +279,15 @@ automan_apply (automan_t* automan,
   case INPUT_DECOMPOSED:
     {
       /* Look up the input. */
-      input_item_t* input_item = ii_find_input (automan,
-						receipt->input_composed.input,
-						receipt->input_composed.in_param);
-      if (input_item != NULL) {
+      ii_list::iterator pos = std::find_if (m_ii_index.begin (),
+					    m_ii_index.end (),
+					    ii_input_equal (receipt.input_composed.input, receipt.input_composed.in_param));
+      if (pos != m_ii_index.end ()) {
 	/* We are tracking.  Set the flag to false. */
-	*input_item->flag_ptr = false;
+	*(pos->flag_ptr) = false;
 	/* Call the handler. */
-	if (input_item->handler != NULL) {
-	  input_item->handler (automan->state, input_item->hparam, receipt->type);
+	if (pos->handler != NULL) {
+	  pos->handler (m_state, pos->hparam, receipt.type);
 	}
       }
     }
@@ -319,26 +295,26 @@ automan_apply (automan_t* automan,
   case OUTPUT_DECOMPOSED:
     {
       /* Look up the output. */
-      output_item_t* output_item = oi_find_output (automan,
-						   receipt->output_composed.output,
-						   receipt->output_composed.out_param);
-      if (output_item != NULL) {
+      oi_list::iterator pos = std::find_if (m_oi_index.begin (),
+					    m_oi_index.end (),
+					    oi_output_equal (receipt.output_composed.output, receipt.output_composed.out_param));
+      if (pos != m_oi_index.end ()) {
 	/* We are tracking.  Set the flag to false. */
-	*output_item->flag_ptr = false;
+	*(pos->flag_ptr) = false;
 	/* Call the handler. */
-	if (output_item->handler != NULL) {
-	  output_item->handler (automan->state, output_item->hparam, receipt->type);
+	if (pos->handler != NULL) {
+	  pos->handler (m_state, pos->hparam, receipt.type);
 	}
       }
     }
     break;
   case RESCINDED:
     {
-      assert (automan->sequence_status == OUTSTANDING && automan->last_order.type == RESCIND);
+      assert (m_sequence_status == OUTSTANDING && m_last_order.type == RESCIND);
       /* Remove the declare. */
-      si_rescind_flag_ptr (automan, automan->last_sequence.flag_ptr, receipt->type);
+      si_rescind_flag_ptr (m_last_sequence.flag_ptr, receipt.type);
       something_changed = true;
-      automan->sequence_status = NORMAL;
+      m_sequence_status = NORMAL;
     }
     break;
   case AUTOMATON_DNE:
@@ -381,31 +357,27 @@ automan_apply (automan_t* automan,
 	 We'll make use of the fact that the destroy procedure will process composes and decomposes.
 	 */
 
-      if (automan->sequence_status == OUTSTANDING &&
-	  automan->last_order.type == DESTROY &&
-	  *automan->last_sequence.aid_ptr == receipt->child_destroyed.child) {
+      if (m_sequence_status == OUTSTANDING &&
+	  m_last_order.type == DESTROY &&
+	  *m_last_sequence.aid_ptr == receipt.child_destroyed.child) {
 	/* Child died intentionally. */
-	si_destroy_aid_ptr (automan, automan->last_sequence.aid_ptr);
+	si_destroy_aid_ptr (m_last_sequence.aid_ptr);
 	something_changed = true;
-	automan->sequence_status = NORMAL;
+	m_sequence_status = NORMAL;
       }
       else {
 	/* Child died unintentionally. */
 
 	/* Find the create. */
-	iterator_t create_pos;
-	sequence_item_t* create = (sequence_item_t*)index_find_value (automan->si_index,
-								      index_begin (automan->si_index),
-								      index_end (automan->si_index),
-								      si_child_destroyed_aid_equal,
-								      receipt,
-								      &create_pos);
-	assert (create != NULL);
-	assert (create->order_type == CREATE);
-	aid_t* aid_ptr = create->aid_ptr;
+	si_list::iterator create_pos = std::find_if (m_si_index.begin (),
+						     m_si_index.end (),
+						     si_child_destroyed_aid_equal (receipt));
+	assert (create_pos != m_si_index.end ());
+	assert (create_pos->order_type == CREATE);
+	aid_t* aid_ptr = create_pos->aid_ptr;
 
-	si_balance_create (automan, aid_ptr);
-	si_destroy_aid_ptr (automan, aid_ptr);
+	si_balance_create (aid_ptr);
+	si_destroy_aid_ptr (aid_ptr);
 
 	something_changed = true;
       }
@@ -413,7 +385,65 @@ automan_apply (automan_t* automan,
     break;
   }
 
-  if ((automan->sequence_status == NORMAL) && something_changed) {
+  if ((m_sequence_status == NORMAL) && something_changed) {
     assert (schedule_system_output () == 0);
   }
+}
+
+int
+automan::input_add (bool* flag_ptr,
+		    input_t input,
+		    void* in_param,
+		    automan_handler_t handler,
+		    void* hparam)
+{
+  assert (flag_ptr != NULL);
+  assert (input != NULL);
+  assert (hparam == NULL || handler != NULL);
+  
+  if (std::find_if (m_ii_index.begin (),
+		    m_ii_index.end (),
+		    ii_flag_ptr_equal (flag_ptr)) != m_ii_index.end () ||
+      std::find_if (m_ii_index.begin (),
+		    m_ii_index.end (),
+		    ii_input_equal (input, in_param)) != m_ii_index.end ()) {
+    /* Already tracking. */
+    return -1;
+  }
+  
+  /* Clear the flag. */
+  *flag_ptr = false;
+
+  m_ii_index.push_back (input_item_t (handler, hparam, flag_ptr, input, in_param));
+
+  return 0;
+}
+
+int
+automan::output_add (bool* flag_ptr,
+		    output_t output,
+		    void* out_param,
+		    automan_handler_t handler,
+		    void* hparam)
+{
+  assert (flag_ptr != NULL);
+  assert (output != NULL);
+  assert (hparam == NULL || handler != NULL);
+  
+  if (std::find_if (m_oi_index.begin (),
+		    m_oi_index.end (),
+		    oi_flag_ptr_equal (flag_ptr)) != m_oi_index.end () ||
+      std::find_if (m_oi_index.begin (),
+		    m_oi_index.end (),
+		    oi_output_equal (output, out_param)) != m_oi_index.end ()) {
+    /* Already tracking. */
+    return -1;
+  }
+  
+  /* Clear the flag. */
+  *flag_ptr = false;
+
+  m_oi_index.push_back (output_item_t (handler, hparam, flag_ptr, output, out_param));
+
+  return 0;
 }

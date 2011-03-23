@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include <list>
-#include <ueioa.h>
+#include <ueioa.hh>
 #include <cassert>
 
 class runq {

@@ -1,12 +1,12 @@
-#include "ueioa.h"
+#include "ueioa.hh"
 
-#include <assert.h>
+#include <cassert>
 #include <pthread.h>
 #include <sys/select.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "ioq.hh"
 #include "runq.hh"

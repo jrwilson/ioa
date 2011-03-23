@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <ueioa.h>
+#include <ueioa.hh>
 
 static bid_t
 schedule_output_output (void* state, void* param)

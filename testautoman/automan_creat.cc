@@ -1,18 +1,18 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <automan.h>
+#include <automan.hh>
 
 typedef struct {
   aid_t self;
-  automan_t* automan;
+  automan* m_automan;
 } automaton_t;
 
 static void*
 automaton_create (const void* arg)
 {
-  automaton_t* automaton = malloc (sizeof (automaton_t));
+  automaton_t* automaton = (automaton_t*)malloc (sizeof (automaton_t));
 
-  automaton->automan = automan_creat (automaton, &automaton->self);
+  automaton->m_automan = new automan (automaton, &automaton->self);
 
   return automaton;
 }
@@ -20,14 +20,14 @@ automaton_create (const void* arg)
 static void
 automaton_system_input (void* state, void* param, bid_t bid)
 {
-  automaton_t* automaton = state;
+  automaton_t* automaton = (automaton_t*)state;
   assert (automaton != NULL);
 
   assert (bid != -1);
   assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = buffer_read_ptr (bid);
+  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
 
-  automan_apply (automaton->automan, receipt);
+  automaton->m_automan->apply (*receipt);
 
   if (receipt->type == SELF_CREATED) {
     if (automaton->self == receipt->self_created.self) {
@@ -42,16 +42,23 @@ automaton_system_input (void* state, void* param, bid_t bid)
 static bid_t
 automaton_system_output (void* state, void* param)
 {
-  automaton_t* automaton = state;
+  automaton_t* automaton = (automaton_t*)state;
   assert (automaton != NULL);
 
-  return automan_action (automaton->automan);
+  return automaton->m_automan->action ();
 }
 
 static const descriptor_t automaton_descriptor = {
-  .constructor = automaton_create,
-  .system_input = automaton_system_input,
-  .system_output = automaton_system_output,
+  automaton_create,
+  automaton_system_input,
+  automaton_system_output,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
 
 int

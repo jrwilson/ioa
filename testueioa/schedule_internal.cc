@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <ueioa.h>
+#include <ueioa.hh>
 
 static void
 schedule_internal_internal (void* state, void* param)

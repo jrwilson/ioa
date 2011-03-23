@@ -1,7 +1,7 @@
 #ifndef __automata_hh__
 #define __automata_hh__
 
-#include <ueioa.h>
+#include <ueioa.hh>
 
 #include "runq.hh"
 #include "ioq.hh"

@@ -2,7 +2,7 @@
 #define __receipts_h__
 
 #include <pthread.h>
-#include <ueioa.h>
+#include <ueioa.hh>
 #include <list>
 
 class receipts {

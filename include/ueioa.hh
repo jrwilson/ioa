@@ -1,5 +1,5 @@
-#ifndef __ueioa_h__
-#define __ueioa_h__
+#ifndef __ueioa_hh__
+#define __ueioa_hh__
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -172,4 +172,4 @@ bool bidq_empty (bidq_t*);
 bid_t bidq_front (bidq_t*);
 void bidq_pop_front (bidq_t*);
 
-#endif /* __ueioa_h__ */
+#endif /* __ueioa_hh__ */

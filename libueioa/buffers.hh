@@ -2,7 +2,7 @@
 #define __buffers_hh__
 
 #include <pthread.h>
-#include <ueioa.h>
+#include <ueioa.hh>
 #include <set>
 #include <vector>
 #include <algorithm>

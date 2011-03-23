@@ -1,7 +1,7 @@
 #ifndef __ioq_hh__
 #define __ioq_hh__
 
-#include <ueioa.h>
+#include <ueioa.hh>
 #include <sys/time.h>
 #include <pthread.h>
 #include <list>

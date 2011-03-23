@@ -1,6 +1,6 @@
-#include <ueioa.h>
+#include <ueioa.hh>
 
-#include <assert.h>
+#include <cassert>
 
 void
 order_create_init (order_t* order, const descriptor_t* descriptor, const void* arg)
