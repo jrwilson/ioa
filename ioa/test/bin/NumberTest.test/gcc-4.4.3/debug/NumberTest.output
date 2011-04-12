@@ -1,6 +1,0 @@
-Running 2 test cases...
-NumberTest.cpp(15): error in "checkFailure": check Number(2).add(2) == Number(5) failed [4 != 5]
-
-*** 1 failure detected in test suite "Number"
-
-EXIT STATUS: 201

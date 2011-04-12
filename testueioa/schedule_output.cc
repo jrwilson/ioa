@@ -1,48 +1,34 @@
-#include <stdlib.h>
-#include <assert.h>
-#include <ueioa.hh>
+#include "art.hh"
 
-static bid_t
-schedule_output_output (void* state, void* param)
-{
-  exit (EXIT_SUCCESS);
-  return -1;
-}
+class automaton {
 
-static void
-schedule_output_system_input (void* state, void* param, bid_t bid)
-{
-  assert (bid != -1);
-  assert (buffer_size (bid) == sizeof (receipt_t));
-  const receipt_t* receipt = (const receipt_t*)buffer_read_ptr (bid);
+public:
+  typedef int param_type;
 
-  if (receipt->type == SELF_CREATED) {
-    assert (schedule_output (schedule_output_output, NULL) == 0);
-  }
-  else {
-    assert (0);
+  class generator {
+  public:
+    automaton* operator() () {
+      return new automaton ();
+    }
+  };
+
+  static generator* new_generator () {
+    return new generator();
   }
 
-}
+  automaton () {
+    art::schedule_output<automaton, output_type> (&automaton::output, 0);
+  }
 
-static output_t schedule_output_outputs[] = { schedule_output_output, NULL };
-
-descriptor_t schedule_output_descriptor = {
-  NULL,
-  schedule_output_system_input,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  schedule_output_outputs,
-  NULL,
+  struct output_type { };
+  buffer_ref<output_type> output (param_type) {
+    exit (EXIT_SUCCESS);
+  }
 };
 
 int
-main (int argc, char** argv)
+main (int argc, char* argv[])
 {
-  ueioa_run (&schedule_output_descriptor, NULL, 1);
-  exit (EXIT_SUCCESS);
+  art::run<automaton::generator, automaton> (automaton::new_generator ());
+  return 0;
 }

@@ -1,94 +1,151 @@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 
-LDADD = $(top_builddir)/libueioa/libueioa.la
+#LDADD = $(top_builddir)/libueioa/libueioa.la
 
 TESTS = \
-schedule_system_output \
-bad_order \
-self_created \
-child_created \
-bad_descriptor \
-declared \
-output_dne \
-input_dne \
-output_unavailable \
-input_unavailable \
-composed \
-input_composed \
-output_composed	\
-not_composed \
-decomposed \
-input_decomposed \
-output_decomposed \
-rescinded \
-automaton_dne \
-not_owner \
-child_destroyed \
-schedule_alarm_input \
-schedule_read_input \
-schedule_write_input \
-schedule_free_input \
-schedule_output \
-schedule_internal \
-same_compose \
-compose_param_input
+system_create_AutomatonCreated \
+system_declare_ParameterDeclared \
+system_declare_ParameterExists \
+system_compose_OutputIsInvalid \
+system_compose_InputIsInvalid \
+system_compose_AlreadyComposed \
+system_compose_InputUnavailable \
+system_compose_OutputUnavailable \
+system_compose_Composed \
+system_decompose_OutputIsInvalid \
+system_decompose_InputIsInvalid \
+system_decompose_Decomposed \
+system_decompose_NotOwner \
+system_decompose_NotComposed \
+system_rescind_ParameterRescinded \
+system_rescind_ParameterDoesNotExist \
+system_rescind_Decomposed
+
+# buffer \
+# dptr
+
+# schedule_output
+# schedule_internal \
+# schedule_create \
+# schedule_declare \
+# schedule_compose
+
+# schedule_system_output \
+# bad_order \
+# self_created \
+# child_created \
+# bad_descriptor \
+# declared \
+# output_dne \
+# input_dne \
+# output_unavailable \
+# input_unavailable \
+# composed \
+# input_composed \
+# output_composed	\
+# not_composed \
+# decomposed \
+# input_decomposed \
+# output_decomposed \
+# rescinded \
+# automaton_dne \
+# not_owner \
+# child_destroyed \
+# schedule_alarm_input \
+# schedule_read_input \
+# schedule_write_input \
+# schedule_free_input \
+# same_compose \
+# compose_param_input
 
 check_PROGRAMS = $(TESTS)
 
-schedule_system_output_SOURCES = schedule_system_output.cc
+system_create_AutomatonCreated_SOURCES = system_create_AutomatonCreated.cc
+system_declare_ParameterDeclared_SOURCES = system_declare_ParameterDeclared.cc
+system_declare_ParameterExists_SOURCES = system_declare_ParameterExists.cc
+system_compose_OutputIsInvalid_SOURCES = system_compose_OutputIsInvalid.cc
+system_compose_InputIsInvalid_SOURCES = system_compose_InputIsInvalid.cc
+system_compose_AlreadyComposed_SOURCES = system_compose_AlreadyComposed.cc
+system_compose_InputUnavailable_SOURCES = system_compose_InputUnavailable.cc
+system_compose_OutputUnavailable_SOURCES = system_compose_OutputUnavailable.cc
+system_compose_Composed_SOURCES = system_compose_Composed.cc
+system_decompose_OutputIsInvalid_SOURCES = system_decompose_OutputIsInvalid.cc
+system_decompose_InputIsInvalid_SOURCES = system_decompose_InputIsInvalid.cc
+system_decompose_Decomposed_SOURCES = system_decompose_Decomposed.cc
+system_decompose_NotOwner_SOURCES = system_decompose_NotOwner.cc
+system_decompose_NotComposed_SOURCES = system_decompose_NotComposed.cc
+system_rescind_ParameterRescinded_SOURCES = system_rescind_ParameterRescinded.cc
+system_rescind_ParameterDoesNotExist_SOURCES = system_rescind_ParameterDoesNotExist.cc
+system_rescind_Decomposed_SOURCES = system_rescind_Decomposed.cc
 
-bad_order_SOURCES = bad_order.cc
+# buffer_SOURCES = buffer.cc
 
-self_created_SOURCES = self_created.cc
+# dptr_SOURCES = dptr.cc
 
-child_created_SOURCES = child_created.cc
+# automaton_SOURCES = automaton.cc
 
-bad_descriptor_SOURCES = bad_descriptor.cc
+# schedule_output_SOURCES = schedule_output.cc art.cc
 
-declared_SOURCES = declared.cc
+# schedule_internal_SOURCES = schedule_internal.cc art.cc
 
-output_dne_SOURCES = output_dne.cc
+# schedule_create_SOURCES = schedule_create.cc art.cc
 
-input_dne_SOURCES = input_dne.cc
+# schedule_declare_SOURCES = schedule_declare.cc art.cc
 
-output_unavailable_SOURCES = output_unavailable.cc
+# schedule_compose_SOURCES = schedule_compose.cc art.cc
 
-input_unavailable_SOURCES = input_unavailable.cc
 
-composed_SOURCES = composed.cc
 
-input_composed_SOURCES = input_composed.cc
+# schedule_system_output_SOURCES = schedule_system_output.cc art.cc
 
-output_composed_SOURCES = output_composed.cc
+# bad_order_SOURCES = bad_order.cc
 
-not_composed_SOURCES = not_composed.cc
+# self_created_SOURCES = self_created.cc
 
-decomposed_SOURCES = decomposed.cc
+# child_created_SOURCES = child_created.cc
 
-input_decomposed_SOURCES = input_decomposed.cc
+# bad_descriptor_SOURCES = bad_descriptor.cc
 
-output_decomposed_SOURCES = output_decomposed.cc
+# declared_SOURCES = declared.cc
 
-rescinded_SOURCES = rescinded.cc
+# output_dne_SOURCES = output_dne.cc
 
-automaton_dne_SOURCES = automaton_dne.cc
+# input_dne_SOURCES = input_dne.cc
 
-not_owner_SOURCES = not_owner.cc
+# output_unavailable_SOURCES = output_unavailable.cc
 
-child_destroyed_SOURCES = child_destroyed.cc
+# input_unavailable_SOURCES = input_unavailable.cc
 
-schedule_alarm_input_SOURCES = schedule_alarm_input.cc
+# composed_SOURCES = composed.cc
 
-schedule_read_input_SOURCES = schedule_read_input.cc
+# input_composed_SOURCES = input_composed.cc
 
-schedule_write_input_SOURCES = schedule_write_input.cc
+# output_composed_SOURCES = output_composed.cc
 
-schedule_free_input_SOURCES = schedule_free_input.cc
+# not_composed_SOURCES = not_composed.cc
 
-schedule_output_SOURCES = schedule_output.cc
+# decomposed_SOURCES = decomposed.cc
 
-schedule_internal_SOURCES = schedule_internal.cc
+# input_decomposed_SOURCES = input_decomposed.cc
 
-same_compose_SOURCES = same_compose.cc
+# output_decomposed_SOURCES = output_decomposed.cc
 
-compose_param_input_SOURCES = compose_param_input.cc
+# rescinded_SOURCES = rescinded.cc
+
+# automaton_dne_SOURCES = automaton_dne.cc
+
+# not_owner_SOURCES = not_owner.cc
+
+# child_destroyed_SOURCES = child_destroyed.cc
+
+# schedule_alarm_input_SOURCES = schedule_alarm_input.cc
+
+# schedule_read_input_SOURCES = schedule_read_input.cc
+
+# schedule_write_input_SOURCES = schedule_write_input.cc
+
+# schedule_free_input_SOURCES = schedule_free_input.cc
+
+# same_compose_SOURCES = same_compose.cc
+
+# compose_param_input_SOURCES = compose_param_input.cc

@@ -1,9 +1,0 @@
-using testing ;
-lib boost_unit_test_framework ;
-lib boost_thread ;
-
-run automaton.cpp boost_unit_test_framework boost_thread ;
-run automaton_handle.cpp boost_unit_test_framework boost_thread ;
-run action.cpp boost_unit_test_framework boost_thread ;
-run composition_manager.cpp boost_unit_test_framework boost_thread ;
-#run system.cpp boost_unit_test_framework boost_thread ;

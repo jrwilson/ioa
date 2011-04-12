@@ -114,7 +114,8 @@ buffers::allocate (aid_t owner, size_t size, size_t alignment)
       data = malloc (size);
     }
     else {
-      assert (posix_memalign (&data, alignment, size) == 0);
+      assert (0);
+      // assert (posix_memalign (&data, alignment, size) == 0);
     }
   }
 
