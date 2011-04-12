@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(DefaultCtor)
 
 BOOST_AUTO_TEST_CASE(Ctor)
 {
-  ioa::automaton<int>* automaton = new ioa::automaton<int>(new int());
+  ioa::typed_automaton<int>* automaton = new ioa::typed_automaton<int>(new int());
   ioa::automaton_handle<int> handle(automaton);
   BOOST_CHECK (handle.valid());
   delete automaton;
@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(Ctor)
 
 BOOST_AUTO_TEST_CASE(Copy)
 {
-  ioa::automaton<int>* automaton = new ioa::automaton<int>(new int());
+  ioa::typed_automaton<int>* automaton = new ioa::typed_automaton<int>(new int());
   ioa::automaton_handle<int> handle(automaton);
   ioa::automaton_handle<int> handle2(handle);
   BOOST_CHECK (handle2.valid());
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(Copy)
 
 BOOST_AUTO_TEST_CASE(Assignment)
 {
-  ioa::automaton<int>* automaton = new ioa::automaton<int>(new int());
+  ioa::typed_automaton<int>* automaton = new ioa::typed_automaton<int>(new int());
   ioa::automaton_handle<int> handle(automaton);
   ioa::automaton_handle<int> handle2;
   handle2 = handle;
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(Assignment)
 
 BOOST_AUTO_TEST_CASE(Dtor)
 {
-  ioa::automaton<int>* automaton = new ioa::automaton<int>(new int());
+  ioa::typed_automaton<int>* automaton = new ioa::typed_automaton<int>(new int());
   ioa::automaton_handle<int>* handle = new ioa::automaton_handle<int>(automaton);
   BOOST_CHECK (automaton->is_handle (handle));
   delete handle;

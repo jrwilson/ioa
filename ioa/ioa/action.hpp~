@@ -6,10 +6,25 @@
 
 namespace ioa {
 
-  // I need something along the lines of "action traits."
-  struct type_status { };
-  struct untyped : public type_status { };
-  struct typed : public type_status { };
+  struct input { };
+  struct output { };
+  struct internal { };
+  struct free_input { };
+
+  struct untyped { };
+  struct typed { };
+
+  struct unparameterized { };
+  struct parameterized { };
+
+  template <class Direction, class TypeStatus, class Type, class ParameterStatus, class Parameter>
+  struct action_trait {
+    typedef Direction direction;
+    typedef TypeStatus type_status;
+    typedef Type type;
+    typedef ParameterStatus parameter_status;
+    typedef Parameter parameter;
+  };
 
   // Interfaces.
   class action_interface {
@@ -180,6 +195,8 @@ namespace ioa {
   private:
     local_action<Instance, Member> m_action;
   public:
+    typedef untyped type_status;
+
     unparameterized_untyped_output_action (automaton<Instance>* automaton,
 					   Member Instance::*member) :
       m_action (automaton, member)
@@ -215,6 +232,8 @@ namespace ioa {
     parameter<Parameter> m_parameter;
     
   public:
+    typedef untyped type_status;
+
     parameterized_untyped_output_action (automaton<Instance>* automaton,
 					 Member Instance::*member,
 					 Parameter* parameter) :
@@ -252,6 +271,9 @@ namespace ioa {
     local_action<Instance, Member> m_action;
 
   public:
+    typedef typed type_status;
+    typedef typename Member::type type;
+
     unparameterized_typed_output_action (automaton<Instance>* automaton,
 					 Member Instance::*member) :
       m_action (automaton, member)
@@ -269,7 +291,7 @@ namespace ioa {
       out << "up_t_output";
     }
 
-    std::pair<bool, typename Member::type> operator() () {
+    std::pair<bool, type> operator() () {
       return (m_action.get_member ()) ();
     }
 
@@ -288,6 +310,9 @@ namespace ioa {
     parameter<Parameter> m_parameter;
 
   public:
+    typedef typed type_status;
+    typedef typename Member::type type;
+
     parameterized_typed_output_action (automaton<Instance>* automaton,
 				       Member Instance::*member,
 				       Parameter* parameter) :
@@ -307,7 +332,7 @@ namespace ioa {
       out << "p_t_output";
     }
 
-    std::pair<bool, typename Member::type> operator() () {
+    std::pair<bool, type> operator() () {
       return (m_action.get_member ()) (m_parameter.get_parameter ());
     }
 

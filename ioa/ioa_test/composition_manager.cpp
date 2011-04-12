@@ -14,11 +14,11 @@ BOOST_AUTO_TEST_CASE(untyped_compose)
 {
   automaton* z = new automaton ();
   ioa::composition_manager cm;
-  ioa::automaton<automaton> parent (new automaton());
-  ioa::automaton<automaton> child1 (new automaton());
+  ioa::typed_automaton<automaton> parent (new automaton());
+  ioa::typed_automaton<automaton> child1 (new automaton());
   ioa::unparameterized_untyped_output_action<automaton, automaton::up_ut_output_action> output_action (&child1, &automaton::up_ut_output);
 
-  ioa::automaton<automaton> child2 (z);
+  ioa::typed_automaton<automaton> child2 (z);
   callback cb;
   ioa::unparameterized_untyped_input_action<automaton, automaton::up_ut_input_action, callback> input_action (&child2, &automaton::up_ut_input, &parent, cb);
 
@@ -46,11 +46,11 @@ BOOST_AUTO_TEST_CASE(typed_compose)
 {
   automaton* z = new automaton ();
   ioa::composition_manager cm;
-  ioa::automaton<automaton> parent (new automaton());
-  ioa::automaton<automaton> child1 (new automaton());
+  ioa::typed_automaton<automaton> parent (new automaton());
+  ioa::typed_automaton<automaton> child1 (new automaton());
   ioa::unparameterized_typed_output_action<automaton, automaton::up_t_output_action> output_action (&child1, &automaton::up_t_output);
 
-  ioa::automaton<automaton> child2 (z);
+  ioa::typed_automaton<automaton> child2 (z);
   callback cb;
   ioa::unparameterized_typed_input_action<automaton, automaton::up_t_input_action, callback> input_action (&child2, &automaton::up_t_input, &parent, cb);
 
@@ -72,6 +72,38 @@ BOOST_AUTO_TEST_CASE(typed_compose)
 
   ioa::unparameterized_typed_output_action<automaton, automaton::up_t_output_action> output_action2 (&child2, &automaton::up_t_output);
   cm.execute (output_action2, scheduler);
+}
+
+BOOST_AUTO_TEST_CASE(untyped_decompose)
+{
+  automaton* z = new automaton ();
+  ioa::composition_manager cm;
+  ioa::typed_automaton<automaton> parent (new automaton());
+  ioa::typed_automaton<automaton> child1 (new automaton());
+  ioa::unparameterized_untyped_output_action<automaton, automaton::up_ut_output_action> output_action (&child1, &automaton::up_ut_output);
+
+  ioa::typed_automaton<automaton> child2 (z);
+  callback cb;
+  ioa::unparameterized_untyped_input_action<automaton, automaton::up_ut_input_action, callback> input_action (&child2, &automaton::up_ut_input, &parent, cb);
+
+  null_scheduler scheduler;
+
+  BOOST_CHECK (!(cm.composed (output_action, input_action)));
+  BOOST_CHECK (cm.input_available (input_action));
+  BOOST_CHECK (cm.output_available (output_action, &child2));
+  BOOST_CHECK (!cm.output_available (output_action, &child1));
+  
+  cm.compose (output_action, input_action, scheduler);
+
+  BOOST_CHECK ((cm.composed (output_action, input_action)));
+  BOOST_CHECK (!cm.input_available (input_action));
+  BOOST_CHECK (!cm.output_available (output_action, &child2));
+
+  cm.decompose (output_action, input_action);
+
+  BOOST_CHECK (!(cm.composed (output_action, input_action)));
+  BOOST_CHECK (cm.input_available (input_action));
+  BOOST_CHECK (cm.output_available (output_action, &child2));
 }
 
 // BOOST_AUTO_TEST_CASE(Decompose)

@@ -6,10 +6,20 @@
 
 namespace ioa {
 
-  struct input { };
-  struct output { };
-  struct internal { };
-  struct free_input { };
+  class scheduler_interface {
+  public:
+    virtual ~scheduler_interface () { }
+    virtual void set_current_automaton (automaton*) = 0;
+  };
+
+  scheduler_interface& get_scheduler ();
+
+  // I need something like "action traits."
+
+  // struct input { };
+  // struct output { };
+  // struct internal { };
+  // struct free_input { };
 
   struct untyped { };
   struct typed { };
@@ -17,23 +27,25 @@ namespace ioa {
   struct unparameterized { };
   struct parameterized { };
 
-  template <class Direction, class TypeStatus, class Type, class ParameterStatus, class Parameter>
-  struct action_trait {
-    typedef Direction direction;
-    typedef TypeStatus type_status;
-    typedef Type type;
-    typedef ParameterStatus parameter_status;
-    typedef Parameter parameter;
-  };
+  // template <class Direction, class ValueStatus, class ValueType, class ParameterStatus, class ParameterType>
+  // struct action_trait {
+  //   typedef Direction direction;
+  //   typedef ValueStatus value_status;
+  //   typedef ValueType value_type;
+  //   typedef ParameterStatus parameter_status;
+  //   typedef ParameterType parameter_type;
+  // };
 
   // Interfaces.
   class action_interface {
   public:
     virtual ~action_interface () { }
 
-    virtual abstract_automaton* get_automaton () const = 0;
+    virtual automaton* get_automaton () const = 0;
     
     virtual const void* get_member_ptr () const = 0;
+
+    virtual bool involves_parameter (const void*) const = 0;
 
     virtual void print_on (std::ostream&) const = 0;
 
@@ -61,7 +73,7 @@ namespace ioa {
 
     virtual void decompose () = 0;
 
-    virtual const abstract_automaton* get_owner () const = 0;
+    virtual const automaton* get_owner () const = 0;
   };
 
   class untyped_output_action_interface :
@@ -111,17 +123,17 @@ namespace ioa {
   class action {
 
   private:
-    automaton<Instance>* m_automaton;
+    typed_automaton<Instance>* m_automaton;
     Member& m_member;
 
   public:
-    action (automaton<Instance>* automaton,
+    action (typed_automaton<Instance>* automaton,
 	    Member Instance::*member) :
       m_automaton (automaton),
       m_member ((m_automaton->get_typed_instance ())->*member)
     { }
     
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_automaton;
     }
 
@@ -137,7 +149,7 @@ namespace ioa {
     public action<Instance, Member> {
 
   public:
-    local_action (automaton<Instance>* automaton,
+    local_action (typed_automaton<Instance>* automaton,
 		  Member Instance::*member) :
       action<Instance, Member> (automaton, member)
     { }
@@ -149,20 +161,20 @@ namespace ioa {
     public action<Instance, Member> {
 
   private:
-    const abstract_automaton* m_owner;
+    const automaton* m_owner;
     Callback m_callback;
 
   public:
-    input_action (automaton<Instance>* automaton,
+    input_action (typed_automaton<Instance>* automaton,
   		  Member Instance::*member,
-  		  const abstract_automaton* owner,
+  		  const automaton* owner,
   		  Callback& callback) :
       action<Instance, Member> (automaton, member),
       m_owner (owner),
       m_callback (callback)
     { }
 
-    const abstract_automaton* get_owner () const {
+    const automaton* get_owner () const {
       return m_owner;
     }
 
@@ -192,22 +204,30 @@ namespace ioa {
   template <class Instance, class Member>
   class unparameterized_untyped_output_action :
     public untyped_output_action_interface {
+
+  public:
+    typedef untyped value_status;
+    typedef unparameterized parameter_status;
+
   private:
     local_action<Instance, Member> m_action;
-  public:
-    typedef untyped type_status;
 
-    unparameterized_untyped_output_action (automaton<Instance>* automaton,
+  public:
+    unparameterized_untyped_output_action (typed_automaton<Instance>* automaton,
 					   Member Instance::*member) :
       m_action (automaton, member)
     { }
     
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void*) const {
+      return false;
     }
 
     void print_on (std::ostream& out) const {
@@ -223,25 +243,29 @@ namespace ioa {
     }
   };
 
-  template <class Instance, class Member, class Parameter>
+  template <class Instance, class Member>
   class parameterized_untyped_output_action :
     public untyped_output_action_interface {
 
+  public:
+    typedef untyped value_status;
+    typedef parameterized parameter_status;
+    typedef typename Member::parameter_type parameter_type;
+
+
   private:
     local_action<Instance, Member> m_action;
-    parameter<Parameter> m_parameter;
+    parameter<parameter_type> m_parameter;
     
   public:
-    typedef untyped type_status;
-
-    parameterized_untyped_output_action (automaton<Instance>* automaton,
+    parameterized_untyped_output_action (typed_automaton<Instance>* automaton,
 					 Member Instance::*member,
-					 Parameter* parameter) :
+					 parameter_type* parameter) :
       m_action (automaton, member),
       m_parameter (parameter)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
@@ -251,6 +275,10 @@ namespace ioa {
 
     void print_on (std::ostream& out) const {
       out << "p_ut_output";
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return m_parameter.get_parameter () == parameter;
     }
 
     bool operator() () {
@@ -265,21 +293,22 @@ namespace ioa {
 
   template <class Instance, class Member>
   class unparameterized_typed_output_action :
-    public typed_output_action_interface<typename Member::type> {
+    public typed_output_action_interface<typename Member::value_type> {
 
   private:
     local_action<Instance, Member> m_action;
 
   public:
-    typedef typed type_status;
-    typedef typename Member::type type;
+    typedef typed value_status;
+    typedef typename Member::value_type value_type;
+    typedef unparameterized parameter_status;
 
-    unparameterized_typed_output_action (automaton<Instance>* automaton,
+    unparameterized_typed_output_action (typed_automaton<Instance>* automaton,
 					 Member Instance::*member) :
       m_action (automaton, member)
     { }
     
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
@@ -287,11 +316,15 @@ namespace ioa {
       return &m_action.get_member ();
     }
 
+    bool involves_parameter (const void* parameter) const {
+      return false;
+    }
+
     void print_on (std::ostream& out) const {
       out << "up_t_output";
     }
 
-    std::pair<bool, type> operator() () {
+    std::pair<bool, value_type> operator() () {
       return (m_action.get_member ()) ();
     }
 
@@ -301,26 +334,29 @@ namespace ioa {
 
   };
 
-  template <class Instance, class Member, class Parameter>
+  template <class Instance, class Member>
   class parameterized_typed_output_action :
-    public typed_output_action_interface<typename Member::type> {
+    public typed_output_action_interface<typename Member::value_type> {
+
+  public:
+    typedef typed value_status;
+    typedef typename Member::value_type value_type;
+    typedef parameterized parameter_status;
+    typedef typename Member::parameter_type parameter_type;
 
   private:
     local_action<Instance, Member> m_action;
-    parameter<Parameter> m_parameter;
+    parameter<parameter_type> m_parameter;
 
   public:
-    typedef typed type_status;
-    typedef typename Member::type type;
-
-    parameterized_typed_output_action (automaton<Instance>* automaton,
+    parameterized_typed_output_action (typed_automaton<Instance>* automaton,
 				       Member Instance::*member,
-				       Parameter* parameter) :
+				       parameter_type* parameter) :
       m_action (automaton, member),
       m_parameter (parameter)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
@@ -328,11 +364,15 @@ namespace ioa {
       return &m_action.get_member ();
     }
 
+    bool involves_parameter (const void* parameter) const {
+      return m_parameter.get_parameter () == parameter;
+    }
+
     void print_on (std::ostream& out) const {
       out << "p_t_output";
     }
 
-    std::pair<bool, type> operator() () {
+    std::pair<bool, value_type> operator() () {
       return (m_action.get_member ()) (m_parameter.get_parameter ());
     }
 
@@ -351,19 +391,26 @@ namespace ioa {
     input_action<Instance, Member, Callback> m_action;
 
   public:
-    unparameterized_untyped_input_action (automaton<Instance>* automaton,
+    typedef untyped value_status;
+    typedef unparameterized parameter_status;
+
+    unparameterized_untyped_input_action (typed_automaton<Instance>* automaton,
 					  Member Instance::*member,
-					  const abstract_automaton* owner,
+					  const automaton* owner,
 					  Callback& callback) :
       m_action (automaton, member, owner, callback)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return false;
     }
 
     void print_on (std::ostream& out) const {
@@ -374,7 +421,7 @@ namespace ioa {
       m_action.decompose ();
     }
 
-    const abstract_automaton* get_owner () const {
+    const automaton* get_owner () const {
       return m_action.get_owner ();
     }
 
@@ -384,30 +431,40 @@ namespace ioa {
 
   };
 
-  template <class Instance, class Member, class Callback, class Parameter>
+  template <class Instance, class Member, class Callback>
   class parameterized_untyped_input_action : 
     public untyped_input_action_interface {
 
+  public:
+    typedef untyped value_status;
+    typedef parameterized parameter_status;
+    typedef typename Member::parameter_type parameter_type;
+
+
   private:
     input_action<Instance, Member, Callback> m_action;
-    parameter<Parameter> m_parameter;
+    parameter<parameter_type> m_parameter;
 
   public:
-    parameterized_untyped_input_action (automaton<Instance>* automaton,
+    parameterized_untyped_input_action (typed_automaton<Instance>* automaton,
 					Member Instance::*member,
-					const abstract_automaton* owner,
+					const automaton* owner,
 					Callback& callback,
-					Parameter* parameter) :
+					parameter_type* parameter) :
       m_action (automaton, member, owner, callback),
       m_parameter (parameter)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return m_parameter.get_parameter () == parameter;
     }
 
     void print_on (std::ostream& out) const {
@@ -418,7 +475,7 @@ namespace ioa {
       m_action.decompose ();
     }
 
-    const abstract_automaton* get_owner () const {
+    const automaton* get_owner () const {
       return m_action.get_owner ();
     }
 
@@ -430,25 +487,33 @@ namespace ioa {
 
   template <class Instance, class Member, class Callback>
   class unparameterized_typed_input_action : 
-    public typed_input_action_interface<typename Member::type> {
+    public typed_input_action_interface<typename Member::value_type> {
 
   private:
     input_action<Instance, Member, Callback> m_action;
 
   public:
-    unparameterized_typed_input_action (automaton<Instance>* automaton,
+    typedef typed value_status;
+    typedef typename Member::value_type value_type;
+    typedef unparameterized parameter_status;
+
+    unparameterized_typed_input_action (typed_automaton<Instance>* automaton,
 					Member Instance::*member,
-					const abstract_automaton* owner,
+					const automaton* owner,
 					Callback& callback) :
       m_action (automaton, member, owner, callback)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return false;
     }
 
     void print_on (std::ostream& out) const {
@@ -459,40 +524,50 @@ namespace ioa {
       m_action.decompose ();
     }
 
-    const abstract_automaton* get_owner () const {
+    const automaton* get_owner () const {
       return m_action.get_owner ();
     }
 
-    void operator() (const typename Member::type t) {
+    void operator() (const typename Member::value_type t) {
       (m_action.get_member ()) (t);
     }
 
   };
 
-  template <class Instance, class Member, class Callback, class Parameter>
+  template <class Instance, class Member, class Callback>
   class parameterized_typed_input_action : 
-    public typed_input_action_interface<typename Member::type> {
+    public typed_input_action_interface<typename Member::value_type> {
+
+  public:
+    typedef typed value_status;
+    typedef typename Member::value_type value_type;
+    typedef parameterized parameter_status;
+    typedef typename Member::parameter_type parameter_type;
 
   private:
     input_action<Instance, Member, Callback> m_action;
-    parameter<Parameter> m_parameter;
+    parameter<parameter_type> m_parameter;
 
   public:
-    parameterized_typed_input_action (automaton<Instance>* automaton,
+    parameterized_typed_input_action (typed_automaton<Instance>* automaton,
 				      Member Instance::*member,
-				      const abstract_automaton* owner,
+				      const automaton* owner,
 				      Callback& callback,
-				      Parameter* parameter) :
+				      parameter_type* parameter) :
       m_action (automaton, member, owner, callback),
       m_parameter (parameter)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return m_parameter.get_parameter () == parameter;
     }
 
     void print_on (std::ostream& out) const {
@@ -503,11 +578,11 @@ namespace ioa {
       m_action.decompose ();
     }
 
-    const abstract_automaton* get_owner () const {
+    const automaton* get_owner () const {
       return m_action.get_owner ();
     }
 
-    void operator() (const typename Member::type t) {
+    void operator() (const typename Member::value_type t) {
       (m_action.get_member ()) (t, m_parameter.get_parameter ());
     }
 
@@ -520,17 +595,23 @@ namespace ioa {
   private:
     local_action<Instance, Member> m_action;
   public:
-    unparameterized_internal_action (automaton<Instance>* automaton,
+    typedef unparameterized parameter_status;
+
+    unparameterized_internal_action (typed_automaton<Instance>* automaton,
 				     Member Instance::*member) :
       m_action (automaton, member)
     { }
     
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return false;
     }
 
     void print_on (std::ostream& out) const {
@@ -546,28 +627,36 @@ namespace ioa {
     }
   };
 
-  template <class Instance, class Member, class Parameter>
+  template <class Instance, class Member>
   class parameterized_internal_action :
     public local_action_interface {
 
+  public:
+    typedef parameterized parameter_status;
+    typedef typename Member::parameter_type parameter_type;
+
   private:
     local_action<Instance, Member> m_action;
-    parameter<Parameter> m_parameter;
+    parameter<parameter_type> m_parameter;
     
   public:
-    parameterized_internal_action (automaton<Instance>* automaton,
+    parameterized_internal_action (typed_automaton<Instance>* automaton,
 				   Member Instance::*member,
-				   Parameter* parameter) :
+				   parameter_type* parameter) :
       m_action (automaton, member),
       m_parameter (parameter)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return m_parameter.get_parameter () == parameter;
     }
 
     bool operator() () {
@@ -581,28 +670,37 @@ namespace ioa {
   };
 
   // Free input implementation.
-  template <class Instance, class Member, class T>
+  template <class Instance, class Member>
   class free_input_action :
     public local_action_interface {
 
+  public:
+    typedef typed value_status;
+    typedef typename Member::value_type value_type;
+    typedef unparameterized parameter_status;
+
   private:
     local_action<Instance, Member> m_action;
-    T m_t;
+    value_type m_t;
     
   public:
-    free_input_action (automaton<Instance>* automaton,
+    free_input_action (typed_automaton<Instance>* automaton,
 		       Member Instance::*member,
-		       const T& t) :
+		       const value_type& t) :
       m_action (automaton, member),
       m_t (t)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_action.get_automaton ();
     }
 
     const void* get_member_ptr () const {
       return &m_action.get_member ();
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return false;
     }
 
     void print_on (std::ostream& out) const {
@@ -621,22 +719,26 @@ namespace ioa {
     public local_action_interface {
 
   private:
-    automaton<Instance>* m_automaton;
+    typed_automaton<Instance>* m_automaton;
     Callback m_callback;
     
   public:
-    callback_action (automaton<Instance>* automaton,
+    callback_action (typed_automaton<Instance>* automaton,
 		     const Callback& callback) :
       m_automaton (automaton),
       m_callback (callback)
     { }
 
-    abstract_automaton* get_automaton () const {
+    automaton* get_automaton () const {
       return m_automaton;
     }
 
     const void* get_member_ptr () const {
       return 0;
+    }
+
+    bool involves_parameter (const void* parameter) const {
+      return false;
     }
 
     void print_on (std::ostream& out) const {
@@ -664,13 +766,12 @@ namespace ioa {
     virtual bool involves_output (const local_action_interface& output_action) const = 0;
     virtual bool involves_input (const input_action_interface& input_action) const = 0;
     virtual bool involves_input_check_owner (const input_action_interface& input_action) const = 0;
-    virtual bool involves_automaton (const abstract_automaton* automaton) const = 0;
+    virtual bool involves_automaton (const automaton* automaton) const = 0;
 
     virtual bool empty () const = 0;
-    virtual void decompose (const abstract_automaton* aa,
-			    const void* input,
-			    const abstract_automaton* owner) = 0;
-
+    virtual void decompose (const input_action_interface& input_action) = 0;
+    virtual void decompose (const automaton*, const void* parameter) = 0;
+    virtual void decompose (const automaton*) = 0;
  };
 
   template <class OutputAction, class InputAction>
@@ -679,9 +780,8 @@ namespace ioa {
 
   protected:
     OutputAction* m_output_action;
-    typedef std::set<InputAction*, action_compare > set_type;
-    typedef typename set_type::const_iterator const_iterator;
-    set_type m_input_actions;
+    typedef std::list<InputAction*> list_type;
+    list_type m_input_actions;
 
   public:
     template <class T>
@@ -690,7 +790,7 @@ namespace ioa {
     { }
 
     ~macro_action_base () {
-      for(const_iterator pos = m_input_actions.begin();
+      for(typename list_type::const_iterator pos = m_input_actions.begin();
   	  pos != m_input_actions.end();
   	  ++pos) {
   	(*pos)->decompose();
@@ -704,7 +804,7 @@ namespace ioa {
     }
 
     bool involves_input (const input_action_interface& input_action) const {
-      for(const_iterator pos = m_input_actions.begin();
+      for(typename list_type::const_iterator pos = m_input_actions.begin();
       	  pos != m_input_actions.end();
       	  ++pos) {
   	if((*(*pos)) == input_action) {
@@ -715,7 +815,7 @@ namespace ioa {
     }
 
     bool involves_input_check_owner (const input_action_interface& input_action) const {
-      for(const_iterator pos = m_input_actions.begin();
+      for(typename list_type::const_iterator pos = m_input_actions.begin();
       	  pos != m_input_actions.end();
       	  ++pos) {
   	if((*(*pos)) == input_action && (*(*pos)).get_owner () == input_action.get_owner ()) {
@@ -725,11 +825,11 @@ namespace ioa {
       return false;
     }
 
-    bool involves_automaton (const abstract_automaton* automaton) const {
+    bool involves_automaton (const automaton* automaton) const {
       if (m_output_action->get_automaton () == automaton) {
 	return true;
       }
-      for (const_iterator pos = m_input_actions.begin();
+      for (typename list_type::const_iterator pos = m_input_actions.begin();
 	   pos != m_input_actions.end();
 	   ++pos) {
   	if((*(*pos)).get_automaton () == automaton) {
@@ -742,31 +842,86 @@ namespace ioa {
     template <class T>
     void add_input (const T& input_action) {
       InputAction* ia = new T (input_action);
-      m_input_actions.insert (ia);
+      list_type temp;
+      temp.push_back (ia);
+      m_input_actions.merge (temp, action_compare ());
     }
 
     bool empty () const {
       return m_input_actions.empty ();
     }
 
-    void decompose (const abstract_automaton* aa,
-		    const void* input,
-		    const abstract_automaton* owner) {
-      BOOST_ASSERT (false);
-      // const_iterator pos;
-      // for(pos = m_input_actions.begin();
-      // 	  pos != m_input_actions.end();
-      // 	  ++pos) {
-      // 	if((*pos)->is_action_owner(aa, input, owner)) {
-      // 	  break;
-      // 	}
-      // }
+    void decompose (const input_action_interface& input_action) {
+      typename list_type::iterator pos;
+      for (pos = m_input_actions.begin ();
+	   pos != m_input_actions.end ();
+	   ++pos) {
+      	if((*(*pos)) == input_action && (*(*pos)).get_owner () == input_action.get_owner ()) {
+      	  break;
+      	}
+      }
 
-      // if(pos != m_input_actions.end()) {
-      // 	(*pos)->decompose();
-      // 	delete (*pos);
-      // 	m_input_actions.erase(pos);
-      // }
+      if (pos != m_input_actions.end ()) {
+      	(*pos)->decompose ();
+      	delete (*pos);
+      	m_input_actions.erase (pos);
+      }
+    }
+
+    void decompose (const automaton* automaton,
+		    const void* parameter) {
+      if (m_output_action->get_automaton () == automaton &&
+	  m_output_action->involves_parameter (parameter)) {
+	typename list_type::const_iterator pos;
+	for (pos = m_input_actions.begin ();
+	     pos != m_input_actions.end ();
+	     ++pos) {
+	  (*pos)->decompose ();
+	  delete (*pos);
+	}
+	m_input_actions.clear ();
+      }
+      else {
+	typename list_type::iterator pos = m_input_actions.begin ();
+	while (pos != m_input_actions.end ()) {
+	  if((*pos)->get_automaton () == automaton &&
+	     (*pos)->involves_parameter (parameter)) {
+	    (*pos)->decompose ();
+	    delete (*pos);
+	    pos = m_input_actions.erase (pos);
+	  }
+	  else {
+	    ++pos;
+	  }
+	}
+      }
+    }
+
+    void decompose (const automaton* automaton) {
+      if (m_output_action->get_automaton () == automaton) {
+	typename list_type::const_iterator pos;
+	for (pos = m_input_actions.begin ();
+	     pos != m_input_actions.end ();
+	     ++pos) {
+	  (*pos)->decompose ();
+	  delete (*pos);
+	}
+	m_input_actions.clear ();
+      }
+      else {
+	typename list_type::iterator pos = m_input_actions.begin ();
+	while (pos != m_input_actions.end ()) {
+	  if((*pos)->get_automaton () == automaton ||
+	     (*pos)->get_owner () == automaton) {
+	    (*pos)->decompose ();
+	    delete (*pos);
+	    pos = m_input_actions.erase (pos);
+	  }
+	  else {
+	    ++pos;
+	  }
+	}
+      }
     }
 
     virtual void execute_core () const = 0;
@@ -774,12 +929,12 @@ namespace ioa {
     void execute () const {
       // Acquire locks (in order).
       bool locked_output = false;
-      abstract_automaton* ao = m_output_action->get_automaton();
+      automaton* ao = m_output_action->get_automaton();
       
-      for(const_iterator pos = m_input_actions.begin();
+      for(typename list_type::const_iterator pos = m_input_actions.begin();
   	  pos != m_input_actions.end();
   	  ++pos) {
-  	abstract_automaton* ai = (*pos)->get_automaton();
+  	automaton* ai = (*pos)->get_automaton();
   	if(!locked_output && ao < ai) {
   	  ao->lock();
   	  locked_output = true;
@@ -792,10 +947,10 @@ namespace ioa {
       
       // Release locks.
       locked_output = false;
-      for(const_iterator pos = m_input_actions.begin();
+      for(typename list_type::const_iterator pos = m_input_actions.begin();
   	  pos != m_input_actions.end();
   	  ++pos) {
-  	abstract_automaton* ai = (*pos)->get_automaton();
+  	automaton* ai = (*pos)->get_automaton();
   	if(!locked_output && ao < ai) {
   	  ao->unlock();
   	  locked_output = true;
@@ -805,64 +960,54 @@ namespace ioa {
     }
   };
 
-  template <class Scheduler>
   class untyped_macro_action :
     public macro_action_base<untyped_output_action_interface, untyped_input_action_interface> {
 
-  private:
-    Scheduler& m_scheduler;
-
   public:
     template <class T>
-    untyped_macro_action (const T& output,
-			  Scheduler& scheduler) :
-      macro_action_base<untyped_output_action_interface, untyped_input_action_interface> (output),
-      m_scheduler (scheduler)
+    untyped_macro_action (const T& output) :
+      macro_action_base<untyped_output_action_interface, untyped_input_action_interface> (output)
     { }
 
     void execute_core () const {
-      m_scheduler.set_current_automaton (m_output_action->get_automaton ());
+      scheduler_interface& scheduler = get_scheduler ();
+      scheduler.set_current_automaton (m_output_action->get_automaton ());
       bool t = (*m_output_action) ();
       if (t) {
-	for(const_iterator pos = m_input_actions.begin();
+	for(list_type::const_iterator pos = m_input_actions.begin();
 	    pos != m_input_actions.end();
 	    ++pos) {
-	  m_scheduler.set_current_automaton ((*pos)->get_automaton ());
+	  scheduler.set_current_automaton ((*pos)->get_automaton ());
 	  (*(*pos)) ();
 	}
       }
-      m_scheduler.set_current_automaton (0);
+      scheduler.set_current_automaton (0);
     }
 
   };
 
-  template <class T, class Scheduler>
+  template <class T>
   class typed_macro_action :
     public macro_action_base<typed_output_action_interface<T>, typed_input_action_interface<T> > {
-
-  private:
-    Scheduler& m_scheduler;
-
   public:
     template <class U>
-    typed_macro_action (const U& output,
-			Scheduler& scheduler) :
-      macro_action_base<typed_output_action_interface<T>, typed_input_action_interface<T> > (output),
-      m_scheduler (scheduler)
+    typed_macro_action (const U& output) :
+      macro_action_base<typed_output_action_interface<T>, typed_input_action_interface<T> > (output)
     { }
 
     void execute_core () const {
-      m_scheduler.set_current_automaton (this->m_output_action->get_automaton ());
+      scheduler_interface& scheduler = get_scheduler ();
+      scheduler.set_current_automaton (this->m_output_action->get_automaton ());
       std::pair<bool, T> t = (*this->m_output_action) ();
       if (t.first) {
-	for (typename macro_action_base<typed_output_action_interface<T>, typed_input_action_interface<T> >::const_iterator pos = this->m_input_actions.begin();
+	for (typename macro_action_base<typed_output_action_interface<T>, typed_input_action_interface<T> >::list_type::const_iterator pos = this->m_input_actions.begin();
 	     pos != this->m_input_actions.end();
 	     ++pos) {
-	  m_scheduler.set_current_automaton ((*pos)->get_automaton ());
+	  scheduler.set_current_automaton ((*pos)->get_automaton ());
 	  (*(*pos)) (t.second);
 	}
       }
-      m_scheduler.set_current_automaton (0);
+      scheduler.set_current_automaton (0);
     }
 
   };

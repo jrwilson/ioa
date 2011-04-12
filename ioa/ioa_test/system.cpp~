@@ -215,44 +215,12 @@ BOOST_AUTO_TEST_CASE(Declare2)
   system.declare(d.cb3, d.handle, &d.param);
 }
 
-struct execute_internal {
-  ioa::automaton_handle<automaton> m_handle;
-
-  struct create_callback {
-    execute_internal& m_execute_internal;
-    create_callback(execute_internal& execute_internal)
-      : m_execute_internal(execute_internal) { }
-    void child_created (const ioa::automaton_handle<ioa::root_automaton>& parent,
-			const ioa::automaton_handle<automaton>& child) {
-      m_execute_internal.m_handle = child;
-    }
-    void automaton_exists (const ioa::automaton_handle<ioa::root_automaton>& parent,
-			   automaton* child) {
-      BOOST_CHECK (false);
-    }
-  };
-  create_callback cb1;
-
-  execute_internal()
-    : cb1(*this) { }
-};
-
-BOOST_AUTO_TEST_CASE(ExecuteInternal)
-{
-  ioa::system* system = new ioa::system();
-  execute_internal c;
-  automaton* a = new automaton();
-  system->create(c.cb1, system->root_handle, a);
-  system->execute_internal(c.m_handle, &automaton::internal);
-  BOOST_CHECK (a->internal.state);
-  delete system;
-}
-
 struct compose {
   ioa::automaton_handle<automaton> parent_handle;
   ioa::automaton_handle<automaton> child1_handle;
   ioa::automaton_handle<automaton> child2_handle;
   bool composed;
+  bool already_composed;
 
   struct callback1 {
     compose& m_compose;
@@ -321,15 +289,48 @@ struct compose {
     void composed() {
       m_compose.composed = true;
     }
+    void decompose() {
+      BOOST_CHECK(false);
+    }
   };
   callback4 cb4;
+
+  struct callback5 {
+    compose& m_compose;
+    callback5(compose& compose)
+      : m_compose(compose) { }
+    void output_invalid() {
+      BOOST_CHECK(false);
+    }
+    void input_invalid() {
+      BOOST_CHECK(false);
+    }
+    void composition_exists() {
+      m_compose.already_composed = true;
+    }
+    void input_unavailable() {
+      BOOST_CHECK(false);
+    }
+    void output_unavailable() {
+      BOOST_CHECK(false);
+    }
+    void composed() {
+      BOOST_CHECK(false);
+    }
+    void decompose() {
+      BOOST_CHECK(false);
+    }
+  };
+  callback5 cb5;
   
   compose()
     : composed(false),
+      already_composed(false),
       cb1(*this),
       cb2(*this),
       cb3(*this),
-      cb4(*this) { }
+      cb4(*this),
+      cb5(*this){ }
 };
 
 BOOST_AUTO_TEST_CASE(Compose)
@@ -342,15 +343,78 @@ BOOST_AUTO_TEST_CASE(Compose)
   system->create(c.cb1, system->root_handle, parent);
   system->create(c.cb2, c.parent_handle, child1);
   system->create(c.cb3, c.parent_handle, child2);
-  system->compose<compose::callback4, automaton,
-    automaton, automaton::output_action,
-    automaton, automaton::input_action,
-    int>(c.cb4, c.parent_handle,
-	 c.child1_handle, &automaton::output,
-	 c.child2_handle, &automaton::input);
+  system->compose<compose::callback4, automaton, automaton, automaton::output_action, automaton, automaton::input_action, int>(c.cb4, c.parent_handle, c.child1_handle, &automaton::output, c.child2_handle, &automaton::input);
+  system->compose<compose::callback5, automaton, automaton, automaton::output_action, automaton, automaton::input_action, int>(c.cb5, c.parent_handle, c.child1_handle, &automaton::output, c.child2_handle, &automaton::input);
   BOOST_CHECK (c.composed);
+  BOOST_CHECK (c.already_composed);
   system->execute_output (c.child1_handle, &automaton::output);
   BOOST_CHECK (child2->value == 9845);
+  delete system;
+}
+
+struct execute_output {
+  ioa::automaton_handle<automaton> m_handle;
+
+  struct create_callback {
+    execute_output& m_execute_output;
+    create_callback(execute_output& execute_output)
+      : m_execute_output(execute_output) { }
+    void child_created (const ioa::automaton_handle<ioa::root_automaton>& parent,
+			const ioa::automaton_handle<automaton>& child) {
+      m_execute_output.m_handle = child;
+    }
+    void automaton_exists (const ioa::automaton_handle<ioa::root_automaton>& parent,
+			   automaton* child) {
+      BOOST_CHECK (false);
+    }
+  };
+  create_callback cb1;
+
+  execute_output()
+    : cb1(*this) { }
+};
+
+BOOST_AUTO_TEST_CASE(ExecuteOutput)
+{
+  ioa::system* system = new ioa::system();
+  execute_output c;
+  automaton* a = new automaton();
+  system->create(c.cb1, system->root_handle, a);
+  system->execute_output(c.m_handle, &automaton::output);
+  BOOST_CHECK (a->output.state);
+  delete system;
+}
+
+struct execute_internal {
+  ioa::automaton_handle<automaton> m_handle;
+
+  struct create_callback {
+    execute_internal& m_execute_internal;
+    create_callback(execute_internal& execute_internal)
+      : m_execute_internal(execute_internal) { }
+    void child_created (const ioa::automaton_handle<ioa::root_automaton>& parent,
+			const ioa::automaton_handle<automaton>& child) {
+      m_execute_internal.m_handle = child;
+    }
+    void automaton_exists (const ioa::automaton_handle<ioa::root_automaton>& parent,
+			   automaton* child) {
+      BOOST_CHECK (false);
+    }
+  };
+  create_callback cb1;
+
+  execute_internal()
+    : cb1(*this) { }
+};
+
+BOOST_AUTO_TEST_CASE(ExecuteInternal)
+{
+  ioa::system* system = new ioa::system();
+  execute_internal c;
+  automaton* a = new automaton();
+  system->create(c.cb1, system->root_handle, a);
+  system->execute_internal(c.m_handle, &automaton::internal);
+  BOOST_CHECK (a->internal.state);
   delete system;
 }
 

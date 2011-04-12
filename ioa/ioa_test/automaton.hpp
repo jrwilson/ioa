@@ -26,6 +26,8 @@ struct automaton {
       last_parameter (0)
     { }
 
+    typedef int parameter_type;
+
     bool operator() (int* parameter) {
       state = true;
       last_parameter = parameter;
@@ -42,7 +44,7 @@ struct automaton {
       state (false)
     { }
 
-    typedef int type;
+    typedef int value_type;
 
     std::pair<bool, int> operator() () {
       state = true;
@@ -61,7 +63,8 @@ struct automaton {
       last_parameter (0)
     { }
 
-    typedef int type;
+    typedef int value_type;
+    typedef int parameter_type;
 
     std::pair<bool, int> operator() (int* parameter) {
       state = true;
@@ -94,6 +97,8 @@ struct automaton {
       last_parameter (0)
     { }
 
+    typedef int parameter_type;
+
     void operator() (int* parameter) {
       state = true;
       last_parameter = parameter;
@@ -108,7 +113,7 @@ struct automaton {
     up_t_input_action () :
       value (0) { }
 
-    typedef int type;
+    typedef int value_type;
 
     void operator() (const int t) {
       value = t;
@@ -126,7 +131,8 @@ struct automaton {
       last_parameter (0)
     { }
 
-    typedef int type;
+    typedef int value_type;
+    typedef int parameter_type;
 
     void operator() (const int t, int* parameter) {
       value = t;
@@ -159,7 +165,7 @@ struct automaton {
 };
 
 struct null_scheduler {
-  void set_current_automaton (ioa::abstract_automaton*) { }
+  void set_current_automaton (ioa::automaton*) { }
 };
 
 #endif

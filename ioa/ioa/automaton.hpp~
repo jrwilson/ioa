@@ -2,82 +2,123 @@
 #define __automaton_hpp__
 
 #include <set>
+#include <map>
 #include <boost/thread.hpp>
 
 namespace ioa {
 
-  class system;
+  class automaton;
 
-  template <class Instance>
-  class automaton_handle;
-
-  class abstract_automaton : public boost::mutex {
+  class handle_interface {
   public:
-    typedef boost::unique_lock<boost::mutex> lock_type;
-    virtual ~abstract_automaton() { };
-    virtual void* get_instance() const = 0;
+    virtual ~handle_interface () { }
+    virtual void invalidate () = 0;
+    virtual bool valid () const = 0;
+    virtual automaton* get_automaton () const = 0;
   };
 
-  template <class Instance>
-  class automaton : public abstract_automaton {
+  class automaton :
+    public boost::mutex {
+
   private:
-    std::auto_ptr<Instance> m_instance;
-    std::set<automaton_handle<Instance>*> m_handles;
+    boost::mutex m_handle_mutex;
+    std::set<handle_interface*> m_handles;
     std::set<const void*> m_parameters;
-    // No copy or assignment.
-    automaton(const automaton&) { }
-    automaton& operator=(const automaton&) { }
-
+    typedef std::map<handle_interface*, const void*> parameter_handle_set_type;
+    parameter_handle_set_type m_parameter_handles;
+    
   public:
-    automaton(Instance* instance = 0) :
-      m_instance(instance) { }
+    typedef boost::unique_lock<boost::mutex> lock_type;
 
-    ~automaton() {
+    virtual ~automaton () {
       std::for_each (m_handles.begin (),
 		     m_handles.end (),
-		     std::mem_fun (&automaton_handle<Instance>::invalidate));
+		     std::mem_fun (&handle_interface::invalidate));
+      for (parameter_handle_set_type::iterator pos = m_parameter_handles.begin ();
+	   pos != m_parameter_handles.end ();
+	   ++pos) {
+	(pos->first)->invalidate ();
+      }
+    };
+
+    bool is_handle (handle_interface* handle) const {
+      return m_handles.find (handle) != m_handles.end () ||
+	m_parameter_handles.find (handle) != m_parameter_handles.end ();
     }
 
-    void* get_instance() const {
-      return m_instance.get();
+    bool is_declared (const void* parameter) const {
+      return m_parameters.find (parameter) != m_parameters.end();
     }
 
-    Instance* get_typed_instance() const {
-      return m_instance.get();
+    void declare (const void* parameter) {
+      m_parameters.insert (parameter);
     }
 
-    bool is_handle(automaton_handle<Instance>* handle) const {
-      return m_handles.find (handle) != m_handles.end ();
-    }
+    virtual void* get_instance () const = 0;
 
-    bool is_declared(const void* parameter) const {
-      return m_parameters.find(parameter) != m_parameters.end();
-    }
-
-    void declare(const void* parameter) {
-      m_parameters.insert(parameter);
-    }
-
-  protected:
-
-    void add(automaton_handle<Instance>* handle) {
-      BOOST_ASSERT(handle != 0);
+    // TODO:  Make it so only handles can call these functions.
+    void add (handle_interface* handle) {
+      boost::unique_lock<boost::mutex> lock (m_handle_mutex);
+      BOOST_ASSERT (handle != 0);
       m_handles.insert (handle);
     }
 
-    void remove(automaton_handle<Instance>* handle) {
-      BOOST_ASSERT(handle != 0);
-      m_handles.erase (handle);
+    void add (handle_interface* handle, const void* parameter) {
+      boost::unique_lock<boost::mutex> lock (m_handle_mutex);
+      BOOST_ASSERT (handle != 0);
+      BOOST_ASSERT (is_declared (parameter));
+      m_parameter_handles.insert (std::make_pair (handle, parameter));
     }
 
-    friend class automaton_handle<Instance>;
+    void remove (handle_interface* handle) {
+      boost::unique_lock<boost::mutex> lock (m_handle_mutex);
+      BOOST_ASSERT (handle != 0);
+      m_handles.erase (handle);
+    }
+    
+    void remove (handle_interface* handle, const void* parameter) {
+      boost::unique_lock<boost::mutex> lock (m_handle_mutex);
+      BOOST_ASSERT (handle != 0);
+      BOOST_ASSERT (is_declared (parameter));
+      m_parameter_handles.erase (handle);
+    }
+
+  };
+  
+  template <class Instance>
+  class typed_automaton :
+    public automaton {
+    
+  private:
+    std::auto_ptr<Instance> m_instance;
+
+    // No copy or assignment.
+    typed_automaton (const typed_automaton&) { }
+    typed_automaton& operator= (const typed_automaton&) { return *this; }
+
+  public:
+    typed_automaton (Instance* instance = 0) :
+      m_instance (instance) { }
+
+    ~typed_automaton () { }
+    
+    void* get_instance () const {
+      return m_instance.get ();
+    }
+
+    Instance* get_typed_instance () const {
+      return m_instance.get ();
+    }
+
   };
 
   template <class Instance>
-  class automaton_handle {
+  class automaton_handle :
+    public handle_interface {
+
   private:
     bool m_valid;
-    automaton<Instance>* m_automaton;
+    typed_automaton<Instance>* m_automaton;
 
     void add() {
       if (m_valid) {
@@ -92,7 +133,7 @@ namespace ioa {
     }
 
   public:
-    automaton_handle(automaton<Instance>* automaton = 0)
+    automaton_handle(typed_automaton<Instance>* automaton = 0)
       : m_automaton(automaton) {
       m_valid = m_automaton != 0;
       add();
@@ -130,8 +171,7 @@ namespace ioa {
       return !(*this == handle);
     }
 
-    automaton<Instance>* get_automaton() const {
-      BOOST_ASSERT(m_valid);
+    typed_automaton<Instance>* get_automaton() const {
       return m_automaton;
     }
 
@@ -140,8 +180,85 @@ namespace ioa {
       m_valid = false;
     }
 
-    friend class automaton<Instance>;
-    friend class system;
+    friend class typed_automaton<Instance>;
+  };
+
+  template <class Instance, class Parameter>
+  class parameter_handle :
+    public handle_interface {
+  private:
+    bool m_valid;
+    typed_automaton<Instance>* m_automaton;
+    Parameter* m_parameter;
+
+    void add () {
+      if (m_valid) {
+	m_automaton->add (this, m_parameter);
+      }
+    }
+
+    void remove () {
+      if (m_valid) {
+	m_automaton->remove (this, m_parameter);
+      }
+    }
+
+  public:
+    parameter_handle (typed_automaton<Instance>* automaton = 0,
+		      Parameter* parameter = 0) :
+      m_automaton (automaton),
+      m_parameter (parameter) {
+      m_valid = m_automaton != 0;
+      add ();
+    }
+
+    parameter_handle (const parameter_handle& handle)
+      : m_valid (handle.m_valid),
+	m_automaton (handle.m_automaton),
+	m_parameter (handle.m_parameter) {
+      add ();
+    }
+
+    parameter_handle& operator=(const parameter_handle& handle) {
+      if (this != &handle) {
+	remove();
+	m_valid = handle.m_valid;
+	m_automaton = handle.m_automaton;
+	m_parameter = handle.m_parameter;
+	add ();
+      }
+      return *this;
+    }
+
+    ~parameter_handle () {
+      remove ();
+    }
+
+    bool valid () const {
+      return m_valid;
+    }
+
+    bool operator== (const parameter_handle& handle) const {
+      return m_valid && handle.m_valid && m_automaton == handle.m_automaton && m_parameter == handle.m_parameter;
+    }
+
+    bool operator!= (const parameter_handle& handle) const {
+      return !(*this == handle);
+    }
+
+    typed_automaton<Instance>* get_automaton () const {
+      return m_automaton;
+    }
+
+    Parameter* get_parameter () const {
+      return m_parameter;
+    }
+
+  protected:
+    void invalidate () {
+      m_valid = false;
+    }
+
   };
 
 }

@@ -6,5 +6,4 @@ run automaton.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run automaton_handle.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run action.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run composition_manager.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
-#run system.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
-
+run system.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;

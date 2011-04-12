@@ -126,7 +126,7 @@ private:
     { }
     
     void operator() (const ioa::create_result<trigger>& r) {
-      assert (r.type == ioa::CHILD_CREATED);
+      assert (r.type == ioa::AUTOMATON_CREATED);
       m_composer.m_trigger_handle = r.handle;
       ioa_clock_callback cb (m_composer);
       ioa::scheduler.schedule_create<composer, ioa_clock, ioa_clock_callback> (new ioa_clock(), cb);
@@ -143,7 +143,7 @@ private:
     { }
     
     void operator() (const ioa::create_result<ioa_clock>& r) {
-      assert (r.type == ioa::CHILD_CREATED);
+      assert (r.type == ioa::AUTOMATON_CREATED);
       m_composer.m_ioa_clock_handle = r.handle;
       display_callback cb (m_composer);
       ioa::scheduler.schedule_create<composer, display, display_callback> (new display(), cb);
@@ -160,7 +160,7 @@ private:
     { }
     
     void operator() (const ioa::create_result<display>& r) {
-      assert (r.type == ioa::CHILD_CREATED);
+      assert (r.type == ioa::AUTOMATON_CREATED);
       m_composer.m_display_handle = r.handle;
       compose_callback1 cb (m_composer);
       ioa::scheduler.schedule_compose<composer, trigger, trigger::request_type, ioa_clock, ioa_clock::request_type, compose_callback1> (m_composer.m_trigger_handle, &trigger::request, m_composer.m_ioa_clock_handle, &ioa_clock::request, cb);
