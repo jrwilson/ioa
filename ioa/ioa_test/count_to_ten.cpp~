@@ -1,0 +1,64 @@
+#include <cstdlib>
+#include <iostream>
+
+#include <ioa.hpp>
+
+template <class C, void (C::*member)()>
+class internal_wrapper {
+private:
+  C& m_c;
+
+public:
+  internal_wrapper (C& c)
+    : m_c (c) { }
+
+  void operator() () {
+    (m_c.*member) ();
+  }
+};
+
+class count_to_ten {
+private:
+  int m_count;
+
+  void increment () {
+    ++m_count;
+    std::cout << m_count << std::endl;
+    if (m_count == 10) {
+      exit (EXIT_SUCCESS);
+    }
+
+    ioa::schedule (); // inc
+  }
+  
+public:
+  void init() {
+    ioa::schedule (); // inc
+  }
+
+  internal_wrapper<count_to_ten, &count_to_ten::increment> inc;
+  
+  count_to_ten ()
+    : m_count (0),
+      inc (*this) { }
+};
+
+int
+main () {
+  count_to_ten ctt;
+
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+  ctt.inc ();
+
+  ctt.inc ();
+
+  return 0; 
+}

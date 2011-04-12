@@ -1,0 +1,5 @@
+lib boost_thread-mt ;
+
+exe count_to_ten : count_to_ten.cpp /libs/ioa//ioa boost_thread-mt ;
+exe clock_213 : clock_213.cpp /libs/ioa//ioa boost_thread-mt ;
+exe bug : bug.cpp /libs/ioa//ioa boost_thread-mt ;

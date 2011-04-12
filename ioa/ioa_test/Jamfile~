@@ -1,0 +1,10 @@
+using testing ;
+lib boost_unit_test_framework ;
+lib boost_thread-mt ;
+
+run automaton.cpp boost_unit_test_framework boost_thread-mt ;
+run automaton_handle.cpp boost_unit_test_framework boost_thread-mt ;
+run action.cpp boost_unit_test_framework boost_thread-mt ;
+run composition_manager.cpp boost_unit_test_framework boost_thread-mt ;
+run system.cpp boost_unit_test_framework boost_thread-mt ;
+
