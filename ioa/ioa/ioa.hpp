@@ -163,7 +163,30 @@ namespace ioa {
 	  m_action (action) { }
       
       void operator() () {
-	m_scheduler.m_system.execute_local (m_handle, m_action, m_scheduler);
+	m_scheduler.m_system.execute (m_handle, m_action);
+      }
+
+      void print_on (std::ostream& output) const {
+	output << "action " << m_action;
+      }
+    };
+
+    template<class Instance, class Action>
+    class execute_output : public runnable {
+    private:
+      automaton_handle<Instance> m_handle;
+      Action m_action;
+      
+    public:
+      execute_output (simple_scheduler& scheduler,
+		      const automaton_handle<Instance>& handle,
+		      const Action& action)
+	: runnable (scheduler),
+	  m_handle (handle),
+	  m_action (action) { }
+      
+      void operator() () {
+	m_scheduler.m_system.execute (m_handle, m_action);
       }
 
       void print_on (std::ostream& output) const {
@@ -347,7 +370,7 @@ namespace ioa {
 
       }
 
-      void decomposed () {
+      void operator() () {
 	compose_result r = make_compose_result (DECOMPOSED);
 	compose_owner_callback<Callback> owner_cb (r, m_callback);
 	m_scheduler.schedule_callback<Instance, compose_owner_callback<Callback> > (m_handle, owner_cb);
@@ -402,12 +425,21 @@ namespace ioa {
     };
 
     template <class Instance, class Member>
+    Member& ptr_to_member (const automaton_handle<Instance>& handle,
+			   Member Instance::*member_ptr) {
+      Instance* instance = handle.get_automaton ()->get_typed_instance ();
+      Member& member = (*instance).*member_ptr;
+      return member;
+    }
+
+    template <class Instance, class Member>
     runnable* make_execute_output (simple_scheduler& scheduler,
 				   const automaton_handle<Instance>& handle,
 				   Member Instance::*member_ptr,
 				   untyped /* */) {
-      unparameterized_untyped_output_action<Instance, Member> output_action (handle.get_automaton (), member_ptr);
-      return new execute_local<Instance, unparameterized_untyped_output_action<Instance, Member> > (scheduler, handle, output_action);
+      unparameterized_untyped_output_action<Member> output_action (handle.get_automaton (),
+								   ptr_to_member (handle, member_ptr));
+      return new execute_output<Instance, unparameterized_untyped_output_action<Member> > (scheduler, handle, output_action);
     }
 
     template <class Instance, class Member>
@@ -415,16 +447,18 @@ namespace ioa {
 				   const automaton_handle<Instance>& handle,
 				   Member Instance::*member_ptr,
 				   typed /* */) {
-      unparameterized_typed_output_action<Instance, Member> output_action (handle.get_automaton (), member_ptr);
-      return new execute_local<Instance, unparameterized_typed_output_action<Instance, Member> > (scheduler, handle, output_action);
+      unparameterized_typed_output_action<Member> output_action (handle.get_automaton (),
+								 ptr_to_member (handle, member_ptr));
+      return new execute_output<Instance, unparameterized_typed_output_action<Member> > (scheduler, handle, output_action);
     }
 
     template <class Instance, class Member>
     runnable* make_execute_internal (simple_scheduler& scheduler,
 				     const automaton_handle<Instance>& handle,
 				     Member Instance::*member_ptr) {
-      unparameterized_internal_action<Instance, Member> action (handle.get_automaton (), member_ptr);
-      return new execute_local<Instance, unparameterized_internal_action<Instance, Member> > (scheduler, handle, action);
+      unparameterized_internal_action<Member> action (handle.get_automaton (),
+						      ptr_to_member (handle, member_ptr));
+      return new execute_local<Instance, unparameterized_internal_action<Member> > (scheduler, handle, action);
     }
 
     template <class Instance, class Member>
@@ -432,16 +466,18 @@ namespace ioa {
 				       const automaton_handle<Instance>& handle,
 				       Member Instance::*member_ptr,
 				       const typename Member::value_type& t) {
-      free_input_action<Instance, Member> action (handle.get_automaton (), member_ptr, t);
-      return new execute_local<Instance, free_input_action<Instance, Member> > (scheduler, handle, action);
+      free_input_action<Member> action (handle.get_automaton (),
+					ptr_to_member (handle, member_ptr),
+					t);
+      return new execute_local<Instance, free_input_action<Member> > (scheduler, handle, action);
     }
 
     template <class Instance, class Callback>
     runnable* make_execute_callback (simple_scheduler& scheduler,
 				     const automaton_handle<Instance>& handle,
 				     const Callback& callback) {
-      callback_action<Instance, Callback> action (handle.get_automaton (), callback);
-      return new execute_local<Instance, callback_action<Instance, Callback> > (scheduler, handle, action);
+      callback_action<Callback> action (handle.get_automaton (), callback);
+      return new execute_local<Instance, callback_action<Callback> > (scheduler, handle, action);
     }
 
     template <class Parent, class Child, class Callback>
@@ -464,10 +500,10 @@ namespace ioa {
 			    InputMember InputInstance::*input_member_ptr,
 			    untyped /* */,
 			    Callback& callback) {
-      unparameterized_untyped_output_action<OutputInstance, OutputMember> output_action (output_handle.get_automaton (), output_member_ptr);
-      unparameterized_untyped_input_action<InputInstance, InputMember, Callback> input_action (input_handle.get_automaton (), input_member_ptr, handle.get_automaton (), callback);
+      unparameterized_untyped_output_action<OutputMember> output_action (output_handle.get_automaton (), ptr_to_member (output_handle, output_member_ptr));
+      unparameterized_untyped_input_action<InputMember, Callback> input_action (input_handle.get_automaton (), ptr_to_member (input_handle, input_member_ptr), handle.get_automaton (), callback);
 
-      return new compose<Instance, OutputInstance, unparameterized_untyped_output_action<OutputInstance, OutputMember>, InputInstance, unparameterized_untyped_input_action<InputInstance, InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
+      return new compose<Instance, OutputInstance, unparameterized_untyped_output_action<OutputMember>, InputInstance, unparameterized_untyped_input_action<InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
     }
 
     template <class Instance,
@@ -482,10 +518,10 @@ namespace ioa {
 			    InputMember InputInstance::*input_member_ptr,
 			    typed /* */,
 			    Callback& callback) {
-      unparameterized_typed_output_action<OutputInstance, OutputMember> output_action (output_handle.get_automaton (), output_member_ptr);
-      unparameterized_typed_input_action<InputInstance, InputMember, Callback> input_action (input_handle.get_automaton (), input_member_ptr, handle.get_automaton (), callback);
+      unparameterized_typed_output_action<OutputMember> output_action (output_handle.get_automaton (), ptr_to_member (output_handle, output_member_ptr));
+      unparameterized_typed_input_action<InputMember, Callback> input_action (input_handle.get_automaton (), ptr_to_member (input_handle, input_member_ptr), handle.get_automaton (), callback);
       
-      return new compose<Instance, OutputInstance, unparameterized_typed_output_action<OutputInstance, OutputMember>, InputInstance, unparameterized_typed_input_action<InputInstance, InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
+      return new compose<Instance, OutputInstance, unparameterized_typed_output_action<OutputMember>, InputInstance, unparameterized_typed_input_action<InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
     }
 
     template <class Instance, class Member>

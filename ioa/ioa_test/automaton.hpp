@@ -164,8 +164,4 @@ struct automaton {
 
 };
 
-struct null_scheduler {
-  void set_current_automaton (ioa::automaton*) { }
-};
-
 #endif

@@ -101,14 +101,14 @@ namespace ioa {
     }
 
     // Non-modifying methods.
-    void execute_local (const handle_interface& handle,
-			local_action_interface& action,
-			scheduler_interface& scheduler) {
+    template <class Action>
+    void execute (const handle_interface& handle,
+    		  Action& action) {
       // Lock the system so automata can't disappear.
       boost::shared_lock<boost::shared_mutex> lock (*this);
       if (handle.valid ()) {
-	BOOST_ASSERT (handle.get_automaton () == action.get_automaton ());
-	m_composition_manager.execute (action, scheduler);
+    	BOOST_ASSERT (handle.get_automaton () == action.get_automaton ());
+    	m_composition_manager.execute (action);
       }
     }
 
