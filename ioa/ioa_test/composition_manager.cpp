@@ -17,12 +17,12 @@ BOOST_AUTO_TEST_CASE(untyped_compose)
   ioa::typed_automaton<automaton> parent (new automaton());
   automaton* y = new automaton ();
   ioa::typed_automaton<automaton> child1 (y);
-  ioa::unparameterized_untyped_output_action<automaton::up_ut_output_action> output_action (&child1, y->up_ut_output);
+  ioa::action<automaton::up_ut_output_action> output_action (&child1, y->up_ut_output);
 
   automaton* z = new automaton ();
   ioa::typed_automaton<automaton> child2 (z);
   callback cb;
-  ioa::unparameterized_untyped_input_action<automaton::up_ut_input_action, callback> input_action (&child2, z->up_ut_input, &parent, cb);
+  ioa::action<automaton::up_ut_input_action, callback> input_action (&child2, z->up_ut_input, &parent, cb);
 
   BOOST_CHECK (!(cm.composed (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(untyped_compose)
   cm.execute (output_action);
   BOOST_CHECK (z->up_ut_input.state);
 
-  ioa::unparameterized_untyped_output_action<automaton::up_ut_output_action> output_action2 (&child2, z->up_ut_output);
+  ioa::action<automaton::up_ut_output_action> output_action2 (&child2, z->up_ut_output);
   cm.execute (output_action2);
 }
 
@@ -48,12 +48,12 @@ BOOST_AUTO_TEST_CASE(typed_compose)
   ioa::typed_automaton<automaton> parent (new automaton());
   automaton* y = new automaton ();
   ioa::typed_automaton<automaton> child1 (y);
-  ioa::unparameterized_typed_output_action<automaton::up_t_output_action> output_action (&child1, y->up_t_output);
+  ioa::action<automaton::up_t_output_action> output_action (&child1, y->up_t_output);
 
   automaton* z = new automaton ();
   ioa::typed_automaton<automaton> child2 (z);
   callback cb;
-  ioa::unparameterized_typed_input_action<automaton::up_t_input_action, callback> input_action (&child2, z->up_t_input, &parent, cb);
+  ioa::action<automaton::up_t_input_action, callback> input_action (&child2, z->up_t_input, &parent, cb);
 
   BOOST_CHECK (!(cm.composed (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(typed_compose)
   cm.execute (output_action);
   BOOST_CHECK_EQUAL (z->up_t_input.value, 9845);
 
-  ioa::unparameterized_typed_output_action<automaton::up_t_output_action> output_action2 (&child2, z->up_t_output);
+  ioa::action<automaton::up_t_output_action> output_action2 (&child2, z->up_t_output);
   cm.execute (output_action2);
 }
 
@@ -79,12 +79,12 @@ BOOST_AUTO_TEST_CASE(untyped_decompose)
   ioa::typed_automaton<automaton> parent (new automaton());
   automaton* y = new automaton ();
   ioa::typed_automaton<automaton> child1 (y);
-  ioa::unparameterized_untyped_output_action<automaton::up_ut_output_action> output_action (&child1, y->up_ut_output);
+  ioa::action<automaton::up_ut_output_action> output_action (&child1, y->up_ut_output);
 
   automaton* z = new automaton ();
   ioa::typed_automaton<automaton> child2 (z);
   callback cb;
-  ioa::unparameterized_untyped_input_action<automaton::up_ut_input_action, callback> input_action (&child2, z->up_ut_input, &parent, cb);
+  ioa::action<automaton::up_ut_input_action, callback> input_action (&child2, z->up_ut_input, &parent, cb);
 
   BOOST_CHECK (!(cm.composed (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));

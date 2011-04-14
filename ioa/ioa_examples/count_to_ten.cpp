@@ -7,7 +7,7 @@ class count_to_ten {
 private:
   int m_count;
 
-  void init_ (const ioa::automaton_handle<count_to_ten>) {
+  void init_ () {
     ioa::scheduler.schedule_internal (&count_to_ten::increment);
   }
 
@@ -20,8 +20,7 @@ private:
   }
   
 public:
-
-  ioa::input_wrapper<count_to_ten, ioa::automaton_handle<count_to_ten>, &count_to_ten::init_> init;
+  ioa::internal_wrapper<count_to_ten, &count_to_ten::init_> init;
   ioa::internal_wrapper<count_to_ten, &count_to_ten::increment_> increment;
   
   count_to_ten ()

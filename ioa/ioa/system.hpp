@@ -119,23 +119,23 @@ namespace ioa {
 		 Callback& callback) {
       boost::unique_lock<boost::shared_mutex> lock (*this);
       if (parent.valid ()) {
-	std::set<automaton*>::const_iterator pos =
-	  std::find_if (m_automata.begin (),
-			m_automata.end (),
-			automaton_instance_equal (child));
-	if(pos == m_automata.end ()) {
-	  typed_automaton<Child>* c = new typed_automaton<Child> (child);
-	  m_automata.insert (c);
-	  const automaton_handle<Child> h (c);
-	  callback (make_create_result (AUTOMATON_CREATED, h));
-	}
-	else {
-	  const automaton_handle<Child> h;
-	  callback (make_create_result (AUTOMATON_EXISTS, h));
-	}
+      	std::set<automaton*>::const_iterator pos =
+      	  std::find_if (m_automata.begin (),
+      			m_automata.end (),
+      			automaton_instance_equal (child));
+      	if(pos == m_automata.end ()) {
+      	  typed_automaton<Child>* c = new typed_automaton<Child> (child);
+      	  m_automata.insert (c);
+      	  const automaton_handle<Child> h (c);
+       	  callback (make_create_result (AUTOMATON_CREATED, h));
+      	}
+      	else {
+      	  const automaton_handle<Child> h;
+       	  callback (make_create_result (AUTOMATON_EXISTS, h));
+      	}
       }
       else {
-	delete child;
+      	delete child;
       }
     }
     

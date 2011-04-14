@@ -6,7 +6,7 @@
 class trigger {
 private:
 
-  void init_ (const ioa::automaton_handle<trigger>) {
+  void init_ () {
     ioa::scheduler.schedule_output (&trigger::request);
   }
 
@@ -19,7 +19,7 @@ private:
 public:
 
   // TODO: This should have a trait that prevents composition.
-  ioa::input_wrapper<trigger, ioa::automaton_handle<trigger>, &trigger::init_> init;  
+  ioa::internal_wrapper<trigger, &trigger::init_> init;  
 
   typedef ioa::void_output_wrapper<trigger, &trigger::request_> request_type;
   request_type request;
@@ -35,7 +35,7 @@ private:
   int m_counter;
   int m_flag;
 
-  void init_ (const ioa::automaton_handle<ioa_clock>) {
+  void init_ () {
     ioa::scheduler.schedule_internal (&ioa_clock::tick);
   }
 
@@ -67,7 +67,7 @@ private:
 public:
 
   // TODO: This should have a trait that prevents composition.
-  ioa::input_wrapper<ioa_clock, ioa::automaton_handle<ioa_clock>, &ioa_clock::init_> init;  
+  ioa::internal_wrapper<ioa_clock, &ioa_clock::init_> init;  
 
   typedef ioa::void_input_wrapper<ioa_clock, &ioa_clock::request_> request_type;
   request_type request;
@@ -87,7 +87,7 @@ public:
 class display {
 private:
 
-  void init_ (const ioa::automaton_handle<display>) {
+  void init_ () {
     // Do nothing.
   }
 
@@ -98,7 +98,7 @@ private:
 public:
 
   // TODO: This should have a trait that prevents composition.
-  ioa::input_wrapper<display, ioa::automaton_handle<display>, &display::init_> init;  
+  ioa::internal_wrapper<display, &display::init_> init;  
 
   typedef ioa::input_wrapper<display, int, &display::clock_> clock_type;
   clock_type clock;
@@ -202,7 +202,7 @@ private:
   };
 
 
-  void init_ (const ioa::automaton_handle<composer>) {
+  void init_ () {
     trigger_callback cb (*this);
     ioa::scheduler.schedule_create<composer, trigger, trigger_callback> (new trigger(), cb);
   }
@@ -210,7 +210,7 @@ private:
 public:
 
   // TODO: This should have a trait that prevents composition.
-  ioa::input_wrapper<composer, ioa::automaton_handle<composer>, &composer::init_> init;  
+  ioa::internal_wrapper<composer, &composer::init_> init;  
 
   composer () :
     init (*this)

@@ -8,7 +8,7 @@ namespace ioa {
   class composition_manager {
 
   private:
-    typedef std::list<macro_action_interface*> list_type;
+    typedef std::list<macro_action*> list_type;
     list_type m_macro_actions;
 
     struct output_equal {
@@ -18,7 +18,7 @@ namespace ioa {
 	output (output)
       { }
 
-      bool operator() (const macro_action_interface* ma) const {
+      bool operator() (const macro_action* ma) const {
 	return ma->involves_output (output);
       }
     };
@@ -30,7 +30,7 @@ namespace ioa {
 	input (input)
       { }
       
-      bool operator() (const macro_action_interface* ma) const {
+      bool operator() (const macro_action* ma) const {
 	return ma->involves_input (input);
       }
     };
@@ -77,6 +77,18 @@ namespace ioa {
       }
 
       ma->add_input (input_action);
+    }
+
+    void execute_local (local_action& local_action) {
+      scheduler_interface& scheduler = get_scheduler ();
+      
+      // Lock.
+      automaton::lock_type lock (*(local_action.get_automaton ()));
+      // Set the current automaton.
+      scheduler.set_current_automaton (local_action.get_automaton ());
+      // Execute.
+      local_action.execute ();
+      scheduler.set_current_automaton (0);
     }
 
   public:
@@ -176,18 +188,9 @@ namespace ioa {
       list_type::const_iterator pos = std::find_if (m_macro_actions.begin(),
 						    m_macro_actions.end(),
 						    output_equal (output_action));
-      
       if (pos == m_macro_actions.end ()) {
-	scheduler_interface& scheduler = get_scheduler ();
 	// Not composed.
-	
-	// Lock.
-	automaton::lock_type lock (*(output_action.get_automaton ()));
-	// Set the current automaton.
-	scheduler.set_current_automaton (output_action.get_automaton ());
-	// Execute.
-	output_action.execute ();
-	scheduler.set_current_automaton (0);
+	execute_local (output_action);
       }
       else {
 	// Composed.
@@ -195,18 +198,10 @@ namespace ioa {
       }
     }
 
-    void execute (local_action& local_action) {
-      scheduler_interface& scheduler = get_scheduler ();
-      
-      // Lock.
-      automaton::lock_type lock (*(local_action.get_automaton ()));
-      // Set the current automaton.
-      scheduler.set_current_automaton (local_action.get_automaton ());
-      // Execute.
-      local_action.execute ();
-      scheduler.set_current_automaton (0);
+    void execute (internal_action& internal_action) {
+      execute_local (internal_action);
     }
-    
+
   };
   
 }

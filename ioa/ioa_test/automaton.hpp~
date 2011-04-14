@@ -4,6 +4,12 @@
 struct automaton {
 
   struct up_ut_output_action {
+    typedef ioa::output action_category;
+    typedef ioa::untyped value_status;
+    typedef ioa::null_type value_type;
+    typedef ioa::unparameterized parameter_status;
+    typedef ioa::null_type parameter_type;
+
     bool state;
 
     up_ut_output_action () :
@@ -18,6 +24,12 @@ struct automaton {
   up_ut_output_action up_ut_output;
 
   struct p_ut_output_action {
+    typedef ioa::output action_category;
+    typedef ioa::untyped value_status;
+    typedef ioa::null_type value_type;
+    typedef ioa::parameterized parameter_status;
+    typedef int parameter_type;
+
     bool state;
     int* last_parameter;
 
@@ -36,13 +48,17 @@ struct automaton {
   p_ut_output_action p_ut_output;
 
   struct up_t_output_action {
+    typedef ioa::output action_category;
+    typedef ioa::typed value_status;
+    typedef int value_type;
+    typedef ioa::unparameterized parameter_status;
+    typedef ioa::null_type parameter_type;
+
     bool state;
 
     up_t_output_action () :
       state (false)
     { }
-
-    typedef int type;
 
     std::pair<bool, int> operator() () {
       state = true;
@@ -53,6 +69,12 @@ struct automaton {
   up_t_output_action up_t_output;
 
   struct p_t_output_action {
+    typedef ioa::output action_category;
+    typedef ioa::typed value_status;
+    typedef int value_type;
+    typedef ioa::parameterized parameter_status;
+    typedef int parameter_type;
+
     bool state;
     int* last_parameter;
 
@@ -60,8 +82,6 @@ struct automaton {
       state (false),
       last_parameter (0)
     { }
-
-    typedef int type;
 
     std::pair<bool, int> operator() (int* parameter) {
       state = true;
@@ -73,6 +93,12 @@ struct automaton {
   p_t_output_action p_t_output;
 
   struct up_ut_input_action {
+    typedef ioa::input action_category;
+    typedef ioa::untyped value_status;
+    typedef ioa::null_type value_type;
+    typedef ioa::unparameterized parameter_status;
+    typedef ioa::null_type parameter_type;
+
     bool state;
 
     up_ut_input_action () :
@@ -86,6 +112,12 @@ struct automaton {
   up_ut_input_action up_ut_input;
 
   struct p_ut_input_action {
+    typedef ioa::input action_category;
+    typedef ioa::untyped value_status;
+    typedef ioa::null_type value_type;
+    typedef ioa::parameterized parameter_status;
+    typedef int parameter_type;
+
     bool state;
     int* last_parameter;
 
@@ -103,12 +135,16 @@ struct automaton {
   p_ut_input_action p_ut_input;
 
   struct up_t_input_action {
+    typedef ioa::input action_category;
+    typedef ioa::typed value_status;
+    typedef int value_type;
+    typedef ioa::unparameterized parameter_status;
+    typedef ioa::null_type parameter_type;
+
     int value;
 
     up_t_input_action () :
       value (0) { }
-
-    typedef int type;
 
     void operator() (const int t) {
       value = t;
@@ -126,7 +162,8 @@ struct automaton {
       last_parameter (0)
     { }
 
-    typedef int type;
+    typedef int value_type;
+    typedef int parameter_type;
 
     void operator() (const int t, int* parameter) {
       value = t;
@@ -156,10 +193,6 @@ struct automaton {
   };
   internal_action internal;
 
-};
-
-struct null_scheduler {
-  void set_current_automaton (ioa::abstract_automaton*) { }
 };
 
 #endif

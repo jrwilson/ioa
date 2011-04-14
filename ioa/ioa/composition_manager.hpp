@@ -1,7 +1,7 @@
 #ifndef __composition_manager_hpp__
 #define __composition_manager_hpp__
 
-#include "action.hpp"
+#include "macro_action.hpp"
 
 namespace ioa {
 
@@ -12,9 +12,9 @@ namespace ioa {
     list_type m_macro_actions;
 
     struct output_equal {
-      const output_action& output;
+      const output_action_interface& output;
 
-      output_equal (const output_action& output) :
+      output_equal (const output_action_interface& output) :
 	output (output)
       { }
 
@@ -24,9 +24,9 @@ namespace ioa {
     };
 
     struct input_equal {
-      const input_action& input;
+      const input_action_interface& input;
 
-      input_equal (const input_action& input) :
+      input_equal (const input_action_interface& input) :
 	input (input)
       { }
       
@@ -37,7 +37,7 @@ namespace ioa {
 
     template <class OutputAction,
 	      class InputAction>
-    void compose (untyped /* */,
+    void compose (unvalued /* */,
 		  const OutputAction& output_action,
 		  const InputAction& input_action) {
 
@@ -59,7 +59,7 @@ namespace ioa {
 
     template <class OutputAction,
 	      class InputAction>
-    void compose (typed /* */,
+    void compose (valued /* */,
 		  const OutputAction& output_action,
 		  const InputAction& input_action) {
 
@@ -79,21 +79,21 @@ namespace ioa {
       ma->add_input (input_action);
     }
 
-    void execute_local (local_action& local_action) {
+    void execute_local (executable_action_interface& executable_action_interface) {
       scheduler_interface& scheduler = get_scheduler ();
       
       // Lock.
-      automaton::lock_type lock (*(local_action.get_automaton ()));
+      automaton::lock_type lock (*(executable_action_interface.get_automaton ()));
       // Set the current automaton.
-      scheduler.set_current_automaton (local_action.get_automaton ());
+      scheduler.set_current_automaton (executable_action_interface.get_automaton ());
       // Execute.
-      local_action.execute ();
+      executable_action_interface.execute ();
       scheduler.set_current_automaton (0);
     }
 
   public:
-    bool composed (const output_action& output_action,
-		   const input_action& input_action) const {
+    bool composed (const output_action_interface& output_action,
+		   const input_action_interface& input_action) const {
       
       list_type::const_iterator pos = std::find_if (m_macro_actions.begin(),
 						    m_macro_actions.end(),
@@ -106,14 +106,14 @@ namespace ioa {
       }
     }
 
-    bool input_available (const input_action& input_action) const {
+    bool input_available (const input_action_interface& input_action) const {
       list_type::const_iterator pos = std::find_if (m_macro_actions.begin (),
 						    m_macro_actions.end (),
 						    input_equal (input_action));
       return pos == m_macro_actions.end ();
     }
 
-    bool output_available (const output_action& output_action,
+    bool output_available (const output_action_interface& output_action,
 			   const automaton* input_automaton) const {
       if (output_action.get_automaton () == input_automaton) {
 	// No self compositions!!
@@ -184,7 +184,7 @@ namespace ioa {
       }
     }
 
-    void execute (output_action& output_action) {
+    void execute (output_action_interface& output_action) {
       list_type::const_iterator pos = std::find_if (m_macro_actions.begin(),
 						    m_macro_actions.end(),
 						    output_equal (output_action));
@@ -198,7 +198,7 @@ namespace ioa {
       }
     }
 
-    void execute (internal_action& internal_action) {
+    void execute (independent_action_interface& internal_action) {
       execute_local (internal_action);
     }
 
