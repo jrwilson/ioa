@@ -26,14 +26,14 @@ BOOST_AUTO_TEST_CASE(untyped_compose)
   callback cb;
   ioa::action<automaton::up_ut_input_action, callback> input_action (child2_handle, z->up_ut_input, &parent, cb);
 
-  BOOST_CHECK (!(cm.composed (output_action, input_action)));
+  BOOST_CHECK (!(cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));
   BOOST_CHECK (cm.output_available (output_action, &child2));
   BOOST_CHECK (!cm.output_available (output_action, &child1));
   
   cm.compose (output_action, input_action);
 
-  BOOST_CHECK ((cm.composed (output_action, input_action)));
+  BOOST_CHECK ((cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (!cm.input_available (input_action));
   BOOST_CHECK (!cm.output_available (output_action, &child2));
 
@@ -59,14 +59,14 @@ BOOST_AUTO_TEST_CASE(typed_compose)
   callback cb;
   ioa::action<automaton::up_t_input_action, callback> input_action (child2_handle, z->up_t_input, &parent, cb);
 
-  BOOST_CHECK (!(cm.composed (output_action, input_action)));
+  BOOST_CHECK (!(cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));
   BOOST_CHECK (cm.output_available (output_action, &child2));
   BOOST_CHECK (!cm.output_available (output_action, &child1));
   
   cm.compose (output_action, input_action);
 
-  BOOST_CHECK ((cm.composed (output_action, input_action)));
+  BOOST_CHECK ((cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (!cm.input_available (input_action));
   BOOST_CHECK (!cm.output_available (output_action, &child2));
 
@@ -92,20 +92,20 @@ BOOST_AUTO_TEST_CASE(untyped_decompose)
   callback cb;
   ioa::action<automaton::up_ut_input_action, callback> input_action (child2_handle, z->up_ut_input, &parent, cb);
 
-  BOOST_CHECK (!(cm.composed (output_action, input_action)));
+  BOOST_CHECK (!(cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));
   BOOST_CHECK (cm.output_available (output_action, &child2));
   BOOST_CHECK (!cm.output_available (output_action, &child1));
   
   cm.compose (output_action, input_action);
 
-  BOOST_CHECK ((cm.composed (output_action, input_action)));
+  BOOST_CHECK ((cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (!cm.input_available (input_action));
   BOOST_CHECK (!cm.output_available (output_action, &child2));
 
   cm.decompose (output_action, input_action);
 
-  BOOST_CHECK (!(cm.composed (output_action, input_action)));
+  BOOST_CHECK (!(cm.composed_check_owner (output_action, input_action)));
   BOOST_CHECK (cm.input_available (input_action));
   BOOST_CHECK (cm.output_available (output_action, &child2));
 }

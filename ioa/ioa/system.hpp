@@ -70,6 +70,22 @@ namespace ioa {
     return compose_result (type);
   }
 
+  typedef enum {
+    NOT_COMPOSED,
+    NOT_OWNER
+  } decompose_result_type;
+
+  struct decompose_result {
+    decompose_result_type type;
+    decompose_result (const decompose_result_type type) :
+      type (type)
+    { }
+  };
+  
+  decompose_result make_decompose_result (const decompose_result_type type) {
+    return decompose_result (type);
+  }
+
   struct root_automaton {
   };
 
@@ -102,7 +118,7 @@ namespace ioa {
 
     // Modifying methods.
     template <class Child, class Callback>
-    void create (const automaton_handle_interface& parent,
+    void create (const generic_automaton_handle& parent,
 		 Child* child,
 		 Callback& callback) {
       boost::unique_lock<boost::shared_mutex> lock (*this);
@@ -147,14 +163,14 @@ namespace ioa {
     }
 
     template<class OutputAction, class InputAction, class Callback>
-    void compose (const automaton_handle_interface& handle,
-		  const automaton_handle_interface& output_handle,
-		  const OutputAction& output_action,
-		  const automaton_handle_interface& input_handle,
+    void compose (const OutputAction& output_action,
 		  const InputAction& input_action,
 		  Callback& callback) {
       // Lock the system.
       boost::unique_lock<boost::shared_mutex> lock (*this);
+      const generic_automaton_handle handle = input_action.get_owner_handle ();
+      const generic_automaton_handle output_handle = output_action.get_automaton_handle ();
+      const generic_automaton_handle input_handle = input_action.get_automaton_handle ();
       if (handle.valid ()) {
       	if (!output_handle.valid ()) {
       	  callback (make_compose_result (OUTPUT_INVALID));
@@ -163,11 +179,7 @@ namespace ioa {
       	  callback (make_compose_result (INPUT_INVALID));
       	}
       	else {
-	  BOOST_ASSERT (handle.get_automaton () == input_action.get_owner_handle ().get_automaton ());
-	  BOOST_ASSERT (output_handle.get_automaton () == output_action.get_automaton_handle ().get_automaton ());
-	  BOOST_ASSERT (input_handle.get_automaton () == input_action.get_automaton_handle ().get_automaton ());
-
-      	  if (m_composition_manager.composed (output_action, input_action)) {
+      	  if (m_composition_manager.composed_check_owner (output_action, input_action)) {
       	    callback (make_compose_result (COMPOSITION_EXISTS));
       	  }
       	  else if (!m_composition_manager.input_available (input_action)) {
@@ -184,35 +196,34 @@ namespace ioa {
       }
     }
 
-    // template<class Callback, class Instance,
-    // 	     class OutputInstance, class OutputMember,
-    // 	     class InputInstance, class InputMember>
-    // void decompose(Callback& callback,
-    // 		   const automaton_handle<Instance>& handle,
-    // 		   const automaton_handle<OutputInstance>& output_handle,
-    // 		   OutputMember OutputInstance::*output_member,
-    // 		   const automaton_handle<InputInstance>& input_handle,
-    // 		   const InputMember InputInstance::*input_member) {
-    //   // Lock the system.
-    //   boost::unique_lock<boost::shared_mutex> lock(*this);
-    //   if(handle.valid()) {
-    // 	automaton<Instance>* owner = handle.get_instance();
-    // 	automaton<OutputInstance>* output_automaton = output_handle.get_instance();
-    // 	automaton<InputInstance>* input_automaton = input_handle.get_instance();
-    // 	if(!m_composition_manager.composed(output_automaton, output_member, input_automaton, input_member)) {
-    // 	  if(m_composition_manager.composed(output_automaton, output_member, input_automaton, input_member)) {
-    // 	    // Decompose.
-    // 	    BOOST_ASSERT(false);
-    // 	  }
-    // 	  else {
-    // 	    callback.not_owner();
-    // 	  }
-    // 	}
-    // 	else {
-    // 	  callback.not_composed();
-    // 	}
-    //   }      
-    // }
+
+    template<class OutputAction, class InputAction, class Callback>
+    void decompose (const OutputAction& output_action,
+		    const InputAction& input_action,
+		    Callback& callback) {
+      // Lock the system.
+      boost::unique_lock<boost::shared_mutex> lock (*this);
+      const generic_automaton_handle handle = input_action.get_owner_handle ();
+      const generic_automaton_handle output_handle = output_action.get_automaton_handle ();
+      const generic_automaton_handle input_handle = input_action.get_automaton_handle ();
+
+      if (handle.valid()) {
+	if (m_composition_manager.composed (output_action, input_action)) {
+	  if (m_composition_manager.composed_check_owner (output_action, input_action)) {
+	    // Decompose.
+	    m_composition_manager.decompose (output_action, input_action);
+	    // Expecting a callback (make_decompose_result (DECOMPOSED)) ??
+	    // Decompose calls the callback that was provided when the composition was made.
+	  }
+	  else {
+	    callback (make_decompose_result (NOT_OWNER));
+	  }
+	}
+	else {
+	  callback (make_decompose_result (NOT_COMPOSED));
+	}
+      }      
+    }
 
     // void rescind();
     // void destroy();

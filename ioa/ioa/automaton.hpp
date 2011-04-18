@@ -354,12 +354,12 @@ namespace ioa {
       parameter_handle_impl<typed_automaton<Instance>, Parameter> (automaton, parameter)
     { }
 
-    operator generic_automaton_handle() const {
+    operator generic_parameter_handle<Parameter>() const {
       if (this->valid ()) {
-	return generic_automaton_handle (this->get_automaton ());
+	return generic_parameter_handle<Parameter> (this->get_automaton (), this->get_parameter ());
       }
       else {
-	return generic_automaton_handle ();
+	return generic_parameter_handle<Parameter> ();
       }
     }
   };

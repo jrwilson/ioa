@@ -399,42 +399,32 @@ namespace ioa {
 
     };
 
-    template <class Instance,
-	      class OutputInstance, class OutputAction,
-	      class InputInstance, class InputAction,
+    template <class OutputAction,
+	      class InputAction,
 	      class Callback>
     class compose : public runnable {
     private:
-      automaton_handle<Instance> m_handle;
-      automaton_handle<OutputInstance> m_output_handle;
       OutputAction m_output_action;
-      ioa::automaton_handle<InputInstance> m_input_handle;
       InputAction m_input_action;
       Callback m_callback;
 
     public:
       compose (simple_scheduler& scheduler,
-	       const automaton_handle<Instance>& handle,
-	       const automaton_handle<OutputInstance>& output_handle,
 	       const OutputAction& output_action,
-	       const ioa::automaton_handle<InputInstance>& input_handle,
 	       const InputAction& input_action,
 	       const Callback& callback)
 	: runnable (scheduler),
-	  m_handle (handle),
-	  m_output_handle (output_handle),
 	  m_output_action (output_action),
-	  m_input_handle (input_handle),
 	  m_input_action (input_action),
 	  m_callback (callback)
       { }
 
       void operator() () {
-	m_scheduler.m_system.compose<OutputAction, InputAction, Callback> (m_handle, m_output_handle, m_output_action, m_input_handle, m_input_action, m_callback);
+	m_scheduler.m_system.compose<OutputAction, InputAction, Callback> (m_output_action, m_input_action, m_callback);
       }
 
       void print_on (std::ostream& output) const {
-	output << "compose owner=" << m_handle.get_automaton ()->get_typed_instance ();
+	output << "compose owner=";
       }
 
     };
@@ -514,7 +504,6 @@ namespace ioa {
 			    OutputMember OutputInstance::*output_member_ptr,
 			    const automaton_handle<InputInstance>& input_handle,
 			    InputMember InputInstance::*input_member_ptr,
-			    unvalued /* */,
 			    Callback& callback) {
       action<OutputMember> output_action (output_handle,
 					  ptr_to_member (output_handle, output_member_ptr));
@@ -523,42 +512,25 @@ namespace ioa {
 						  handle,
 						  callback);
 
-      return new compose<Instance, OutputInstance, action<OutputMember>, InputInstance, action<InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
-    }
-
-    template <class Instance,
-	      class OutputInstance, class OutputMember,
-	      class InputInstance, class InputMember,
-	      class Callback>
-    runnable* make_compose (simple_scheduler& scheduler,
-			    const automaton_handle<Instance>& handle,
-			    const automaton_handle<OutputInstance>& output_handle,
-			    OutputMember OutputInstance::*output_member_ptr,
-			    const automaton_handle<InputInstance>& input_handle,
-			    InputMember InputInstance::*input_member_ptr,
-			    valued /* */,
-			    Callback& callback) {
-      action<OutputMember> output_action (output_handle,
-					  ptr_to_member (output_handle, output_member_ptr));
-      action<InputMember, Callback> input_action (input_handle,
-						  ptr_to_member (input_handle, input_member_ptr),
-						  handle,
-						  callback);
-      
-      return new compose<Instance, OutputInstance, action<OutputMember>, InputInstance, action<InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
+      return new compose<action<OutputMember>, action<InputMember, Callback>, Callback> (scheduler, output_action, input_action, callback);
     }
 
     template <class Instance, class Member>
     void schedule_free_input (const automaton_handle<Instance>& handle,
 			      Member Instance::*member_ptr,
 			      const typename Member::value_type& t) {
-      m_runq.push_back (make_execute_free_input (*this, handle, member_ptr, t));
+      m_runq.push_back (make_execute_free_input (*this,
+						 handle,
+						 member_ptr,
+						 t));
     }
 
     template <class Instance, class Callback>
     void schedule_callback (const automaton_handle<Instance>& handle,
 			    Callback& callback) {
-      m_runq.push_back (make_execute_callback (*this, handle, callback));
+      m_runq.push_back (make_execute_callback (*this,
+					       handle,
+					       callback));
     }
 
     template <class Instance, class Member>
@@ -662,7 +634,6 @@ namespace ioa {
 				      output_member_ptr,
 				      input_handle,
 				      input_member_ptr,
-				      typename OutputMember::value_status (),
 				      cb));
     }
   };

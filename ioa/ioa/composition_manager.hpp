@@ -92,6 +92,20 @@ namespace ioa {
     }
 
   public:
+    bool composed_check_owner (const output_action_interface& output_action,
+			       const input_action_interface& input_action) const {
+      
+      list_type::const_iterator pos = std::find_if (m_macro_actions.begin(),
+						    m_macro_actions.end(),
+						    output_equal (output_action));
+      if(pos == m_macro_actions.end ()) {
+	return false;
+      }
+      else {
+	return (*pos)->involves_input_check_owner (input_action);
+      }
+    }
+
     bool composed (const output_action_interface& output_action,
 		   const input_action_interface& input_action) const {
       
@@ -102,7 +116,7 @@ namespace ioa {
 	return false;
       }
       else {
-	return (*pos)->involves_input_check_owner (input_action);
+	return (*pos)->involves_input (input_action);
       }
     }
 
