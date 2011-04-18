@@ -1,8 +1,9 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE action
 #include <boost/test/unit_test.hpp>
-#include <action.hpp>
+#include <macro_action.hpp>
 #include "automaton.hpp"
+#include "scheduler.hpp"
 
 struct callback {
   bool* ptr;
@@ -11,7 +12,7 @@ struct callback {
     ptr (ptr)
   { }
 
-  void decomposed () {
+  void operator() () {
     *ptr = true;
   }
 };
@@ -21,9 +22,11 @@ BOOST_AUTO_TEST_SUITE(action_suite)
 BOOST_AUTO_TEST_CASE(unparameterized_untyped_output_action)
 {
   automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::unparameterized_untyped_output_action<automaton, automaton::up_ut_output_action> action (&a, &automaton::up_ut_output);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ());
+  ioa::typed_automaton<automaton> a (z);
+  ioa::generic_automaton_handle h_a (&a);
+  ioa::action<automaton::up_ut_output_action> action (h_a, z->up_ut_output);
+
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ());
   BOOST_CHECK_EQUAL (action, action);
   bool r = action ();
   BOOST_CHECK (r);
@@ -34,9 +37,11 @@ BOOST_AUTO_TEST_CASE(parameterized_untyped_output_action)
 {
   int parameter;
   automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::parameterized_untyped_output_action<automaton, automaton::p_ut_output_action, int> action (&a, &automaton::p_ut_output, &parameter);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::typed_automaton<automaton> a (z);
+  a.declare (&parameter);
+  ioa::generic_parameter_handle<int> h_a (&a, &parameter);
+  ioa::action<automaton::p_ut_output_action> action (h_a, z->p_ut_output);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
   bool r = action ();
   BOOST_CHECK (r);
@@ -47,9 +52,10 @@ BOOST_AUTO_TEST_CASE(parameterized_untyped_output_action)
 BOOST_AUTO_TEST_CASE(unparameterized_typed_output_action)
 {
   automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::unparameterized_typed_output_action<automaton, automaton::up_t_output_action> action (&a, &automaton::up_t_output);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::typed_automaton<automaton> a (z);
+  ioa::generic_automaton_handle h_a (&a);
+  ioa::action<automaton::up_t_output_action> action (h_a, z->up_t_output);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
   std::pair<bool, int> r = action ();
   BOOST_CHECK (r.first);
@@ -61,9 +67,11 @@ BOOST_AUTO_TEST_CASE(parameterized_typed_output_action)
 {
   int parameter;
   automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::parameterized_typed_output_action<automaton, automaton::p_t_output_action, int> action (&a, &automaton::p_t_output, &parameter);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::typed_automaton<automaton> a (z);
+  a.declare (&parameter);
+  ioa::generic_parameter_handle<int> h_a (&a, &parameter);
+  ioa::action<automaton::p_t_output_action> action (h_a, z->p_t_output);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
   std::pair<bool, int> r = action ();
   BOOST_CHECK (r.first);
@@ -75,13 +83,14 @@ BOOST_AUTO_TEST_CASE(parameterized_typed_output_action)
 BOOST_AUTO_TEST_CASE(unparameterized_untyped_input_action)
 {
   automaton*z = new automaton();
-  ioa::automaton<automaton> a (z);
+  ioa::typed_automaton<automaton> a (z);
+  ioa::generic_automaton_handle h_a (&a);
   bool decomposed;
   callback cb (&decomposed);
-  ioa::unparameterized_untyped_input_action<automaton, automaton::up_ut_input_action, callback> action (&a, &automaton::up_ut_input, &a, cb);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::action<automaton::up_ut_input_action, callback> action (h_a, z->up_ut_input, h_a, cb);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
-  BOOST_CHECK_EQUAL (action.get_owner (), &a);
+  BOOST_CHECK_EQUAL (action.get_owner_handle (), h_a);
   action ();
   BOOST_CHECK (z->up_ut_input.state);
   action.decompose ();
@@ -92,13 +101,15 @@ BOOST_AUTO_TEST_CASE(parameterized_untyped_input_action)
 {
   int parameter;
   automaton*z = new automaton();
-  ioa::automaton<automaton> a (z);
+  ioa::typed_automaton<automaton> a (z);
+  a.declare (&parameter);
+  ioa::generic_parameter_handle<int> h_a (&a, &parameter);
   bool decomposed;
   callback cb (&decomposed);
-  ioa::parameterized_untyped_input_action<automaton, automaton::p_ut_input_action, callback, int> action (&a, &automaton::p_ut_input, &a, cb, &parameter);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::action<automaton::p_ut_input_action, callback> action (h_a, z->p_ut_input, h_a, cb);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
-  BOOST_CHECK_EQUAL (action.get_owner (), &a);
+  BOOST_CHECK_EQUAL (action.get_owner_handle (), h_a);
   action ();
   BOOST_CHECK (z->p_ut_input.state);
   BOOST_CHECK_EQUAL (&parameter, z->p_ut_input.last_parameter);
@@ -109,13 +120,14 @@ BOOST_AUTO_TEST_CASE(parameterized_untyped_input_action)
 BOOST_AUTO_TEST_CASE(unparameterized_typed_input_action)
 {
   automaton*z = new automaton();
-  ioa::automaton<automaton> a (z);
+  ioa::typed_automaton<automaton> a (z);
+  ioa::generic_automaton_handle h_a (&a);
   bool decomposed;
   callback cb (&decomposed);
-  ioa::unparameterized_typed_input_action<automaton, automaton::up_t_input_action, callback> action (&a, &automaton::up_t_input, &a, cb);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::action<automaton::up_t_input_action, callback> action (h_a, z->up_t_input, h_a, cb);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
-  BOOST_CHECK_EQUAL (action.get_owner (), &a);
+  BOOST_CHECK_EQUAL (action.get_owner_handle (), h_a);
   action (9845);
   BOOST_CHECK_EQUAL (9845, z->up_t_input.value);
   action.decompose ();
@@ -126,13 +138,15 @@ BOOST_AUTO_TEST_CASE(parameterized_typed_input_action)
 {
   int parameter;
   automaton*z = new automaton();
-  ioa::automaton<automaton> a (z);
+  ioa::typed_automaton<automaton> a (z);
+  a.declare (&parameter);
+  ioa::generic_parameter_handle<int> h_a (&a, &parameter);
   bool decomposed;
   callback cb (&decomposed);
-  ioa::parameterized_typed_input_action<automaton, automaton::p_t_input_action, callback, int> action (&a, &automaton::p_t_input, &a, cb, &parameter);
-  BOOST_CHECK_EQUAL (&a, action.get_automaton ()); 
+  ioa::action<automaton::p_t_input_action, callback> action (h_a, z->p_t_input, h_a, cb);
+  BOOST_CHECK_EQUAL (h_a, action.get_automaton_handle ()); 
   BOOST_CHECK_EQUAL (action, action);
-  BOOST_CHECK_EQUAL (action.get_owner (), &a);
+  BOOST_CHECK_EQUAL (action.get_owner_handle (), h_a);
   action (9845);
   BOOST_CHECK_EQUAL (9845, z->p_t_input.value);
   BOOST_CHECK_EQUAL (&parameter, z->p_t_input.last_parameter);
@@ -143,18 +157,18 @@ BOOST_AUTO_TEST_CASE(parameterized_typed_input_action)
 BOOST_AUTO_TEST_CASE(untyped_macro_action)
 {
   automaton* automaton_a = new automaton ();
-  ioa::automaton<automaton> a (automaton_a);
-  ioa::unparameterized_untyped_output_action<automaton, automaton::up_ut_output_action> output_action (&a, &automaton::up_ut_output);
+  ioa::typed_automaton<automaton> a (automaton_a);
+  ioa::generic_automaton_handle h_a (&a);
+  ioa::action<automaton::up_ut_output_action> output_action (h_a, automaton_a->up_ut_output);
 
   bool decomposed;
   callback cb (&decomposed);
 
   automaton* automaton_b = new automaton ();
-  ioa::automaton<automaton> b (automaton_b);
-  ioa::unparameterized_untyped_input_action<automaton, automaton::up_ut_input_action, callback> input_action (&b, &automaton::up_ut_input, &b, cb);
+  ioa::typed_automaton<automaton> b (automaton_b);
+  ioa::action<automaton::up_ut_input_action, callback> input_action (&b, automaton_b->up_ut_input, &b, cb);
 
-  null_scheduler scheduler;
-  ioa::untyped_macro_action<null_scheduler> macro_action (output_action, scheduler);
+  ioa::untyped_macro_action macro_action (output_action);
   macro_action.add_input (input_action);
 
   BOOST_CHECK (macro_action.involves_output (output_action));
@@ -163,23 +177,29 @@ BOOST_AUTO_TEST_CASE(untyped_macro_action)
   BOOST_CHECK (!automaton_b->up_ut_input.state);
   macro_action.execute ();
   BOOST_CHECK (automaton_b->up_ut_input.state);
+
+  BOOST_CHECK (!decomposed);
+  BOOST_CHECK (!macro_action.empty ());
+  macro_action.decompose (input_action);
+  BOOST_CHECK (decomposed);
+  BOOST_CHECK (macro_action.empty ());
 }
 
 BOOST_AUTO_TEST_CASE(typed_macro_action)
 {
   automaton* automaton_a = new automaton ();
-  ioa::automaton<automaton> a (automaton_a);
-  ioa::unparameterized_typed_output_action<automaton, automaton::up_t_output_action> output_action (&a, &automaton::up_t_output);
+  ioa::typed_automaton<automaton> a (automaton_a);
+  ioa::generic_automaton_handle h_a (&a);
+  ioa::action<automaton::up_t_output_action> output_action (h_a, automaton_a->up_t_output);
 
   bool decomposed;
   callback cb (&decomposed);
 
   automaton* automaton_b = new automaton ();
-  ioa::automaton<automaton> b (automaton_b);
-  ioa::unparameterized_typed_input_action<automaton, automaton::up_t_input_action, callback> input_action (&b, &automaton::up_t_input, &b, cb);
+  ioa::typed_automaton<automaton> b (automaton_b);
+  ioa::action<automaton::up_t_input_action, callback> input_action (&b, automaton_b->up_t_input, &b, cb);
 
-  null_scheduler scheduler;
-  ioa::typed_macro_action<int, null_scheduler> macro_action (output_action, scheduler);
+  ioa::typed_macro_action<int> macro_action (output_action);
   macro_action.add_input (input_action);
 
   BOOST_CHECK (macro_action.involves_output (output_action));
@@ -187,6 +207,12 @@ BOOST_AUTO_TEST_CASE(typed_macro_action)
 
   macro_action.execute ();
   BOOST_CHECK_EQUAL (automaton_b->up_t_input.value, 9845);
+
+  BOOST_CHECK (!decomposed);
+  BOOST_CHECK (!macro_action.empty ());
+  macro_action.decompose (input_action);
+  BOOST_CHECK (decomposed);
+  BOOST_CHECK (macro_action.empty ());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

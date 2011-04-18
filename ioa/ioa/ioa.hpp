@@ -452,7 +452,7 @@ namespace ioa {
 				   const automaton_handle<Instance>& handle,
 				   Member Instance::*member_ptr,
 				   unvalued /* */) {
-      action<Member> output_action (handle.get_automaton (),
+      action<Member> output_action (handle,
 				    ptr_to_member (handle, member_ptr));
       return new execute_output<Instance, action<Member> > (scheduler, handle, output_action);
     }
@@ -462,8 +462,8 @@ namespace ioa {
 				   const automaton_handle<Instance>& handle,
 				   Member Instance::*member_ptr,
 				   valued /* */) {
-      action<Member> output_action (handle.get_automaton (),
-								 ptr_to_member (handle, member_ptr));
+      action<Member> output_action (handle,
+				    ptr_to_member (handle, member_ptr));
       return new execute_output<Instance, action<Member> > (scheduler, handle, output_action);
     }
 
@@ -471,7 +471,7 @@ namespace ioa {
     runnable* make_execute_internal (simple_scheduler& scheduler,
 				     const automaton_handle<Instance>& handle,
 				     Member Instance::*member_ptr) {
-      action<Member> ac (handle.get_automaton (),
+      action<Member> ac (handle,
 			 ptr_to_member (handle, member_ptr));
       return new execute_local<Instance, action<Member> > (scheduler, handle, ac);
     }
@@ -481,7 +481,7 @@ namespace ioa {
 				       const automaton_handle<Instance>& handle,
 				       Member Instance::*member_ptr,
 				       const typename Member::value_type& t) {
-      action<Member> ac (handle.get_automaton (),
+      action<Member> ac (handle,
 			 ptr_to_member (handle, member_ptr),
 			 t);
       return new execute_local<Instance, action<Member> > (scheduler, handle, ac);
@@ -491,7 +491,8 @@ namespace ioa {
     runnable* make_execute_callback (simple_scheduler& scheduler,
 				     const automaton_handle<Instance>& handle,
 				     const Callback& callback) {
-      action<Callback> ac (handle.get_automaton (), callback);
+      action<Callback> ac (handle,
+			   callback);
       return new execute_local<Instance, action<Callback> > (scheduler, handle, ac);
     }
 
@@ -515,8 +516,12 @@ namespace ioa {
 			    InputMember InputInstance::*input_member_ptr,
 			    unvalued /* */,
 			    Callback& callback) {
-      action<OutputMember> output_action (output_handle.get_automaton (), ptr_to_member (output_handle, output_member_ptr));
-      action<InputMember, Callback> input_action (input_handle.get_automaton (), ptr_to_member (input_handle, input_member_ptr), handle.get_automaton (), callback);
+      action<OutputMember> output_action (output_handle,
+					  ptr_to_member (output_handle, output_member_ptr));
+      action<InputMember, Callback> input_action (input_handle,
+						  ptr_to_member (input_handle, input_member_ptr),
+						  handle,
+						  callback);
 
       return new compose<Instance, OutputInstance, action<OutputMember>, InputInstance, action<InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
     }
@@ -533,8 +538,12 @@ namespace ioa {
 			    InputMember InputInstance::*input_member_ptr,
 			    valued /* */,
 			    Callback& callback) {
-      action<OutputMember> output_action (output_handle.get_automaton (), ptr_to_member (output_handle, output_member_ptr));
-      action<InputMember, Callback> input_action (input_handle.get_automaton (), ptr_to_member (input_handle, input_member_ptr), handle.get_automaton (), callback);
+      action<OutputMember> output_action (output_handle,
+					  ptr_to_member (output_handle, output_member_ptr));
+      action<InputMember, Callback> input_action (input_handle,
+						  ptr_to_member (input_handle, input_member_ptr),
+						  handle,
+						  callback);
       
       return new compose<Instance, OutputInstance, action<OutputMember>, InputInstance, action<InputMember, Callback>, Callback> (scheduler, handle, output_handle, output_action, input_handle, input_action, callback);
     }

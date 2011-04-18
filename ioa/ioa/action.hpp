@@ -39,18 +39,9 @@ namespace ioa {
 
   class action_interface
   {
-  private:
-    automaton* m_automaton;
-    
   public:
-    action_interface (automaton* automaton) :
-      m_automaton (automaton)
-    { }
-
-    automaton* get_automaton () const
-    {
-      return m_automaton;
-    }
+    virtual ~action_interface () { }
+    virtual const generic_automaton_handle get_automaton_handle () const = 0;
   };
 
   std::ostream& operator<<(std::ostream& output, const action_interface&);
@@ -59,12 +50,10 @@ namespace ioa {
     public action_interface
   {
   private:
-    const automaton* m_owner;
+    const generic_automaton_handle m_owner;
     
   public:
-    input_action_interface (automaton* automaton,
-			    const automaton* owner) :
-      action_interface (automaton),
+    input_action_interface (const generic_automaton_handle& owner) :
       m_owner (owner)
     { }
     
@@ -72,16 +61,13 @@ namespace ioa {
 
     virtual void decompose () = 0;
 
-    const automaton* get_owner () const
+    const generic_automaton_handle get_owner_handle () const
     {
       return m_owner;
     }
 
-    bool operator== (const input_action_interface& ia) const
-    {
-      return get_member_ptr () == ia.get_member_ptr ();
-    }
-    
+    virtual bool operator== (const input_action_interface& ia) const = 0;
+
     virtual const void* get_member_ptr () const = 0;
     
     virtual bool involves_parameter (const void*) const = 0;
@@ -91,9 +77,8 @@ namespace ioa {
     public input_action_interface
   {
   public:
-    untyped_input_action_interface (automaton* automaton,
-				    const automaton* owner) :
-      input_action_interface (automaton, owner)
+    untyped_input_action_interface (const generic_automaton_handle& owner) :
+      input_action_interface (owner)
     { }
     
     virtual ~untyped_input_action_interface () { }
@@ -106,9 +91,8 @@ namespace ioa {
     public input_action_interface
   {
   public:
-    typed_input_action_interface (automaton* automaton,
-				  const automaton* owner) :
-      input_action_interface (automaton, owner)
+    typed_input_action_interface (const generic_automaton_handle& owner) :
+      input_action_interface (owner)
     { }
     
     virtual ~typed_input_action_interface () { }
@@ -120,10 +104,6 @@ namespace ioa {
     public action_interface
   {
   public:
-    executable_action_interface (automaton* automaton) :
-      action_interface (automaton)
-    { }
-
     virtual ~executable_action_interface () { }
 
     virtual void execute () = 0;
@@ -133,17 +113,10 @@ namespace ioa {
     public executable_action_interface
   {
   public:
-    output_action_interface (automaton* automaton) :
-      executable_action_interface (automaton)
-    { }
-    
-    bool operator== (const output_action_interface& oa) const
-    {
-      return get_member_ptr () == oa.get_member_ptr ();
-    }
+    virtual bool operator== (const output_action_interface& oa) const = 0;
     
     virtual const void* get_member_ptr () const = 0;
-    
+
     virtual bool involves_parameter (const void*) const = 0;
   };
 
@@ -151,10 +124,6 @@ namespace ioa {
     public output_action_interface
   {
   public:
-    untyped_output_action_interface (automaton* automaton) :
-      output_action_interface (automaton)
-    { }
-
     virtual ~untyped_output_action_interface () { }
 
     virtual bool operator() () = 0;
@@ -165,10 +134,6 @@ namespace ioa {
     public output_action_interface
   {
   public:
-    typed_output_action_interface (automaton* automaton) :
-      output_action_interface (automaton)
-    { }
-
     virtual ~typed_output_action_interface () { }
 
     virtual std::pair<bool, T> operator() () = 0;
@@ -177,10 +142,6 @@ namespace ioa {
   class independent_action_interface :
     public executable_action_interface
   {
-  public:
-    independent_action_interface (automaton* automaton) :
-      executable_action_interface (automaton)
-    { }
   };
 
   // Member.
@@ -219,18 +180,6 @@ namespace ioa {
   public:
     callback (const Callback& callback) :
       m_callback (callback)
-    { }
-  };
-
-  // Parameter.
-  template <class T>
-  class parameter_impl {
-  protected:
-    T* m_parameter;
-
-  public:
-    parameter_impl (T* parameter) :
-      m_parameter (parameter)
     { }
   };
 
@@ -303,15 +252,23 @@ namespace ioa {
     private ref_member<M>,
     private callback<C>
   {
+  private:
+    const generic_automaton_handle m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	    M& m,
-	    const automaton* owner,
-	    const C& c) :
-      untyped_input_action_interface (automaton, owner),
+    action_impl (const generic_automaton_handle& handle,
+		 M& m,
+		 const generic_automaton_handle& owner,
+		 const C& c) :
+      untyped_input_action_interface (owner),
       ref_member<M> (m),
-      callback<C> (c)
+      callback<C> (c),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
     
     bool involves_parameter (const void* parameter) const {
       return false;
@@ -319,6 +276,10 @@ namespace ioa {
     
     void decompose () {
       this->m_callback ();
+    }
+
+    bool operator== (const input_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr ();
     }
     
     const void* get_member_ptr () const {
@@ -333,28 +294,37 @@ namespace ioa {
   template <class PT, class M, class C>
   class action_impl<input_category, unvalued, null_type, parameterized, PT, M, C> : 
     public untyped_input_action_interface,
-    private parameter_impl<PT>,
     private ref_member<M>,
     private callback<C> {
+  private:
+    const generic_parameter_handle<PT> m_handle;
 
   public:
-    action_impl (automaton* automaton,
-	PT* p,
-	M& m,
-	const automaton* owner,
-	const C& c) :
-      untyped_input_action_interface (automaton, owner),
-      parameter_impl<PT> (p),
+    action_impl (const generic_parameter_handle<PT>& handle,
+		 M& m,
+		 const generic_automaton_handle& owner,
+		 const C& c) :
+      untyped_input_action_interface (owner),
       ref_member<M> (m),
-      callback<C> (c)
+      callback<C> (c),
+      m_handle (handle)
     { }
 
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
+
     bool involves_parameter (const void* parameter) const {
-      return this->m_parameter == parameter;
+      return m_handle.get_parameter () == parameter;
     }
 
     void decompose () {
       this->m_callback ();
+    }
+
+    bool operator== (const input_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr () &&
+	oa.involves_parameter (m_handle.get_parameter ());
     }
 
     const void* get_member_ptr () const {
@@ -362,7 +332,7 @@ namespace ioa {
     }
 
     void operator() () {
-      this->m_member (this->m_parameter);
+      this->m_member (m_handle.get_parameter ());
     }
 
   };
@@ -373,15 +343,23 @@ namespace ioa {
     private ref_member<M>,
     private callback<C>
   {
+  private:
+    const generic_automaton_handle m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	M& m,
-	const automaton* owner,
-	const C& c) :
-      typed_input_action_interface<VT> (automaton, owner),
+    action_impl (const generic_automaton_handle& handle,
+		 M& m,
+		 const generic_automaton_handle& owner,
+		 const C& c) :
+      typed_input_action_interface<VT> (owner),
       ref_member<M> (m),
-      callback<C> (c)
+      callback<C> (c),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
 
     bool involves_parameter (const void* parameter) const {
       return false;
@@ -389,6 +367,10 @@ namespace ioa {
 
     void decompose () {
       this->m_callback ();
+    }
+
+    bool operator== (const input_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr ();
     }
 
     const void* get_member_ptr () const {
@@ -404,24 +386,29 @@ namespace ioa {
   template <class VT, class PT, class M, class C>
   class action_impl<input_category, valued, VT, parameterized, PT, M, C> :
     public typed_input_action_interface<VT>,
-    private parameter_impl<PT>,
     private ref_member<M>,
     private callback<C>
   {
+  private:
+    const generic_parameter_handle<PT> m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	PT* p,
-	M& m,
-	const automaton* owner,
-	const C& c) :
-      typed_input_action_interface<VT> (automaton, owner),
-      parameter_impl<PT> (p),
+    action_impl (const generic_parameter_handle<PT>& handle,
+		 M& m,
+		 const generic_automaton_handle& owner,
+		 const C& c) :
+      typed_input_action_interface<VT> (owner),
       ref_member<M> (m),
-      callback<C> (c)
+      callback<C> (c),
+      m_handle (handle)
     { }
 
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
+
     bool involves_parameter (const void* parameter) const {
-      return this->m_parameter == parameter;
+      return m_handle.get_parameter () == parameter;
     }
 
     void decompose () {
@@ -432,8 +419,13 @@ namespace ioa {
       return &this->m_member;
     }
 
+    bool operator== (const input_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr () &&
+	oa.involves_parameter (m_handle.get_parameter ());
+    }
+
     void operator() (const VT t) {
-      this->m_member (t, this->m_parameter);
+      this->m_member (t, m_handle.get_parameter ());
     }
 
   };
@@ -443,13 +435,24 @@ namespace ioa {
     public untyped_output_action_interface,
     private ref_member<M>
   {
-  public:
-    action_impl (automaton* automaton,
-	M& m) :
-      untyped_output_action_interface (automaton),
-      ref_member<M> (m)
-    { }
+  private:
+    const generic_automaton_handle m_handle;
     
+  public:
+    action_impl (const generic_automaton_handle& handle,
+		 M& m) :
+      ref_member<M> (m),
+      m_handle (handle)
+    { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
+
+    bool operator== (const output_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr ();
+    }
+
     const void* get_member_ptr () const {
       return &this->m_member;
     }
@@ -470,20 +473,29 @@ namespace ioa {
   template <class PT, class M>
   class action_impl<output_category, unvalued, null_type, parameterized, PT, M, null_type> :
     public untyped_output_action_interface,
-    private parameter_impl<PT>,
     private ref_member<M>
   {
+  private:
+    const generic_parameter_handle<PT> m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	PT* p,
-	M& m) :
-      untyped_output_action_interface (automaton),
-      parameter_impl<PT> (p),
-      ref_member<M> (m)
+    action_impl (const generic_parameter_handle<PT>& handle,
+		 M& m) :
+      ref_member<M> (m),
+      m_handle (handle)
     { }
-    
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
+
     bool involves_parameter (const void* parameter) const {
-      return this->m_parameter == parameter;
+      return m_handle.get_parameter () == parameter;
+    }
+
+    bool operator== (const output_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr () &&
+	oa.involves_parameter (m_handle.get_parameter ());
     }
 
     const void* get_member_ptr () const {
@@ -491,7 +503,7 @@ namespace ioa {
     }
 
     bool operator() () {
-      return this->m_member (this->m_parameter);
+      return this->m_member (m_handle.get_parameter ());
     }
 
     void execute () {
@@ -505,15 +517,26 @@ namespace ioa {
     public typed_output_action_interface<VT>,
     private ref_member<M>
   {
+  private:
+    const generic_automaton_handle m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	M& m) :
-      typed_output_action_interface<VT> (automaton),
-      ref_member<M> (m)
+    action_impl (const generic_automaton_handle& handle,
+		 M& m) :
+      ref_member<M> (m),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
     
     bool involves_parameter (const void* parameter) const {
       return false;
+    }
+
+    bool operator== (const output_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr ();
     }
 
     const void* get_member_ptr () const {
@@ -533,20 +556,29 @@ namespace ioa {
   template <class VT, class PT, class M>
   class action_impl<output_category, valued, VT, parameterized, PT, M, null_type> :
     public typed_output_action_interface<VT>,
-    private parameter_impl<PT>,
     private ref_member<M>
   {
+  private:
+    const generic_parameter_handle<PT> m_handle;
+    
   public:
-    action_impl (automaton* automaton,
-	PT* p,
-	M& m) :
-      typed_output_action_interface<VT> (automaton),
-      parameter_impl<PT> (p),
-      ref_member<M> (m)
+    action_impl (const generic_parameter_handle<PT>& handle,
+		 M& m) :
+      ref_member<M> (m),
+      m_handle (handle)
     { }
 
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
+
     bool involves_parameter (const void* parameter) const {
-      return this->m_parameter == parameter;
+      return m_handle.get_parameter () == parameter;
+    }
+
+    bool operator== (const output_action_interface& oa) const {
+      return &this->m_member == oa.get_member_ptr () &&
+	oa.involves_parameter (m_handle.get_parameter ());
     }
 
     const void* get_member_ptr () const {
@@ -554,7 +586,7 @@ namespace ioa {
     }
 
     std::pair<bool, VT> operator() () {
-      return this->m_member (this->m_parameter); 
+      return this->m_member (m_handle.get_parameter ()); 
     }
 
     void execute () {
@@ -568,12 +600,19 @@ namespace ioa {
     public independent_action_interface,
     private ref_member<M>
   {
+  private:
+    const generic_automaton_handle m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	M& m) :
-      independent_action_interface (automaton),
-      ref_member<M> (m)
+    action_impl (const generic_automaton_handle& handle,
+		 M& m) :
+      ref_member<M> (m),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
     
     void execute () {
       this->m_member ();
@@ -583,17 +622,21 @@ namespace ioa {
   template <class PT, class M>
   class action_impl<internal_category, unvalued, null_type, parameterized, PT, M, null_type> :
     public independent_action_interface,
-    private parameter_impl<PT>,
     private ref_member<M>
   {
+  private:
+    const generic_parameter_handle<PT> m_handle;
+
   public:
-    action_impl (automaton* automaton,
-	PT* p,
-	M& m) :
-      independent_action_interface (automaton),
-      parameter_impl<PT> (p),
-      ref_member<M> (m)
+    action_impl (const generic_parameter_handle<PT>& handle,
+		 M& m) :
+      ref_member<M> (m),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
     
     void execute () {
       this->m_member (this->m_parameter);
@@ -607,16 +650,21 @@ namespace ioa {
     private ref_member<M>
   {
   private:
+    const generic_automaton_handle m_handle;
     VT m_t;
 
   public:
-    action_impl (automaton* automaton,
-	M& m,
-	const VT& t) :
-      independent_action_interface (automaton),
+    action_impl (const generic_automaton_handle handle,
+		 M& m,
+		 const VT& t) :
       ref_member<M> (m),
-      m_t (t)
+      m_t (t),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
 
     void execute () {
       this->m_member (m_t);
@@ -628,13 +676,20 @@ namespace ioa {
     public independent_action_interface,
     private copy_member<M>
   {
+  private:
+    const generic_automaton_handle m_handle;
+
     // TODO:  We are copying.  Should we take a reference?
   public:
-    action_impl (automaton* automaton,
+    action_impl (const generic_automaton_handle handle,
 		 const M& m) :
-      independent_action_interface (automaton),
-      copy_member<M> (m)
+      copy_member<M> (m),
+      m_handle (handle)
     { }
+
+    const generic_automaton_handle get_automaton_handle () const {
+      return m_handle;
+    }
     
     void execute () {
       this->m_member ();
@@ -658,7 +713,7 @@ namespace ioa {
     typedef typename Member::parameter_status parameter_status;
     typedef typename Member::parameter_type parameter_type;
 
-    action (automaton* automaton,
+    action (const generic_automaton_handle& handle,
 	    Member& member) :
       action_impl<action_category,
 		  value_status,
@@ -666,11 +721,10 @@ namespace ioa {
 		  parameter_status,
 		  parameter_type,
 		  Member,
-		  Callback> (automaton, member)
+		  Callback> (handle, member)
     { }
 
-    action (automaton* automaton,
-	    parameter_type* parameter,
+    action (const generic_parameter_handle<parameter_type>& handle,
 	    Member& member) :
       action_impl<action_category,
 		  value_status,
@@ -678,12 +732,12 @@ namespace ioa {
 		  parameter_status,
 		  parameter_type,
 		  Member,
-		  Callback> (automaton, parameter, member)
+		  Callback> (handle, member)
     { }
 
-    action (automaton* automaton,
+    action (const generic_automaton_handle& handle,
 	    Member& member,
-	    const automaton* owner,
+	    const generic_automaton_handle& owner,
 	    const Callback& callback) :
       action_impl<action_category,
 		  value_status,
@@ -691,13 +745,12 @@ namespace ioa {
 		  parameter_status,
 		  parameter_type,
 		  Member,
-		  Callback> (automaton, member, owner, callback)
-    { }      
+		  Callback> (handle, member, owner, callback)
+    { }
 
-    action (automaton* automaton,
-	    parameter_type* parameter,
+    action (const generic_parameter_handle<parameter_type>& handle,
 	    Member& member,
-	    const automaton* owner,
+	    const generic_automaton_handle& owner,
 	    const Callback& callback) :
       action_impl<action_category,
 		  value_status,
@@ -705,10 +758,10 @@ namespace ioa {
 		  parameter_status,
 		  parameter_type,
 		  Member,
-		  Callback> (automaton, parameter, member, owner, callback)
+		  Callback> (handle, member, owner, callback)
     { }
 
-    action (automaton* automaton,
+    action (const generic_automaton_handle& handle,
 	    const Member& member) :
       action_impl<action_category,
 		  value_status,
@@ -716,7 +769,7 @@ namespace ioa {
 		  parameter_status,
 		  parameter_type,
 		  Member,
-		  Callback> (automaton, member)
+		  Callback> (handle, member)
     { }
   };
 

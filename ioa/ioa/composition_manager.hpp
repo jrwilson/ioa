@@ -83,9 +83,9 @@ namespace ioa {
       scheduler_interface& scheduler = get_scheduler ();
       
       // Lock.
-      automaton::lock_type lock (*(executable_action_interface.get_automaton ()));
+      automaton::lock_type lock (*(executable_action_interface.get_automaton_handle ().get_automaton ()));
       // Set the current automaton.
-      scheduler.set_current_automaton (executable_action_interface.get_automaton ());
+      scheduler.set_current_automaton (executable_action_interface.get_automaton_handle ().get_automaton ());
       // Execute.
       executable_action_interface.execute ();
       scheduler.set_current_automaton (0);
@@ -114,8 +114,8 @@ namespace ioa {
     }
 
     bool output_available (const output_action_interface& output_action,
-			   const automaton* input_automaton) const {
-      if (output_action.get_automaton () == input_automaton) {
+			   const generic_automaton_handle& input_handle) const {
+      if (output_action.get_automaton_handle () == input_handle) {
 	// No self compositions!!
 	return false;
       }
@@ -128,7 +128,7 @@ namespace ioa {
 	return true;
       }
       else {
-	return !(*pos)->involves_automaton (input_automaton);
+	return !(*pos)->involves_automaton (input_handle);
       }
     }
 
@@ -155,11 +155,11 @@ namespace ioa {
       }
     }
  
-    void decompose (const automaton* automaton,
+    void decompose (const generic_automaton_handle& handle,
 		    const void* parameter) {
       list_type::iterator pos = m_macro_actions.begin ();
       while (pos != m_macro_actions.end ()) {
-	(*pos)->decompose (automaton, parameter);
+	(*pos)->decompose (handle, parameter);
 	if ((*pos)->empty ()) {
 	  delete (*pos);
 	  pos = m_macro_actions.erase (pos);
@@ -170,10 +170,10 @@ namespace ioa {
       }
     }
 
-    void decompose (const automaton* automaton) {
+    void decompose (const generic_automaton_handle& handle) {
       list_type::iterator pos = m_macro_actions.begin ();
       while (pos != m_macro_actions.end ()) {
-	(*pos)->decompose (automaton);
+	(*pos)->decompose (handle);
 	if ((*pos)->empty ()) {
 	  delete (*pos);
 	  pos = m_macro_actions.erase (pos);

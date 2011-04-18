@@ -16,7 +16,7 @@ namespace ioa {
   struct action_compare {
     bool operator() (const action_interface* x,
 		     const action_interface* y) {
-      return x->get_automaton() < y->get_automaton();
+      return x->get_automaton_handle ().get_automaton () < y->get_automaton_handle ().get_automaton();
     }
   };
 
@@ -28,12 +28,12 @@ namespace ioa {
     virtual bool involves_output (const output_action_interface& output_action) const = 0;
     virtual bool involves_input (const input_action_interface& input_action) const = 0;
     virtual bool involves_input_check_owner (const input_action_interface& input_action) const = 0;
-    virtual bool involves_automaton (const automaton* automaton) const = 0;
+    virtual bool involves_automaton (const generic_automaton_handle& handle) const = 0;
 
     virtual bool empty () const = 0;
     virtual void decompose (const input_action_interface& input_action) = 0;
-    virtual void decompose (const automaton*, const void* parameter) = 0;
-    virtual void decompose (const automaton*) = 0;
+    virtual void decompose (const generic_automaton_handle& handle, const void* parameter) = 0;
+    virtual void decompose (const generic_automaton_handle&) = 0;
  };
 
   template <class OutputAction, class InputAction>
@@ -80,21 +80,21 @@ namespace ioa {
       for(typename list_type::const_iterator pos = m_input_actions.begin();
       	  pos != m_input_actions.end();
       	  ++pos) {
-  	if((*(*pos)) == input_action && (*(*pos)).get_owner () == input_action.get_owner ()) {
+  	if((*(*pos)) == input_action && (*(*pos)).get_owner_handle () == input_action.get_owner_handle ()) {
   	  return true;
   	}
       }
       return false;
     }
 
-    bool involves_automaton (const automaton* automaton) const {
-      if (m_output_action->get_automaton () == automaton) {
+    bool involves_automaton (const generic_automaton_handle& handle) const {
+      if (m_output_action->get_automaton_handle () == handle) {
 	return true;
       }
       for (typename list_type::const_iterator pos = m_input_actions.begin();
 	   pos != m_input_actions.end();
 	   ++pos) {
-  	if((*(*pos)).get_automaton () == automaton) {
+  	if((*(*pos)).get_automaton_handle () == handle) {
   	  return true;
   	}
       }
@@ -118,7 +118,7 @@ namespace ioa {
       for (pos = m_input_actions.begin ();
 	   pos != m_input_actions.end ();
 	   ++pos) {
-      	if((*(*pos)) == input_action && (*(*pos)).get_owner () == input_action.get_owner ()) {
+      	if((*(*pos)) == input_action && (*(*pos)).get_owner_handle () == input_action.get_owner_handle ()) {
       	  break;
       	}
       }
@@ -130,9 +130,9 @@ namespace ioa {
       }
     }
 
-    void decompose (const automaton* automaton,
+    void decompose (const generic_automaton_handle& handle,
 		    const void* parameter) {
-      if (m_output_action->get_automaton () == automaton &&
+      if (m_output_action->get_automaton_handle () == handle &&
 	  m_output_action->involves_parameter (parameter)) {
 	typename list_type::const_iterator pos;
 	for (pos = m_input_actions.begin ();
@@ -146,7 +146,7 @@ namespace ioa {
       else {
 	typename list_type::iterator pos = m_input_actions.begin ();
 	while (pos != m_input_actions.end ()) {
-	  if((*pos)->get_automaton () == automaton &&
+	  if((*pos)->get_automaton_handle () == handle &&
 	     (*pos)->involves_parameter (parameter)) {
 	    (*pos)->decompose ();
 	    delete (*pos);
@@ -159,8 +159,8 @@ namespace ioa {
       }
     }
 
-    void decompose (const automaton* automaton) {
-      if (m_output_action->get_automaton () == automaton) {
+    void decompose (const generic_automaton_handle& handle) {
+      if (m_output_action->get_automaton_handle () == handle) {
 	typename list_type::const_iterator pos;
 	for (pos = m_input_actions.begin ();
 	     pos != m_input_actions.end ();
@@ -173,8 +173,8 @@ namespace ioa {
       else {
 	typename list_type::iterator pos = m_input_actions.begin ();
 	while (pos != m_input_actions.end ()) {
-	  if((*pos)->get_automaton () == automaton ||
-	     (*pos)->get_owner () == automaton) {
+	  if((*pos)->get_automaton_handle () == handle ||
+	     (*pos)->get_owner_handle () == handle) {
 	    (*pos)->decompose ();
 	    delete (*pos);
 	    pos = m_input_actions.erase (pos);
@@ -191,17 +191,17 @@ namespace ioa {
     void execute () const {
       // Acquire locks (in order).
       bool locked_output = false;
-      automaton* ao = m_output_action->get_automaton();
+      generic_automaton_handle ao = m_output_action->get_automaton_handle ();
       
       for(typename list_type::const_iterator pos = m_input_actions.begin();
   	  pos != m_input_actions.end();
   	  ++pos) {
-  	automaton* ai = (*pos)->get_automaton();
+  	generic_automaton_handle ai = (*pos)->get_automaton_handle ();
   	if(!locked_output && ao < ai) {
-  	  ao->lock();
+  	  ao.get_automaton ()->lock();
   	  locked_output = true;
   	}
-  	ai->lock();
+  	ai.get_automaton ()->lock();
       }
 
       // Execute.
@@ -212,12 +212,12 @@ namespace ioa {
       for(typename list_type::const_iterator pos = m_input_actions.begin();
   	  pos != m_input_actions.end();
   	  ++pos) {
-  	automaton* ai = (*pos)->get_automaton();
+  	generic_automaton_handle ai = (*pos)->get_automaton_handle ();
   	if(!locked_output && ao < ai) {
-  	  ao->unlock();
+  	  ao.get_automaton ()->unlock();
   	  locked_output = true;
   	}
-  	ai->unlock();
+  	ai.get_automaton ()->unlock();
       }
     }
   };
@@ -233,13 +233,13 @@ namespace ioa {
 
     void execute_core () const {
       scheduler_interface& scheduler = get_scheduler ();
-      scheduler.set_current_automaton (m_output_action->get_automaton ());
+      scheduler.set_current_automaton (m_output_action->get_automaton_handle ().get_automaton ());
       bool t = (*m_output_action) ();
       if (t) {
 	for(list_type::const_iterator pos = m_input_actions.begin();
 	    pos != m_input_actions.end();
 	    ++pos) {
-	  scheduler.set_current_automaton ((*pos)->get_automaton ());
+	  scheduler.set_current_automaton ((*pos)->get_automaton_handle ().get_automaton ());
 	  (*(*pos)) ();
 	}
       }
@@ -259,13 +259,13 @@ namespace ioa {
 
     void execute_core () const {
       scheduler_interface& scheduler = get_scheduler ();
-      scheduler.set_current_automaton (this->m_output_action->get_automaton ());
+      scheduler.set_current_automaton (this->m_output_action->get_automaton_handle ().get_automaton ());
       std::pair<bool, T> t = (*this->m_output_action) ();
       if (t.first) {
 	for (typename macro_action_base<typed_output_action_interface<T>, typed_input_action_interface<T> >::list_type::const_iterator pos = this->m_input_actions.begin();
 	     pos != this->m_input_actions.end();
 	     ++pos) {
-	  scheduler.set_current_automaton ((*pos)->get_automaton ());
+	  scheduler.set_current_automaton ((*pos)->get_automaton_handle ().get_automaton ());
 	  (*(*pos)) (t.second);
 	}
       }

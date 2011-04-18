@@ -204,7 +204,9 @@ namespace ioa {
     };
 
     template <class Instance, class Callback>
-    class create_parent_callback {
+    class create_parent_callback :
+      public anonymous_internal
+    {
     private:
       create_result<Instance> m_result;
       Callback m_callback;
@@ -247,7 +249,7 @@ namespace ioa {
 	}
 
 	create_parent_callback<Child, Callback> cb (r, m_callback);
-	//m_scheduler.schedule_callback<Parent, create_parent_callback<Child, Callback> > (m_parent_handle, cb);
+	m_scheduler.schedule_callback<Parent, create_parent_callback<Child, Callback> > (m_parent_handle, cb);
       }
 
     };
@@ -280,7 +282,8 @@ namespace ioa {
     };
 
     template <class Callback>
-    class compose_owner_callback
+    class compose_owner_callback :
+      public anonymous_internal
     {
     private:
       compose_result m_result;
@@ -298,7 +301,9 @@ namespace ioa {
     };
 
     template <class Instance, class Member>
-    class compose_action_callback {
+    class compose_action_callback :
+      public anonymous_internal
+    {
     private:
       automaton_handle<Instance> m_handle;
       Member Instance::*m_member_ptr;

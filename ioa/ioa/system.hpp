@@ -100,21 +100,9 @@ namespace ioa {
       }
     }
 
-    // Non-modifying methods.
-    template <class Action>
-    void execute (const handle_interface& handle,
-    		  Action& action) {
-      // Lock the system so automata can't disappear.
-      boost::shared_lock<boost::shared_mutex> lock (*this);
-      if (handle.valid ()) {
-    	BOOST_ASSERT (handle.get_automaton () == action.get_automaton ());
-    	m_composition_manager.execute (action);
-      }
-    }
-
     // Modifying methods.
     template <class Child, class Callback>
-    void create (const handle_interface& parent,
+    void create (const automaton_handle_interface& parent,
 		 Child* child,
 		 Callback& callback) {
       boost::unique_lock<boost::shared_mutex> lock (*this);
@@ -159,10 +147,10 @@ namespace ioa {
     }
 
     template<class OutputAction, class InputAction, class Callback>
-    void compose (const handle_interface& handle,
-		  const handle_interface& output_handle,
+    void compose (const automaton_handle_interface& handle,
+		  const automaton_handle_interface& output_handle,
 		  const OutputAction& output_action,
-		  const handle_interface& input_handle,
+		  const automaton_handle_interface& input_handle,
 		  const InputAction& input_action,
 		  Callback& callback) {
       // Lock the system.
@@ -175,9 +163,9 @@ namespace ioa {
       	  callback (make_compose_result (INPUT_INVALID));
       	}
       	else {
-	  BOOST_ASSERT (handle.get_automaton () == input_action.get_owner ());
-	  BOOST_ASSERT (output_handle.get_automaton () == output_action.get_automaton ());
-	  BOOST_ASSERT (input_handle.get_automaton () == input_action.get_automaton ());
+	  BOOST_ASSERT (handle.get_automaton () == input_action.get_owner_handle ().get_automaton ());
+	  BOOST_ASSERT (output_handle.get_automaton () == output_action.get_automaton_handle ().get_automaton ());
+	  BOOST_ASSERT (input_handle.get_automaton () == input_action.get_automaton_handle ().get_automaton ());
 
       	  if (m_composition_manager.composed (output_action, input_action)) {
       	    callback (make_compose_result (COMPOSITION_EXISTS));
@@ -185,7 +173,7 @@ namespace ioa {
       	  else if (!m_composition_manager.input_available (input_action)) {
       	    callback (make_compose_result (INPUT_UNAVAILABLE));
       	  }
-      	  else if(!m_composition_manager.output_available (output_action, input_action.get_automaton ())) {
+      	  else if(!m_composition_manager.output_available (output_action, input_action.get_automaton_handle ())) {
       	    callback (make_compose_result (OUTPUT_UNAVAILABLE));
       	  }
       	  else {
@@ -228,6 +216,18 @@ namespace ioa {
 
     // void rescind();
     // void destroy();
+
+    // Non-modifying methods.
+    template <class Action>
+    void execute (const automaton_handle_interface& handle,
+    		  Action& action) {
+      // Lock the system so automata can't disappear.
+      boost::shared_lock<boost::shared_mutex> lock (*this);
+      if (handle.valid ()) {
+    	BOOST_ASSERT (handle.get_automaton () == action.get_automaton_handle ().get_automaton ());
+    	m_composition_manager.execute (action);
+      }
+    }
 
   };
 }
