@@ -21,20 +21,15 @@ namespace ioa {
 
     The input and output interfaces are split by type to enable safe composition.
     Namely, untyped input actions can be composed with untyped output actions and typed input actiosn can be composed with typed output actions of the same time.
-    See macro_action.hpp to see how this is used.
 
     The executable interface contains output and independent actions.
     This split is necessary because outputs require special processing when they are executed, i.e., they can be composed and involve more than one automaton.
-    Independent actions only involve one automaton and include internal actions, events, and anonymous internal actions.
+    Independent actions only involve one automaton and include internal actions and events.
     The intended usage of independent actions is that they will be executed after the automaton is locked.
 
     Events are asynchronous messages from other automata.
     Conceptually, events act like a permanent inbox and are a cross between an internal action and an input action.
     Events allow arbitrary automata to coordinate are are necessary for dynamic interfaces.
-
-    Anonymous internal actions are used to allow the system to deliver the result of a system call to an automaton.
-    Anonymous internal actions consist of a nullary functor.
-
   */
 
   class action_interface
@@ -168,6 +163,10 @@ namespace ioa {
   class independent_action_interface :
     public executable_action_interface
   {
+  public:
+    independent_action_interface (const generic_automaton_handle& handle) :
+      executable_action_interface (handle)
+    { }
   };
 
   // Member.
@@ -200,9 +199,8 @@ namespace ioa {
 
   struct input_category { };
   struct output_category { };
-  // struct internal_category { };
-  // struct event_category { };
-  // struct anonymous_internal_category { };
+  struct internal_category { };
+  struct event_category { };
 
   struct unvalued { };
   struct valued { };
@@ -240,13 +238,13 @@ namespace ioa {
     typedef output_category action_category;
   };
 
-  // struct internal : public no_value {
-  //   typedef internal_category action_category;
-  // };
+  struct internal : public no_value {
+    typedef internal_category action_category;
+  };
 
-  // struct anonymous_internal : public no_value, public no_parameter {
-  //   typedef anonymous_internal_category action_category;
-  // };
+  struct event : public no_parameter {
+    typedef event_category action_category;
+  };
 
   /*
     K - category
@@ -532,106 +530,82 @@ namespace ioa {
 
   };
 
-  // template <class M>
-  // class action_impl<internal_category, unvalued, null_type, unparameterized, null_type, M, null_type> :
-  //   public independent_action_interface,
-  //   private member_ref<M>
-  // {
-  // private:
-  //   const automaton_handle m_handle;
+  template <class M>
+  class action_impl<internal_category, M, unvalued, null_type, unparameterized, null_type> :
+    public independent_action_interface,
+    private member_ref<M>
+  {
+  public:
+    action_impl (const generic_automaton_handle& handle,
+  		 M& m) :
+      independent_action_interface (handle),
+      member_ref<M> (m)
+    { }
 
-  // public:
-  //   action_impl (const automaton_handle& handle,
-  // 		 M& m) :
-  //     member_ref<M> (m),
-  //     m_handle (handle)
-  //   { }
+    void execute () {
+      this->m_member ();
+    }
+  };
 
-  //   const automaton_handle get_automaton_handle () const {
-  //     return m_handle;
-  //   }
+  template <class M, class PT>
+  class action_impl<internal_category, M, unvalued, null_type, parameterized, PT> :
+    public independent_action_interface,
+    private member_ref<M>,
+    private param<PT>
+  {
+  public:
+    action_impl (const generic_automaton_handle& handle,
+		 M& m,
+		 const parameter_handle<PT>& parameter) :
+      independent_action_interface (handle),
+      member_ref<M> (m),
+      param<PT> (parameter)
+    { }
+
+    void execute () {
+      this->m_member (this->m_parameter.second);
+    }
     
-  //   void execute () {
-  //     this->m_member ();
-  //   }
-  // };
+  };
 
-  // template <class PT, class M>
-  // class action_impl<internal_category, unvalued, null_type, parameterized, PT, M, null_type> :
-  //   public independent_action_interface,
-  //   private member_ptr<M>
-  // {
-  // private:
-  //   const half_generic_parameter_handle<PT> m_handle;
+  template <class M>
+  class action_impl<event_category, M, unvalued, null_type, unparameterized, null_type> :
+    public independent_action_interface,
+    private member_ref<M>
+  {
+  public:
+    action_impl (const generic_automaton_handle handle,
+  		 M& m) :
+      independent_action_interface (handle),
+      member_ref<M> (m)
+    { }
 
-  // public:
-  //   action_impl (const half_generic_parameter_handle<PT>& handle,
-  // 		 M& m) :
-  //     member_ptr<M> (m),
-  //     m_handle (handle)
-  //   { }
+    void execute () {
+      this->m_member ();
+    }    
+  };
 
-  //   const automaton_handle get_automaton_handle () const {
-  //     return m_handle;
-  //   }
-    
-  //   void execute () {
-  //     this->m_member (this->m_parameter);
-  //   }
-    
-  // };
+  template <class M, class VT>
+  class action_impl<event_category, M, valued, VT, unparameterized, null_type> :
+    public independent_action_interface,
+    private member_ref<M>
+  {
+  private:
+    const VT m_t;
 
-  // template <class VT, class M>
-  // class action_impl<event_category, valued, VT, unparameterized, null_type, M, null_type> :
-  //   public independent_action_interface,
-  //   private member_ref<M>
-  // {
-  // private:
-  //   const automaton_handle m_handle;
-  //   VT m_t;
+  public:
+    action_impl (const generic_automaton_handle handle,
+  		 M& m,
+  		 const VT& t) :
+      independent_action_interface (handle),
+      member_ref<M> (m),
+      m_t (t)
+    { }
 
-  // public:
-  //   action_impl (const automaton_handle handle,
-  // 		 M& m,
-  // 		 const VT& t) :
-  //     member_ref<M> (m),
-  //     m_t (t),
-  //     m_handle (handle)
-  //   { }
-
-  //   const automaton_handle get_automaton_handle () const {
-  //     return m_handle;
-  //   }
-
-  //   void execute () {
-  //     this->m_member (m_t);
-  //   }    
-  // };
-
-  // template <class M>
-  // class action_impl<anonymous_internal_category, unvalued, null_type, unparameterized, null_type, M, null_type> :
-  //   public independent_action_interface,
-  //   private copy_member<M>
-  // {
-  // private:
-  //   const automaton_handle m_handle;
-
-  //   // TODO:  We are copying.  Should we take a reference?
-  // public:
-  //   action_impl (const automaton_handle handle,
-  // 		 const M& m) :
-  //     copy_member<M> (m),
-  //     m_handle (handle)
-  //   { }
-
-  //   const automaton_handle get_automaton_handle () const {
-  //     return m_handle;
-  //   }
-    
-  //   void execute () {
-  //     this->m_member ();
-  //   }
-  // };
+    void execute () {
+      this->m_member (m_t);
+    }    
+  };
   
   template <class Member>
   class action :
@@ -693,16 +667,17 @@ namespace ioa {
   		  parameter_type> (handle, member, parameter, composer)
     { }
 
-  //   action (const automaton_handle& handle,
-  // 	    const Member& member) :
-  //     action_impl<action_category,
-  // 		  value_status,
-  // 		  value_type,
-  // 		  parameter_status,
-  // 		  parameter_type,
-  // 		  Member,
-  // 		  Callback> (handle, member)
-  //   { }
+    action (const generic_automaton_handle& handle,
+  	    Member& member,
+	    const value_type& value) :
+      action_impl<action_category,
+		  Member,
+  		  value_status,
+  		  value_type,
+  		  parameter_status,
+  		  parameter_type> (handle, member, value)
+    { }
+
   };
 
 }
