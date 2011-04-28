@@ -7,10 +7,10 @@ namespace ioa {
     void set_current_automaton (ioa::automaton*) { }
   };
 
-  null_scheduler ns;
+  null_scheduler null_sched;
   
   ioa::scheduler_interface& get_scheduler () {
-    return ns;
+    return null_sched;
   }
 
 }

@@ -1,104 +1,15 @@
 #ifndef __automaton_test_hpp__
 #define __automaton_test_hpp__
 
+#include <action.hpp>
+
 struct automaton {
 
-  struct up_ut_output_action {
-    typedef ioa::output action_category;
-    typedef ioa::untyped value_status;
-    typedef ioa::null_type value_type;
-    typedef ioa::unparameterized parameter_status;
-    typedef ioa::null_type parameter_type;
-
-    bool state;
-
-    up_ut_output_action () :
-      state (false) { }
-
-    bool operator() () {
-      state = true;
-      return true;
-    }
-
-  };
-  up_ut_output_action up_ut_output;
-
-  struct p_ut_output_action {
-    typedef ioa::output action_category;
-    typedef ioa::untyped value_status;
-    typedef ioa::null_type value_type;
-    typedef ioa::parameterized parameter_status;
-    typedef int parameter_type;
-
-    bool state;
-    int* last_parameter;
-
-    p_ut_output_action () :
-      state (false),
-      last_parameter (0)
-    { }
-
-    bool operator() (int* parameter) {
-      state = true;
-      last_parameter = parameter;
-      return true;
-    }
-
-  };
-  p_ut_output_action p_ut_output;
-
-  struct up_t_output_action {
-    typedef ioa::output action_category;
-    typedef ioa::typed value_status;
-    typedef int value_type;
-    typedef ioa::unparameterized parameter_status;
-    typedef ioa::null_type parameter_type;
-
-    bool state;
-
-    up_t_output_action () :
-      state (false)
-    { }
-
-    std::pair<bool, int> operator() () {
-      state = true;
-      return std::make_pair (true, 9845);
-    }
-
-  };
-  up_t_output_action up_t_output;
-
-  struct p_t_output_action {
-    typedef ioa::output action_category;
-    typedef ioa::typed value_status;
-    typedef int value_type;
-    typedef ioa::parameterized parameter_status;
-    typedef int parameter_type;
-
-    bool state;
-    int* last_parameter;
-
-    p_t_output_action () :
-      state (false),
-      last_parameter (0)
-    { }
-
-    std::pair<bool, int> operator() (int* parameter) {
-      state = true;
-      last_parameter = parameter;
-      return std::make_pair (true, 9845);
-    }
-
-  };
-  p_t_output_action p_t_output;
-
-  struct up_ut_input_action {
-    typedef ioa::input action_category;
-    typedef ioa::untyped value_status;
-    typedef ioa::null_type value_type;
-    typedef ioa::unparameterized parameter_status;
-    typedef ioa::null_type parameter_type;
-
+  struct up_ut_input_action :
+    public ioa::input,
+    public ioa::no_value,
+    public ioa::no_parameter
+  {
     bool state;
 
     up_ut_input_action () :
@@ -111,13 +22,11 @@ struct automaton {
   };
   up_ut_input_action up_ut_input;
 
-  struct p_ut_input_action {
-    typedef ioa::input action_category;
-    typedef ioa::untyped value_status;
-    typedef ioa::null_type value_type;
-    typedef ioa::parameterized parameter_status;
-    typedef int parameter_type;
-
+  struct p_ut_input_action :
+    public ioa::input,
+    public ioa::no_value,
+    public ioa::parameter<int>
+  {
     bool state;
     int* last_parameter;
 
@@ -134,13 +43,11 @@ struct automaton {
   };
   p_ut_input_action p_ut_input;
 
-  struct up_t_input_action {
-    typedef ioa::input action_category;
-    typedef ioa::typed value_status;
-    typedef int value_type;
-    typedef ioa::unparameterized parameter_status;
-    typedef ioa::null_type parameter_type;
-
+  struct up_t_input_action :
+    public ioa::input,
+    public ioa::value<int>,
+    public ioa::no_parameter
+  {
     int value;
 
     up_t_input_action () :
@@ -153,7 +60,11 @@ struct automaton {
   };
   up_t_input_action up_t_input;
 
-  struct p_t_input_action {
+  struct p_t_input_action :
+    public ioa::input,
+    public ioa::value<int>,
+    public ioa::parameter<int>
+  {
     int value;
     int* last_parameter;
 
@@ -161,9 +72,6 @@ struct automaton {
       value (0),
       last_parameter (0)
     { }
-
-    typedef int value_type;
-    typedef int parameter_type;
 
     void operator() (const int t, int* parameter) {
       value = t;
@@ -173,25 +81,96 @@ struct automaton {
   };
   p_t_input_action p_t_input;
 
-  // struct input_action {
-  //   automaton& m_automaton;
-  //   input_action(automaton& automaton)
-  //     : m_automaton(automaton) { }
-  //   void operator()(const int v) {
-  //     m_automaton.value = v;
+  struct up_ut_output_action :
+    public ioa::output,
+    public ioa::no_value,
+    public ioa::no_parameter
+  {
+    bool state;
+
+    up_ut_output_action () :
+      state (false) { }
+
+    bool operator() () {
+      state = true;
+      return true;
+    }
+
+  };
+  up_ut_output_action up_ut_output;
+
+  // struct p_ut_output_action :
+  //   public ioa::output,
+  //   public ioa::no_value,
+  //   public ioa::parameter<int>
+  // {
+  //   bool state;
+  //   int* last_parameter;
+
+  //   p_ut_output_action () :
+  //     state (false),
+  //     last_parameter (0)
+  //   { }
+
+  //   bool operator() (int* parameter) {
+  //     state = true;
+  //     last_parameter = parameter;
+  //     return true;
+  //   }
+
+  // };
+  // p_ut_output_action p_ut_output;
+
+  // struct up_t_output_action :
+  //   public ioa::output,
+  //   public ioa::value<int>,
+  //   public ioa::no_parameter
+  // {
+  //   bool state;
+
+  //   up_t_output_action () :
+  //     state (false)
+  //   { }
+
+  //   std::pair<bool, int> operator() () {
+  //     state = true;
+  //     return std::make_pair (true, 9845);
+  //   }
+
+  // };
+  // up_t_output_action up_t_output;
+
+  // struct p_t_output_action :
+  //   public ioa::output,
+  //   public ioa::value<int>,
+  //   public ioa::parameter<int>
+  // {
+  //   bool state;
+  //   int* last_parameter;
+
+  //   p_t_output_action () :
+  //     state (false),
+  //     last_parameter (0)
+  //   { }
+
+  //   std::pair<bool, int> operator() (int* parameter) {
+  //     state = true;
+  //     last_parameter = parameter;
+  //     return std::make_pair (true, 9845);
+  //   }
+
+  // };
+  // p_t_output_action p_t_output;
+  
+  // struct internal_action {
+  //   bool state;
+  //   internal_action()
+  //     : state(false) { }
+  //   void operator()() {
+  //     state = true;
   //   }
   // };
-  // input_action input;
-  
-  struct internal_action {
-    bool state;
-    internal_action()
-      : state(false) { }
-    void operator()() {
-      state = true;
-    }
-  };
-  internal_action internal;
+  // internal_action internal;
 
 };
 

@@ -4,6 +4,7 @@
 #include <macro_action.hpp>
 #include "automaton.hpp"
 #include "scheduler.hpp"
+#include "system.hpp"
 
 struct callback {
   bool* ptr;
@@ -22,7 +23,7 @@ BOOST_AUTO_TEST_SUITE(action_suite)
 BOOST_AUTO_TEST_CASE(untyped_macro_action)
 {
   automaton* automaton_a = new automaton ();
-  ioa::typed_automaton<automaton> a (automaton_a);
+  ioa::typed_automaton<automaton> a (0, ioa::null_sys, automaton_a);
   ioa::generic_automaton_handle h_a (&a);
   ioa::action<automaton::up_ut_output_action> output_action (h_a, automaton_a->up_ut_output);
 
@@ -30,7 +31,7 @@ BOOST_AUTO_TEST_CASE(untyped_macro_action)
   callback cb (&decomposed);
 
   automaton* automaton_b = new automaton ();
-  ioa::typed_automaton<automaton> b (automaton_b);
+  ioa::typed_automaton<automaton> b (0, ioa::null_sys, automaton_b);
   ioa::generic_automaton_handle h_b (&b);
   ioa::action<automaton::up_ut_input_action, callback> input_action (h_b, automaton_b->up_ut_input, h_b, cb);
 
@@ -54,7 +55,7 @@ BOOST_AUTO_TEST_CASE(untyped_macro_action)
 BOOST_AUTO_TEST_CASE(typed_macro_action)
 {
   automaton* automaton_a = new automaton ();
-  ioa::typed_automaton<automaton> a (automaton_a);
+  ioa::typed_automaton<automaton> a (0, ioa::null_sys, automaton_a);
   ioa::generic_automaton_handle h_a (&a);
   ioa::action<automaton::up_t_output_action> output_action (h_a, automaton_a->up_t_output);
 
@@ -62,7 +63,7 @@ BOOST_AUTO_TEST_CASE(typed_macro_action)
   callback cb (&decomposed);
 
   automaton* automaton_b = new automaton ();
-  ioa::typed_automaton<automaton> b (automaton_b);
+  ioa::typed_automaton<automaton> b (0, ioa::null_sys, automaton_b);
   ioa::generic_automaton_handle h_b (&b);
   ioa::action<automaton::up_t_input_action, callback> input_action (h_b, automaton_b->up_t_input, h_b, cb);
 

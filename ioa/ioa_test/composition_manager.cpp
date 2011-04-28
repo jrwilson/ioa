@@ -4,6 +4,7 @@
 #include <composition_manager.hpp>
 #include "automaton.hpp"
 #include "scheduler.hpp"
+#include "system.hpp"
 
 struct callback {
   void operator() () { }
@@ -14,14 +15,14 @@ BOOST_AUTO_TEST_SUITE(composition_manager_suite)
 BOOST_AUTO_TEST_CASE(untyped_compose)
 {
   ioa::composition_manager cm;
-  ioa::typed_automaton<automaton> parent (new automaton());
+  ioa::typed_automaton<automaton> parent (0, ioa::null_sys, new automaton());
   automaton* y = new automaton ();
-  ioa::typed_automaton<automaton> child1 (y);
+  ioa::typed_automaton<automaton> child1 (0, ioa::null_sys, y);
   ioa::generic_automaton_handle child1_handle (&child1);
   ioa::action<automaton::up_ut_output_action> output_action (child1_handle, y->up_ut_output);
 
   automaton* z = new automaton ();
-  ioa::typed_automaton<automaton> child2 (z);
+  ioa::typed_automaton<automaton> child2 (0, ioa::null_sys, z);
   ioa::generic_automaton_handle child2_handle (&child2);
   callback cb;
   ioa::action<automaton::up_ut_input_action, callback> input_action (child2_handle, z->up_ut_input, &parent, cb);
@@ -47,14 +48,14 @@ BOOST_AUTO_TEST_CASE(untyped_compose)
 BOOST_AUTO_TEST_CASE(typed_compose)
 {
   ioa::composition_manager cm;
-  ioa::typed_automaton<automaton> parent (new automaton());
+  ioa::typed_automaton<automaton> parent (0, ioa::null_sys, new automaton());
   automaton* y = new automaton ();
-  ioa::typed_automaton<automaton> child1 (y);
+  ioa::typed_automaton<automaton> child1 (0, ioa::null_sys, y);
   ioa::generic_automaton_handle child1_handle (&child1);
   ioa::action<automaton::up_t_output_action> output_action (child1_handle, y->up_t_output);
 
   automaton* z = new automaton ();
-  ioa::typed_automaton<automaton> child2 (z);
+  ioa::typed_automaton<automaton> child2 (0, ioa::null_sys, z);
   ioa::generic_automaton_handle child2_handle (&child2);
   callback cb;
   ioa::action<automaton::up_t_input_action, callback> input_action (child2_handle, z->up_t_input, &parent, cb);
@@ -80,14 +81,14 @@ BOOST_AUTO_TEST_CASE(typed_compose)
 BOOST_AUTO_TEST_CASE(untyped_decompose)
 {
   ioa::composition_manager cm;
-  ioa::typed_automaton<automaton> parent (new automaton());
+  ioa::typed_automaton<automaton> parent (0, ioa::null_sys, new automaton());
   automaton* y = new automaton ();
-  ioa::typed_automaton<automaton> child1 (y);
+  ioa::typed_automaton<automaton> child1 (0, ioa::null_sys, y);
   ioa::generic_automaton_handle child1_handle (&child1);
   ioa::action<automaton::up_ut_output_action> output_action (child1_handle, y->up_ut_output);
 
   automaton* z = new automaton ();
-  ioa::typed_automaton<automaton> child2 (z);
+  ioa::typed_automaton<automaton> child2 (0, ioa::null_sys, z);
   ioa::generic_automaton_handle child2_handle (&child2);
   callback cb;
   ioa::action<automaton::up_ut_input_action, callback> input_action (child2_handle, z->up_ut_input, &parent, cb);

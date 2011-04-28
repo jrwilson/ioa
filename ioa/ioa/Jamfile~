@@ -1,2 +1,2 @@
 project : usage-requirements <include>. ;
-lib ioa : action.cpp ;
+lib ioa : automaton.cpp action.cpp system.cpp ;

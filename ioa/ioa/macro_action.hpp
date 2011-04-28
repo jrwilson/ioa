@@ -32,7 +32,7 @@ namespace ioa {
 
     virtual bool empty () const = 0;
     virtual void decompose (const input_action_interface& input_action) = 0;
-    virtual void decompose (const generic_automaton_handle& handle, const void* parameter) = 0;
+    virtual void decompose (const generic_parameter_handle& handle) = 0;
     virtual void decompose (const generic_automaton_handle&) = 0;
  };
 
@@ -130,10 +130,9 @@ namespace ioa {
       }
     }
 
-    void decompose (const generic_automaton_handle& handle,
-		    const void* parameter) {
+    void decompose (const generic_parameter_handle& handle) {
       if (m_output_action->get_automaton_handle () == handle &&
-	  m_output_action->involves_parameter (parameter)) {
+	  m_output_action->involves_parameter (handle.get_parameter ())) {
 	typename list_type::const_iterator pos;
 	for (pos = m_input_actions.begin ();
 	     pos != m_input_actions.end ();
@@ -147,7 +146,7 @@ namespace ioa {
 	typename list_type::iterator pos = m_input_actions.begin ();
 	while (pos != m_input_actions.end ()) {
 	  if((*pos)->get_automaton_handle () == handle &&
-	     (*pos)->involves_parameter (parameter)) {
+	     (*pos)->involves_parameter (handle.get_parameter ())) {
 	    (*pos)->decompose ();
 	    delete (*pos);
 	    pos = m_input_actions.erase (pos);

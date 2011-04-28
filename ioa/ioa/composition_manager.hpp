@@ -169,11 +169,10 @@ namespace ioa {
       }
     }
  
-    void decompose (const generic_automaton_handle& handle,
-		    const void* parameter) {
+    void decompose (const generic_parameter_handle& handle) {
       list_type::iterator pos = m_macro_actions.begin ();
       while (pos != m_macro_actions.end ()) {
-	(*pos)->decompose (handle, parameter);
+	(*pos)->decompose (handle);
 	if ((*pos)->empty ()) {
 	  delete (*pos);
 	  pos = m_macro_actions.erase (pos);
