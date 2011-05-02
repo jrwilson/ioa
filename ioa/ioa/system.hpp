@@ -276,13 +276,13 @@ namespace ioa {
   	return compose_result (COMPOSE_OUTPUT_ACTION_UNAVAILABLE);
       }
 
-      composition<action<OM> >* c;
+      composition<OM>* c;
 
       if (out_pos != m_compositions.end ()) {
-	c = static_cast<composition<action<OM> >*> (*out_pos);
+	c = static_cast<composition<OM>*> (*out_pos);
       }
       else {
-	c = new composition<action<OM> > (output);
+	c = new composition<OM> (output);
   	m_compositions.push_front (c);
       }
       

@@ -5,6 +5,7 @@ lib boost_thread-mt ;
 run locker.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run automaton.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run action.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
+run composition.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run system.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 
 #(do) ioa/system.hpp

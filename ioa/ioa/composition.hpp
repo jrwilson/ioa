@@ -1,6 +1,9 @@
 #ifndef __composition_hpp__
 #define __composition_hpp__
 
+#include <boost/foreach.hpp>
+#include "action.hpp"
+
 namespace ioa {
 
   class input_equal
@@ -79,8 +82,8 @@ namespace ioa {
     
   public:
     template <class T>
-    generic_composition_impl (const T& output) :
-      m_output (new T (output))
+    generic_composition_impl (const action<T>& output) :
+      m_output (new action<T> (output))
     { }
     
     ~generic_composition_impl () {
@@ -121,8 +124,6 @@ namespace ioa {
       m_inputs.insert (new T (input));
     }
 
-    virtual void execute_dispatch () = 0;
-
     void execute () {
       bool output_processed;
 
@@ -152,7 +153,9 @@ namespace ioa {
       }
 
     }
-    
+
+  protected:
+    virtual void execute_dispatch () = 0;
   };
   
   template <class VS, class VT> class composition_impl;
@@ -167,6 +170,7 @@ namespace ioa {
       generic_composition_impl<unvalued_output_action_interface, unvalued_input_action_interface> (action)
     { }
 
+  protected:
     void execute_dispatch () {
       if ((*m_output) ()) {
 	BOOST_FOREACH (unvalued_input_action_interface* i, m_inputs) {
@@ -175,17 +179,39 @@ namespace ioa {
       }
     }
   };
-  
-  template <class Action>
-  class composition :
-    public composition_impl<typename Action::value_status,
-			    typename Action::value_type>
+
+  template <class T>
+  class composition_impl<valued, T> :
+    public generic_composition_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >
   {
   public:
-    typedef typename Action::value_status value_status;
-    typedef typename Action::value_type value_type;
+    template <class Action>
+    composition_impl (const Action& action) :
+      generic_composition_impl<valued_output_action_interface<T>, valued_input_action_interface<T> > (action)
+    { }
 
-    composition (const Action& action) :
+  protected:
+    void execute_dispatch () {
+      const std::pair<bool, T> p = (*(this->m_output)) ();
+      if (p.first) {
+       	BOOST_FOREACH (valued_input_action_interface<T>* i, this->m_inputs) {
+       	  (*i) (p.second);
+       	}
+      }
+    }
+
+  };
+  
+  template <class Member>
+  class composition :
+    public composition_impl<typename Member::value_status,
+			    typename Member::value_type>
+  {
+  public:
+    typedef typename Member::value_status value_status;
+    typedef typename Member::value_type value_type;
+
+    composition (const action<Member>& action) :
       composition_impl<value_status, value_type> (action)
     { }
 
