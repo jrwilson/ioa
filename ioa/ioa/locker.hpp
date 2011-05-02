@@ -8,36 +8,58 @@ namespace ioa {
   typedef size_t serial_type;
 
   template <class T>
-  struct locker_key :
-    public std::pair<serial_type const, T const>
+  class locker_key
   {
+  private:
+    serial_type m_serial;
+    T m_value;
+
+  public:
+    locker_key ()
+    { }
+
     locker_key (serial_type const serial_number,
 		T const value)
       :
-      std::pair<serial_type const, T const> (serial_number, value) { }
-    
-    template<class U>
-    operator locker_key<U> () const {
-      return locker_key<U> (this->first, this->second);
+      m_serial (serial_number),
+      m_value (value)
+    { }
+
+    locker_key& operator= (const locker_key& key) {
+      this->m_serial = key.m_serial;
+      this->m_value = key.m_value;
+      return *this;
     }
 
-    // bool operator== (const locker_key& k) const {
-    //   return this->first == k.first && this->second == k.second;
-    // }
+    template<class U>
+    operator locker_key<U> () const {
+      return locker_key<U> (this->m_serial, this->m_value);
+    }
+
+    const serial_type& serial () const {
+      return m_serial;
+    }
+    
+    const T& value () const {
+      return m_value;
+    }
   };
 
   template <class U, class V>
   bool operator== (const locker_key<U>& u,
 		   const locker_key<V>& v) {
-    return u.first == v.first && u.second == v.second;
+    return u.serial () == v.serial () && u.value () == v.value ();
+  }
+
+  template <class U, class V>
+  bool operator< (const locker_key<U>& u,
+		  const locker_key<V>& v) {
+    return u.serial () < v.serial ();
   }
 
   template <class T>
   class locker
   {
-  public:
-    typedef size_t size_type;
-
   private:
     typedef locker_key<T> key_type;
     typedef std::map<serial_type, T> sv_type;
@@ -46,8 +68,12 @@ namespace ioa {
     serial_type m_serial_number;
     sv_type m_serial_value;
     vs_type m_value_serial;
-    
+
   public:
+    typedef size_t size_type;
+    typedef typename vs_type::iterator iterator;
+    typedef typename vs_type::const_iterator const_iterator;
+
     // Capacity.
     bool empty () const {
       return m_serial_value.empty ();
@@ -59,6 +85,22 @@ namespace ioa {
   
     size_type max_size () const {
       return m_serial_value.max_size ();
+    }
+
+    iterator begin () {
+      return iterator (m_value_serial.begin ());
+    }
+
+    const_iterator begin () const {
+      return const_iterator (m_value_serial.begin ());
+    }
+
+    iterator end () {
+      return iterator (m_value_serial.end ());
+    }
+
+    const_iterator end () const {
+      return const_iterator (m_value_serial.end ());
     }
 
     // Modifiers.
@@ -73,9 +115,10 @@ namespace ioa {
       }
 
       // Generate a new key.
-      // We don't use 0 as a serial number so keys can have a default constructor.
+      // We don't use the serial number from the default constructor locker keys constructed
+      // outside of a locker are invalid.
       while (m_serial_value.find (m_serial_number) != m_serial_value.end () ||
-	     m_serial_number == 0) {
+	     m_serial_number == serial_type ()) {
 	++m_serial_number;
       }
 
@@ -87,8 +130,8 @@ namespace ioa {
     }
 
     void erase (const key_type& key) {
-      m_serial_value.erase (key.first);
-      m_value_serial.erase (key.second);
+      m_serial_value.erase (key.serial ());
+      m_value_serial.erase (key.value ());
     }
     
     void clear () {
@@ -102,9 +145,9 @@ namespace ioa {
     }
 
     bool contains (const key_type& key) const {
-      typename sv_type::const_iterator pos = m_serial_value.find (key.first);
+      typename sv_type::const_iterator pos = m_serial_value.find (key.serial ());
       if (pos != m_serial_value.end ()) {
-	return pos->second == key.second;
+	return pos->second == key.value ();
       }
       else {
 	return false;

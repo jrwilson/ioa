@@ -2,6 +2,7 @@
 #define __automaton_hpp__
 
 #include <boost/utility.hpp>
+#include <boost/thread/mutex.hpp>
 #include "locker.hpp"
 
 namespace ioa {
@@ -13,6 +14,9 @@ namespace ioa {
     public locker_key<T*>
   {
   public:
+    parameter_handle ()
+    { }
+
     parameter_handle (const locker_key<T*>& key)
       :
       locker_key<T*> (key)
@@ -21,7 +25,7 @@ namespace ioa {
 
   class automaton_interface
     :
-    private boost::noncopyable
+    public boost::mutex
   {
   private:
     locker<void*> m_parameters;
@@ -73,6 +77,9 @@ namespace ioa {
     public locker_key<automaton<T>*>
   {
   public:
+    automaton_handle ()
+    { }
+
     automaton_handle (const locker_key<automaton<T>*>& key)
       :
       locker_key<automaton<T>*> (key)

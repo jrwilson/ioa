@@ -2,49 +2,59 @@
 #define __automaton_hpp__
 
 #include <boost/utility.hpp>
+#include <boost/thread/mutex.hpp>
 #include "locker.hpp"
 
 namespace ioa {
 
-  class automaton
+  typedef locker_key<void*> generic_parameter_handle;
+
+  template <class T>
+  class parameter_handle :
+    public locker_key<T*>
+  {
+  public:
+    parameter_handle (const locker_key<T*>& key)
+      :
+      locker_key<T*> (key)
+    { }
+  };
+
+  class automaton_interface
     :
-    private boost::noncopyable
+    public boost::mutex
   {
   private:
-    typedef locker<void*> locker_type;
-    locker_type m_parameters;
+    locker<void*> m_parameters;
     
   public:
-    automaton ()
-    { }
-    
-    virtual ~automaton () { }
+    virtual ~automaton_interface () { }
     
     virtual void* get_instance () const = 0;
 
     bool parameter_exists (void* parameter) const {
       return m_parameters.contains (parameter);
     }
-    
-    bool parameter_exists (const locker_type::key_type& parameter) const {
+
+    bool parameter_exists (const generic_parameter_handle& parameter) const {
       return m_parameters.contains (parameter);
     }
     
     template <class T>
-    locker_type::key_type declare_parameter (T* parameter) {
+    parameter_handle<T> declare_parameter (T* parameter) {
       return m_parameters.insert (parameter);
     }
   };
 
   template <class T>
-  class typed_automaton :
-    public automaton
+  class automaton :
+    public automaton_interface
   {
   private:
     std::auto_ptr<T> m_instance;
     
   public:
-    typed_automaton (T* instance) :
+    automaton (T* instance) :
       m_instance (instance)
     { }
     
@@ -57,7 +67,23 @@ namespace ioa {
     }
   };
 
-  typedef locker<automaton*>::key_type automaton_handle;
+  typedef locker_key<automaton_interface*> generic_automaton_handle;
+
+  template <class T>
+  class automaton_handle :
+    public locker_key<automaton<T>*>
+  {
+  public:
+    automaton_handle ()
+    { }
+
+    automaton_handle (const locker_key<automaton<T>*>& key)
+      :
+      locker_key<automaton<T>*> (key)
+    { }
+    
+  };
+
 }
 
 #endif
