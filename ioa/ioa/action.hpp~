@@ -11,16 +11,16 @@ namespace ioa {
 
     - action
       - input
-        - untyped
-        - typed
+        - unvalued
+        - valued
       - executable
         - output
-          - untyped
-	  - typed
+          - unvalued
+	  - valued
         - independent
 
     The input and output interfaces are split by type to enable safe composition.
-    Namely, untyped input actions can be composed with untyped output actions and typed input actiosn can be composed with typed output actions of the same time.
+    Namely, unvalued input actions can be composed with unvalued output actions and valued input actiosn can be composed with valued output actions of the same time.
 
     The executable interface contains output and independent actions.
     This split is necessary because outputs require special processing when they are executed, i.e., they can be composed and involve more than one automaton.
@@ -34,7 +34,7 @@ namespace ioa {
 
   class action_interface
   {
-  private:
+  protected:
     const generic_automaton_handle m_handle;
 
   public:
@@ -74,33 +74,35 @@ namespace ioa {
     virtual const void* get_member_ptr () const = 0;
     
     virtual bool involves_parameter (const void*) const = 0;
+    
+    virtual bool parameter_exists () const = 0;
   };
 
-  class untyped_input_action_interface :
+  class unvalued_input_action_interface :
     public input_action_interface
   {
   public:
-    untyped_input_action_interface (const generic_automaton_handle& handle,
+    unvalued_input_action_interface (const generic_automaton_handle& handle,
   				    const generic_automaton_handle& composer) :
       input_action_interface (handle, composer)
     { }
     
-    virtual ~untyped_input_action_interface () { }
+    virtual ~unvalued_input_action_interface () { }
     
     virtual void operator() () = 0;
   };
 
   template <class T>
-  class typed_input_action_interface :
+  class valued_input_action_interface :
     public input_action_interface
   {
   public:
-    typed_input_action_interface (const generic_automaton_handle& handle,
+    valued_input_action_interface (const generic_automaton_handle& handle,
   				  const generic_automaton_handle& composer) :
       input_action_interface (handle, composer)
     { }
     
-    virtual ~typed_input_action_interface () { }
+    virtual ~valued_input_action_interface () { }
     
     virtual void operator() (const T t) = 0;
   };
@@ -131,31 +133,33 @@ namespace ioa {
     virtual const void* get_member_ptr () const = 0;
 
     virtual bool involves_parameter (const void*) const = 0;
+
+    virtual bool parameter_exists () const = 0;
   };
 
-  class untyped_output_action_interface :
+  class unvalued_output_action_interface :
     public output_action_interface
   {
   public:
-    untyped_output_action_interface (const generic_automaton_handle& handle) :
+    unvalued_output_action_interface (const generic_automaton_handle& handle) :
       output_action_interface (handle)
     { }
 
-    virtual ~untyped_output_action_interface () { }
+    virtual ~unvalued_output_action_interface () { }
 
     virtual bool operator() () = 0;
   };
 
   template <class T>
-  class typed_output_action_interface :
+  class valued_output_action_interface :
     public output_action_interface
   {
   public:
-    typed_output_action_interface (const generic_automaton_handle& handle) :
+    valued_output_action_interface (const generic_automaton_handle& handle) :
       output_action_interface (handle)
     { }
 
-    virtual ~typed_output_action_interface () { }
+    virtual ~valued_output_action_interface () { }
 
     virtual std::pair<bool, T> operator() () = 0;
   };
@@ -258,19 +262,23 @@ namespace ioa {
 
   template <class M>
   class action_impl<input_category, M, unvalued, null_type, unparameterized, null_type> :
-    public untyped_input_action_interface,
+    public unvalued_input_action_interface,
     private member_ref<M>
   {
   public:
     action_impl (const generic_automaton_handle& handle,
 		 M& m,
   		 const generic_automaton_handle& composer) :
-      untyped_input_action_interface (handle, composer),
+      unvalued_input_action_interface (handle, composer),
       member_ref<M> (m)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
     }
     
     bool operator== (const input_action_interface& oa) const {
@@ -288,7 +296,7 @@ namespace ioa {
 
   template <class M, class PT>
   class action_impl<input_category, M, unvalued, null_type, parameterized, PT> : 
-    public untyped_input_action_interface,
+    public unvalued_input_action_interface,
     private member_ref<M>,
     private param<PT>
   {
@@ -297,13 +305,17 @@ namespace ioa {
   		 M& m,
 		 const parameter_handle<PT>& parameter,
   		 const generic_automaton_handle& composer) :
-      untyped_input_action_interface (handle, composer),
+      unvalued_input_action_interface (handle, composer),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return this->m_parameter.value () == parameter;
+    }
+
+    bool parameter_exists () const {
+      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     bool operator== (const input_action_interface& oa) const {
@@ -323,19 +335,23 @@ namespace ioa {
 
   template <class M, class VT>
   class action_impl<input_category, M, valued, VT, unparameterized, null_type> : 
-    public typed_input_action_interface<VT>,
+    public valued_input_action_interface<VT>,
     private member_ref<M>
   {
   public:
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
   		 const generic_automaton_handle& composer) :
-      typed_input_action_interface<VT> (handle, composer),
+      valued_input_action_interface<VT> (handle, composer),
       member_ref<M> (m)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
     }
 
     bool operator== (const input_action_interface& oa) const {
@@ -354,7 +370,7 @@ namespace ioa {
 
   template <class M, class VT, class PT>
   class action_impl<input_category, M, valued, VT, parameterized, PT> :
-    public typed_input_action_interface<VT>,
+    public valued_input_action_interface<VT>,
     private member_ref<M>,
     private param<PT>
   {
@@ -363,13 +379,17 @@ namespace ioa {
   		 M& m,
 		 const parameter_handle<PT>& parameter,
   		 const generic_automaton_handle& composer) :
-      typed_input_action_interface<VT> (handle, composer),
+      valued_input_action_interface<VT> (handle, composer),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return this->m_parameter.value () == parameter;
+    }
+
+    bool parameter_exists () const {
+      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     const void* get_member_ptr () const {
@@ -389,13 +409,13 @@ namespace ioa {
 
   template <class M>
   class action_impl<output_category, M, unvalued, null_type, unparameterized, null_type> :
-    public untyped_output_action_interface,
+    public unvalued_output_action_interface,
     private member_ref<M>
   {
   public:
     action_impl (const generic_automaton_handle& handle,
   		 M& m) :
-      untyped_output_action_interface (handle),
+      unvalued_output_action_interface (handle),
       member_ref<M> (m)
     { }
 
@@ -411,6 +431,10 @@ namespace ioa {
       return false;
     }
 
+    bool parameter_exists () const {
+      return true;
+    }
+
     bool operator() () {
       return this->m_member ();
     }
@@ -422,7 +446,7 @@ namespace ioa {
 
   template <class M, class PT>
   class action_impl<output_category, M, unvalued, null_type, parameterized, PT> :
-    public untyped_output_action_interface,
+    public unvalued_output_action_interface,
     private member_ref<M>,
     private param<PT>
   {
@@ -430,13 +454,17 @@ namespace ioa {
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
 		 const parameter_handle<PT>& parameter) :
-      untyped_output_action_interface (handle),
+      unvalued_output_action_interface (handle),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return this->m_parameter.value () == parameter;
+    }
+
+    bool parameter_exists () const {
+      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     bool operator== (const output_action_interface& oa) const {
@@ -460,18 +488,22 @@ namespace ioa {
 
   template <class M, class VT>
   class action_impl<output_category, M, valued, VT, unparameterized, null_type> :
-    public typed_output_action_interface<VT>,
+    public valued_output_action_interface<VT>,
     private member_ref<M>
   {
   public:
     action_impl (const generic_automaton_handle& handle,
   		 M& m) :
-      typed_output_action_interface<VT> (handle),
+      valued_output_action_interface<VT> (handle),
       member_ref<M> (m)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
     }
 
     bool operator== (const output_action_interface& oa) const {
@@ -494,7 +526,7 @@ namespace ioa {
 
   template <class M, class VT, class PT>
   class action_impl<output_category, M, valued, VT, parameterized, PT> :
-    public typed_output_action_interface<VT>,
+    public valued_output_action_interface<VT>,
     private member_ref<M>,
     private param<PT>
   {
@@ -502,13 +534,17 @@ namespace ioa {
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
 		 const parameter_handle<PT>& parameter) :
-      typed_output_action_interface<VT> (handle),
+      valued_output_action_interface<VT> (handle),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
 
     bool involves_parameter (const void* parameter) const {
       return this->m_parameter.value () == parameter;
+    }
+
+    bool parameter_exists () const {
+      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     bool operator== (const output_action_interface& oa) const {

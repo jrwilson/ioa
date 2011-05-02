@@ -45,6 +45,14 @@ namespace ioa {
     const generic_automaton_handle get_automaton_handle () const {
       return m_handle;
     }
+
+    void lock_automaton () {
+      m_handle.value ()->lock ();
+    }
+
+    void unlock_automaton () {
+      m_handle.value ()->unlock ();
+    }
   };
 
   // std::ostream& operator<<(std::ostream& output, const action_interface&);

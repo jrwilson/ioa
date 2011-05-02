@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE (system_compose_output_action_unavailable)
   ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
-  c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::p_uv_input, param, composer);
+  c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::p_uv_input, param);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_OUTPUT_ACTION_UNAVAILABLE);
 }
 
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE (system_compose_success)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  ioa::system::compose_result c1 = system.compose (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input, composer);
+  ioa::system::compose_result c1 = system.compose (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
   ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
@@ -391,6 +391,7 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
 
   ioa::system::execute_result e1 = system.execute_output (output, &automaton::up_uv_output);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
+  BOOST_CHECK (output_instance->up_uv_output.state);
 }
 
 

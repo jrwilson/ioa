@@ -350,8 +350,7 @@ public:
 	   OM OI::*output_member_ptr,
 	   const parameter_handle<T>& output_parameter,	     
 	   const automaton_handle<II>& input_automaton,
-	   IM II::*input_member_ptr,
-	   const generic_automaton_handle& composer_automaton)
+	   IM II::*input_member_ptr)
   {
     boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
@@ -366,7 +365,7 @@ public:
     }
 
     action<OM> o (output_automaton, *output_member, output_parameter);
-    action<IM> i (input_automaton, *input_member, composer_automaton);
+    action<IM> i (input_automaton, *input_member, output_automaton);
 
     return compose (o, i);
   }
@@ -377,8 +376,7 @@ public:
 	   OM OI::*output_member_ptr,
 	   const automaton_handle<II>& input_automaton,
 	   IM II::*input_member_ptr,
-	   const parameter_handle<T>& input_parameter,	     
-	   const generic_automaton_handle& composer_automaton)
+	   const parameter_handle<T>& input_parameter)
   {
     boost::unique_lock<boost::shared_mutex> lock (m_mutex);
     
@@ -393,7 +391,7 @@ public:
     }
     
     action<OM> o (output_automaton, *output_member);
-    action<IM> i (input_automaton, *input_member, input_parameter, composer_automaton);
+    action<IM> i (input_automaton, *input_member, input_parameter, input_automaton);
     
     return compose (o, i);
   }
@@ -427,9 +425,9 @@ private:
 
     if (out_pos == m_compositions.end ()) {
       // Not composed.
-      ac.get_automaton_handle ().value ()->lock ();
+      ac.lock_automaton ();
       ac.execute ();
-      ac.get_automaton_handle ().value ()->unlock ();
+      ac.unlock_automaton ();
     }
     else {
       (*out_pos)->execute ();

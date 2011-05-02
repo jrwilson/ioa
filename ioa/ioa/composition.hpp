@@ -130,12 +130,11 @@ namespace ioa {
       // Lock in order.
       output_processed = false;
       BOOST_FOREACH (IA* i, m_inputs) {
-	// TODO:  Clean this up.
 	if (!output_processed && m_output->get_automaton_handle () < i->get_automaton_handle ()) {
-	  m_output->get_automaton_handle ().value()->lock ();
+	  m_output->lock_automaton ();
 	  output_processed = true;
 	}
-	i->get_automaton_handle ().value ()->lock ();
+	i->lock_automaton ();
       }
 
       // Execute.
@@ -146,10 +145,10 @@ namespace ioa {
       BOOST_FOREACH (IA* i, m_inputs) {
 	// TODO:  Clean this up.
 	if (!output_processed && m_output->get_automaton_handle () < i->get_automaton_handle ()) {
-	  m_output->get_automaton_handle ().value()->unlock ();
+	  m_output->unlock_automaton ();
 	  output_processed = true;
 	}
-	i->get_automaton_handle ().value ()->unlock ();
+	i->unlock_automaton ();
       }
 
     }
