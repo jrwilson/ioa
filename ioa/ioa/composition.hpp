@@ -124,6 +124,14 @@ namespace ioa {
       m_inputs.insert (new T (input));
     }
 
+    void decompose (IA& input) {
+      m_inputs.erase (&input);
+    }
+
+    bool empty () const {
+      return m_inputs.empty ();
+    }
+
     void execute () {
       bool output_processed;
 
