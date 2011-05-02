@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE (system_compose_input_automaton_dne)
 BOOST_AUTO_TEST_CASE (system_compose_output_parameter_dne)
 {
   ioa::system system;
-  int parameter;
+  // int parameter;
   automaton* composer_instance = new automaton ();
   automaton* output_instance = new automaton ();
   automaton* input_instance = new automaton ();
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE (system_compose_output_parameter_dne)
 BOOST_AUTO_TEST_CASE (system_compose_input_parameter_dne)
 {
   ioa::system system;
-  int parameter;
+  // int parameter;
   automaton* composer_instance = new automaton ();
   automaton* output_instance = new automaton ();
   automaton* input_instance = new automaton ();
@@ -285,6 +285,7 @@ BOOST_AUTO_TEST_CASE (system_compose_output_action_unavailable)
 BOOST_AUTO_TEST_CASE (system_compose_success)
 {
   ioa::system system;
+  int parameter;
   automaton* composer_instance = new automaton ();
   automaton* output_instance = new automaton ();
   automaton* input_instance = new automaton ();
@@ -301,11 +302,96 @@ BOOST_AUTO_TEST_CASE (system_compose_success)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
 
-  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  ioa::system::declare_result<int> d1 = system.declare (output, &parameter);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
+  ioa::parameter_handle<int> param = d1.parameter;
+
+  ioa::system::compose_result c1 = system.compose (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input, composer);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
-  system.execute_output (output, &automaton::up_uv_output);
+  ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (input_instance->up_uv_input.state);
 }
+
+BOOST_AUTO_TEST_CASE (system_execute_output_automaton_dne)
+{
+  // ioa::system system;
+  // int parameter;
+  // automaton* composer_instance = new automaton ();
+  // automaton* output_instance = new automaton ();
+  // automaton* input_instance = new automaton ();
+
+  // ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  // ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  // r1 = system.create (output_instance);
+  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  // ioa::automaton_handle<automaton> output = r1.automaton;
+
+  // r1 = system.create (input_instance);
+  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  // ioa::automaton_handle<automaton> input = r1.automaton;
+
+  // ioa::system::declare_result<int> d1 = system.declare (output, &parameter);
+  // BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
+  // ioa::parameter_handle<int> param = d1.parameter;
+
+  // ioa::system::compose_result c1 = system.compose (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input, composer);
+  // BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
+
+  // ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
+  // BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
+  // BOOST_CHECK (input_instance->up_uv_input.state);
+  BOOST_CHECK (false);
+}
+
+BOOST_AUTO_TEST_CASE (system_execute_output_parameter_dne)
+{
+  // ioa::system system;
+  // int parameter;
+  // automaton* composer_instance = new automaton ();
+  // automaton* output_instance = new automaton ();
+  // automaton* input_instance = new automaton ();
+
+  // ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  // ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  // r1 = system.create (output_instance);
+  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  // ioa::automaton_handle<automaton> output = r1.automaton;
+
+  // r1 = system.create (input_instance);
+  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  // ioa::automaton_handle<automaton> input = r1.automaton;
+
+  // ioa::system::declare_result<int> d1 = system.declare (output, &parameter);
+  // BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
+  // ioa::parameter_handle<int> param = d1.parameter;
+
+  // ioa::system::compose_result c1 = system.compose (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input, composer);
+  // BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
+
+  // ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
+  // BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
+  // BOOST_CHECK (input_instance->up_uv_input.state);
+  BOOST_CHECK (false);
+}
+
+BOOST_AUTO_TEST_CASE (system_execute_output_success)
+{
+  ioa::system system;
+  automaton* output_instance = new automaton ();
+
+  ioa::system::create_result<automaton> r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+
+  ioa::system::execute_result e1 = system.execute_output (output, &automaton::up_uv_output);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
