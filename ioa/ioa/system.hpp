@@ -280,16 +280,16 @@ namespace ioa {
       
       if (out_pos != m_compositions.end ()) {
 	c = static_cast<composition<OM>*> (*out_pos);
-      }
-      else {
-        c = new composition<OM> (output);
-        m_compositions.push_front (c);
-      }
-    
-      // Compose.
-      c->compose (input);
-      return compose_result (COMPOSE_SUCCESS);
     }
+    else {
+      c = new composition<OM> (output);
+      m_compositions.push_front (c);
+    }
+    
+    // Compose.
+    c->compose (input);
+    return compose_result (COMPOSE_SUCCESS);
+  }
 
     template <class I, class M>
     M&
@@ -382,8 +382,208 @@ public:
     return compose (o, i);
   }
 
-  //   // decompose_result decompose (output* o, input* i) { }
-  //   // rescind_result rescind (automaton* automaton, void* parameter) { }
+  enum decompose_result_type {
+    DECOMPOSE_COMPOSER_AUTOMATON_DNE,
+    DECOMPOSE_OUTPUT_AUTOMATON_DNE,
+    DECOMPOSE_INPUT_AUTOMATON_DNE,
+    DECOMPOSE_OUTPUT_PARAMETER_DNE,
+    DECOMPOSE_INPUT_PARAMETER_DNE,
+    DECOMPOSE_EXISTS,
+    DECOMPOSE_SUCCESS,
+  };
+    
+  struct decompose_result
+  {
+    decompose_result_type type;
+    
+    decompose_result (decompose_result_type type) :
+      type (type)
+    { }
+  };
+  
+private:
+  template <class OM, class IM>
+  decompose_result
+  decompose (const action<OM>& output,
+	     action<IM>& input)
+  {
+    if (!m_automata.contains (input.get_composer_handle ())) {
+      // Owner DNE.
+      return decompose_result (DECOMPOSE_COMPOSER_AUTOMATON_DNE);
+    }
+    
+    if (!output.parameter_exists ()) {
+      return decompose_result (DECOMPOSE_OUTPUT_PARAMETER_DNE);
+    }
+    
+    if (!input.parameter_exists ()) {
+      return decompose_result (DECOMPOSE_INPUT_PARAMETER_DNE);
+    }
+    
+    std::list<composition_interface*>::iterator pos = std::find_if (m_compositions.begin (),
+								    m_compositions.end (),
+								    composition_equal (output, input));
+    
+    if (pos == m_compositions.end ()) {
+      // Not composed.
+      return decompose_result (DECOMPOSE_EXISTS);
+    }
+    
+    composition<OM>* c = static_cast<composition<OM>*> (*pos);
+  
+    // Compose.
+    c->decompose (input);
+
+    if (c->empty ()) {
+      delete c;
+      m_compositions.erase (pos);
+    }
+
+    return decompose_result (DECOMPOSE_SUCCESS);
+  }
+
+  public:
+    template <class OI, class OM, class II, class IM>
+    decompose_result
+    decompose (const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr,
+	       const generic_automaton_handle& composer_automaton)
+    {
+      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+
+      if (!m_automata.contains (output_automaton)) {
+        return decompose_result (DECOMPOSE_OUTPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (input_automaton)) {
+        return decompose_result (DECOMPOSE_INPUT_AUTOMATON_DNE);
+      }
+
+      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
+      
+      action<OM> o (output_automaton, output_member);
+      action<IM> i (input_automaton, input_member, composer_automaton);
+      
+      return decompose (o, i);
+    }
+  
+    template <class OI, class OM, class II, class IM, class T>
+    decompose_result
+    decompose (const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       const parameter_handle<T>& output_parameter,	     
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr)
+    {
+      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+
+      if (!m_automata.contains (output_automaton)) {
+        return decompose_result (DECOMPOSE_OUTPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (input_automaton)) {
+        return decompose_result (DECOMPOSE_INPUT_AUTOMATON_DNE);
+      }
+
+      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
+
+      action<OM> o (output_automaton, output_member, output_parameter);
+      action<IM> i (input_automaton, input_member, output_automaton);
+
+      return decompose (o, i);
+    }
+
+    template <class OI, class OM, class II, class IM, class T>
+    decompose_result
+    decompose (const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr,
+	       const parameter_handle<T>& input_parameter)
+    {
+      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_automata.contains (output_automaton)) {
+        return decompose_result (DECOMPOSE_OUTPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (input_automaton)) {
+        return decompose_result (DECOMPOSE_INPUT_AUTOMATON_DNE);
+      }
+
+      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
+    
+      action<OM> o (output_automaton, output_member);
+      action<IM> i (input_automaton, input_member, input_parameter, input_automaton);
+    
+      return decompose (o, i);
+    }
+
+    enum rescind_result_type {
+      RESCIND_AUTOMATON_DNE,
+      RESCIND_EXISTS,
+      RESCIND_SUCCESS,
+    };
+    
+    template <class T>
+    struct rescind_result
+    {
+      rescind_result_type type;
+      T* parameter;
+      
+      rescind_result (T* param) :
+	type (RESCIND_SUCCESS),
+	parameter (param)
+      { }
+      
+      rescind_result (rescind_result_type type) :
+  	type (type)
+      {
+	BOOST_ASSERT (type != RESCIND_SUCCESS);
+      }
+    };
+    
+    template <class T>
+    rescind_result<T>
+    rescind (const generic_automaton_handle& a,
+  	     const parameter_handle<T>& p,
+	     decompose_listener_interface& listener)
+    {
+      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_automata.contains (a)) {
+  	return rescind_result<T> (RESCIND_AUTOMATON_DNE);	
+      }
+      
+      automaton_interface* pa = a.value ();
+      
+      if (!pa->parameter_exists (p)) {
+  	return rescind_result<T> (RESCIND_EXISTS);
+      }
+
+      pa->rescind_parameter (p);
+
+      for (std::list<composition_interface*>::iterator pos = m_compositions.begin ();
+	   pos != m_compositions.end ();
+	   ) {
+	(*pos)->decompose_parameter (a, p, listener);
+	if ((*pos)->empty ()) {
+	  delete *pos;
+	  pos = m_compositions.erase (pos);
+	}
+	else {
+	  ++pos;
+	}
+      }
+
+      return rescind_result<T> (p.value ());
+    }
+
   //   // destroy_result destroy (automaton* destroyer, automaton* destroyee) { }
 
   enum execute_result_type {

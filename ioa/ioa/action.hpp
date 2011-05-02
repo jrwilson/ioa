@@ -81,7 +81,7 @@ namespace ioa {
 
     virtual const void* get_member_ptr () const = 0;
     
-    virtual bool involves_parameter (const void*) const = 0;
+    virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
     
     virtual bool parameter_exists () const = 0;
   };
@@ -140,7 +140,7 @@ namespace ioa {
     
     virtual const void* get_member_ptr () const = 0;
 
-    virtual bool involves_parameter (const void*) const = 0;
+    virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
 
     virtual bool parameter_exists () const = 0;
   };
@@ -281,7 +281,7 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    bool involves_parameter (const void* parameter) const {
+    bool involves_parameter (const generic_parameter_handle&) const {
       return false;
     }
 
@@ -318,8 +318,8 @@ namespace ioa {
       param<PT> (parameter)
     { }
 
-    bool involves_parameter (const void* parameter) const {
-      return this->m_parameter.value () == parameter;
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return this->m_parameter == parameter;
     }
 
     bool parameter_exists () const {
@@ -328,7 +328,7 @@ namespace ioa {
 
     bool operator== (const input_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr () &&
-  	oa.involves_parameter (this->m_parameter.value ());
+  	oa.involves_parameter (this->m_parameter);
     }
 
     const void* get_member_ptr () const {
@@ -354,7 +354,7 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    bool involves_parameter (const void* parameter) const {
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
     }
 
@@ -392,8 +392,8 @@ namespace ioa {
       param<PT> (parameter)
     { }
 
-    bool involves_parameter (const void* parameter) const {
-      return this->m_parameter.value () == parameter;
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return this->m_parameter == parameter;
     }
 
     bool parameter_exists () const {
@@ -406,7 +406,7 @@ namespace ioa {
 
     bool operator== (const input_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr () &&
-  	oa.involves_parameter (this->m_parameter.value ());
+  	oa.involves_parameter (this->m_parameter);
     }
 
     void operator() (const VT t) {
@@ -435,7 +435,7 @@ namespace ioa {
       return &this->m_member;
     }
 
-    bool involves_parameter (const void* parameter) const {
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
     }
 
@@ -467,8 +467,8 @@ namespace ioa {
       param<PT> (parameter)
     { }
 
-    bool involves_parameter (const void* parameter) const {
-      return this->m_parameter.value () == parameter;
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return this->m_parameter == parameter;
     }
 
     bool parameter_exists () const {
@@ -477,7 +477,7 @@ namespace ioa {
 
     bool operator== (const output_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr () &&
-  	oa.involves_parameter (this->m_parameter.value ());
+  	oa.involves_parameter (this->m_parameter);
     }
 
     const void* get_member_ptr () const {
@@ -506,7 +506,7 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    bool involves_parameter (const void* parameter) const {
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
     }
 
@@ -547,8 +547,8 @@ namespace ioa {
       param<PT> (parameter)
     { }
 
-    bool involves_parameter (const void* parameter) const {
-      return this->m_parameter.value () == parameter;
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return this->m_parameter == parameter;
     }
 
     bool parameter_exists () const {
@@ -557,7 +557,7 @@ namespace ioa {
 
     bool operator== (const output_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr () &&
-  	oa.involves_parameter (this->m_parameter.value ());
+  	oa.involves_parameter (this->m_parameter);
     }
 
     const void* get_member_ptr () const {

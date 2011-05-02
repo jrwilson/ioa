@@ -14,6 +14,9 @@ namespace ioa {
     public locker_key<T*>
   {
   public:
+    parameter_handle ()
+    { }
+
     parameter_handle (const locker_key<T*>& key)
       :
       locker_key<T*> (key)
@@ -44,6 +47,12 @@ namespace ioa {
     parameter_handle<T> declare_parameter (T* parameter) {
       return m_parameters.insert (parameter);
     }
+
+    template <class T>
+    parameter_handle<T> rescind_parameter (T* parameter) {
+      return m_parameters.erase (parameter);
+    }
+
   };
 
   template <class T>

@@ -6,6 +6,22 @@
 
 namespace ioa {
 
+  class decompose_listener_interface
+  {
+  public:
+    virtual ~decompose_listener_interface () { }
+    virtual void decomposed (const generic_automaton_handle& output_automaton,
+			     const void* output_member_ptr,
+			     const generic_parameter_handle& output_parameter,
+			     const generic_automaton_handle& input_automaton,
+			     const void* input_member_ptr) = 0;
+    virtual void decomposed (const generic_automaton_handle& output_automaton,
+			     const void* output_member_ptr,
+			     const generic_automaton_handle& input_automaton,
+			     const void* input_member_ptr,
+			     const generic_parameter_handle& input_parameter) = 0;
+  };
+
   class input_equal
   {
   private:
@@ -62,7 +78,11 @@ namespace ioa {
     virtual bool involves_input (const input_action_interface& input,
   				 bool check_owner) const = 0;
     virtual bool involves_input_automaton (const generic_automaton_handle& automaton) const = 0;
+    virtual bool empty () const = 0;
     virtual void execute () = 0;
+    virtual void decompose_parameter (const generic_automaton_handle& automaton,
+				      const generic_parameter_handle& parameter,
+				      decompose_listener_interface& listener) = 0;
   };
   
   struct action_compare
@@ -78,7 +98,8 @@ namespace ioa {
   {
   protected:
     OA* m_output;
-    std::set<IA*, action_compare> m_inputs;
+    typedef std::set<IA*, action_compare> set_type;
+    set_type m_inputs;
     
   public:
     template <class T>
@@ -151,7 +172,6 @@ namespace ioa {
       // Unlock.
       output_processed = false;
       BOOST_FOREACH (IA* i, m_inputs) {
-	// TODO:  Clean this up.
 	if (!output_processed && m_output->get_automaton_handle () < i->get_automaton_handle ()) {
 	  m_output->unlock_automaton ();
 	  output_processed = true;
@@ -159,6 +179,42 @@ namespace ioa {
 	i->unlock_automaton ();
       }
 
+    }
+
+    void decompose_parameter (const generic_automaton_handle& automaton,
+			      const generic_parameter_handle& parameter,
+			      decompose_listener_interface& listener) {
+      if (m_output->get_automaton_handle () == automaton &&
+	  m_output->involves_parameter (parameter)) {
+	// Decompose all.
+	BOOST_FOREACH (IA* i, m_inputs) {
+	  listener.decomposed (m_output->get_automaton_handle (),
+			       m_output->get_member_ptr (),
+			       parameter,
+			       i->get_automaton_handle (),
+			       i->get_member_ptr ());
+	  delete i;
+	}
+	m_inputs.clear ();
+      }
+      else {
+	// Try the inputs.
+	for (typename set_type::iterator pos = m_inputs.begin ();
+	     pos != m_inputs.end ();
+	     ++pos) {
+	  if ((*pos)->get_automaton_handle () == automaton &&
+	      (*pos)->involves_parameter (parameter)) {
+	    listener.decomposed (m_output->get_automaton_handle (),
+				 m_output->get_member_ptr (),
+				 (*pos)->get_automaton_handle (),
+				 (*pos)->get_member_ptr (),
+				 parameter);
+	    delete *pos;
+	    m_inputs.erase (pos);
+	    break;
+	  }
+	}
+      }
     }
 
   protected:
