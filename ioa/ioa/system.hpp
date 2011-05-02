@@ -280,42 +280,25 @@ namespace ioa {
       
       if (out_pos != m_compositions.end ()) {
 	c = static_cast<composition<OM>*> (*out_pos);
-    }
-    else {
-      c = new composition<OM> (output);
-      m_compositions.push_front (c);
-    }
-    
-    // Compose.
-    c->compose (input);
-    return compose_result (COMPOSE_SUCCESS);
-  }
-    
-    template <class OI, class OM>
-    OM*
-    get_output_member (const automaton_handle<OI>& output_automaton,
-  		       OM OI::*output_member_ptr)
-    {
-      if (!m_automata.contains (output_automaton)) {
-  	return 0;
       }
-      
-      automaton<OI>* toa = output_automaton.value ();
-      return &((*(toa->get_typed_instance ())).*output_member_ptr);
-    }
+      else {
+        c = new composition<OM> (output);
+        m_compositions.push_front (c);
+      }
     
-  template <class II, class IM>
-  IM*
-  get_input_member (const automaton_handle<II>& input_automaton,
-		    IM II::*input_member_ptr)
-  {
-    if (!m_automata.contains (input_automaton)) {
-      return 0;
+      // Compose.
+      c->compose (input);
+      return compose_result (COMPOSE_SUCCESS);
     }
-      
-    automaton<II>* tia = input_automaton.value ();
-    return &((*(tia->get_typed_instance ())).*input_member_ptr);
-  }
+
+    template <class I, class M>
+    M&
+    ptr_to_member (const automaton_handle<I>& handle,
+		   M I::*member_ptr)
+    {
+      automaton<I>* toa = handle.value ();
+      return ((*(toa->get_typed_instance ())).*member_ptr);
+    }
   
 public:
   template <class OI, class OM, class II, class IM>
@@ -327,19 +310,20 @@ public:
 	   const generic_automaton_handle& composer_automaton)
   {
     boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-      
-    OM* output_member = get_output_member (output_automaton, output_member_ptr);
-    if (output_member == 0) {
+
+    if (!m_automata.contains (output_automaton)) {
       return compose_result (COMPOSE_OUTPUT_AUTOMATON_DNE);
     }
-      
-    IM* input_member = get_input_member (input_automaton, input_member_ptr);
-    if (input_member == 0) {
+
+    if (!m_automata.contains (input_automaton)) {
       return compose_result (COMPOSE_INPUT_AUTOMATON_DNE);
     }
+
+    OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+    IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
       
-    action<OM> o (output_automaton, *output_member);
-    action<IM> i (input_automaton, *input_member, composer_automaton);
+    action<OM> o (output_automaton, output_member);
+    action<IM> i (input_automaton, input_member, composer_automaton);
       
     return compose (o, i);
   }
@@ -354,18 +338,19 @@ public:
   {
     boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-    OM* output_member = get_output_member (output_automaton, output_member_ptr);
-    if (output_member == 0) {
+    if (!m_automata.contains (output_automaton)) {
       return compose_result (COMPOSE_OUTPUT_AUTOMATON_DNE);
     }
 
-    IM* input_member = get_input_member (input_automaton, input_member_ptr);
-    if (input_member == 0) {
+    if (!m_automata.contains (input_automaton)) {
       return compose_result (COMPOSE_INPUT_AUTOMATON_DNE);
     }
 
-    action<OM> o (output_automaton, *output_member, output_parameter);
-    action<IM> i (input_automaton, *input_member, output_automaton);
+    OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+    IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
+
+    action<OM> o (output_automaton, output_member, output_parameter);
+    action<IM> i (input_automaton, input_member, output_automaton);
 
     return compose (o, i);
   }
@@ -379,19 +364,20 @@ public:
 	   const parameter_handle<T>& input_parameter)
   {
     boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-    
-    OM* output_member = get_output_member (output_automaton, output_member_ptr);
-    if (output_member == 0) {
+
+    if (!m_automata.contains (output_automaton)) {
       return compose_result (COMPOSE_OUTPUT_AUTOMATON_DNE);
     }
-    
-    IM* input_member = get_input_member (input_automaton, input_member_ptr);
-    if (input_member == 0) {
+
+    if (!m_automata.contains (input_automaton)) {
       return compose_result (COMPOSE_INPUT_AUTOMATON_DNE);
     }
+
+    OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+    IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
     
-    action<OM> o (output_automaton, *output_member);
-    action<IM> i (input_automaton, *input_member, input_parameter, input_automaton);
+    action<OM> o (output_automaton, output_member);
+    action<IM> i (input_automaton, input_member, input_parameter, input_automaton);
     
     return compose (o, i);
   }
@@ -443,13 +429,15 @@ public:
 		  OM OI::*output_member_ptr)
   {
     boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-    OM* output_member = get_output_member (output_automaton, output_member_ptr);
-    if (output_member == 0) {
+
+    if (!m_automata.contains (output_automaton)) {
       return execute_result (EXECUTE_AUTOMATON_DNE);
     }
-      
-    action<OM> ac (output_automaton, *output_member);
+
+    OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+
+    action<OM> ac (output_automaton, output_member);
+
     return execute_output (ac);
   }
 
@@ -460,13 +448,14 @@ public:
 		  const parameter_handle<T>& output_parameter)
   {
     boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-    OM* output_member = get_output_member (output_automaton, output_member_ptr);
-    if (output_member == 0) {
+
+    if (!m_automata.contains (output_automaton)) {
       return execute_result (EXECUTE_AUTOMATON_DNE);
     }
 
-    action<OM> ac (output_automaton, *output_member, output_parameter);
+    OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
+
+    action<OM> ac (output_automaton, output_member, output_parameter);
 
     if (!ac.parameter_exists ()) {
       return execute_result (EXECUTE_PARAMETER_DNE);
