@@ -16,6 +16,8 @@ namespace ioa {
 
   public:
     locker_key ()
+      :
+      m_serial (0)
     { }
 
     locker_key (serial_type const serial_number,
@@ -74,6 +76,11 @@ namespace ioa {
     typedef typename vs_type::iterator iterator;
     typedef typename vs_type::const_iterator const_iterator;
 
+    locker ()
+      :
+      m_serial_number (0)
+    { }
+
     // Capacity.
     bool empty () const {
       return m_serial_value.empty ();
@@ -117,10 +124,10 @@ namespace ioa {
       // Generate a new key.
       // We don't use the serial number from the default constructor locker keys constructed
       // outside of a locker are invalid.
-      while (m_serial_value.find (m_serial_number) != m_serial_value.end () ||
-	     m_serial_number == serial_type ()) {
+      do {
 	++m_serial_number;
-      }
+      } while (m_serial_value.find (m_serial_number) != m_serial_value.end () ||
+	       m_serial_number == 0);
 
       // Insert.
       m_serial_value.insert (std::make_pair (m_serial_number, value));

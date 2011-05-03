@@ -6,10 +6,33 @@
 
 namespace ioa {
 
-  class decompose_listener_interface
+  class rescind_listener_interface
   {
   public:
-    virtual ~decompose_listener_interface () { }
+    virtual ~rescind_listener_interface () { }
+    virtual void decomposed (const generic_automaton_handle& output_automaton,
+			     const void* output_member_ptr,
+			     const generic_parameter_handle& output_parameter,
+			     const generic_automaton_handle& input_automaton,
+			     const void* input_member_ptr) = 0;
+    virtual void decomposed (const generic_automaton_handle& output_automaton,
+			     const void* output_member_ptr,
+			     const generic_automaton_handle& input_automaton,
+			     const void* input_member_ptr,
+			     const generic_parameter_handle& input_parameter) = 0;
+  };
+
+  class destroy_listener_interface
+  {
+  public:
+    virtual ~destroy_listener_interface () { }
+    virtual void destroyed (const generic_automaton_handle& parent,
+			    const generic_automaton_handle& child) = 0;
+    virtual void decomposed (const generic_automaton_handle& output_automaton,
+			     const void* output_member_ptr,
+			     const generic_automaton_handle& input_automaton,
+			     const void* input_member_ptr,
+			     const generic_automaton_handle& composer_automaton) = 0;
     virtual void decomposed (const generic_automaton_handle& output_automaton,
 			     const void* output_member_ptr,
 			     const generic_parameter_handle& output_parameter,
@@ -82,7 +105,9 @@ namespace ioa {
     virtual void execute () = 0;
     virtual void decompose_parameter (const generic_automaton_handle& automaton,
 				      const generic_parameter_handle& parameter,
-				      decompose_listener_interface& listener) = 0;
+				      rescind_listener_interface& listener) = 0;
+    virtual void decompose_automaton (const generic_automaton_handle& automaton,
+				      destroy_listener_interface& listener) = 0;
   };
   
   struct action_compare
@@ -183,7 +208,7 @@ namespace ioa {
 
     void decompose_parameter (const generic_automaton_handle& automaton,
 			      const generic_parameter_handle& parameter,
-			      decompose_listener_interface& listener) {
+			      rescind_listener_interface& listener) {
       if (m_output->get_automaton_handle () == automaton &&
 	  m_output->involves_parameter (parameter)) {
 	// Decompose all.
@@ -209,6 +234,58 @@ namespace ioa {
 				 (*pos)->get_automaton_handle (),
 				 (*pos)->get_member_ptr (),
 				 parameter);
+	    delete *pos;
+	    m_inputs.erase (pos);
+	    break;
+	  }
+	}
+      }
+    }
+    
+    void decompose_automaton (const generic_automaton_handle& automaton,
+			      destroy_listener_interface& listener) {
+      if (m_output->get_automaton_handle () == automaton) {
+	// Decompose all.
+	BOOST_FOREACH (IA* i, m_inputs) {
+	  if (m_output->is_parameterized ()) {
+	    listener.decomposed (m_output->get_automaton_handle (),
+				 m_output->get_member_ptr (),
+				 m_output->get_parameter_handle (),
+				 i->get_automaton_handle (),
+				 i->get_member_ptr ());
+	  }
+	  else {
+	    listener.decomposed (m_output->get_automaton_handle (),
+				 m_output->get_member_ptr (),
+				 i->get_automaton_handle (),
+				 i->get_member_ptr (),
+				 i->get_composer_handle ());
+	  }
+	  delete i;
+	}
+	m_inputs.clear ();
+      }
+      else {
+	// Try the inputs.
+	for (typename set_type::iterator pos = m_inputs.begin ();
+	     pos != m_inputs.end ();
+	     ++pos) {
+	  if ((*pos)->get_automaton_handle () == automaton ||
+	      (*pos)->get_composer_handle () == automaton) {
+	    if ((*pos)->is_parameterized ()) {
+	      listener.decomposed (m_output->get_automaton_handle (),
+				   m_output->get_member_ptr (),
+				   (*pos)->get_automaton_handle (),
+				   (*pos)->get_member_ptr (),
+				   (*pos)->get_parameter_handle ());
+	    }
+	    else {
+	      listener.decomposed (m_output->get_automaton_handle (),
+				   m_output->get_member_ptr (),
+				   (*pos)->get_automaton_handle (),
+				   (*pos)->get_member_ptr (),
+				   (*pos)->get_composer_handle ());
+	    }
 	    delete *pos;
 	    m_inputs.erase (pos);
 	    break;

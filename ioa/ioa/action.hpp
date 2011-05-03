@@ -57,8 +57,20 @@ namespace ioa {
 
   // std::ostream& operator<<(std::ostream& output, const action_interface&);
 
+  class parameter_action_interface
+  {
+  public:
+    virtual ~parameter_action_interface () { }
+    virtual const void* get_member_ptr () const = 0;
+    virtual bool is_parameterized () const = 0;
+    virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
+    virtual bool parameter_exists () const = 0;
+    virtual generic_parameter_handle get_parameter_handle () const = 0;
+  };
+
   class input_action_interface :
-    public action_interface
+    public action_interface,
+    public parameter_action_interface
   {
   private:
     const generic_automaton_handle m_composer;
@@ -78,12 +90,6 @@ namespace ioa {
     }
 
     virtual bool operator== (const input_action_interface& ia) const = 0;
-
-    virtual const void* get_member_ptr () const = 0;
-    
-    virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
-    
-    virtual bool parameter_exists () const = 0;
   };
 
   class unvalued_input_action_interface :
@@ -129,7 +135,8 @@ namespace ioa {
   };
 
   class output_action_interface :
-    public executable_action_interface
+    public executable_action_interface,
+    public parameter_action_interface
   {
   public:
     output_action_interface (const generic_automaton_handle& handle) :
@@ -139,10 +146,6 @@ namespace ioa {
     virtual bool operator== (const output_action_interface& oa) const = 0;
     
     virtual const void* get_member_ptr () const = 0;
-
-    virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
-
-    virtual bool parameter_exists () const = 0;
   };
 
   class unvalued_output_action_interface :
@@ -281,6 +284,14 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
+
     bool involves_parameter (const generic_parameter_handle&) const {
       return false;
     }
@@ -318,6 +329,14 @@ namespace ioa {
       param<PT> (parameter)
     { }
 
+    generic_parameter_handle get_parameter_handle () const {
+      return this->m_parameter;
+    }
+
+    bool is_parameterized () const {
+      return true;
+    }
+
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;
     }
@@ -353,6 +372,14 @@ namespace ioa {
       valued_input_action_interface<VT> (handle, composer),
       member_ref<M> (m)
     { }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
@@ -391,6 +418,14 @@ namespace ioa {
       member_ref<M> (m),
       param<PT> (parameter)
     { }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return this->m_parameter;
+    }
+
+    bool is_parameterized () const {
+      return true;
+    }
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;
@@ -435,6 +470,14 @@ namespace ioa {
       return &this->m_member;
     }
 
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
+
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
     }
@@ -466,6 +509,14 @@ namespace ioa {
       member_ref<M> (m),
       param<PT> (parameter)
     { }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return this->m_parameter;
+    }
+
+    bool is_parameterized () const {
+      return true;
+    }
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;
@@ -505,6 +556,14 @@ namespace ioa {
       valued_output_action_interface<VT> (handle),
       member_ref<M> (m)
     { }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
@@ -546,6 +605,14 @@ namespace ioa {
       member_ref<M> (m),
       param<PT> (parameter)
     { }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return this->m_parameter;
+    }
+
+    bool is_parameterized () const {
+      return true;
+    }
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;

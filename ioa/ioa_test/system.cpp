@@ -5,6 +5,35 @@
 #include <system.hpp>
 #include "automaton.hpp"
 
+struct decompose_record
+{
+  ioa::generic_automaton_handle output_automaton;
+  const void* output_member;
+  ioa::generic_automaton_handle input_automaton;
+  const void* input_member;
+  ioa::generic_automaton_handle composer_automaton;
+
+  decompose_record (const ioa::generic_automaton_handle& output_automaton,
+		    const void* output_member,
+		    const ioa::generic_automaton_handle& input_automaton,
+		    const void* input_member,
+		    const ioa::generic_automaton_handle& composer_automaton) :
+    output_automaton (output_automaton),
+    output_member (output_member),
+    input_automaton (input_automaton),
+    input_member (input_member),
+    composer_automaton (composer_automaton)
+  { }
+  
+  bool operator== (const decompose_record& odr) const {
+    return output_automaton == odr.output_automaton &&
+      output_member == odr.output_member &&
+      input_automaton == odr.input_automaton &&
+      input_member == odr.input_member &&
+      composer_automaton == odr.composer_automaton;
+  }
+};
+
 struct output_decompose_record
 {
   ioa::generic_automaton_handle output_automaton;
@@ -63,8 +92,8 @@ struct input_decompose_record
   }
 };
 
-struct dummy_decompose_listener :
-  public ioa::decompose_listener_interface
+struct dummy_rescind_listener :
+  public ioa::rescind_listener_interface
 {
   std::vector<output_decompose_record> output_records;
   std::vector<input_decompose_record> input_records;
@@ -88,21 +117,62 @@ struct dummy_decompose_listener :
   }
 };
 
+struct dummy_destroy_listener :
+  public ioa::destroy_listener_interface
+{
+  std::vector<std::pair<ioa::generic_automaton_handle, ioa::generic_automaton_handle> > destroyed_records;
+  std::vector<decompose_record> decompose_records;
+  std::vector<output_decompose_record> output_records;
+  std::vector<input_decompose_record> input_records;
+
+
+  void destroyed (const ioa::generic_automaton_handle& parent,
+		  const ioa::generic_automaton_handle& child) {
+    destroyed_records.push_back (std::make_pair (parent, child));
+  }
+
+  void decomposed (const ioa::generic_automaton_handle& output_automaton,
+		   const void* output_member,
+		   const ioa::generic_automaton_handle& input_automaton,
+		   const void* input_member,
+		   const ioa::generic_automaton_handle& composer_automaton) {
+    decompose_record dr (output_automaton, output_member, input_automaton, input_member, composer_automaton);
+    decompose_records.push_back (dr);
+  }
+
+  void decomposed (const ioa::generic_automaton_handle& output_automaton,
+		   const void* output_member,
+		   const ioa::generic_parameter_handle& output_parameter,
+		   const ioa::generic_automaton_handle& input_automaton,
+		   const void* input_member) {
+    output_decompose_record odr (output_automaton, output_member, output_parameter, input_automaton, input_member);
+    output_records.push_back (odr);
+  }
+
+  void decomposed (const ioa::generic_automaton_handle& output_automaton,
+		   const void* output_member,
+		   const ioa::generic_automaton_handle& input_automaton,
+		   const void* input_member,
+		   const ioa::generic_parameter_handle& input_parameter) {
+    input_decompose_record idr (output_automaton, output_member, input_automaton, input_member, input_parameter);
+    input_records.push_back (idr);
+  }
+
+};
+
 BOOST_AUTO_TEST_SUITE(system_suite)
 
 BOOST_AUTO_TEST_CASE (system_create_creator_dne)
 {
-  // ioa::system system;
-  // automaton* a = new automaton ();
-  // ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
-  // x = new blah ();
-  // ioa::system::create_result<blah> r1 = system.create (a, x);
-  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_CREATOR_DNE);
-  // delete a;
-  // 1. Create an automaton.
-  // 2. Destroy the automaton.
-  // 3. Create another automaton using handle of first automaton.
-  BOOST_CHECK (false);
+  ioa::system system;
+  ioa::system::create_result<automaton> r1 = system.create (new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> creator_handle = r1.automaton;
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (creator_handle, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
+  r1 = system.create (creator_handle, new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_CREATOR_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_create_exists)
@@ -125,15 +195,17 @@ BOOST_AUTO_TEST_CASE (system_create_success)
 
 BOOST_AUTO_TEST_CASE (system_declare_automaton_dne)
 {
-//   ioa::system system;
-//   int parameter;
+  ioa::system system;
+  int parameter;
   
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
-//   ioa::system::declare_result d1 = system.declare (a, &parameter);
-//   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system::create_result<automaton> r1 = system.create (new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> automaton = r1.automaton;
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (automaton, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
+  ioa::system::declare_result<int> x1 = system.declare (automaton, &parameter);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DECLARE_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_declare_exists)
@@ -161,66 +233,82 @@ BOOST_AUTO_TEST_CASE (system_declare_success)
   BOOST_CHECK_EQUAL (d1.parameter.value (), &parameter);
 }
 
-BOOST_AUTO_TEST_CASE (system_compose_compose_automaton_dne)
+BOOST_AUTO_TEST_CASE (system_compose_composer_automaton_dne)
 {
-//   ioa::system system;
-
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
-
-//   x = new blah ();
-//   ioa::system::create_result<blah> r1 = system.create (x);
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::typed_automaton<blah> > output = r1.automaton;
-
-//   r1 = system.create (new blah ());
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::typed_automaton<blah> > input = r1.automaton;
-
-//   ioa::system::compose_result c1 = system.compose (output, &blah::output, input, &blah::input, a);
-//   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_COMPOSER_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system system;
+  automaton* composer_instance = new automaton ();
+  automaton* output_instance = new automaton ();
+  automaton* input_instance = new automaton ();
+  
+  ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> composer = r1.automaton;
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (composer, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
+  
+  r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+  
+  r1 = system.create (input_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> input = r1.automaton;
+  
+  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_COMPOSER_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_compose_output_automaton_dne)
 {
-//   ioa::system system;
-
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
-
-//   x = new blah ();
-//   ioa::system::create_result<blah> r1 = system.create (x);
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::automaton> composer = r1.automaton;
-
-//   ioa::system::compose_result c1 = system.compose (a, &blah::output, a, &blah::input, composer);
-//   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_OUTPUT_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system system;
+  automaton* composer_instance = new automaton ();
+  automaton* output_instance = new automaton ();
+  automaton* input_instance = new automaton ();
+  
+  ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (output, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
+  
+  r1 = system.create (input_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> input = r1.automaton;
+  
+  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_OUTPUT_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_compose_input_automaton_dne)
 {
-//   ioa::system system;
-
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
-
-//   x = new blah ();
-//   ioa::system::create_result<blah> r1 = system.create (x);
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::automaton> composer = r1.automaton;
-
-//   r1 = system.create (new blah ());
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::typed_automaton<blah> > output = r1.automaton;
-
-//   ioa::system::compose_result c1 = system.compose (output, &blah::output, a, &blah::input, composer);
-//   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_INPUT_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system system;
+  automaton* composer_instance = new automaton ();
+  automaton* output_instance = new automaton ();
+  automaton* input_instance = new automaton ();
+  
+  ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+  
+  r1 = system.create (input_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> input = r1.automaton;
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (input, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
+  
+  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_INPUT_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_compose_output_parameter_dne)
@@ -246,7 +334,7 @@ BOOST_AUTO_TEST_CASE (system_compose_output_parameter_dne)
   ioa::system::declare_result<int> d1 = system.declare (output, &parameter);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (output, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
@@ -277,7 +365,7 @@ BOOST_AUTO_TEST_CASE (system_compose_input_parameter_dne)
   ioa::system::declare_result<int> d1 = system.declare (input, &parameter);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (input, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
@@ -408,66 +496,94 @@ BOOST_AUTO_TEST_CASE (system_compose_success)
   BOOST_CHECK (input_instance->up_uv_input.state);
 }
 
-BOOST_AUTO_TEST_CASE (system_decompose_compose_automaton_dne)
+BOOST_AUTO_TEST_CASE (system_decompose_composer_automaton_dne)
 {
-//   ioa::system system;
+  ioa::system system;
+  automaton* composer_instance = new automaton ();
+  automaton* output_instance = new automaton ();
+  automaton* input_instance = new automaton ();
+  
+  ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+  
+  r1 = system.create (input_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> input = r1.automaton;
+  
+  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (composer, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
 
-//   x = new blah ();
-//   ioa::system::create_result<blah> r1 = system.create (x);
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::typed_automaton<blah> > output = r1.automaton;
-
-//   r1 = system.create (new blah ());
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::typed_automaton<blah> > input = r1.automaton;
-
-//   ioa::system::compose_result c1 = system.compose (output, &blah::output, input, &blah::input, a);
-//   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_COMPOSER_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system::decompose_result x1 = system.decompose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DECOMPOSE_COMPOSER_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_decompose_output_automaton_dne)
 {
-//   ioa::system system;
+  ioa::system system;
+  automaton* composer_instance = new automaton ();
+  automaton* output_instance = new automaton ();
+  automaton* input_instance = new automaton ();
+  
+  ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+  
+  r1 = system.create (input_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> input = r1.automaton;
+  
+  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (output, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
 
-//   x = new blah ();
-//   ioa::system::create_result<blah> r1 = system.create (x);
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::automaton> composer = r1.automaton;
-
-//   ioa::system::compose_result c1 = system.compose (a, &blah::output, a, &blah::input, composer);
-//   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_OUTPUT_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system::decompose_result x1 = system.decompose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DECOMPOSE_OUTPUT_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_decompose_input_automaton_dne)
 {
-//   ioa::system system;
+  ioa::system system;
+  automaton* composer_instance = new automaton ();
+  automaton* output_instance = new automaton ();
+  automaton* input_instance = new automaton ();
+  
+  ioa::system::create_result<automaton> r1 = system.create (composer_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> composer = r1.automaton;
+  
+  r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
+  
+  r1 = system.create (input_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> input = r1.automaton;
+  
+  ioa::system::compose_result c1 = system.compose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (input, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
 
-//   x = new blah ();
-//   ioa::system::create_result<blah> r1 = system.create (x);
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::automaton> composer = r1.automaton;
-
-//   r1 = system.create (new blah ());
-//   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-//   ioa::timestamp<ioa::typed_automaton<blah> > output = r1.automaton;
-
-//   ioa::system::compose_result c1 = system.compose (output, &blah::output, a, &blah::input, composer);
-//   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_INPUT_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system::decompose_result x1 = system.decompose (output, &automaton::up_uv_output, input, &automaton::up_uv_input, composer);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DECOMPOSE_INPUT_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_decompose_output_parameter_dne)
@@ -493,7 +609,7 @@ BOOST_AUTO_TEST_CASE (system_decompose_output_parameter_dne)
   ioa::system::declare_result<int> d1 = system.declare (output, &parameter);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (output, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
@@ -524,7 +640,7 @@ BOOST_AUTO_TEST_CASE (system_decompose_input_parameter_dne)
   ioa::system::declare_result<int> d1 = system.declare (input, &parameter);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (input, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
@@ -588,15 +704,22 @@ BOOST_AUTO_TEST_CASE (system_decompose_success)
 
 BOOST_AUTO_TEST_CASE (system_rescind_automaton_dne)
 {
-//   ioa::system system;
-//   int parameter;
+  ioa::system system;
+  int parameter;
   
-//   blah* x = new blah ();
-//   ioa::typed_automaton<blah> y (x);
-//   ioa::timestamp<ioa::typed_automaton<blah> > a (&y);
-//   ioa::system::declare_result d1 = system.declare (a, &parameter);
-//   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_AUTOMATON_DNE);
-  BOOST_CHECK (false);
+  ioa::system::create_result<automaton> r1 = system.create (new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::system::declare_result<int> d1 = system.declare (r1.automaton, &parameter);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
+  ioa::parameter_handle<int> param = d1.parameter;
+
+  dummy_destroy_listener destroy_listener;
+  ioa::system::destroy_result y1 = system.destroy (r1.automaton, destroy_listener);
+  BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
+
+  dummy_rescind_listener listener;
+  ioa::system::rescind_result<int> k1 = system.rescind (r1.automaton, param, listener);
+  BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_rescind_exists)
@@ -609,7 +732,7 @@ BOOST_AUTO_TEST_CASE (system_rescind_exists)
   ioa::system::declare_result<int> d1 = system.declare (r1.automaton, &parameter);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (r1.automaton, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
   k1 = system.rescind (r1.automaton, param, listener);
@@ -646,7 +769,7 @@ BOOST_AUTO_TEST_CASE (system_rescind_success)
   c1 = system.compose (output, &automaton::up_uv_output, composer, &automaton::p_uv_input, param);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
 
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (composer, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
   BOOST_CHECK (std::find (listener.output_records.begin (),
@@ -667,37 +790,139 @@ BOOST_AUTO_TEST_CASE (system_rescind_success)
 
 }
 
+BOOST_AUTO_TEST_CASE (system_destroy_destroyer_dne)
+{
+  ioa::system system;
+  ioa::system::create_result<automaton> r1 = system.create (new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> parent_handle = r1.automaton;
+  r1 = system.create (parent_handle, new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> child_handle = r1.automaton;
+
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result d1 = system.destroy (parent_handle, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
+  d1 = system.destroy (parent_handle, child_handle, listener);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_DESTROYER_DNE);
+}
+
+BOOST_AUTO_TEST_CASE (system_destroy_destroyer_not_creator)
+{
+   ioa::system system;
+   ioa::system::create_result<automaton> r1 = system.create (new automaton ());
+   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+   ioa::automaton_handle<automaton> parent_handle = r1.automaton;
+   r1 = system.create (parent_handle, new automaton ());
+   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+   ioa::automaton_handle<automaton> child_handle = r1.automaton;
+   r1 = system.create (new automaton ());
+   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+   ioa::automaton_handle<automaton> third_party_handle = r1.automaton;
+
+   dummy_destroy_listener listener;
+   ioa::system::destroy_result d1 = system.destroy (third_party_handle, child_handle, listener);
+   BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_DESTROYER_NOT_CREATOR);
+}
+
+BOOST_AUTO_TEST_CASE (system_destroy_exists)
+{
+  ioa::system system;
+  ioa::system::create_result<automaton> r1 = system.create (new automaton ());
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result x1 = system.destroy (r1.automaton, listener);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DESTROY_SUCCESS);
+  x1 = system.destroy (r1.automaton, listener);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DESTROY_EXISTS);
+}
+
+BOOST_AUTO_TEST_CASE (system_destroy_success)
+{
+  ioa::system system;
+  int parameter;
+
+  automaton* alpha_instance = new automaton ();
+  automaton* beta_instance = new automaton ();
+  automaton* gamma_instance = new automaton ();
+
+  ioa::system::create_result<automaton> r1 = system.create (alpha_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> alpha = r1.automaton;
+
+  r1 = system.create (alpha, beta_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> beta = r1.automaton;
+
+  r1 = system.create (beta, gamma_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> gamma = r1.automaton;
+
+  ioa::system::declare_result<int> d1 = system.declare (beta, &parameter);
+  BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
+  ioa::parameter_handle<int> param = d1.parameter;
+
+  ioa::system::compose_result c1 = system.compose (alpha, &automaton::up_uv_output, beta, &automaton::up_uv_input, alpha);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
+  c1 = system.compose (beta, &automaton::p_uv_output, param, gamma, &automaton::up_uv_input);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
+  c1 = system.compose (gamma, &automaton::up_uv_output, beta, &automaton::p_uv_input, param);
+  BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
+
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result x1 = system.destroy (beta, listener);
+  BOOST_CHECK_EQUAL (x1.type, ioa::system::DESTROY_SUCCESS);
+
+  std::pair <ioa::generic_automaton_handle, ioa::generic_automaton_handle> p1 (alpha, beta);
+  BOOST_CHECK (std::find (listener.destroyed_records.begin (),
+			  listener.destroyed_records.end (),
+			  p1) != listener.destroyed_records.end ());
+  std::pair <ioa::generic_automaton_handle, ioa::generic_automaton_handle> p2 (beta, gamma);
+  BOOST_CHECK (std::find (listener.destroyed_records.begin (),
+			  listener.destroyed_records.end (),
+			  p2) != listener.destroyed_records.end ());
+  BOOST_CHECK (std::find (listener.decompose_records.begin (),
+			  listener.decompose_records.end (),
+			  decompose_record (alpha,
+					    &alpha_instance->up_uv_output,
+					    beta,
+					    &beta_instance->up_uv_input,
+					    alpha)) != listener.decompose_records.end ());
+  BOOST_CHECK (std::find (listener.output_records.begin (),
+			  listener.output_records.end (),
+			  output_decompose_record (beta,
+						   &beta_instance->p_uv_output,
+						   param,
+						   gamma,
+						   &gamma_instance->up_uv_input)) != listener.output_records.end ());
+  BOOST_CHECK (std::find (listener.input_records.begin (),
+  			  listener.input_records.end (),
+  			  input_decompose_record (gamma,
+  						  &gamma_instance->up_uv_output,
+  						  beta,
+  						  &beta_instance->p_uv_input,
+  						  param)) != listener.input_records.end ());
+
+
+
+}
+
 BOOST_AUTO_TEST_CASE (system_execute_output_automaton_dne)
 {
-  // ioa::system system;
-  // int parameter;
-  // automaton* composer_instance = new automaton ();
-  // automaton* output_instance = new automaton ();
-  // automaton* input_instance = new automaton ();
+  ioa::system system;
+  automaton* output_instance = new automaton ();
 
-  // ioa::system::create_result<automaton> r1 = system.create (composer_instance);
-  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-  // ioa::automaton_handle<automaton> composer = r1.automaton;
-  
-  // r1 = system.create (output_instance);
-  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-  // ioa::automaton_handle<automaton> output = r1.automaton;
+  ioa::system::create_result<automaton> r1 = system.create (output_instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> output = r1.automaton;
 
-  // r1 = system.create (input_instance);
-  // BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
-  // ioa::automaton_handle<automaton> input = r1.automaton;
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result y1 = system.destroy (output, listener);
+  BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
 
-  // ioa::system::declare_result<int> d1 = system.declare (output, &parameter);
-  // BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
-  // ioa::parameter_handle<int> param = d1.parameter;
-
-  // ioa::system::compose_result c1 = system.compose (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input, composer);
-  // BOOST_CHECK_EQUAL (c1.type, ioa::system::COMPOSE_SUCCESS);
-
-  // ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
-  // BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
-  // BOOST_CHECK (input_instance->up_uv_input.state);
-  BOOST_CHECK (false);
+  ioa::system::execute_result e1 = system.execute_output (output, &automaton::up_uv_output);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 }
 
 BOOST_AUTO_TEST_CASE (system_execute_output_parameter_dne)
@@ -714,7 +939,7 @@ BOOST_AUTO_TEST_CASE (system_execute_output_parameter_dne)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  dummy_decompose_listener listener;
+  dummy_rescind_listener listener;
   ioa::system::rescind_result<int> k1 = system.rescind (r1.automaton, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
