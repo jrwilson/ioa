@@ -26,19 +26,19 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::up_uv_output_action> output (output_handle, output_instance->up_uv_output);
-  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, input1_instance->up_uv_input, binder_handle);
-  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, input2_instance->p_uv_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::up_uv_output_action> output (output_handle, &automaton::up_uv_output);
+  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, &automaton::up_uv_input);
+  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, &automaton::p_uv_input, input_parameter_handle);
 
   ioa::binding<automaton::up_uv_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_input (input1, true));
-  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, input2_instance->p_uv_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (binding.involves_input (input_test, false));
+  BOOST_CHECK (binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, &automaton::p_uv_input, input_parameter_handle);
+  BOOST_CHECK (binding.involves_input (input_test));
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
@@ -71,19 +71,19 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_unvalued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::p_uv_output_action> output (output_handle, output_instance->p_uv_output, output_parameter_handle);
-  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, input1_instance->up_uv_input, binder_handle);
-  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, input2_instance->p_uv_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::p_uv_output_action> output (output_handle, &automaton::p_uv_output, output_parameter_handle);
+  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, &automaton::up_uv_input);
+  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, &automaton::p_uv_input, input_parameter_handle);
 
   ioa::binding<automaton::p_uv_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_input (input1, true));
-  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, input2_instance->p_uv_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (binding.involves_input (input_test, false));
+  BOOST_CHECK (binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, &automaton::p_uv_input, input_parameter_handle);
+  BOOST_CHECK (binding.involves_input (input_test));
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
@@ -115,19 +115,19 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_valued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::up_v_output_action> output (output_handle, output_instance->up_v_output);
-  ioa::action<automaton::up_v_input_action> input1 (input1_handle, input1_instance->up_v_input, binder_handle);
-  ioa::action<automaton::p_v_input_action> input2 (input2_handle, input2_instance->p_v_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::up_v_output_action> output (output_handle, &automaton::up_v_output);
+  ioa::action<automaton::up_v_input_action> input1 (input1_handle, &automaton::up_v_input);
+  ioa::action<automaton::p_v_input_action> input2 (input2_handle, &automaton::p_v_input, input_parameter_handle);
 
   ioa::binding<automaton::up_v_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_input (input1, true));
-  ioa::action<automaton::p_v_input_action> input_test (input2_handle, input2_instance->p_v_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (binding.involves_input (input_test, false));
+  BOOST_CHECK (binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_v_input_action> input_test (input2_handle, &automaton::p_v_input, input_parameter_handle);
+  BOOST_CHECK (binding.involves_input (input_test));
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
@@ -160,19 +160,19 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_valued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::p_v_output_action> output (output_handle, output_instance->p_v_output, output_parameter_handle);
-  ioa::action<automaton::up_v_input_action> input1 (input1_handle, input1_instance->up_v_input, binder_handle);
-  ioa::action<automaton::p_v_input_action> input2 (input2_handle, input2_instance->p_v_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::p_v_output_action> output (output_handle, &automaton::p_v_output, output_parameter_handle);
+  ioa::action<automaton::up_v_input_action> input1 (input1_handle, &automaton::up_v_input);
+  ioa::action<automaton::p_v_input_action> input2 (input2_handle, &automaton::p_v_input, input_parameter_handle);
 
   ioa::binding<automaton::p_v_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_input (input1, true));
-  ioa::action<automaton::p_v_input_action> input_test (input2_handle, input2_instance->p_v_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (binding.involves_input (input_test, false));
+  BOOST_CHECK (binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_v_input_action> input_test (input2_handle, &automaton::p_v_input, input_parameter_handle);
+  BOOST_CHECK (binding.involves_input (input_test));
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
@@ -204,21 +204,21 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::up_uv_output_action> output (output_handle, output_instance->up_uv_output);
-  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, input1_instance->up_uv_input, binder_handle);
-  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, input2_instance->p_uv_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::up_uv_output_action> output (output_handle, &automaton::up_uv_output);
+  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, &automaton::up_uv_input);
+  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, &automaton::p_uv_input, input_parameter_handle);
 
   ioa::binding<automaton::up_uv_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
-  binding.unbind (input1);
-  binding.unbind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
+  binding.unbind (input1, binder_handle);
+  binding.unbind (input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_input (input1, true));
-  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, input2_instance->p_uv_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (!binding.involves_input (input_test, false));
+  BOOST_CHECK (!binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, &automaton::p_uv_input, input_parameter_handle);
+  BOOST_CHECK (!binding.involves_input (input_test));
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (!binding.involves_input_automaton (input2_handle));
 }
@@ -244,21 +244,21 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::p_uv_output_action> output (output_handle, output_instance->p_uv_output, output_parameter_handle);
-  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, input1_instance->up_uv_input, binder_handle);
-  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, input2_instance->p_uv_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::p_uv_output_action> output (output_handle, &automaton::p_uv_output, output_parameter_handle);
+  ioa::action<automaton::up_uv_input_action> input1 (input1_handle, &automaton::up_uv_input);
+  ioa::action<automaton::p_uv_input_action> input2 (input2_handle, &automaton::p_uv_input, input_parameter_handle);
 
   ioa::binding<automaton::p_uv_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
-  binding.unbind (input1);
-  binding.unbind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
+  binding.unbind (input1, binder_handle);
+  binding.unbind (input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_input (input1, true));
-  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, input2_instance->p_uv_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (!binding.involves_input (input_test, false));
+  BOOST_CHECK (!binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_uv_input_action> input_test (input2_handle, &automaton::p_uv_input, input_parameter_handle);
+  BOOST_CHECK (!binding.involves_input (input_test));
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (!binding.involves_input_automaton (input2_handle));
 }
@@ -282,21 +282,21 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::up_v_output_action> output (output_handle, output_instance->up_v_output);
-  ioa::action<automaton::up_v_input_action> input1 (input1_handle, input1_instance->up_v_input, binder_handle);
-  ioa::action<automaton::p_v_input_action> input2 (input2_handle, input2_instance->p_v_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::up_v_output_action> output (output_handle, &automaton::up_v_output);
+  ioa::action<automaton::up_v_input_action> input1 (input1_handle, &automaton::up_v_input);
+  ioa::action<automaton::p_v_input_action> input2 (input2_handle, &automaton::p_v_input, input_parameter_handle);
 
   ioa::binding<automaton::up_v_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
-  binding.unbind (input1);
-  binding.unbind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
+  binding.unbind (input1, binder_handle);
+  binding.unbind (input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_input (input1, true));
-  ioa::action<automaton::p_v_input_action> input_test (input2_handle, input2_instance->p_v_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (!binding.involves_input (input_test, false));
+  BOOST_CHECK (!binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_v_input_action> input_test (input2_handle, &automaton::p_v_input, input_parameter_handle);
+  BOOST_CHECK (!binding.involves_input (input_test));
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (!binding.involves_input_automaton (input2_handle));
 }
@@ -322,21 +322,21 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
 
-  ioa::action<automaton::p_v_output_action> output (output_handle, output_instance->p_v_output, output_parameter_handle);
-  ioa::action<automaton::up_v_input_action> input1 (input1_handle, input1_instance->up_v_input, binder_handle);
-  ioa::action<automaton::p_v_input_action> input2 (input2_handle, input2_instance->p_v_input, input_parameter_handle, binder_handle);
+  ioa::action<automaton::p_v_output_action> output (output_handle, &automaton::p_v_output, output_parameter_handle);
+  ioa::action<automaton::up_v_input_action> input1 (input1_handle, &automaton::up_v_input);
+  ioa::action<automaton::p_v_input_action> input2 (input2_handle, &automaton::p_v_input, input_parameter_handle);
 
   ioa::binding<automaton::p_v_output_action> binding (output);
-  binding.bind (input1);
-  binding.bind (input2);
-  binding.unbind (input1);
-  binding.unbind (input2);
+  binding.bind (input1, binder_handle);
+  binding.bind (input2, binder_handle);
+  binding.unbind (input1, binder_handle);
+  binding.unbind (input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_input (input1, true));
-  ioa::action<automaton::p_v_input_action> input_test (input2_handle, input2_instance->p_v_input, input_parameter_handle, input2_handle);
-  BOOST_CHECK (!binding.involves_input (input_test, false));
+  BOOST_CHECK (!binding.involves_input (input1, binder_handle));
+  ioa::action<automaton::p_v_input_action> input_test (input2_handle, &automaton::p_v_input, input_parameter_handle);
+  BOOST_CHECK (!binding.involves_input (input_test));
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (!binding.involves_input_automaton (input2_handle));
 }

@@ -32,16 +32,19 @@ namespace ioa {
     private:
       const output_action_interface& m_output;
       const input_action_interface& m_input;
-      
+      const generic_automaton_handle& m_binder;
+
     public:
       binding_equal (const output_action_interface& output,
-  			 const input_action_interface& input) :
+		     const input_action_interface& input,
+		     const generic_automaton_handle& binder) :
   	m_output (output),
-  	m_input (input)
+  	m_input (input),
+	m_binder (binder)
       { }
       
       bool operator() (const binding_interface* c) const {
-  	return c->involves_output (m_output) && c->involves_input (m_input, true);
+  	return c->involves_output (m_output) && c->involves_input (m_input, m_binder);
       }
     };
     
@@ -71,7 +74,7 @@ namespace ioa {
       { }
       
       bool operator() (const binding_interface* c) const {
-  	return c->involves_input (m_input, false);
+  	return c->involves_input (m_input);
       }
     };
     
@@ -237,10 +240,19 @@ namespace ioa {
   private:
     template <class OM, class IM>
     bind_result
-    bind (const action<OM>& output,
-	  const action<IM>& input)
+    _bind (const action<OM>& output,
+	   const action<IM>& input,
+	   const generic_automaton_handle& binder)
     {
-      if (!m_automata.contains (input.get_binder_handle ())) {
+      if (!m_automata.contains (output.get_automaton_handle ())) {
+	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (input.get_automaton_handle ())) {
+	return bind_result (BIND_INPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (binder)) {
   	// Binder DNE.
   	return bind_result (BIND_BINDER_AUTOMATON_DNE);
       }
@@ -255,7 +267,7 @@ namespace ioa {
       
       std::list<binding_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
 									m_bindings.end (),
-									binding_equal (output, input));
+									binding_equal (output, input, binder));
       
       if (pos != m_bindings.end ()) {
   	// Bound.
@@ -292,101 +304,63 @@ namespace ioa {
       }
     
       // Bind.
-      c->bind (input);
+      c->bind (input, binder);
       return bind_result (BIND_SUCCESS);
     }
 
-    template <class I, class M>
-    M&
-    ptr_to_member (const automaton_handle<I>& handle,
-		   M I::*member_ptr)
+    template <class OM, class IM>
+    bind_result
+    bind (const action<OM>& output,
+	  unparameterized /* */,
+	  const action<IM>& input,
+	  unparameterized /* */,
+	  const generic_automaton_handle& binder)
     {
-      automaton<I>* toa = handle.value ();
-      return ((*(toa->get_typed_instance ())).*member_ptr);
-    }
-  
+      return _bind (output, input, binder);
+    }    
+
+    template <class OM, class IM>
+    bind_result
+    bind (const action<OM>& output,
+	  parameterized /* */,
+	  const action<IM>& input,
+	  unparameterized /* */)
+    {
+      return _bind (output, input, output.get_automaton_handle ());
+    }    
+
+    template <class OM, class IM>
+    bind_result
+    bind (const action<OM>& output,
+	  unparameterized /* */,
+	  const action<IM>& input,
+	  parameterized /* */)
+    {
+      return _bind (output, input, input.get_automaton_handle ());
+    }    
+
   public:
-    template <class OI, class OM, class II, class IM>
+    template <class OM, class IM>
     bind_result
-    bind (const automaton_handle<OI>& output_automaton,
-	     OM OI::*output_member_ptr,
-	     const automaton_handle<II>& input_automaton,
-	     IM II::*input_member_ptr,
-	     const generic_automaton_handle& binder_automaton)
+    bind (const action<OM>& output,
+	  const action<IM>& input,
+	  const generic_automaton_handle& binder)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (output_automaton)) {
-	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_automata.contains (input_automaton)) {
-	return bind_result (BIND_INPUT_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
       
-      action<OM> o (output_automaton, output_member);
-      action<IM> i (input_automaton, input_member, binder_automaton);
-
-      return bind (o, i);
+      return bind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), binder);
     }
-  
-    template <class OI, class OM, class II, class IM, class T>
+
+    template <class OM, class IM>
     bind_result
-    bind (const automaton_handle<OI>& output_automaton,
-	     OM OI::*output_member_ptr,
-	     const parameter_handle<T>& output_parameter,	     
-	     const automaton_handle<II>& input_automaton,
-	     IM II::*input_member_ptr)
+    bind (const action<OM>& output,
+	  const action<IM>& input)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (output_automaton)) {
-	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_automata.contains (input_automaton)) {
-	return bind_result (BIND_INPUT_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
-
-      action<OM> o (output_automaton, output_member, output_parameter);
-      action<IM> i (input_automaton, input_member, output_automaton);
-
-      return bind (o, i);
+      
+      return bind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status ());
     }
-
-    template <class OI, class OM, class II, class IM, class T>
-    bind_result
-    bind (const automaton_handle<OI>& output_automaton,
-	     OM OI::*output_member_ptr,
-	     const automaton_handle<II>& input_automaton,
-	     IM II::*input_member_ptr,
-	     const parameter_handle<T>& input_parameter)
-    {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (output_automaton)) {
-	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_automata.contains (input_automaton)) {
-	return bind_result (BIND_INPUT_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
     
-      action<OM> o (output_automaton, output_member);
-      action<IM> i (input_automaton, input_member, input_parameter, input_automaton);
-    
-      return bind (o, i);
-    }
-
     enum unbind_result_type {
       UNBIND_BINDER_AUTOMATON_DNE,
       UNBIND_OUTPUT_AUTOMATON_DNE,
@@ -409,124 +383,104 @@ namespace ioa {
   private:
     template <class OM, class IM>
     unbind_result
-    unbind (const action<OM>& output,
-	       action<IM>& input)
+    _unbind (const action<OM>& output,
+	     const action<IM>& input,
+	     const generic_automaton_handle& binder)
     {
-      if (!m_automata.contains (input.get_binder_handle ())) {
+      if (!m_automata.contains (output.get_automaton_handle ())) {
+        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (input.get_automaton_handle ())) {
+        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
+      }
+
+      if (!m_automata.contains (binder)) {
 	// Owner DNE.
 	return unbind_result (UNBIND_BINDER_AUTOMATON_DNE);
       }
-    
+      
       if (!output.parameter_exists ()) {
 	return unbind_result (UNBIND_OUTPUT_PARAMETER_DNE);
       }
-    
+      
       if (!input.parameter_exists ()) {
 	return unbind_result (UNBIND_INPUT_PARAMETER_DNE);
       }
-    
+      
       std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
-								      m_bindings.end (),
-								      binding_equal (output, input));
-    
+								  m_bindings.end (),
+								  binding_equal (output, input, binder));
+      
       if (pos == m_bindings.end ()) {
 	// Not bound.
 	return unbind_result (UNBIND_EXISTS);
       }
-    
+      
       binding<OM>* c = static_cast<binding<OM>*> (*pos);
-  
+      
       // Unbind.
-      c->unbind (input);
-
+      c->unbind (input, binder);
+      
       if (c->empty ()) {
 	delete c;
 	m_bindings.erase (pos);
       }
-
+      
       return unbind_result (UNBIND_SUCCESS);
     }
 
+    template <class OM, class IM>
+    unbind_result
+    unbind (const action<OM>& output,
+	    unparameterized /* */,
+	    const action<IM>& input,
+	    unparameterized /* */,
+	    const generic_automaton_handle& binder)
+    {
+      return _unbind (output, input, binder);
+    }    
+    
+    template <class OM, class IM>
+    unbind_result
+    unbind (const action<OM>& output,
+	    parameterized /* */,
+	    const action<IM>& input,
+	    unparameterized /* */)
+    {
+      return _unbind (output, input, output.get_automaton_handle ());
+    }    
+    
+    template <class OM, class IM>
+    unbind_result
+    unbind (const action<OM>& output,
+	    unparameterized /* */,
+	    const action<IM>& input,
+	    parameterized /* */)
+    {
+      return _unbind (output, input, input.get_automaton_handle ());
+    }    
+    
   public:
-    template <class OI, class OM, class II, class IM>
+    template <class OM, class IM>
     unbind_result
-    unbind (const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr,
-	       const generic_automaton_handle& binder_automaton)
+    unbind (const action<OM>& output,
+	    const action<IM>& input,
+	    const generic_automaton_handle& binder)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      if (!m_automata.contains (output_automaton)) {
-        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_automata.contains (input_automaton)) {
-        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
-      
-      action<OM> o (output_automaton, output_member);
-      action<IM> i (input_automaton, input_member, binder_automaton);
-      
-      return unbind (o, i);
-    }
-  
-    template <class OI, class OM, class II, class IM, class T>
-    unbind_result
-    unbind (const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const parameter_handle<T>& output_parameter,	     
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr)
-    {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (output_automaton)) {
-        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_automata.contains (input_automaton)) {
-        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
-
-      action<OM> o (output_automaton, output_member, output_parameter);
-      action<IM> i (input_automaton, input_member, output_automaton);
-
-      return unbind (o, i);
+      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), binder);
     }
 
-    template <class OI, class OM, class II, class IM, class T>
+    template <class OM, class IM>
     unbind_result
-    unbind (const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr,
-	       const parameter_handle<T>& input_parameter)
+    unbind (const action<OM>& output,
+	    const action<IM>& input)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_automata.contains (output_automaton)) {
-        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
-      }
 
-      if (!m_automata.contains (input_automaton)) {
-        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-      IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
-    
-      action<OM> o (output_automaton, output_member);
-      action<IM> i (input_automaton, input_member, input_parameter, input_automaton);
-    
-      return unbind (o, i);
+      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status ());
     }
 
     enum rescind_result_type {
@@ -729,7 +683,7 @@ namespace ioa {
 
   private:
     execute_result
-    execute_executable (executable_action_interface& ac)
+    execute_executable (const executable_action_interface& ac)
     {
       ac.lock_automaton ();
       ac.execute ();
@@ -737,101 +691,47 @@ namespace ioa {
       return execute_result (EXECUTE_SUCCESS);
     }
 
+  public:
     execute_result
-    execute_output (output_action_interface& ac)
+    execute (const output_action_interface& ac)
     {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+
+      if (!m_automata.contains (ac.get_automaton_handle ())) {
+	return execute_result (EXECUTE_AUTOMATON_DNE);
+      }
+      
+      if (!ac.parameter_exists ()) {
+	return execute_result (EXECUTE_PARAMETER_DNE);
+      }
+
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
-										m_bindings.end (),
-										binding_output_equal (ac));
+									    m_bindings.end (),
+									    binding_output_equal (ac));
 
       if (out_pos == m_bindings.end ()) {
 	// Not bound.
 	return execute_executable (ac);
       }
-      else {
+      else {	
 	(*out_pos)->execute ();
 	return execute_result (EXECUTE_SUCCESS);
       }
     }
 
-  public:
-    template <class OI, class OM>
     execute_result
-    execute_output (const automaton_handle<OI>& output_automaton,
-		    OM OI::*output_member_ptr)
+    execute (const independent_action_interface& ac)
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (output_automaton)) {
+      
+      if (!m_automata.contains (ac.get_automaton_handle ())) {
 	return execute_result (EXECUTE_AUTOMATON_DNE);
       }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-
-      action<OM> ac (output_automaton, output_member);
-
-      return execute_output (ac);
-    }
-
-    template <class OI, class OM, class T>
-    execute_result
-    execute_output (const automaton_handle<OI>& output_automaton,
-		    OM OI::*output_member_ptr,
-		    const parameter_handle<T>& output_parameter)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (output_automaton)) {
-	return execute_result (EXECUTE_AUTOMATON_DNE);
-      }
-
-      OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
-
-      action<OM> ac (output_automaton, output_member, output_parameter);
-
+      
       if (!ac.parameter_exists ()) {
 	return execute_result (EXECUTE_PARAMETER_DNE);
       }
-
-      return execute_output (ac);
-    }
-
-    // void execute_internal () { }
-
-    template <class I, class M>
-    execute_result
-    deliver_event (const automaton_handle<I>& automaton,
-		   M I::*member_ptr)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (automaton)) {
-	return execute_result (EXECUTE_AUTOMATON_DNE);
-      }
-
-      M& member = ptr_to_member (automaton, member_ptr);
-
-      action<M> ac (automaton, member);
-
-      return execute_executable (ac);
-    }
-
-    template <class I, class M, class T>
-    execute_result
-    deliver_event (const automaton_handle<I>& automaton,
-		   M I::*member_ptr,
-		   const T& t)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-
-      if (!m_automata.contains (automaton)) {
-	return execute_result (EXECUTE_AUTOMATON_DNE);
-      }
-
-      M& member = ptr_to_member (automaton, member_ptr);
-
-      action<M> ac (automaton, member, t);
-
+      
       return execute_executable (ac);
     }
 

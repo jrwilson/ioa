@@ -254,7 +254,13 @@ BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  // ioa::system::bind_result c1 = system.bind (ioa::action<automaton::up_uv_output_action> (output, &automaton::up_uv_output),
+  // 					     ioa::action<automaton::up_uv_input_action> (input, &automaton::up_uv_input),
+  // 					     binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+   					     ioa::make_action (input, &automaton::up_uv_input),
+ 					     binder);
+
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_BINDER_AUTOMATON_DNE);
 }
 
@@ -280,7 +286,9 @@ BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_OUTPUT_AUTOMATON_DNE);
 }
 
@@ -306,7 +314,9 @@ BOOST_AUTO_TEST_CASE (system_bind_input_automaton_dne)
   ioa::system::destroy_result d1 = system.destroy (input, listener);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_INPUT_AUTOMATON_DNE);
 }
 
@@ -337,7 +347,8 @@ BOOST_AUTO_TEST_CASE (system_bind_output_parameter_dne)
   ioa::system::rescind_result<int> k1 = system.rescind (output, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
-  ioa::system::bind_result c1 = system.bind (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::p_uv_output, param),
+					     ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_OUTPUT_PARAMETER_DNE);
 }
 
@@ -368,7 +379,8 @@ BOOST_AUTO_TEST_CASE (system_bind_input_parameter_dne)
   ioa::system::rescind_result<int> k1 = system.rescind (input, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::p_uv_input, param);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::p_uv_input, param));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_INPUT_PARAMETER_DNE);
 }
 
@@ -391,10 +403,14 @@ BOOST_AUTO_TEST_CASE (system_bind_exists)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+		    ioa::make_action (input, &automaton::up_uv_input),
+		    binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_EXISTS);
 }
 
@@ -422,13 +438,19 @@ BOOST_AUTO_TEST_CASE (system_bind_input_action_unavailable)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output1, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output1, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  c1 = system.bind (output1, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  c1 = system.bind (ioa::make_action (output1, &automaton::up_uv_output),
+		    ioa::make_action (input, &automaton::up_uv_input),
+		    binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_EXISTS);
 
-  c1 = system.bind (output2, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  c1 = system.bind (ioa::make_action (output2, &automaton::up_uv_output),
+		    ioa::make_action (input, &automaton::up_uv_input),
+		    binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_INPUT_ACTION_UNAVAILABLE);
 }
 
@@ -456,10 +478,13 @@ BOOST_AUTO_TEST_CASE (system_bind_output_action_unavailable)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::p_uv_input, param);
+  c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+		    ioa::make_action (input, &automaton::p_uv_input, param));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_OUTPUT_ACTION_UNAVAILABLE);
 }
 
@@ -487,10 +512,11 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  ioa::system::bind_result c1 = system.bind (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::p_uv_output, param),
+					     ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::p_uv_output, param));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (input_instance->up_uv_input.state);
 }
@@ -514,14 +540,18 @@ BOOST_AUTO_TEST_CASE (system_unbind_binder_automaton_dne)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
   dummy_destroy_listener listener;
   ioa::system::destroy_result d1 = system.destroy (binder, listener);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::unbind_result x1 = system.unbind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::unbind_result x1 = system.unbind (ioa::make_action (output, &automaton::up_uv_output),
+						 ioa::make_action (input, &automaton::up_uv_input),
+						 binder);
   BOOST_CHECK_EQUAL (x1.type, ioa::system::UNBIND_BINDER_AUTOMATON_DNE);
 }
 
@@ -544,14 +574,18 @@ BOOST_AUTO_TEST_CASE (system_unbind_output_automaton_dne)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
   dummy_destroy_listener listener;
   ioa::system::destroy_result d1 = system.destroy (output, listener);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::unbind_result x1 = system.unbind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::unbind_result x1 = system.unbind (ioa::make_action (output, &automaton::up_uv_output), 
+						 ioa::make_action (input, &automaton::up_uv_input),
+						 binder);
   BOOST_CHECK_EQUAL (x1.type, ioa::system::UNBIND_OUTPUT_AUTOMATON_DNE);
 }
 
@@ -574,14 +608,18 @@ BOOST_AUTO_TEST_CASE (system_unbind_input_automaton_dne)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::bind_result c1 = system.bind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+					     ioa::make_action (input, &automaton::up_uv_input),
+					     binder);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
   dummy_destroy_listener listener;
   ioa::system::destroy_result d1 = system.destroy (input, listener);
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::unbind_result x1 = system.unbind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::unbind_result x1 = system.unbind (ioa::make_action (output, &automaton::up_uv_output),
+						 ioa::make_action (input, &automaton::up_uv_input),
+						 binder);
   BOOST_CHECK_EQUAL (x1.type, ioa::system::UNBIND_INPUT_AUTOMATON_DNE);
 }
 
@@ -612,7 +650,8 @@ BOOST_AUTO_TEST_CASE (system_unbind_output_parameter_dne)
   ioa::system::rescind_result<int> k1 = system.rescind (output, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
-  ioa::system::unbind_result c1 = system.unbind (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
+  ioa::system::unbind_result c1 = system.unbind (ioa::make_action (output, &automaton::p_uv_output, param),
+						 ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::UNBIND_OUTPUT_PARAMETER_DNE);
 }
 
@@ -643,7 +682,8 @@ BOOST_AUTO_TEST_CASE (system_unbind_input_parameter_dne)
   ioa::system::rescind_result<int> k1 = system.rescind (input, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
-  ioa::system::unbind_result c1 = system.unbind (output, &automaton::up_uv_output, input, &automaton::p_uv_input, param);
+  ioa::system::unbind_result c1 = system.unbind (ioa::make_action (output, &automaton::up_uv_output), 
+						 ioa::make_action (input, &automaton::p_uv_input, param));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::UNBIND_INPUT_PARAMETER_DNE);
 }
 
@@ -666,7 +706,8 @@ BOOST_AUTO_TEST_CASE (system_unbind_exists)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> input = r1.automaton;
   
-  ioa::system::unbind_result j1 = system.unbind (output, &automaton::up_uv_output, input, &automaton::up_uv_input, binder);
+  ioa::system::unbind_result j1 = system.unbind (ioa::make_action (output, &automaton::up_uv_output),
+						 ioa::make_action (input, &automaton::up_uv_input), binder);
   BOOST_CHECK_EQUAL (j1.type, ioa::system::UNBIND_EXISTS);
 }
 
@@ -694,10 +735,12 @@ BOOST_AUTO_TEST_CASE (system_unbind_success)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  ioa::system::bind_result c1 = system.bind (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (output, &automaton::p_uv_output, param), 
+					     ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  ioa::system::unbind_result j1 = system.unbind (output, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
+  ioa::system::unbind_result j1 = system.unbind (ioa::make_action (output, &automaton::p_uv_output, param),
+						 ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (j1.type, ioa::system::UNBIND_SUCCESS);
 }
 
@@ -762,10 +805,12 @@ BOOST_AUTO_TEST_CASE (system_rescind_success)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  ioa::system::bind_result c1 = system.bind (binder, &automaton::p_uv_output, param, input, &automaton::up_uv_input);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (binder, &automaton::p_uv_output, param),
+					     ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  c1 = system.bind (output, &automaton::up_uv_output, binder, &automaton::p_uv_input, param);
+  c1 = system.bind (ioa::make_action (output, &automaton::up_uv_output),
+		    ioa::make_action (binder, &automaton::p_uv_input, param));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
   dummy_rescind_listener listener;
@@ -862,11 +907,15 @@ BOOST_AUTO_TEST_CASE (system_destroy_success)
   BOOST_CHECK_EQUAL (d1.type, ioa::system::DECLARE_SUCCESS);
   ioa::parameter_handle<int> param = d1.parameter;
 
-  ioa::system::bind_result c1 = system.bind (alpha, &automaton::up_uv_output, beta, &automaton::up_uv_input, alpha);
+  ioa::system::bind_result c1 = system.bind (ioa::make_action (alpha, &automaton::up_uv_output),
+					     ioa::make_action (beta, &automaton::up_uv_input),
+					     alpha);
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
-  c1 = system.bind (beta, &automaton::p_uv_output, param, gamma, &automaton::up_uv_input);
+  c1 = system.bind (ioa::make_action (beta, &automaton::p_uv_output, param),
+		    ioa::make_action (gamma, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
-  c1 = system.bind (gamma, &automaton::up_uv_output, beta, &automaton::p_uv_input, param);
+  c1 = system.bind (ioa::make_action (gamma, &automaton::up_uv_output),
+		    ioa::make_action (beta, &automaton::p_uv_input, param));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
   dummy_destroy_listener listener;
@@ -920,7 +969,7 @@ BOOST_AUTO_TEST_CASE (system_execute_output_automaton_dne)
   ioa::system::destroy_result y1 = system.destroy (output, listener);
   BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute_output (output, &automaton::up_uv_output);
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::up_uv_output));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 }
 
@@ -942,7 +991,7 @@ BOOST_AUTO_TEST_CASE (system_execute_output_parameter_dne)
   ioa::system::rescind_result<int> k1 = system.rescind (r1.automaton, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute_output (output, &automaton::p_uv_output, param);
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::p_uv_output, param));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_PARAMETER_DNE);
 }
 
@@ -955,7 +1004,7 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> output = r1.automaton;
 
-  ioa::system::execute_result e1 = system.execute_output (output, &automaton::up_uv_output);
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::up_uv_output));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (output_instance->up_uv_output.state);
 }
@@ -973,10 +1022,10 @@ BOOST_AUTO_TEST_CASE (system_deliver_event_automaton_dne)
   ioa::system::destroy_result y1 = system.destroy (automaton, listener);
   BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::execute_result e1 = system.deliver_event (automaton, &automaton::uv_event);
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (automaton, &automaton::uv_event));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 
-  e1 = system.deliver_event (automaton, &automaton::v_event, 9845);
+  e1 = system.execute (ioa::make_action (automaton, &automaton::v_event, 9845));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 }
 
@@ -989,11 +1038,11 @@ BOOST_AUTO_TEST_CASE (system_deliver_event_success)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> automaton = r1.automaton;
 
-  ioa::system::execute_result e1 = system.deliver_event (automaton, &automaton::uv_event);
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (automaton, &automaton::uv_event));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (instance->uv_event.state);
 
-  e1 = system.deliver_event (automaton, &automaton::v_event, 9845);
+  e1 = system.execute (ioa::make_action (automaton, &automaton::v_event, 9845));
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (instance->v_event.state);
   BOOST_CHECK_EQUAL (instance->v_event.last_value, 9845);

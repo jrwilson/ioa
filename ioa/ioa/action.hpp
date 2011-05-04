@@ -38,6 +38,8 @@ namespace ioa {
     const generic_automaton_handle m_handle;
 
   public:
+    virtual ~action_interface() { }
+
     action_interface (const generic_automaton_handle& handle) :
       m_handle (handle)
     { }
@@ -46,21 +48,14 @@ namespace ioa {
       return m_handle;
     }
 
-    void lock_automaton () {
+    void lock_automaton () const {
       m_handle.value ()->lock ();
     }
 
-    void unlock_automaton () {
+    void unlock_automaton () const {
       m_handle.value ()->unlock ();
     }
-  };
 
-  // std::ostream& operator<<(std::ostream& output, const action_interface&);
-
-  class parameter_action_interface
-  {
-  public:
-    virtual ~parameter_action_interface () { }
     virtual const void* get_member_ptr () const = 0;
     virtual bool is_parameterized () const = 0;
     virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
@@ -68,26 +63,17 @@ namespace ioa {
     virtual generic_parameter_handle get_parameter_handle () const = 0;
   };
 
+  // std::ostream& operator<<(std::ostream& output, const action_interface&);
+
   class input_action_interface :
-    public action_interface,
-    public parameter_action_interface
+    public action_interface
   {
-  private:
-    const generic_automaton_handle m_binder;
-    
   public:
-    input_action_interface (const generic_automaton_handle& handle,
-  			    const generic_automaton_handle& binder) :
-      action_interface (handle),
-      m_binder (binder)
+    input_action_interface (const generic_automaton_handle& handle) :
+      action_interface (handle)
     { }
     
     virtual ~input_action_interface () { }
-
-    const generic_automaton_handle get_binder_handle () const
-    {
-      return m_binder;
-    }
 
     virtual bool operator== (const input_action_interface& ia) const = 0;
   };
@@ -96,14 +82,13 @@ namespace ioa {
     public input_action_interface
   {
   public:
-    unvalued_input_action_interface (const generic_automaton_handle& handle,
-  				    const generic_automaton_handle& binder) :
-      input_action_interface (handle, binder)
+    unvalued_input_action_interface (const generic_automaton_handle& handle) :
+      input_action_interface (handle)
     { }
     
     virtual ~unvalued_input_action_interface () { }
     
-    virtual void operator() () = 0;
+    virtual void operator() () const = 0;
   };
 
   template <class T>
@@ -111,14 +96,13 @@ namespace ioa {
     public input_action_interface
   {
   public:
-    valued_input_action_interface (const generic_automaton_handle& handle,
-  				  const generic_automaton_handle& binder) :
-      input_action_interface (handle, binder)
+    valued_input_action_interface (const generic_automaton_handle& handle) :
+      input_action_interface (handle)
     { }
     
     virtual ~valued_input_action_interface () { }
     
-    virtual void operator() (const T t) = 0;
+    virtual void operator() (const T t) const = 0;
   };
 
   class executable_action_interface :
@@ -131,12 +115,11 @@ namespace ioa {
 
     virtual ~executable_action_interface () { }
 
-    virtual void execute () = 0;
+    virtual void execute () const = 0;
   };
 
   class output_action_interface :
-    public executable_action_interface,
-    public parameter_action_interface
+    public executable_action_interface
   {
   public:
     output_action_interface (const generic_automaton_handle& handle) :
@@ -158,7 +141,7 @@ namespace ioa {
 
     virtual ~unvalued_output_action_interface () { }
 
-    virtual bool operator() () = 0;
+    virtual bool operator() () const = 0;
   };
 
   template <class T>
@@ -172,7 +155,7 @@ namespace ioa {
 
     virtual ~valued_output_action_interface () { }
 
-    virtual std::pair<bool, T> operator() () = 0;
+    virtual std::pair<bool, T> operator() () const = 0;
   };
 
   class independent_action_interface :
@@ -278,9 +261,8 @@ namespace ioa {
   {
   public:
     action_impl (const generic_automaton_handle& handle,
-		 M& m,
-  		 const generic_automaton_handle& binder) :
-      unvalued_input_action_interface (handle, binder),
+		 M& m) :
+      unvalued_input_action_interface (handle),
       member_ref<M> (m)
     { }
 
@@ -308,7 +290,7 @@ namespace ioa {
       return &this->m_member;
     }
     
-    void operator() () {
+    void operator() () const {
       this->m_member ();
     }
   };
@@ -322,9 +304,8 @@ namespace ioa {
   public:
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
-		 const parameter_handle<PT>& parameter,
-  		 const generic_automaton_handle& binder) :
-      unvalued_input_action_interface (handle, binder),
+		 const parameter_handle<PT>& parameter) :
+      unvalued_input_action_interface (handle),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
@@ -354,7 +335,7 @@ namespace ioa {
       return &this->m_member;
     }
 
-    void operator() () {
+    void operator() () const {
       this->m_member (this->m_parameter.value ());
     }
 
@@ -367,9 +348,8 @@ namespace ioa {
   {
   public:
     action_impl (const generic_automaton_handle& handle,
-  		 M& m,
-  		 const generic_automaton_handle& binder) :
-      valued_input_action_interface<VT> (handle, binder),
+  		 M& m) :
+      valued_input_action_interface<VT> (handle),
       member_ref<M> (m)
     { }
 
@@ -397,7 +377,7 @@ namespace ioa {
       return &this->m_member;
     }
 
-    void operator() (const VT t) {
+    void operator() (const VT t) const {
       this->m_member (t);
     }
 
@@ -412,9 +392,8 @@ namespace ioa {
   public:
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
-		 const parameter_handle<PT>& parameter,
-  		 const generic_automaton_handle& binder) :
-      valued_input_action_interface<VT> (handle, binder),
+		 const parameter_handle<PT>& parameter) :
+      valued_input_action_interface<VT> (handle),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
@@ -444,7 +423,7 @@ namespace ioa {
   	oa.involves_parameter (this->m_parameter);
     }
 
-    void operator() (const VT t) {
+    void operator() (const VT t) const {
       this->m_member (t, this->m_parameter.value ());
     }
 
@@ -486,11 +465,11 @@ namespace ioa {
       return true;
     }
 
-    bool operator() () {
+    bool operator() () const {
       return this->m_member ();
     }
 
-    void execute () {
+    void execute () const {
       (*this) ();
     }
   };
@@ -535,11 +514,11 @@ namespace ioa {
       return &this->m_member;
     }
 
-    bool operator() () {
+    bool operator() () const {
       return this->m_member (this->m_parameter.value ());
     }
 
-    void execute () {
+    void execute () const {
       (*this) ();
     }
     
@@ -581,11 +560,11 @@ namespace ioa {
       return &this->m_member;
     }
 
-    std::pair<bool, VT> operator() () {
+    std::pair<bool, VT> operator() () const {
       return this->m_member ();
     }
 
-    void execute () {
+    void execute () const {
       (*this) ();
     }
 
@@ -631,11 +610,11 @@ namespace ioa {
       return &this->m_member;
     }
 
-    std::pair<bool, VT> operator() () {
+    std::pair<bool, VT> operator() () const {
       return this->m_member (this->m_parameter.value ()); 
     }
 
-    void execute () {
+    void execute () const {
       (*this) ();
     }
 
@@ -653,7 +632,27 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    void execute () {
+    const void* get_member_ptr () const {
+      return &this->m_member;
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
+
+    bool involves_parameter (const generic_parameter_handle&) const {
+      return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
+    }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    void execute () const {
       this->m_member ();
     }
   };
@@ -673,7 +672,27 @@ namespace ioa {
       param<PT> (parameter)
     { }
 
-    void execute () {
+    const void* get_member_ptr () const {
+      return &this->m_member;
+    }
+
+    bool is_parameterized () const {
+      return true;
+    }
+
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return this->m_parameter == parameter;
+    }
+
+    bool parameter_exists () const {
+      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
+    }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return this->m_parameter;
+    }
+
+    void execute () const {
       this->m_member (this->m_parameter.value ());
     }
     
@@ -691,7 +710,27 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    void execute () {
+    const void* get_member_ptr () const {
+      return &this->m_member;
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
+
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
+    }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    void execute () const {
       this->m_member ();
     }    
   };
@@ -713,7 +752,27 @@ namespace ioa {
       m_t (t)
     { }
 
-    void execute () {
+    const void* get_member_ptr () const {
+      return &this->m_member;
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
+
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
+    }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    void execute () const {
       this->m_member (m_t);
     }    
   };
@@ -727,6 +786,16 @@ namespace ioa {
   		       typename Member::parameter_status,
   		       typename Member::parameter_type>
   {
+  private:
+    template <class I>
+    static Member&
+    ptr_to_member (const automaton_handle<I>& handle,
+  		   Member I::*member_ptr)
+    {
+      automaton<I>* toa = handle.value ();
+      return ((*(toa->get_typed_instance ())).*member_ptr);
+    }
+
   public:
     typedef typename Member::action_category action_category;
     typedef typename Member::value_status value_status;
@@ -734,62 +803,66 @@ namespace ioa {
     typedef typename Member::parameter_status parameter_status;
     typedef typename Member::parameter_type parameter_type;
 
-    action (const generic_automaton_handle& handle,
-  	    Member& member) :
+    template <class I>
+    action (const automaton_handle<I>& handle,
+  	    Member I::*member_ptr) :
       action_impl<action_category,
 		  Member,
   		  value_status,
   		  value_type,
   		  parameter_status,
-  		  parameter_type> (handle, member)
+  		  parameter_type> (handle, ptr_to_member (handle, member_ptr))
     { }
 
-    action (const generic_automaton_handle& handle,
-  	    Member& member,
+    template <class I>
+    action (const automaton_handle<I>& handle,
+  	    Member I::*member_ptr,
 	    const parameter_handle<parameter_type>& parameter) :
       action_impl<action_category,
 		  Member,
   		  value_status,
   		  value_type,
   		  parameter_status,
-  		  parameter_type> (handle, member, parameter)
+  		  parameter_type> (handle, ptr_to_member (handle, member_ptr), parameter)
     { }
     
-    action (const generic_automaton_handle& handle,
-  	    Member& member,
-  	    const generic_automaton_handle& binder) :
-      action_impl<action_category,
-		  Member,
-  		  value_status,
-  		  value_type,
-  		  parameter_status,
-  		  parameter_type> (handle, member, binder)
-    { }
-
-    action (const generic_automaton_handle& handle,
-  	    Member& member,
-	    const parameter_handle<parameter_type>& parameter,
-  	    const generic_automaton_handle& binder) :
-      action_impl<action_category,
-		  Member,
-  		  value_status,
-  		  value_type,
-  		  parameter_status,
-  		  parameter_type> (handle, member, parameter, binder)
-    { }
-
-    action (const generic_automaton_handle& handle,
-  	    Member& member,
+    template <class I>
+    action (const automaton_handle<I>& handle,
+  	    Member I::*member_ptr,
 	    const value_type& value) :
       action_impl<action_category,
 		  Member,
   		  value_status,
   		  value_type,
   		  parameter_status,
-  		  parameter_type> (handle, member, value)
+  		  parameter_type> (handle, ptr_to_member (handle, member_ptr), value)
     { }
 
   };
+
+  template <class I, class M>
+  action<M>
+  make_action (const automaton_handle<I>& handle,
+	       M I::*member_ptr) {
+    return action<M> (handle, member_ptr);
+  }
+
+  template <class I, class M>
+  action<M>
+  make_action (const automaton_handle<I>& handle,
+	       M I::*member_ptr,
+	       const parameter_handle<typename M::parameter_type>& parameter) {
+    return action<M> (handle, member_ptr, parameter);
+  }
+
+  template <class I, class M>
+  action<M>
+  make_action (const automaton_handle<I>& handle,
+	       M I::*member_ptr,
+	       const typename M::value_type& v) {
+    return action<M> (handle, member_ptr, v);
+  }
+
 
 }
 

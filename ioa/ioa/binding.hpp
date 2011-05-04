@@ -11,17 +11,17 @@ namespace ioa {
   public:
     virtual ~rescind_listener_interface () { }
     virtual void unbound (const generic_automaton_handle& output_automaton,
-			     const void* output_member_ptr,
-			     const generic_parameter_handle& output_parameter,
-			     const generic_automaton_handle& input_automaton,
-			     const void* input_member_ptr) = 0;
+			  const void* output_member_ptr,
+			  const generic_parameter_handle& output_parameter,
+			  const generic_automaton_handle& input_automaton,
+			  const void* input_member_ptr) = 0;
     virtual void unbound (const generic_automaton_handle& output_automaton,
-			     const void* output_member_ptr,
-			     const generic_automaton_handle& input_automaton,
-			     const void* input_member_ptr,
-			     const generic_parameter_handle& input_parameter) = 0;
+			  const void* output_member_ptr,
+			  const generic_automaton_handle& input_automaton,
+			  const void* input_member_ptr,
+			  const generic_parameter_handle& input_parameter) = 0;
   };
-
+  
   class destroy_listener_interface
   {
   public:
@@ -29,22 +29,42 @@ namespace ioa {
     virtual void destroyed (const generic_automaton_handle& parent,
 			    const generic_automaton_handle& child) = 0;
     virtual void unbound (const generic_automaton_handle& output_automaton,
-			     const void* output_member_ptr,
-			     const generic_automaton_handle& input_automaton,
-			     const void* input_member_ptr,
-			     const generic_automaton_handle& binder_automaton) = 0;
+			  const void* output_member_ptr,
+			  const generic_automaton_handle& input_automaton,
+			  const void* input_member_ptr,
+			  const generic_automaton_handle& binder_automaton) = 0;
     virtual void unbound (const generic_automaton_handle& output_automaton,
-			     const void* output_member_ptr,
-			     const generic_parameter_handle& output_parameter,
-			     const generic_automaton_handle& input_automaton,
-			     const void* input_member_ptr) = 0;
+			  const void* output_member_ptr,
+			  const generic_parameter_handle& output_parameter,
+			  const generic_automaton_handle& input_automaton,
+			  const void* input_member_ptr) = 0;
     virtual void unbound (const generic_automaton_handle& output_automaton,
-			     const void* output_member_ptr,
-			     const generic_automaton_handle& input_automaton,
-			     const void* input_member_ptr,
-			     const generic_parameter_handle& input_parameter) = 0;
+			  const void* output_member_ptr,
+			  const generic_automaton_handle& input_automaton,
+			  const void* input_member_ptr,
+			  const generic_parameter_handle& input_parameter) = 0;
   };
-
+  
+  class input_and_binder_equal
+  {
+  private:
+    const input_action_interface& m_input;
+    const generic_automaton_handle m_handle;
+    
+  public:
+    input_and_binder_equal (const input_action_interface& i,
+			    const generic_automaton_handle& handle) :
+      m_input (i),
+      m_handle (handle)
+    { }
+    
+    bool operator() (const std::pair<input_action_interface*, generic_automaton_handle>& i) const {
+      return m_input.get_automaton_handle () == i.first->get_automaton_handle ()
+	&& m_input.get_member_ptr () == i.first->get_member_ptr ()
+	&& m_handle == i.second;
+    }
+  };
+  
   class input_equal
   {
   private:
@@ -55,41 +75,24 @@ namespace ioa {
       m_input (i)
     { }
     
-    bool operator() (const input_action_interface* i) const {
-      return m_input.get_automaton_handle () == i->get_automaton_handle () &&
-	m_input.get_member_ptr () == i->get_member_ptr () &&
-	m_input.get_binder_handle () == i->get_binder_handle ();
+    bool operator() (const std::pair<input_action_interface*, generic_automaton_handle>& i) const {
+      return m_input.get_automaton_handle () == i.first->get_automaton_handle () &&
+	m_input.get_member_ptr () == i.first->get_member_ptr ();
     }
   };
   
-  class input_equal_no_binder
-  {
-  private:
-    const input_action_interface& m_input;
-    
-  public:
-    input_equal_no_binder (const input_action_interface& i) :
-      m_input (i)
-    { }
-    
-    bool operator() (const input_action_interface* i) const {
-      return m_input.get_automaton_handle () == i->get_automaton_handle () &&
-	m_input.get_member_ptr () == i->get_member_ptr ();
-    }
-  };
-
-  class input_equal_automaton_only
+  class input_automaton_equal
   {
   private:
     generic_automaton_handle m_automaton;
     
   public:
-    input_equal_automaton_only (const generic_automaton_handle& automaton) :
+    input_automaton_equal (const generic_automaton_handle& automaton) :
       m_automaton (automaton)
     { }
     
-    bool operator() (const input_action_interface* i) const {
-      return m_automaton == i->get_automaton_handle ();
+    bool operator() (const std::pair<input_action_interface*, generic_automaton_handle>& i) const {
+      return m_automaton == i.first->get_automaton_handle ();
     }
   };
   
@@ -99,7 +102,9 @@ namespace ioa {
     virtual ~binding_interface () { }
     virtual bool involves_output (const output_action_interface& output) const = 0;
     virtual bool involves_input (const input_action_interface& input,
-  				 bool check_owner) const = 0;
+  				 const generic_automaton_handle& binder) const = 0;
+    virtual bool involves_input (const input_action_interface& input) const = 0;
+
     virtual bool involves_input_automaton (const generic_automaton_handle& automaton) const = 0;
     virtual bool empty () const = 0;
     virtual void execute () = 0;
@@ -112,8 +117,9 @@ namespace ioa {
   
   struct action_compare
   {
-    bool operator() (const action_interface* x, const action_interface* y) const {
-      return x->get_automaton_handle () < y->get_automaton_handle ();
+    bool operator() (const std::pair<action_interface*, generic_automaton_handle>& x,
+		     const std::pair<action_interface*, generic_automaton_handle>& y) const {
+      return x.first->get_automaton_handle () < y.first->get_automaton_handle ();
     }
   };
 
@@ -123,7 +129,7 @@ namespace ioa {
   {
   protected:
     OA* m_output;
-    typedef std::set<IA*, action_compare> set_type;
+    typedef std::set<std::pair<IA*, generic_automaton_handle>, action_compare> set_type;
     set_type m_inputs;
     
   public:
@@ -134,8 +140,10 @@ namespace ioa {
     
     ~generic_binding_impl () {
       delete m_output;
-      BOOST_FOREACH (IA* p, m_inputs) {
-  	delete p;
+      for (typename set_type::iterator pos = m_inputs.begin ();
+	   pos != m_inputs.end ();
+	   ++pos) {
+  	delete pos->first;
       }
     }
     
@@ -144,17 +152,16 @@ namespace ioa {
     }
     
     bool involves_input (const input_action_interface& input,
-  			 bool check_owner) const {
-      if (check_owner) {
-  	return std::find_if (m_inputs.begin (),
-  			     m_inputs.end (),
-  			     input_equal (input)) != m_inputs.end ();
-      }
-      else {
-  	return std::find_if (m_inputs.begin (),
-  			     m_inputs.end (),
-  			     input_equal_no_binder (input)) != m_inputs.end ();
-      }
+			 const generic_automaton_handle& binder) const {
+      return std::find_if (m_inputs.begin (),
+			   m_inputs.end (),
+			   input_and_binder_equal (input, binder)) != m_inputs.end ();
+    }
+
+    bool involves_input (const input_action_interface& input) const {
+      return std::find_if (m_inputs.begin (),
+			   m_inputs.end (),
+			   input_equal (input)) != m_inputs.end ();
     }
     
     bool
@@ -162,16 +169,21 @@ namespace ioa {
     {
       return std::find_if (m_inputs.begin (),
   			   m_inputs.end (),
-  			   input_equal_automaton_only (automaton)) != m_inputs.end ();
+  			   input_automaton_equal (automaton)) != m_inputs.end ();
     }
     
     template <class T>
-    void bind (const T& input) {
-      m_inputs.insert (new T (input));
+    void bind (const T& input,
+	       const generic_automaton_handle& binder) {
+      IA* ia = new T (input);
+      m_inputs.insert (std::make_pair (ia, binder));
     }
 
-    void unbind (IA& input) {
-      m_inputs.erase (&input);
+    template <class T>
+    void unbind (const T& input,
+		 const generic_automaton_handle& binder) {
+      T t (input);
+      m_inputs.erase (std::make_pair (&t, binder));
     }
 
     bool empty () const {
@@ -183,12 +195,14 @@ namespace ioa {
 
       // Lock in order.
       output_processed = false;
-      BOOST_FOREACH (IA* i, m_inputs) {
-	if (!output_processed && m_output->get_automaton_handle () < i->get_automaton_handle ()) {
+      for (typename set_type::iterator pos = m_inputs.begin ();
+	   pos != m_inputs.end ();
+	   ++pos) {
+	if (!output_processed && m_output->get_automaton_handle () < pos->first->get_automaton_handle ()) {
 	  m_output->lock_automaton ();
 	  output_processed = true;
 	}
-	i->lock_automaton ();
+	pos->first->lock_automaton ();
       }
 
       // Execute.
@@ -196,12 +210,14 @@ namespace ioa {
 
       // Unlock.
       output_processed = false;
-      BOOST_FOREACH (IA* i, m_inputs) {
-	if (!output_processed && m_output->get_automaton_handle () < i->get_automaton_handle ()) {
+      for (typename set_type::iterator pos = m_inputs.begin ();
+	   pos != m_inputs.end ();
+	   ++pos) {
+	if (!output_processed && m_output->get_automaton_handle () < pos->first->get_automaton_handle ()) {
 	  m_output->unlock_automaton ();
 	  output_processed = true;
 	}
-	i->unlock_automaton ();
+	pos->first->unlock_automaton ();
       }
 
     }
@@ -212,13 +228,15 @@ namespace ioa {
       if (m_output->get_automaton_handle () == automaton &&
 	  m_output->involves_parameter (parameter)) {
 	// Unbind all.
-	BOOST_FOREACH (IA* i, m_inputs) {
+	for (typename set_type::iterator pos = m_inputs.begin ();
+	     pos != m_inputs.end ();
+	     ++pos) {
 	  listener.unbound (m_output->get_automaton_handle (),
-			       m_output->get_member_ptr (),
-			       parameter,
-			       i->get_automaton_handle (),
-			       i->get_member_ptr ());
-	  delete i;
+			    m_output->get_member_ptr (),
+			    parameter,
+			    pos->first->get_automaton_handle (),
+			    pos->first->get_member_ptr ());
+	  delete pos->first;
 	}
 	m_inputs.clear ();
       }
@@ -227,14 +245,14 @@ namespace ioa {
 	for (typename set_type::iterator pos = m_inputs.begin ();
 	     pos != m_inputs.end ();
 	     ++pos) {
-	  if ((*pos)->get_automaton_handle () == automaton &&
-	      (*pos)->involves_parameter (parameter)) {
+	  if (pos->first->get_automaton_handle () == automaton &&
+	      pos->first->involves_parameter (parameter)) {
 	    listener.unbound (m_output->get_automaton_handle (),
-				 m_output->get_member_ptr (),
-				 (*pos)->get_automaton_handle (),
-				 (*pos)->get_member_ptr (),
-				 parameter);
-	    delete *pos;
+			      m_output->get_member_ptr (),
+			      pos->first->get_automaton_handle (),
+			      pos->first->get_member_ptr (),
+			      parameter);
+	    delete pos->first;
 	    m_inputs.erase (pos);
 	    break;
 	  }
@@ -246,22 +264,24 @@ namespace ioa {
 			      destroy_listener_interface& listener) {
       if (m_output->get_automaton_handle () == automaton) {
 	// Unbind all.
-	BOOST_FOREACH (IA* i, m_inputs) {
+	for (typename set_type::iterator pos = m_inputs.begin ();
+	     pos != m_inputs.end ();
+	     ++pos) {
 	  if (m_output->is_parameterized ()) {
 	    listener.unbound (m_output->get_automaton_handle (),
-				 m_output->get_member_ptr (),
-				 m_output->get_parameter_handle (),
-				 i->get_automaton_handle (),
-				 i->get_member_ptr ());
+			      m_output->get_member_ptr (),
+			      m_output->get_parameter_handle (),
+			      pos->first->get_automaton_handle (),
+			      pos->first->get_member_ptr ());
 	  }
 	  else {
 	    listener.unbound (m_output->get_automaton_handle (),
-				 m_output->get_member_ptr (),
-				 i->get_automaton_handle (),
-				 i->get_member_ptr (),
-				 i->get_binder_handle ());
+			      m_output->get_member_ptr (),
+			      pos->first->get_automaton_handle (),
+			      pos->first->get_member_ptr (),
+			      pos->second);
 	  }
-	  delete i;
+	  delete pos->first;
 	}
 	m_inputs.clear ();
       }
@@ -270,23 +290,23 @@ namespace ioa {
 	for (typename set_type::iterator pos = m_inputs.begin ();
 	     pos != m_inputs.end ();
 	     ++pos) {
-	  if ((*pos)->get_automaton_handle () == automaton ||
-	      (*pos)->get_binder_handle () == automaton) {
-	    if ((*pos)->is_parameterized ()) {
+	  if (pos->first->get_automaton_handle () == automaton ||
+	      pos->second == automaton) {
+	    if (pos->first->is_parameterized ()) {
 	      listener.unbound (m_output->get_automaton_handle (),
-				   m_output->get_member_ptr (),
-				   (*pos)->get_automaton_handle (),
-				   (*pos)->get_member_ptr (),
-				   (*pos)->get_parameter_handle ());
+				m_output->get_member_ptr (),
+				pos->first->get_automaton_handle (),
+				pos->first->get_member_ptr (),
+				pos->first->get_parameter_handle ());
 	    }
 	    else {
 	      listener.unbound (m_output->get_automaton_handle (),
-				   m_output->get_member_ptr (),
-				   (*pos)->get_automaton_handle (),
-				   (*pos)->get_member_ptr (),
-				   (*pos)->get_binder_handle ());
+				m_output->get_member_ptr (),
+				pos->first->get_automaton_handle (),
+				pos->first->get_member_ptr (),
+				pos->second);
 	    }
-	    delete *pos;
+	    delete pos->first;
 	    m_inputs.erase (pos);
 	    break;
 	  }
@@ -311,10 +331,14 @@ namespace ioa {
     { }
 
   protected:
+    typedef generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface>::set_type set_type;
+
     void execute_dispatch () {
       if ((*m_output) ()) {
-	BOOST_FOREACH (unvalued_input_action_interface* i, m_inputs) {
-	  (*i) ();
+	for (set_type::iterator pos = m_inputs.begin ();
+	     pos != m_inputs.end ();
+	     ++pos) {
+	  (*(pos->first)) ();
 	}
       }
     }
@@ -331,12 +355,16 @@ namespace ioa {
     { }
 
   protected:
+    typedef typename generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >::set_type set_type;
+
     void execute_dispatch () {
       const std::pair<bool, T> p = (*(this->m_output)) ();
       if (p.first) {
-       	BOOST_FOREACH (valued_input_action_interface<T>* i, this->m_inputs) {
-       	  (*i) (p.second);
-       	}
+	for (typename set_type::iterator pos = this->m_inputs.begin ();
+	     pos != this->m_inputs.end ();
+	     ++pos) {
+	  (*(pos->first)) (p.second);
+	}
       }
     }
 
