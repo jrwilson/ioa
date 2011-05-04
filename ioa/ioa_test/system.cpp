@@ -960,5 +960,43 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
   BOOST_CHECK (output_instance->up_uv_output.state);
 }
 
+BOOST_AUTO_TEST_CASE (system_deliver_event_automaton_dne)
+{
+  ioa::system system;
+  automaton* instance = new automaton ();
+
+  ioa::system::create_result<automaton> r1 = system.create (instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> automaton = r1.automaton;
+
+  dummy_destroy_listener listener;
+  ioa::system::destroy_result y1 = system.destroy (automaton, listener);
+  BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
+
+  ioa::system::execute_result e1 = system.deliver_event (automaton, &automaton::uv_event);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
+
+  e1 = system.deliver_event (automaton, &automaton::v_event, 9845);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
+}
+
+BOOST_AUTO_TEST_CASE (system_deliver_event_success)
+{
+  ioa::system system;
+  automaton* instance = new automaton ();
+
+  ioa::system::create_result<automaton> r1 = system.create (instance);
+  BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
+  ioa::automaton_handle<automaton> automaton = r1.automaton;
+
+  ioa::system::execute_result e1 = system.deliver_event (automaton, &automaton::uv_event);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
+  BOOST_CHECK (instance->uv_event.state);
+
+  e1 = system.deliver_event (automaton, &automaton::v_event, 9845);
+  BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
+  BOOST_CHECK (instance->v_event.state);
+  BOOST_CHECK_EQUAL (instance->v_event.last_value, 9845);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

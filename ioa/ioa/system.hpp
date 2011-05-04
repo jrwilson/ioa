@@ -729,6 +729,15 @@ namespace ioa {
 
   private:
     execute_result
+    execute_executable (executable_action_interface& ac)
+    {
+      ac.lock_automaton ();
+      ac.execute ();
+      ac.unlock_automaton ();
+      return execute_result (EXECUTE_SUCCESS);
+    }
+
+    execute_result
     execute_output (output_action_interface& ac)
     {
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
@@ -737,15 +746,12 @@ namespace ioa {
 
       if (out_pos == m_bindings.end ()) {
 	// Not bound.
-	ac.lock_automaton ();
-	ac.execute ();
-	ac.unlock_automaton ();
+	return execute_executable (ac);
       }
       else {
 	(*out_pos)->execute ();
+	return execute_result (EXECUTE_SUCCESS);
       }
-
-      return execute_result (EXECUTE_SUCCESS);
     }
 
   public:
@@ -791,7 +797,44 @@ namespace ioa {
     }
 
     // void execute_internal () { }
-    // void deliver_event () { }
+
+    template <class I, class M>
+    execute_result
+    deliver_event (const automaton_handle<I>& automaton,
+		   M I::*member_ptr)
+    {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+
+      if (!m_automata.contains (automaton)) {
+	return execute_result (EXECUTE_AUTOMATON_DNE);
+      }
+
+      M& member = ptr_to_member (automaton, member_ptr);
+
+      action<M> ac (automaton, member);
+
+      return execute_executable (ac);
+    }
+
+    template <class I, class M, class T>
+    execute_result
+    deliver_event (const automaton_handle<I>& automaton,
+		   M I::*member_ptr,
+		   const T& t)
+    {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+
+      if (!m_automata.contains (automaton)) {
+	return execute_result (EXECUTE_AUTOMATON_DNE);
+      }
+
+      M& member = ptr_to_member (automaton, member_ptr);
+
+      action<M> ac (automaton, member, t);
+
+      return execute_executable (ac);
+    }
+
   };
 
 }
