@@ -1,5 +1,5 @@
-#ifndef __composition_hpp__
-#define __composition_hpp__
+#ifndef __binding_hpp__
+#define __binding_hpp__
 
 #include <boost/foreach.hpp>
 #include "action.hpp"
@@ -10,12 +10,12 @@ namespace ioa {
   {
   public:
     virtual ~rescind_listener_interface () { }
-    virtual void decomposed (const generic_automaton_handle& output_automaton,
+    virtual void unbound (const generic_automaton_handle& output_automaton,
 			     const void* output_member_ptr,
 			     const generic_parameter_handle& output_parameter,
 			     const generic_automaton_handle& input_automaton,
 			     const void* input_member_ptr) = 0;
-    virtual void decomposed (const generic_automaton_handle& output_automaton,
+    virtual void unbound (const generic_automaton_handle& output_automaton,
 			     const void* output_member_ptr,
 			     const generic_automaton_handle& input_automaton,
 			     const void* input_member_ptr,
@@ -28,17 +28,17 @@ namespace ioa {
     virtual ~destroy_listener_interface () { }
     virtual void destroyed (const generic_automaton_handle& parent,
 			    const generic_automaton_handle& child) = 0;
-    virtual void decomposed (const generic_automaton_handle& output_automaton,
+    virtual void unbound (const generic_automaton_handle& output_automaton,
 			     const void* output_member_ptr,
 			     const generic_automaton_handle& input_automaton,
 			     const void* input_member_ptr,
-			     const generic_automaton_handle& composer_automaton) = 0;
-    virtual void decomposed (const generic_automaton_handle& output_automaton,
+			     const generic_automaton_handle& binder_automaton) = 0;
+    virtual void unbound (const generic_automaton_handle& output_automaton,
 			     const void* output_member_ptr,
 			     const generic_parameter_handle& output_parameter,
 			     const generic_automaton_handle& input_automaton,
 			     const void* input_member_ptr) = 0;
-    virtual void decomposed (const generic_automaton_handle& output_automaton,
+    virtual void unbound (const generic_automaton_handle& output_automaton,
 			     const void* output_member_ptr,
 			     const generic_automaton_handle& input_automaton,
 			     const void* input_member_ptr,
@@ -58,17 +58,17 @@ namespace ioa {
     bool operator() (const input_action_interface* i) const {
       return m_input.get_automaton_handle () == i->get_automaton_handle () &&
 	m_input.get_member_ptr () == i->get_member_ptr () &&
-	m_input.get_composer_handle () == i->get_composer_handle ();
+	m_input.get_binder_handle () == i->get_binder_handle ();
     }
   };
   
-  class input_equal_no_composer
+  class input_equal_no_binder
   {
   private:
     const input_action_interface& m_input;
     
   public:
-    input_equal_no_composer (const input_action_interface& i) :
+    input_equal_no_binder (const input_action_interface& i) :
       m_input (i)
     { }
     
@@ -93,21 +93,21 @@ namespace ioa {
     }
   };
   
-  class composition_interface
+  class binding_interface
   {
   public:
-    virtual ~composition_interface () { }
+    virtual ~binding_interface () { }
     virtual bool involves_output (const output_action_interface& output) const = 0;
     virtual bool involves_input (const input_action_interface& input,
   				 bool check_owner) const = 0;
     virtual bool involves_input_automaton (const generic_automaton_handle& automaton) const = 0;
     virtual bool empty () const = 0;
     virtual void execute () = 0;
-    virtual void decompose_parameter (const generic_automaton_handle& automaton,
-				      const generic_parameter_handle& parameter,
-				      rescind_listener_interface& listener) = 0;
-    virtual void decompose_automaton (const generic_automaton_handle& automaton,
-				      destroy_listener_interface& listener) = 0;
+    virtual void unbind_parameter (const generic_automaton_handle& automaton,
+				   const generic_parameter_handle& parameter,
+				   rescind_listener_interface& listener) = 0;
+    virtual void unbind_automaton (const generic_automaton_handle& automaton,
+				   destroy_listener_interface& listener) = 0;
   };
   
   struct action_compare
@@ -118,8 +118,8 @@ namespace ioa {
   };
 
   template <class OA, class IA>
-  class generic_composition_impl :
-    public composition_interface
+  class generic_binding_impl :
+    public binding_interface
   {
   protected:
     OA* m_output;
@@ -128,11 +128,11 @@ namespace ioa {
     
   public:
     template <class T>
-    generic_composition_impl (const action<T>& output) :
+    generic_binding_impl (const action<T>& output) :
       m_output (new action<T> (output))
     { }
     
-    ~generic_composition_impl () {
+    ~generic_binding_impl () {
       delete m_output;
       BOOST_FOREACH (IA* p, m_inputs) {
   	delete p;
@@ -153,7 +153,7 @@ namespace ioa {
       else {
   	return std::find_if (m_inputs.begin (),
   			     m_inputs.end (),
-  			     input_equal_no_composer (input)) != m_inputs.end ();
+  			     input_equal_no_binder (input)) != m_inputs.end ();
       }
     }
     
@@ -166,11 +166,11 @@ namespace ioa {
     }
     
     template <class T>
-    void compose (const T& input) {
+    void bind (const T& input) {
       m_inputs.insert (new T (input));
     }
 
-    void decompose (IA& input) {
+    void unbind (IA& input) {
       m_inputs.erase (&input);
     }
 
@@ -206,14 +206,14 @@ namespace ioa {
 
     }
 
-    void decompose_parameter (const generic_automaton_handle& automaton,
+    void unbind_parameter (const generic_automaton_handle& automaton,
 			      const generic_parameter_handle& parameter,
 			      rescind_listener_interface& listener) {
       if (m_output->get_automaton_handle () == automaton &&
 	  m_output->involves_parameter (parameter)) {
-	// Decompose all.
+	// Unbind all.
 	BOOST_FOREACH (IA* i, m_inputs) {
-	  listener.decomposed (m_output->get_automaton_handle (),
+	  listener.unbound (m_output->get_automaton_handle (),
 			       m_output->get_member_ptr (),
 			       parameter,
 			       i->get_automaton_handle (),
@@ -229,7 +229,7 @@ namespace ioa {
 	     ++pos) {
 	  if ((*pos)->get_automaton_handle () == automaton &&
 	      (*pos)->involves_parameter (parameter)) {
-	    listener.decomposed (m_output->get_automaton_handle (),
+	    listener.unbound (m_output->get_automaton_handle (),
 				 m_output->get_member_ptr (),
 				 (*pos)->get_automaton_handle (),
 				 (*pos)->get_member_ptr (),
@@ -242,24 +242,24 @@ namespace ioa {
       }
     }
     
-    void decompose_automaton (const generic_automaton_handle& automaton,
+    void unbind_automaton (const generic_automaton_handle& automaton,
 			      destroy_listener_interface& listener) {
       if (m_output->get_automaton_handle () == automaton) {
-	// Decompose all.
+	// Unbind all.
 	BOOST_FOREACH (IA* i, m_inputs) {
 	  if (m_output->is_parameterized ()) {
-	    listener.decomposed (m_output->get_automaton_handle (),
+	    listener.unbound (m_output->get_automaton_handle (),
 				 m_output->get_member_ptr (),
 				 m_output->get_parameter_handle (),
 				 i->get_automaton_handle (),
 				 i->get_member_ptr ());
 	  }
 	  else {
-	    listener.decomposed (m_output->get_automaton_handle (),
+	    listener.unbound (m_output->get_automaton_handle (),
 				 m_output->get_member_ptr (),
 				 i->get_automaton_handle (),
 				 i->get_member_ptr (),
-				 i->get_composer_handle ());
+				 i->get_binder_handle ());
 	  }
 	  delete i;
 	}
@@ -271,20 +271,20 @@ namespace ioa {
 	     pos != m_inputs.end ();
 	     ++pos) {
 	  if ((*pos)->get_automaton_handle () == automaton ||
-	      (*pos)->get_composer_handle () == automaton) {
+	      (*pos)->get_binder_handle () == automaton) {
 	    if ((*pos)->is_parameterized ()) {
-	      listener.decomposed (m_output->get_automaton_handle (),
+	      listener.unbound (m_output->get_automaton_handle (),
 				   m_output->get_member_ptr (),
 				   (*pos)->get_automaton_handle (),
 				   (*pos)->get_member_ptr (),
 				   (*pos)->get_parameter_handle ());
 	    }
 	    else {
-	      listener.decomposed (m_output->get_automaton_handle (),
+	      listener.unbound (m_output->get_automaton_handle (),
 				   m_output->get_member_ptr (),
 				   (*pos)->get_automaton_handle (),
 				   (*pos)->get_member_ptr (),
-				   (*pos)->get_composer_handle ());
+				   (*pos)->get_binder_handle ());
 	    }
 	    delete *pos;
 	    m_inputs.erase (pos);
@@ -298,16 +298,16 @@ namespace ioa {
     virtual void execute_dispatch () = 0;
   };
   
-  template <class VS, class VT> class composition_impl;
+  template <class VS, class VT> class binding_impl;
 
   template <>
-  class composition_impl<unvalued, null_type> :
-    public generic_composition_impl<unvalued_output_action_interface, unvalued_input_action_interface>
+  class binding_impl<unvalued, null_type> :
+    public generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface>
   {
   public:
     template <class Action>
-    composition_impl (const Action& action) :
-      generic_composition_impl<unvalued_output_action_interface, unvalued_input_action_interface> (action)
+    binding_impl (const Action& action) :
+      generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface> (action)
     { }
 
   protected:
@@ -321,13 +321,13 @@ namespace ioa {
   };
 
   template <class T>
-  class composition_impl<valued, T> :
-    public generic_composition_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >
+  class binding_impl<valued, T> :
+    public generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >
   {
   public:
     template <class Action>
-    composition_impl (const Action& action) :
-      generic_composition_impl<valued_output_action_interface<T>, valued_input_action_interface<T> > (action)
+    binding_impl (const Action& action) :
+      generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> > (action)
     { }
 
   protected:
@@ -343,16 +343,16 @@ namespace ioa {
   };
   
   template <class Member>
-  class composition :
-    public composition_impl<typename Member::value_status,
+  class binding :
+    public binding_impl<typename Member::value_status,
 			    typename Member::value_type>
   {
   public:
     typedef typename Member::value_status value_status;
     typedef typename Member::value_type value_type;
 
-    composition (const action<Member>& action) :
-      composition_impl<value_status, value_type> (action)
+    binding (const action<Member>& action) :
+      binding_impl<value_status, value_type> (action)
     { }
 
   };

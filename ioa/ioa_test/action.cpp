@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(unparameterized_unvalued_input_action)
   ioa::action<automaton::up_uv_input_action> action (a_h, z->up_uv_input, a_h);
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   BOOST_CHECK (action == action);
-  BOOST_CHECK (a_h == action.get_composer_handle ());
+  BOOST_CHECK (a_h == action.get_binder_handle ());
   action ();
   BOOST_CHECK (z->up_uv_input.state);
 }
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(parameterized_unvalued_input_action)
 
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
-  BOOST_CHECK (a_h == action.get_composer_handle ());
+  BOOST_CHECK (a_h == action.get_binder_handle ());
   action ();
   BOOST_CHECK (z->p_uv_input.state);
   BOOST_CHECK_EQUAL (&parameter, z->p_uv_input.last_parameter);
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(unparameterized_valued_input_action)
   ioa::action<automaton::up_v_input_action> action (a_h, z->up_v_input, a_h);
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
-  BOOST_CHECK (a_h == action.get_composer_handle ());
+  BOOST_CHECK (a_h == action.get_binder_handle ());
   action (9845);
   BOOST_CHECK_EQUAL (9845, z->up_v_input.value);
 }
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(parameterized_valued_input_action)
 
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
-  BOOST_CHECK (a_h == action.get_composer_handle ());
+  BOOST_CHECK (a_h == action.get_binder_handle ());
   action (9845);
   BOOST_CHECK_EQUAL (9845, z->p_v_input.value);
   BOOST_CHECK_EQUAL (&parameter, z->p_v_input.last_parameter);

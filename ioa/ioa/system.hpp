@@ -7,7 +7,7 @@
 #include <list>
 #include "automaton.hpp"
 #include "action.hpp"
-#include "composition.hpp"
+#include "binding.hpp"
 
 namespace ioa {
   
@@ -27,50 +27,50 @@ namespace ioa {
       }
     };
     
-    class composition_equal
+    class binding_equal
     {
     private:
       const output_action_interface& m_output;
       const input_action_interface& m_input;
       
     public:
-      composition_equal (const output_action_interface& output,
+      binding_equal (const output_action_interface& output,
   			 const input_action_interface& input) :
   	m_output (output),
   	m_input (input)
       { }
       
-      bool operator() (const composition_interface* c) const {
+      bool operator() (const binding_interface* c) const {
   	return c->involves_output (m_output) && c->involves_input (m_input, true);
       }
     };
     
-    class composition_output_equal
+    class binding_output_equal
     {
     private:
       const output_action_interface& m_output;
       
     public:
-      composition_output_equal (const output_action_interface& output) :
+      binding_output_equal (const output_action_interface& output) :
   	m_output (output)
       { }
       
-      bool operator() (const composition_interface* c) const {
+      bool operator() (const binding_interface* c) const {
   	return c->involves_output (m_output);
       }
     };
     
-    class composition_input_equal
+    class binding_input_equal
     {
     private:
       const input_action_interface& m_input;
       
     public:
-      composition_input_equal (const input_action_interface& input) :
+      binding_input_equal (const input_action_interface& input) :
   	m_input (input)
       { }
       
-      bool operator() (const composition_interface* c) const {
+      bool operator() (const binding_interface* c) const {
   	return c->involves_input (m_input, false);
       }
     };
@@ -78,7 +78,7 @@ namespace ioa {
     boost::shared_mutex m_mutex;
     locker<automaton_interface*> m_automata;
     std::list<std::pair<generic_automaton_handle, generic_automaton_handle> > m_parent_child;
-    std::list<composition_interface*> m_compositions;
+    std::list<binding_interface*> m_bindings;
     
   public:
     
@@ -213,87 +213,87 @@ namespace ioa {
       return declare_result<T> (pa->declare_parameter (parameter));
     }
     
-    enum compose_result_type {
-      COMPOSE_COMPOSER_AUTOMATON_DNE,
-      COMPOSE_OUTPUT_AUTOMATON_DNE,
-      COMPOSE_INPUT_AUTOMATON_DNE,
-      COMPOSE_OUTPUT_PARAMETER_DNE,
-      COMPOSE_INPUT_PARAMETER_DNE,
-      COMPOSE_EXISTS,
-      COMPOSE_INPUT_ACTION_UNAVAILABLE,
-      COMPOSE_OUTPUT_ACTION_UNAVAILABLE,
-      COMPOSE_SUCCESS,
+    enum bind_result_type {
+      BIND_BINDER_AUTOMATON_DNE,
+      BIND_OUTPUT_AUTOMATON_DNE,
+      BIND_INPUT_AUTOMATON_DNE,
+      BIND_OUTPUT_PARAMETER_DNE,
+      BIND_INPUT_PARAMETER_DNE,
+      BIND_EXISTS,
+      BIND_INPUT_ACTION_UNAVAILABLE,
+      BIND_OUTPUT_ACTION_UNAVAILABLE,
+      BIND_SUCCESS,
     };
     
-    struct compose_result
+    struct bind_result
     {
-      compose_result_type type;
+      bind_result_type type;
       
-      compose_result (compose_result_type type) :
+      bind_result (bind_result_type type) :
   	type (type)
       { }
     };
     
   private:
     template <class OM, class IM>
-    compose_result
-    compose (const action<OM>& output,
-  	     const action<IM>& input)
+    bind_result
+    bind (const action<OM>& output,
+	  const action<IM>& input)
     {
-      if (!m_automata.contains (input.get_composer_handle ())) {
-  	// Owner DNE.
-  	return compose_result (COMPOSE_COMPOSER_AUTOMATON_DNE);
+      if (!m_automata.contains (input.get_binder_handle ())) {
+  	// Binder DNE.
+  	return bind_result (BIND_BINDER_AUTOMATON_DNE);
       }
       
       if (!output.parameter_exists ()) {
-  	return compose_result (COMPOSE_OUTPUT_PARAMETER_DNE);
+  	return bind_result (BIND_OUTPUT_PARAMETER_DNE);
       }
       
       if (!input.parameter_exists ()) {
-  	return compose_result (COMPOSE_INPUT_PARAMETER_DNE);
+  	return bind_result (BIND_INPUT_PARAMETER_DNE);
       }
       
-      std::list<composition_interface*>::const_iterator pos = std::find_if (m_compositions.begin (),
-									    m_compositions.end (),
-									    composition_equal (output, input));
+      std::list<binding_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
+									m_bindings.end (),
+									binding_equal (output, input));
       
-      if (pos != m_compositions.end ()) {
-  	// Composed.
-  	return compose_result (COMPOSE_EXISTS);
+      if (pos != m_bindings.end ()) {
+  	// Bound.
+  	return bind_result (BIND_EXISTS);
       }
       
-      std::list<composition_interface*>::const_iterator in_pos = std::find_if (m_compositions.begin (),
-									       m_compositions.end (),
-									       composition_input_equal (input));
+      std::list<binding_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
+									       m_bindings.end (),
+									       binding_input_equal (input));
       
-      if (in_pos != m_compositions.end ()) {
+      if (in_pos != m_bindings.end ()) {
   	// Input unavailable.
-  	return compose_result (COMPOSE_INPUT_ACTION_UNAVAILABLE);
+  	return bind_result (BIND_INPUT_ACTION_UNAVAILABLE);
       }
       
-      std::list<composition_interface*>::const_iterator out_pos = std::find_if (m_compositions.begin (),
-										m_compositions.end (),
-										composition_output_equal (output));
+      std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
+										m_bindings.end (),
+										binding_output_equal (output));
       
       if (output.get_automaton_handle () == input.get_automaton_handle () ||
-  	  (out_pos != m_compositions.end () && (*out_pos)->involves_input_automaton (input.get_automaton_handle ()))) {
+  	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_automaton_handle ()))) {
   	// Output unavailable.
-  	return compose_result (COMPOSE_OUTPUT_ACTION_UNAVAILABLE);
+  	return bind_result (BIND_OUTPUT_ACTION_UNAVAILABLE);
       }
       
-      composition<OM>* c;
+      binding<OM>* c;
       
-      if (out_pos != m_compositions.end ()) {
-	c = static_cast<composition<OM>*> (*out_pos);
+      if (out_pos != m_bindings.end ()) {
+	c = static_cast<binding<OM>*> (*out_pos);
       }
       else {
-	c = new composition<OM> (output);
-	m_compositions.push_front (c);
+	c = new binding<OM> (output);
+	m_bindings.push_front (c);
       }
     
-      // Compose.
-      c->compose (input);
-      return compose_result (COMPOSE_SUCCESS);
+      // Bind.
+      c->bind (input);
+      return bind_result (BIND_SUCCESS);
     }
 
     template <class I, class M>
@@ -307,35 +307,35 @@ namespace ioa {
   
   public:
     template <class OI, class OM, class II, class IM>
-    compose_result
-    compose (const automaton_handle<OI>& output_automaton,
+    bind_result
+    bind (const automaton_handle<OI>& output_automaton,
 	     OM OI::*output_member_ptr,
 	     const automaton_handle<II>& input_automaton,
 	     IM II::*input_member_ptr,
-	     const generic_automaton_handle& composer_automaton)
+	     const generic_automaton_handle& binder_automaton)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_automata.contains (output_automaton)) {
-	return compose_result (COMPOSE_OUTPUT_AUTOMATON_DNE);
+	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
       }
 
       if (!m_automata.contains (input_automaton)) {
-	return compose_result (COMPOSE_INPUT_AUTOMATON_DNE);
+	return bind_result (BIND_INPUT_AUTOMATON_DNE);
       }
 
       OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
       IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
       
       action<OM> o (output_automaton, output_member);
-      action<IM> i (input_automaton, input_member, composer_automaton);
+      action<IM> i (input_automaton, input_member, binder_automaton);
 
-      return compose (o, i);
+      return bind (o, i);
     }
   
     template <class OI, class OM, class II, class IM, class T>
-    compose_result
-    compose (const automaton_handle<OI>& output_automaton,
+    bind_result
+    bind (const automaton_handle<OI>& output_automaton,
 	     OM OI::*output_member_ptr,
 	     const parameter_handle<T>& output_parameter,	     
 	     const automaton_handle<II>& input_automaton,
@@ -344,11 +344,11 @@ namespace ioa {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_automata.contains (output_automaton)) {
-	return compose_result (COMPOSE_OUTPUT_AUTOMATON_DNE);
+	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
       }
 
       if (!m_automata.contains (input_automaton)) {
-	return compose_result (COMPOSE_INPUT_AUTOMATON_DNE);
+	return bind_result (BIND_INPUT_AUTOMATON_DNE);
       }
 
       OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
@@ -357,12 +357,12 @@ namespace ioa {
       action<OM> o (output_automaton, output_member, output_parameter);
       action<IM> i (input_automaton, input_member, output_automaton);
 
-      return compose (o, i);
+      return bind (o, i);
     }
 
     template <class OI, class OM, class II, class IM, class T>
-    compose_result
-    compose (const automaton_handle<OI>& output_automaton,
+    bind_result
+    bind (const automaton_handle<OI>& output_automaton,
 	     OM OI::*output_member_ptr,
 	     const automaton_handle<II>& input_automaton,
 	     IM II::*input_member_ptr,
@@ -371,11 +371,11 @@ namespace ioa {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_automata.contains (output_automaton)) {
-	return compose_result (COMPOSE_OUTPUT_AUTOMATON_DNE);
+	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
       }
 
       if (!m_automata.contains (input_automaton)) {
-	return compose_result (COMPOSE_INPUT_AUTOMATON_DNE);
+	return bind_result (BIND_INPUT_AUTOMATON_DNE);
       }
 
       OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
@@ -384,100 +384,100 @@ namespace ioa {
       action<OM> o (output_automaton, output_member);
       action<IM> i (input_automaton, input_member, input_parameter, input_automaton);
     
-      return compose (o, i);
+      return bind (o, i);
     }
 
-    enum decompose_result_type {
-      DECOMPOSE_COMPOSER_AUTOMATON_DNE,
-      DECOMPOSE_OUTPUT_AUTOMATON_DNE,
-      DECOMPOSE_INPUT_AUTOMATON_DNE,
-      DECOMPOSE_OUTPUT_PARAMETER_DNE,
-      DECOMPOSE_INPUT_PARAMETER_DNE,
-      DECOMPOSE_EXISTS,
-      DECOMPOSE_SUCCESS,
+    enum unbind_result_type {
+      UNBIND_BINDER_AUTOMATON_DNE,
+      UNBIND_OUTPUT_AUTOMATON_DNE,
+      UNBIND_INPUT_AUTOMATON_DNE,
+      UNBIND_OUTPUT_PARAMETER_DNE,
+      UNBIND_INPUT_PARAMETER_DNE,
+      UNBIND_EXISTS,
+      UNBIND_SUCCESS,
     };
     
-    struct decompose_result
+    struct unbind_result
     {
-      decompose_result_type type;
+      unbind_result_type type;
     
-      decompose_result (decompose_result_type type) :
+      unbind_result (unbind_result_type type) :
 	type (type)
       { }
     };
   
   private:
     template <class OM, class IM>
-    decompose_result
-    decompose (const action<OM>& output,
+    unbind_result
+    unbind (const action<OM>& output,
 	       action<IM>& input)
     {
-      if (!m_automata.contains (input.get_composer_handle ())) {
+      if (!m_automata.contains (input.get_binder_handle ())) {
 	// Owner DNE.
-	return decompose_result (DECOMPOSE_COMPOSER_AUTOMATON_DNE);
+	return unbind_result (UNBIND_BINDER_AUTOMATON_DNE);
       }
     
       if (!output.parameter_exists ()) {
-	return decompose_result (DECOMPOSE_OUTPUT_PARAMETER_DNE);
+	return unbind_result (UNBIND_OUTPUT_PARAMETER_DNE);
       }
     
       if (!input.parameter_exists ()) {
-	return decompose_result (DECOMPOSE_INPUT_PARAMETER_DNE);
+	return unbind_result (UNBIND_INPUT_PARAMETER_DNE);
       }
     
-      std::list<composition_interface*>::iterator pos = std::find_if (m_compositions.begin (),
-								      m_compositions.end (),
-								      composition_equal (output, input));
+      std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
+								      m_bindings.end (),
+								      binding_equal (output, input));
     
-      if (pos == m_compositions.end ()) {
-	// Not composed.
-	return decompose_result (DECOMPOSE_EXISTS);
+      if (pos == m_bindings.end ()) {
+	// Not bound.
+	return unbind_result (UNBIND_EXISTS);
       }
     
-      composition<OM>* c = static_cast<composition<OM>*> (*pos);
+      binding<OM>* c = static_cast<binding<OM>*> (*pos);
   
-      // Compose.
-      c->decompose (input);
+      // Unbind.
+      c->unbind (input);
 
       if (c->empty ()) {
 	delete c;
-	m_compositions.erase (pos);
+	m_bindings.erase (pos);
       }
 
-      return decompose_result (DECOMPOSE_SUCCESS);
+      return unbind_result (UNBIND_SUCCESS);
     }
 
   public:
     template <class OI, class OM, class II, class IM>
-    decompose_result
-    decompose (const automaton_handle<OI>& output_automaton,
+    unbind_result
+    unbind (const automaton_handle<OI>& output_automaton,
 	       OM OI::*output_member_ptr,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr,
-	       const generic_automaton_handle& composer_automaton)
+	       const generic_automaton_handle& binder_automaton)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_automata.contains (output_automaton)) {
-        return decompose_result (DECOMPOSE_OUTPUT_AUTOMATON_DNE);
+        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
       }
 
       if (!m_automata.contains (input_automaton)) {
-        return decompose_result (DECOMPOSE_INPUT_AUTOMATON_DNE);
+        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
       }
 
       OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
       IM& input_member = ptr_to_member (input_automaton, input_member_ptr);
       
       action<OM> o (output_automaton, output_member);
-      action<IM> i (input_automaton, input_member, composer_automaton);
+      action<IM> i (input_automaton, input_member, binder_automaton);
       
-      return decompose (o, i);
+      return unbind (o, i);
     }
   
     template <class OI, class OM, class II, class IM, class T>
-    decompose_result
-    decompose (const automaton_handle<OI>& output_automaton,
+    unbind_result
+    unbind (const automaton_handle<OI>& output_automaton,
 	       OM OI::*output_member_ptr,
 	       const parameter_handle<T>& output_parameter,	     
 	       const automaton_handle<II>& input_automaton,
@@ -486,11 +486,11 @@ namespace ioa {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_automata.contains (output_automaton)) {
-        return decompose_result (DECOMPOSE_OUTPUT_AUTOMATON_DNE);
+        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
       }
 
       if (!m_automata.contains (input_automaton)) {
-        return decompose_result (DECOMPOSE_INPUT_AUTOMATON_DNE);
+        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
       }
 
       OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
@@ -499,12 +499,12 @@ namespace ioa {
       action<OM> o (output_automaton, output_member, output_parameter);
       action<IM> i (input_automaton, input_member, output_automaton);
 
-      return decompose (o, i);
+      return unbind (o, i);
     }
 
     template <class OI, class OM, class II, class IM, class T>
-    decompose_result
-    decompose (const automaton_handle<OI>& output_automaton,
+    unbind_result
+    unbind (const automaton_handle<OI>& output_automaton,
 	       OM OI::*output_member_ptr,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr,
@@ -513,11 +513,11 @@ namespace ioa {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_automata.contains (output_automaton)) {
-        return decompose_result (DECOMPOSE_OUTPUT_AUTOMATON_DNE);
+        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
       }
 
       if (!m_automata.contains (input_automaton)) {
-        return decompose_result (DECOMPOSE_INPUT_AUTOMATON_DNE);
+        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
       }
 
       OM& output_member = ptr_to_member (output_automaton, output_member_ptr);
@@ -526,7 +526,7 @@ namespace ioa {
       action<OM> o (output_automaton, output_member);
       action<IM> i (input_automaton, input_member, input_parameter, input_automaton);
     
-      return decompose (o, i);
+      return unbind (o, i);
     }
 
     enum rescind_result_type {
@@ -573,13 +573,13 @@ namespace ioa {
 
       pa->rescind_parameter (p);
 
-      for (std::list<composition_interface*>::iterator pos = m_compositions.begin ();
-	   pos != m_compositions.end ();
+      for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
+	   pos != m_bindings.end ();
 	   ) {
-	(*pos)->decompose_parameter (a, p, listener);
+	(*pos)->unbind_parameter (a, p, listener);
 	if ((*pos)->empty ()) {
 	  delete *pos;
-	  pos = m_compositions.erase (pos);
+	  pos = m_bindings.erase (pos);
 	}
 	else {
 	  ++pos;
@@ -665,14 +665,14 @@ namespace ioa {
 	  m_parent_child.erase (pos);
 	}
 	
-	// Update compositions.
-	for (std::list<composition_interface*>::iterator pos = m_compositions.begin ();
-	     pos != m_compositions.end ();
+	// Update bindings.
+	for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
+	     pos != m_bindings.end ();
 	     ) {
-	  (*pos)->decompose_automaton (handle, listener);
+	  (*pos)->unbind_automaton (handle, listener);
 	  if ((*pos)->empty ()) {
 	    delete *pos;
-	    pos = m_compositions.erase (pos);
+	    pos = m_bindings.erase (pos);
 	  }
 	  else {
 	    ++pos;
@@ -731,12 +731,12 @@ namespace ioa {
     execute_result
     execute_output (output_action_interface& ac)
     {
-      std::list<composition_interface*>::const_iterator out_pos = std::find_if (m_compositions.begin (),
-										m_compositions.end (),
-										composition_output_equal (ac));
+      std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
+										m_bindings.end (),
+										binding_output_equal (ac));
 
-      if (out_pos == m_compositions.end ()) {
-	// Not composed.
+      if (out_pos == m_bindings.end ()) {
+	// Not bound.
 	ac.lock_automaton ();
 	ac.execute ();
 	ac.unlock_automaton ();

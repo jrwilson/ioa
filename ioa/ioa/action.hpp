@@ -73,20 +73,20 @@ namespace ioa {
     public parameter_action_interface
   {
   private:
-    const generic_automaton_handle m_composer;
+    const generic_automaton_handle m_binder;
     
   public:
     input_action_interface (const generic_automaton_handle& handle,
-  			    const generic_automaton_handle& composer) :
+  			    const generic_automaton_handle& binder) :
       action_interface (handle),
-      m_composer (composer)
+      m_binder (binder)
     { }
     
     virtual ~input_action_interface () { }
 
-    const generic_automaton_handle get_composer_handle () const
+    const generic_automaton_handle get_binder_handle () const
     {
-      return m_composer;
+      return m_binder;
     }
 
     virtual bool operator== (const input_action_interface& ia) const = 0;
@@ -97,8 +97,8 @@ namespace ioa {
   {
   public:
     unvalued_input_action_interface (const generic_automaton_handle& handle,
-  				    const generic_automaton_handle& composer) :
-      input_action_interface (handle, composer)
+  				    const generic_automaton_handle& binder) :
+      input_action_interface (handle, binder)
     { }
     
     virtual ~unvalued_input_action_interface () { }
@@ -112,8 +112,8 @@ namespace ioa {
   {
   public:
     valued_input_action_interface (const generic_automaton_handle& handle,
-  				  const generic_automaton_handle& composer) :
-      input_action_interface (handle, composer)
+  				  const generic_automaton_handle& binder) :
+      input_action_interface (handle, binder)
     { }
     
     virtual ~valued_input_action_interface () { }
@@ -279,8 +279,8 @@ namespace ioa {
   public:
     action_impl (const generic_automaton_handle& handle,
 		 M& m,
-  		 const generic_automaton_handle& composer) :
-      unvalued_input_action_interface (handle, composer),
+  		 const generic_automaton_handle& binder) :
+      unvalued_input_action_interface (handle, binder),
       member_ref<M> (m)
     { }
 
@@ -323,8 +323,8 @@ namespace ioa {
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
 		 const parameter_handle<PT>& parameter,
-  		 const generic_automaton_handle& composer) :
-      unvalued_input_action_interface (handle, composer),
+  		 const generic_automaton_handle& binder) :
+      unvalued_input_action_interface (handle, binder),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
@@ -368,8 +368,8 @@ namespace ioa {
   public:
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
-  		 const generic_automaton_handle& composer) :
-      valued_input_action_interface<VT> (handle, composer),
+  		 const generic_automaton_handle& binder) :
+      valued_input_action_interface<VT> (handle, binder),
       member_ref<M> (m)
     { }
 
@@ -413,8 +413,8 @@ namespace ioa {
     action_impl (const generic_automaton_handle& handle,
   		 M& m,
 		 const parameter_handle<PT>& parameter,
-  		 const generic_automaton_handle& composer) :
-      valued_input_action_interface<VT> (handle, composer),
+  		 const generic_automaton_handle& binder) :
+      valued_input_action_interface<VT> (handle, binder),
       member_ref<M> (m),
       param<PT> (parameter)
     { }
@@ -757,25 +757,25 @@ namespace ioa {
     
     action (const generic_automaton_handle& handle,
   	    Member& member,
-  	    const generic_automaton_handle& composer) :
+  	    const generic_automaton_handle& binder) :
       action_impl<action_category,
 		  Member,
   		  value_status,
   		  value_type,
   		  parameter_status,
-  		  parameter_type> (handle, member, composer)
+  		  parameter_type> (handle, member, binder)
     { }
 
     action (const generic_automaton_handle& handle,
   	    Member& member,
 	    const parameter_handle<parameter_type>& parameter,
-  	    const generic_automaton_handle& composer) :
+  	    const generic_automaton_handle& binder) :
       action_impl<action_category,
 		  Member,
   		  value_status,
   		  value_type,
   		  parameter_status,
-  		  parameter_type> (handle, member, parameter, composer)
+  		  parameter_type> (handle, member, parameter, binder)
     { }
 
     action (const generic_automaton_handle& handle,
