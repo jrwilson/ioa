@@ -195,10 +195,13 @@ namespace ioa {
 
   class null_type { };
 
+  struct schedulable_category { };
+
   struct input_category { };
-  struct output_category { };
-  struct internal_category { };
-  struct event_category { };
+  struct output_category : public schedulable_category { };
+  struct internal_category : public schedulable_category { };
+  struct event_category : public schedulable_category { };
+  struct system_event_category { };
 
   struct unvalued { };
   struct valued { };
@@ -242,6 +245,10 @@ namespace ioa {
 
   struct event : public no_parameter {
     typedef event_category action_category;
+  };
+
+  struct system_event : public no_parameter {
+    typedef system_event_category action_category;
   };
 
   /*
@@ -737,6 +744,48 @@ namespace ioa {
 
   template <class M, class VT>
   class action_impl<event_category, M, valued, VT, unparameterized, null_type> :
+    public independent_action_interface,
+    private member_ref<M>
+  {
+  private:
+    const VT m_t;
+
+  public:
+    action_impl (const generic_automaton_handle handle,
+  		 M& m,
+  		 const VT& t) :
+      independent_action_interface (handle),
+      member_ref<M> (m),
+      m_t (t)
+    { }
+
+    const void* get_member_ptr () const {
+      return &this->m_member;
+    }
+
+    bool is_parameterized () const {
+      return false;
+    }
+
+    bool involves_parameter (const generic_parameter_handle& parameter) const {
+      return false;
+    }
+
+    bool parameter_exists () const {
+      return true;
+    }
+
+    generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
+
+    void execute () const {
+      this->m_member (m_t);
+    }    
+  };
+
+  template <class M, class VT>
+  class action_impl<system_event_category, M, valued, VT, unparameterized, null_type> :
     public independent_action_interface,
     private member_ref<M>
   {

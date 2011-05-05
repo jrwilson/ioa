@@ -275,8 +275,8 @@ namespace ioa {
       }
       
       std::list<binding_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
-									       m_bindings.end (),
-									       binding_input_equal (input));
+									   m_bindings.end (),
+									   binding_input_equal (input));
       
       if (in_pos != m_bindings.end ()) {
   	// Input unavailable.
@@ -284,8 +284,8 @@ namespace ioa {
       }
       
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
-										m_bindings.end (),
-										binding_output_equal (output));
+									    m_bindings.end (),
+									    binding_output_equal (output));
       
       if (output.get_automaton_handle () == input.get_automaton_handle () ||
   	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_automaton_handle ()))) {
@@ -311,8 +311,10 @@ namespace ioa {
     template <class OM, class IM>
     bind_result
     bind (const action<OM>& output,
+	  output_category /* */,
 	  unparameterized /* */,
 	  const action<IM>& input,
+	  input_category /* */,
 	  unparameterized /* */,
 	  const generic_automaton_handle& binder)
     {
@@ -322,8 +324,10 @@ namespace ioa {
     template <class OM, class IM>
     bind_result
     bind (const action<OM>& output,
+	  output_category /* */,
 	  parameterized /* */,
 	  const action<IM>& input,
+	  input_category /* */,
 	  unparameterized /* */)
     {
       return _bind (output, input, output.get_automaton_handle ());
@@ -332,8 +336,10 @@ namespace ioa {
     template <class OM, class IM>
     bind_result
     bind (const action<OM>& output,
+	  output_category /* */,
 	  unparameterized /* */,
 	  const action<IM>& input,
+	  input_category /* */,
 	  parameterized /* */)
     {
       return _bind (output, input, input.get_automaton_handle ());
@@ -348,7 +354,13 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      return bind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), binder);
+      return bind (output,
+		   typename action<OM>::action_category (),
+		   typename action<OM>::parameter_status (),
+		   input,
+		   typename action<IM>::action_category (),
+		   typename action<IM>::parameter_status (),
+		   binder);
     }
 
     template <class OM, class IM>
@@ -357,8 +369,13 @@ namespace ioa {
 	  const action<IM>& input)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-      
-      return bind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status ());
+
+      return bind (output,
+		   typename action<OM>::action_category (),
+		   typename action<OM>::parameter_status (),
+		   input,
+		   typename action<IM>::action_category (),
+		   typename action<IM>::parameter_status ());
     }
     
     enum unbind_result_type {
@@ -683,17 +700,21 @@ namespace ioa {
 
   private:
     execute_result
-    execute_executable (const executable_action_interface& ac)
+    execute_executable (const executable_action_interface& ac,
+			scheduler_interface& scheduler)
     {
       ac.lock_automaton ();
+      scheduler.set_current_handle (ac.get_automaton_handle ());
       ac.execute ();
+      scheduler.clear_current_handle ();
       ac.unlock_automaton ();
       return execute_result (EXECUTE_SUCCESS);
     }
 
   public:
     execute_result
-    execute (const output_action_interface& ac)
+    execute (const output_action_interface& ac,
+	     scheduler_interface& scheduler)
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
 
@@ -711,16 +732,17 @@ namespace ioa {
 
       if (out_pos == m_bindings.end ()) {
 	// Not bound.
-	return execute_executable (ac);
+	return execute_executable (ac, scheduler);
       }
       else {	
-	(*out_pos)->execute ();
+	(*out_pos)->execute (scheduler);
 	return execute_result (EXECUTE_SUCCESS);
       }
     }
 
     execute_result
-    execute (const independent_action_interface& ac)
+    execute (const independent_action_interface& ac,
+	     scheduler_interface& scheduler)
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
@@ -732,7 +754,7 @@ namespace ioa {
 	return execute_result (EXECUTE_PARAMETER_DNE);
       }
       
-      return execute_executable (ac);
+      return execute_executable (ac, scheduler);
     }
 
   };

@@ -5,6 +5,14 @@
 #include <binding.hpp>
 #include "automaton.hpp"
 
+class dummy_scheduler :
+  public ioa::scheduler_interface
+{
+public:
+  void set_current_handle (const ioa::generic_automaton_handle&) { }
+  void clear_current_handle (void) { }
+};
+
 BOOST_AUTO_TEST_SUITE(binding_suite)
 
 BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
@@ -42,7 +50,8 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
-  binding.execute ();
+  dummy_scheduler scheduler;
+  binding.execute (scheduler);
 
   BOOST_CHECK (output_instance->up_uv_output.state);
   BOOST_CHECK (input1_instance->up_uv_input.state);
@@ -87,7 +96,8 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_unvalued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
-  binding.execute ();
+  dummy_scheduler scheduler;
+  binding.execute (scheduler);
 
   BOOST_CHECK (output_instance->p_uv_output.state);
   BOOST_CHECK_EQUAL (output_instance->p_uv_output.last_parameter, &output_parameter);
@@ -131,7 +141,8 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_valued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
-  binding.execute ();
+  dummy_scheduler scheduler;
+  binding.execute (scheduler);
 
   BOOST_CHECK (output_instance->up_v_output.state);
   BOOST_CHECK_EQUAL (input1_instance->up_v_input.value, 9845);
@@ -176,7 +187,8 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_valued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input1_handle));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
-  binding.execute ();
+  dummy_scheduler scheduler;
+  binding.execute (scheduler);
 
   BOOST_CHECK (output_instance->p_v_output.state);
   BOOST_CHECK_EQUAL (output_instance->p_v_output.last_parameter, &output_parameter);

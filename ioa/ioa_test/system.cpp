@@ -5,6 +5,14 @@
 #include <system.hpp>
 #include "automaton.hpp"
 
+class dummy_scheduler :
+  public ioa::scheduler_interface
+{
+public:
+  void set_current_handle (const ioa::generic_automaton_handle&) { }
+  void clear_current_handle (void) { }
+};
+
 struct unbind_record
 {
   ioa::generic_automaton_handle output_automaton;
@@ -516,7 +524,8 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
 					     ioa::make_action (input, &automaton::up_uv_input));
   BOOST_CHECK_EQUAL (c1.type, ioa::system::BIND_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::p_uv_output, param));
+  dummy_scheduler scheduler;
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::p_uv_output, param), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (input_instance->up_uv_input.state);
 }
@@ -969,7 +978,8 @@ BOOST_AUTO_TEST_CASE (system_execute_output_automaton_dne)
   ioa::system::destroy_result y1 = system.destroy (output, listener);
   BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::up_uv_output));
+  dummy_scheduler scheduler;
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::up_uv_output), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 }
 
@@ -991,7 +1001,8 @@ BOOST_AUTO_TEST_CASE (system_execute_output_parameter_dne)
   ioa::system::rescind_result<int> k1 = system.rescind (r1.automaton, param, listener);
   BOOST_CHECK_EQUAL (k1.type, ioa::system::RESCIND_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::p_uv_output, param));
+  dummy_scheduler scheduler;
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::p_uv_output, param), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_PARAMETER_DNE);
 }
 
@@ -1004,7 +1015,8 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> output = r1.automaton;
 
-  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::up_uv_output));
+  dummy_scheduler scheduler;
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (output, &automaton::up_uv_output), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (output_instance->up_uv_output.state);
 }
@@ -1022,10 +1034,11 @@ BOOST_AUTO_TEST_CASE (system_deliver_event_automaton_dne)
   ioa::system::destroy_result y1 = system.destroy (automaton, listener);
   BOOST_CHECK_EQUAL (y1.type, ioa::system::DESTROY_SUCCESS);
 
-  ioa::system::execute_result e1 = system.execute (ioa::make_action (automaton, &automaton::uv_event));
+  dummy_scheduler scheduler;
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (automaton, &automaton::uv_event), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 
-  e1 = system.execute (ioa::make_action (automaton, &automaton::v_event, 9845));
+  e1 = system.execute (ioa::make_action (automaton, &automaton::v_event, 9845), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_AUTOMATON_DNE);
 }
 
@@ -1038,11 +1051,12 @@ BOOST_AUTO_TEST_CASE (system_deliver_event_success)
   BOOST_CHECK_EQUAL (r1.type, ioa::system::CREATE_SUCCESS);
   ioa::automaton_handle<automaton> automaton = r1.automaton;
 
-  ioa::system::execute_result e1 = system.execute (ioa::make_action (automaton, &automaton::uv_event));
+  dummy_scheduler scheduler;
+  ioa::system::execute_result e1 = system.execute (ioa::make_action (automaton, &automaton::uv_event), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (instance->uv_event.state);
 
-  e1 = system.execute (ioa::make_action (automaton, &automaton::v_event, 9845));
+  e1 = system.execute (ioa::make_action (automaton, &automaton::v_event, 9845), scheduler);
   BOOST_CHECK_EQUAL (e1.type, ioa::system::EXECUTE_SUCCESS);
   BOOST_CHECK (instance->v_event.state);
   BOOST_CHECK_EQUAL (instance->v_event.last_value, 9845);

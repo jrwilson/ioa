@@ -6,6 +6,14 @@
 
 namespace ioa {
 
+  class scheduler_interface
+  {
+  public:
+    virtual ~scheduler_interface () { }
+    virtual void set_current_handle (const generic_automaton_handle& handle) = 0;
+    virtual void clear_current_handle () = 0;
+  };
+
   class rescind_listener_interface
   {
   public:
@@ -107,7 +115,7 @@ namespace ioa {
 
     virtual bool involves_input_automaton (const generic_automaton_handle& automaton) const = 0;
     virtual bool empty () const = 0;
-    virtual void execute () = 0;
+    virtual void execute (scheduler_interface& scheduler) = 0;
     virtual void unbind_parameter (const generic_automaton_handle& automaton,
 				   const generic_parameter_handle& parameter,
 				   rescind_listener_interface& listener) = 0;
@@ -190,7 +198,7 @@ namespace ioa {
       return m_inputs.empty ();
     }
 
-    void execute () {
+    void execute (scheduler_interface& scheduler) {
       bool output_processed;
 
       // Lock in order.
@@ -206,7 +214,7 @@ namespace ioa {
       }
 
       // Execute.
-      execute_dispatch ();
+      execute_dispatch (scheduler);
 
       // Unlock.
       output_processed = false;
@@ -315,7 +323,7 @@ namespace ioa {
     }
 
   protected:
-    virtual void execute_dispatch () = 0;
+    virtual void execute_dispatch (scheduler_interface&) = 0;
   };
   
   template <class VS, class VT> class binding_impl;
@@ -333,14 +341,17 @@ namespace ioa {
   protected:
     typedef generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface>::set_type set_type;
 
-    void execute_dispatch () {
+    void execute_dispatch (scheduler_interface& scheduler) {
+      scheduler.set_current_handle (m_output->get_automaton_handle ());
       if ((*m_output) ()) {
 	for (set_type::iterator pos = m_inputs.begin ();
 	     pos != m_inputs.end ();
 	     ++pos) {
+	  scheduler.set_current_handle (pos->first->get_automaton_handle ());
 	  (*(pos->first)) ();
 	}
       }
+      scheduler.clear_current_handle ();
     }
   };
 
@@ -357,15 +368,18 @@ namespace ioa {
   protected:
     typedef typename generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >::set_type set_type;
 
-    void execute_dispatch () {
+    void execute_dispatch (scheduler_interface& scheduler) {
+      scheduler.set_current_handle (this->m_output->get_automaton_handle ());
       const std::pair<bool, T> p = (*(this->m_output)) ();
       if (p.first) {
 	for (typename set_type::iterator pos = this->m_inputs.begin ();
 	     pos != this->m_inputs.end ();
 	     ++pos) {
+	  scheduler.set_current_handle (pos->first->get_automaton_handle ());
 	  (*(pos->first)) (p.second);
 	}
       }
+      scheduler.clear_current_handle ();
     }
 
   };

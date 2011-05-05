@@ -117,6 +117,22 @@ namespace ioa {
     }
   };
 
+  template <class C, class T, void (C::*member)(const T&)>
+  class system_event_wrapper :
+    public system_event,
+    public value<T>
+  {
+  private:
+    C& m_c;
+
+  public:
+    system_event_wrapper (C& c)
+      : m_c (c) { }
+
+    void operator() (const T& t) {
+      (m_c.*member) (t);
+    }
+  };
 
   
   // template <class Instance>
