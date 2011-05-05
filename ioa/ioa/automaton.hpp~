@@ -48,9 +48,8 @@ namespace ioa {
       return m_parameters.insert (parameter);
     }
 
-    template <class T>
-    parameter_handle<T> rescind_parameter (T* parameter) {
-      return m_parameters.erase (parameter);
+    void rescind_parameter (const generic_parameter_handle& parameter) {
+      m_parameters.erase (parameter);
     }
 
   };

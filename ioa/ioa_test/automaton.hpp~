@@ -5,14 +5,14 @@
 
 struct automaton {
 
-  struct up_ut_input_action :
+  struct up_uv_input_action :
     public ioa::input,
     public ioa::no_value,
     public ioa::no_parameter
   {
     bool state;
 
-    up_ut_input_action () :
+    up_uv_input_action () :
       state (false) { }
 
     void operator() () {
@@ -20,9 +20,9 @@ struct automaton {
     }
 
   };
-  up_ut_input_action up_ut_input;
+  up_uv_input_action up_uv_input;
 
-  struct p_ut_input_action :
+  struct p_uv_input_action :
     public ioa::input,
     public ioa::no_value,
     public ioa::parameter<int>
@@ -30,7 +30,7 @@ struct automaton {
     bool state;
     int* last_parameter;
 
-    p_ut_input_action () :
+    p_uv_input_action () :
       state (false),
       last_parameter (0)
     { }
@@ -41,16 +41,16 @@ struct automaton {
     }
 
   };
-  p_ut_input_action p_ut_input;
+  p_uv_input_action p_uv_input;
 
-  struct up_t_input_action :
+  struct up_v_input_action :
     public ioa::input,
     public ioa::value<int>,
     public ioa::no_parameter
   {
     int value;
 
-    up_t_input_action () :
+    up_v_input_action () :
       value (0) { }
 
     void operator() (const int t) {
@@ -58,9 +58,9 @@ struct automaton {
     }
 
   };
-  up_t_input_action up_t_input;
+  up_v_input_action up_v_input;
 
-  struct p_t_input_action :
+  struct p_v_input_action :
     public ioa::input,
     public ioa::value<int>,
     public ioa::parameter<int>
@@ -68,7 +68,7 @@ struct automaton {
     int value;
     int* last_parameter;
 
-    p_t_input_action () :
+    p_v_input_action () :
       value (0),
       last_parameter (0)
     { }
@@ -79,16 +79,16 @@ struct automaton {
     }
 
   };
-  p_t_input_action p_t_input;
+  p_v_input_action p_v_input;
 
-  struct up_ut_output_action :
+  struct up_uv_output_action :
     public ioa::output,
     public ioa::no_value,
     public ioa::no_parameter
   {
     bool state;
 
-    up_ut_output_action () :
+    up_uv_output_action () :
       state (false) { }
 
     bool operator() () {
@@ -97,9 +97,9 @@ struct automaton {
     }
 
   };
-  up_ut_output_action up_ut_output;
+  up_uv_output_action up_uv_output;
 
-  struct p_ut_output_action :
+  struct p_uv_output_action :
     public ioa::output,
     public ioa::no_value,
     public ioa::parameter<int>
@@ -107,7 +107,7 @@ struct automaton {
     bool state;
     int* last_parameter;
 
-    p_ut_output_action () :
+    p_uv_output_action () :
       state (false),
       last_parameter (0)
     { }
@@ -119,16 +119,16 @@ struct automaton {
     }
 
   };
-  p_ut_output_action p_ut_output;
+  p_uv_output_action p_uv_output;
 
-  struct up_t_output_action :
+  struct up_v_output_action :
     public ioa::output,
     public ioa::value<int>,
     public ioa::no_parameter
   {
     bool state;
 
-    up_t_output_action () :
+    up_v_output_action () :
       state (false)
     { }
 
@@ -138,9 +138,9 @@ struct automaton {
     }
 
   };
-  up_t_output_action up_t_output;
+  up_v_output_action up_v_output;
 
-  struct p_t_output_action :
+  struct p_v_output_action :
     public ioa::output,
     public ioa::value<int>,
     public ioa::parameter<int>
@@ -148,7 +148,7 @@ struct automaton {
     bool state;
     int* last_parameter;
 
-    p_t_output_action () :
+    p_v_output_action () :
       state (false),
       last_parameter (0)
     { }
@@ -160,17 +160,68 @@ struct automaton {
     }
 
   };
-  p_t_output_action p_t_output;
+  p_v_output_action p_v_output;
   
-  // struct internal_action {
-  //   bool state;
-  //   internal_action()
-  //     : state(false) { }
-  //   void operator()() {
-  //     state = true;
-  //   }
-  // };
-  // internal_action internal;
+  struct up_internal_action :
+    public ioa::internal,
+    public ioa::no_parameter
+  {
+    bool state;
+    up_internal_action()
+      : state(false) { }
+    void operator()() {
+      state = true;
+    }
+  };
+  up_internal_action up_internal;
+
+  struct p_internal_action :
+    public ioa::internal,
+    public ioa::parameter<int>
+  {
+    bool state;
+    int* last_parameter;
+
+    p_internal_action()
+      : state(false) { }
+    void operator()(int* parameter) {
+      state = true;
+      last_parameter = parameter;
+    }
+  };
+  p_internal_action p_internal;
+
+  struct uv_event_action :
+    public ioa::event,
+    public ioa::no_value
+  {
+    bool state;
+
+    uv_event_action () :
+      state (false) { }
+
+    void operator () () {
+      state = true;
+    }
+  };
+  uv_event_action uv_event;
+
+  struct v_event_action :
+    public ioa::event,
+    public ioa::value<int>
+  {
+    bool state;
+    int last_value;
+
+    v_event_action () :
+      state (false) { }
+
+    void operator () (const int value) {
+      state = true;
+      last_value = value;
+    }
+  };
+  v_event_action v_event;
 
 };
 
