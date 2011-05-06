@@ -1,2 +1,2 @@
 project : usage-requirements <include>. ;
-lib ioa : automaton.cpp ;
+lib ioa : scheduler.cpp ;

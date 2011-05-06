@@ -85,13 +85,24 @@ namespace ioa {
     
   public:
     
-    ~system ()
-    {
+    void clear (void) {
       for (locker<automaton_interface*>::const_iterator pos = m_automata.begin ();
 	   pos != m_automata.end ();
 	   ++pos) {
 	delete pos->first;
       }
+      m_automata.clear ();
+      m_parent_child.clear ();
+      for (std::list<binding_interface*>::const_iterator pos = m_bindings.begin ();
+	   pos != m_bindings.end ();
+	   ++pos) {
+	delete (*pos);
+      }
+      m_bindings.clear ();
+    }
+
+    ~system (void) {
+      clear ();
     }
     
     enum create_result_type {
