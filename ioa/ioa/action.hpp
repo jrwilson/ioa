@@ -195,12 +195,10 @@ namespace ioa {
 
   class null_type { };
 
-  struct schedulable_category { };
-
   struct input_category { };
-  struct output_category : public schedulable_category { };
-  struct internal_category : public schedulable_category { };
-  struct event_category : public schedulable_category { };
+  struct output_category { };
+  struct internal_category { };
+  struct event_category { };
   struct system_event_category { };
 
   struct unvalued { };

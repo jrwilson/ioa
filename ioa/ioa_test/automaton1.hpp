@@ -1,9 +1,9 @@
-#ifndef __automaton_test_hpp__
-#define __automaton_test_hpp__
+#ifndef __automaton1_hpp__
+#define __automaton1_hpp__
 
 #include <scheduler.hpp>
 
-struct automaton {
+struct automaton1 {
 
   struct up_uv_input_action :
     public ioa::input,
@@ -222,7 +222,6 @@ struct automaton {
     }
   };
   v_event_action v_event;
-
 };
 
 #endif

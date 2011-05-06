@@ -1,5 +1,38 @@
 lib boost_thread-mt ;
 
+exe create_exists : create_exists.cpp /libs/ioa//ioa boost_thread-mt ;
+exe create_success : create_success.cpp /libs/ioa//ioa boost_thread-mt ;
+
+#      DECLARE_EXISTS,
+#      DECLARE_SUCCESS,
+
+#      BIND_OUTPUT_AUTOMATON_DNE,
+#      BIND_INPUT_AUTOMATON_DNE,
+#      BIND_OUTPUT_PARAMETER_DNE,
+#      BIND_INPUT_PARAMETER_DNE,
+#      BIND_EXISTS,
+#      BIND_INPUT_ACTION_UNAVAILABLE,
+#      BIND_OUTPUT_ACTION_UNAVAILABLE,
+#      BIND_SUCCESS,
+
+#      UNBIND_OUTPUT_AUTOMATON_DNE,
+#      UNBIND_INPUT_AUTOMATON_DNE,
+#      UNBIND_OUTPUT_PARAMETER_DNE,
+#      UNBIND_INPUT_PARAMETER_DNE,
+#      UNBIND_EXISTS,
+#      UNBIND_SUCCESS,
+
+#      RESCIND_EXISTS,
+#      RESCIND_SUCCESS,
+
+#      DESTROY_DESTROYER_NOT_CREATOR,
+#      DESTROY_EXISTS,
+exe destroy_success : destroy_success.cpp /libs/ioa//ioa boost_thread-mt ;
+
+#      EXECUTE_AUTOMATON_DNE,
+#      EXECUTE_PARAMETER_DNE,
+#      EXECUTE_SUCCESS,
+
 exe count_to_ten : count_to_ten.cpp /libs/ioa//ioa boost_thread-mt ;
-#exe clock_213 : clock_213.cpp /libs/ioa//ioa boost_thread-mt ;
+exe clock_213 : clock_213.cpp /libs/ioa//ioa boost_thread-mt ;
 #exe bug : bug.cpp /libs/ioa//ioa boost_thread-mt ;

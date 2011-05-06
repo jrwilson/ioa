@@ -7,18 +7,17 @@ class trigger {
 private:
 
   void init_ () {
-    ioa::scheduler.schedule_output (&trigger::request);
+    ioa::scheduler.schedule (this, &trigger::request);
   }
 
   bool request_ () {
-    //std::cout << "trigger request" << std::endl;
-    ioa::scheduler.schedule_output (&trigger::request);
+    // std::cout << "trigger request" << std::endl;
+    ioa::scheduler.schedule (this, &trigger::request);
     return true;
   }
 
 public:
 
-  // TODO: This should have a trait that prevents composition.
   ioa::internal_wrapper<trigger, &trigger::init_> init;  
 
   typedef ioa::void_output_wrapper<trigger, &trigger::request_> request_type;
@@ -36,23 +35,23 @@ private:
   int m_flag;
 
   void init_ () {
-    ioa::scheduler.schedule_internal (&ioa_clock::tick);
+    ioa::scheduler.schedule (this, &ioa_clock::tick);
   }
 
   void request_ () {
-    //std::cout << "ioa_clock request" << std::endl;
+    // std::cout << "ioa_clock request" << std::endl;
     m_flag = true;
-    ioa::scheduler.schedule_output (&ioa_clock::clock);
+    ioa::scheduler.schedule (this, &ioa_clock::clock);
   }
 
   void tick_ () {
-    //std::cout << "ioa_clock tick" << std::endl;
+    // std::cout << "ioa_clock tick" << std::endl;
     m_counter = m_counter + 1;
-    ioa::scheduler.schedule_internal (&ioa_clock::tick);
+    ioa::scheduler.schedule (this, &ioa_clock::tick);
   }
 
   std::pair<bool, int> clock_ () {
-    //std::cout << "ioa_clock clock" << std::endl;
+    // std::cout << "ioa_clock clock" << std::endl;
     if (m_flag) {
       m_flag = false;
       return std::make_pair (true, m_counter);
@@ -66,7 +65,6 @@ private:
   
 public:
 
-  // TODO: This should have a trait that prevents composition.
   ioa::internal_wrapper<ioa_clock, &ioa_clock::init_> init;  
 
   typedef ioa::void_input_wrapper<ioa_clock, &ioa_clock::request_> request_type;
@@ -97,7 +95,6 @@ private:
 
 public:
 
-  // TODO: This should have a trait that prevents composition.
   ioa::internal_wrapper<display, &display::init_> init;  
 
   typedef ioa::input_wrapper<display, int, &display::clock_> clock_type;
@@ -116,104 +113,63 @@ private:
   ioa::automaton_handle<ioa_clock> m_ioa_clock_handle;
   ioa::automaton_handle<display> m_display_handle;
 
-  class trigger_callback {
-  private:
-    composer& m_composer;
-    
-  public:
-    trigger_callback (composer& composer) :
-      m_composer (composer)
-    { }
-    
-    void operator() (const ioa::create_result<trigger>& r) {
-      assert (r.type == ioa::AUTOMATON_CREATED);
-      m_composer.m_trigger_handle = r.handle;
-      ioa_clock_callback cb (m_composer);
-      ioa::scheduler.schedule_create<composer, ioa_clock, ioa_clock_callback> (new ioa_clock(), cb);
-    }
-  };
-
-  class ioa_clock_callback {
-  private:
-    composer& m_composer;
-    
-  public:
-    ioa_clock_callback (composer& composer) :
-      m_composer (composer)
-    { }
-    
-    void operator() (const ioa::create_result<ioa_clock>& r) {
-      assert (r.type == ioa::AUTOMATON_CREATED);
-      m_composer.m_ioa_clock_handle = r.handle;
-      display_callback cb (m_composer);
-      ioa::scheduler.schedule_create<composer, display, display_callback> (new display(), cb);
-    }
-  };
-
-  class display_callback {
-  private:
-    composer& m_composer;
-    
-  public:
-    display_callback (composer& composer) :
-      m_composer (composer)
-    { }
-    
-    void operator() (const ioa::create_result<display>& r) {
-      assert (r.type == ioa::AUTOMATON_CREATED);
-      m_composer.m_display_handle = r.handle;
-      compose_callback1 cb (m_composer);
-      ioa::scheduler.schedule_compose<composer, trigger, trigger::request_type, ioa_clock, ioa_clock::request_type, compose_callback1> (m_composer.m_trigger_handle, &trigger::request, m_composer.m_ioa_clock_handle, &ioa_clock::request, cb);
-    }
-  };
-
-  class compose_callback1 {
-  private:
-    composer& m_composer;
-
-  public:
-    compose_callback1 (composer& composer) :
-      m_composer (composer)
-    { }
-
-    void operator() (const ioa::compose_result& r) {
-      assert (r.type == ioa::COMPOSED);
-      compose_callback2 cb (m_composer);
-      ioa::scheduler.schedule_compose<composer, ioa_clock, ioa_clock::clock_type, display, display::clock_type, compose_callback2> (m_composer.m_ioa_clock_handle, &ioa_clock::clock, m_composer.m_display_handle, &display::clock, cb);
-
-    }
-  };
-
-  class compose_callback2 {
-  private:
-    composer& m_composer;
-
-  public:
-    compose_callback2 (composer& composer) :
-      m_composer (composer)
-    { }
-
-    void operator() (const ioa::compose_result& r) {
-      assert (r.type == ioa::COMPOSED);
-      //compose_callback2 cb (m_composer);
-      //ioa::scheduler.schedule_compose<composer, ioa_clock, ioa_clock::clock_type, display, display::clock_type, compose_callback2> (m_composer.m_ioa_clock_handle, &ioa_clock::clock, m_composer.m_display_handle, &display::clock, cb);
-
-    }
-  };
-
-
   void init_ () {
-    trigger_callback cb (*this);
-    ioa::scheduler.schedule_create<composer, trigger, trigger_callback> (new trigger(), cb);
+    ioa::scheduler.create (this, new trigger (), &composer::trigger_created);
+  }
+
+  void trigger_created_ (const ioa::system::create_result<trigger>& r) {
+    BOOST_ASSERT (r.type == ioa::system::CREATE_SUCCESS);
+    m_trigger_handle = r.automaton;
+    ioa::scheduler.create (this, new ioa_clock (), &composer::ioa_clock_created);
+  }
+
+  void ioa_clock_created_ (const ioa::system::create_result<ioa_clock>& r) {
+    BOOST_ASSERT (r.type == ioa::system::CREATE_SUCCESS);
+    m_ioa_clock_handle = r.automaton;
+    ioa::scheduler.create (this, new display (), &composer::display_created);
+  }
+
+  void display_created_ (const ioa::system::create_result<display>& r) {
+    BOOST_ASSERT (r.type == ioa::system::CREATE_SUCCESS);
+    m_display_handle = r.automaton;
+    ioa::scheduler.bind (this,
+			 m_trigger_handle,
+			 &trigger::request,
+			 m_ioa_clock_handle,
+			 &ioa_clock::request,
+			 &composer::bound1);
+  }
+
+  void bound1_ (const ioa::system::bind_result& r) {
+    BOOST_ASSERT (r.type == ioa::system::BIND_SUCCESS);
+    ioa::scheduler.bind (this,
+			 m_ioa_clock_handle,
+			 &ioa_clock::clock,
+			 m_display_handle,
+			 &display::clock,
+			 &composer::bound2);
+  }
+
+  void bound2_ (const ioa::system::bind_result& r) {
+    BOOST_ASSERT (r.type == ioa::system::BIND_SUCCESS);
   }
 
 public:
 
-  // TODO: This should have a trait that prevents composition.
-  ioa::internal_wrapper<composer, &composer::init_> init;  
+  ioa::internal_wrapper<composer, &composer::init_> init;
+  ioa::system_event_wrapper<composer, ioa::system::create_result<trigger>, &composer::trigger_created_> trigger_created;
+  ioa::system_event_wrapper<composer, ioa::system::create_result<ioa_clock>, &composer::ioa_clock_created_> ioa_clock_created;
+  ioa::system_event_wrapper<composer, ioa::system::create_result<display>, &composer::display_created_> display_created;
+  ioa::system_event_wrapper<composer, ioa::system::bind_result, &composer::bound1_> bound1;
+  ioa::system_event_wrapper<composer, ioa::system::bind_result, &composer::bound2_> bound2;
 
   composer () :
-    init (*this)
+    init (*this),
+    trigger_created (*this),
+    ioa_clock_created (*this),
+    display_created (*this),
+    bound1 (*this),
+    bound2 (*this)
   { }
 };
 

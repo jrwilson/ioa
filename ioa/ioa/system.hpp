@@ -100,13 +100,12 @@ namespace ioa {
       CREATE_SUCCESS,
     };
     
-    template <class T>
     struct create_result
     {
       create_result_type type;
-      automaton_handle<T> automaton;
+      generic_automaton_handle automaton;
       
-      create_result (const automaton_handle<T>& automaton) :
+      create_result (const generic_automaton_handle& automaton) :
   	type (CREATE_SUCCESS),
   	automaton (automaton)
       { }
@@ -120,7 +119,7 @@ namespace ioa {
 
   private:
     template <class T>
-    create_result<T> inner_create (T* instance)
+    create_result inner_create (T* instance)
     {
       BOOST_ASSERT (instance != 0);
       
@@ -129,19 +128,19 @@ namespace ioa {
 								       automaton_interface_instance_equal (instance));
       
       if (pos != m_automata.end ()) {
-      	return create_result<T> (CREATE_EXISTS);
+      	return create_result (CREATE_EXISTS);
       }
       
       automaton<T>* created = new automaton<T> (instance);
       automaton_handle<T> handle = m_automata.insert (created);
       
-      return create_result<T> (handle);
+      return create_result (handle);
     }
 
   public:
     
     template <class T>
-    create_result<T> create (T* instance)
+    create_result create (T* instance)
     {
       BOOST_ASSERT (instance != 0);
       
@@ -151,7 +150,7 @@ namespace ioa {
     }
     
     template <class T>
-    create_result<T>
+    create_result
     create (const generic_automaton_handle& creator,
     	    T* instance)
     {
@@ -161,10 +160,10 @@ namespace ioa {
     
       if (!m_automata.contains (creator)) {
 	delete instance;
-     	return create_result<T> (CREATE_CREATOR_DNE);
+     	return create_result (CREATE_CREATOR_DNE);
       }
 
-      create_result<T> result = inner_create (instance);
+      create_result result = inner_create (instance);
       if (result.type == CREATE_SUCCESS) {
 	m_parent_child.push_back (std::make_pair (creator, result.automaton));
       }
@@ -178,13 +177,12 @@ namespace ioa {
       DECLARE_SUCCESS,
     };
     
-    template <class T>
     struct declare_result
     {
       declare_result_type type;
-      parameter_handle<T> parameter;
+      generic_parameter_handle parameter;
       
-      declare_result (const parameter_handle<T>& param) :
+      declare_result (const generic_parameter_handle& param) :
 	type (DECLARE_SUCCESS),
 	parameter (param)
       { }
@@ -197,23 +195,23 @@ namespace ioa {
     };
     
     template <class T>
-    declare_result<T>
+    declare_result
     declare (const generic_automaton_handle& a,
   	     T* parameter)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_automata.contains (a)) {
-  	return declare_result<T> (DECLARE_AUTOMATON_DNE);	
+  	return declare_result (DECLARE_AUTOMATON_DNE);	
       }
       
       automaton_interface* pa = a.value ();
       
       if (pa->parameter_exists (parameter)) {
-  	return declare_result<T> (DECLARE_EXISTS);
+  	return declare_result (DECLARE_EXISTS);
       }
       
-      return declare_result<T> (pa->declare_parameter (parameter));
+      return declare_result (pa->declare_parameter (parameter));
     }
     
     enum bind_result_type {
@@ -758,6 +756,20 @@ namespace ioa {
     }
 
   };
+
+  template <class T>
+  automaton_handle<T> cast_automaton (const generic_automaton_handle& handle)
+  {
+    locker_key<automaton<T>*> key (handle.serial (), static_cast<automaton<T>*> (handle.value ()));
+    return automaton_handle<T> (key);
+  }
+
+  template <class T>
+  parameter_handle<T> cast_parameter (const generic_parameter_handle& handle)
+  {
+    locker_key<T*> key (handle.serial (), static_cast<T*> (handle.value ()));
+    return parameter_handle<T> (key);
+  }
 
 }
 

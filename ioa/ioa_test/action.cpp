@@ -2,17 +2,17 @@
 #define BOOST_TEST_MODULE action
 #include <boost/test/unit_test.hpp>
 
-#include "automaton.hpp"
+#include "automaton1.hpp"
 
 BOOST_AUTO_TEST_SUITE(action_suite)
 
 BOOST_AUTO_TEST_CASE(unparameterized_unvalued_input_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::up_uv_input_action> action (a_h, &automaton::up_uv_input);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::up_uv_input_action> action (a_h, &automaton1::up_uv_input);
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   BOOST_CHECK (action == action);
   action ();
@@ -22,14 +22,14 @@ BOOST_AUTO_TEST_CASE(unparameterized_unvalued_input_action)
 BOOST_AUTO_TEST_CASE(parameterized_unvalued_input_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
 
   int parameter;
   ioa::parameter_handle<int> p_h = a.declare_parameter (&parameter);
 
-  ioa::action<automaton::p_uv_input_action> action (a_h, &automaton::p_uv_input, p_h);
+  ioa::action<automaton1::p_uv_input_action> action (a_h, &automaton1::p_uv_input, p_h);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
@@ -41,10 +41,10 @@ BOOST_AUTO_TEST_CASE(parameterized_unvalued_input_action)
 BOOST_AUTO_TEST_CASE(unparameterized_valued_input_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::up_v_input_action> action (a_h, &automaton::up_v_input);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::up_v_input_action> action (a_h, &automaton1::up_v_input);
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
   action (9845);
@@ -54,14 +54,14 @@ BOOST_AUTO_TEST_CASE(unparameterized_valued_input_action)
 BOOST_AUTO_TEST_CASE(parameterized_valued_input_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
 
   int parameter;
   ioa::parameter_handle<int> p_h = a.declare_parameter (&parameter);
 
-  ioa::action<automaton::p_v_input_action> action (a_h, &automaton::p_v_input, p_h);
+  ioa::action<automaton1::p_v_input_action> action (a_h, &automaton1::p_v_input, p_h);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
@@ -73,10 +73,10 @@ BOOST_AUTO_TEST_CASE(parameterized_valued_input_action)
 BOOST_AUTO_TEST_CASE(unparameterized_unvalued_output_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::up_uv_output_action> action (a_h, &automaton::up_uv_output);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::up_uv_output_action> action (a_h, &automaton1::up_uv_output);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   BOOST_CHECK (action == action);
@@ -88,14 +88,14 @@ BOOST_AUTO_TEST_CASE(unparameterized_unvalued_output_action)
 BOOST_AUTO_TEST_CASE(parameterized_unvalued_output_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
 
   int parameter;
   ioa::parameter_handle<int> p_h = a.declare_parameter (&parameter);
 
-  ioa::action<automaton::p_uv_output_action> action (a_h, &automaton::p_uv_output, p_h);
+  ioa::action<automaton1::p_uv_output_action> action (a_h, &automaton1::p_uv_output, p_h);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
@@ -108,10 +108,10 @@ BOOST_AUTO_TEST_CASE(parameterized_unvalued_output_action)
 BOOST_AUTO_TEST_CASE(unparameterized_valued_output_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::up_v_output_action> action (a_h, &automaton::up_v_output);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::up_v_output_action> action (a_h, &automaton1::up_v_output);
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
   std::pair<bool, int> r = action ();
@@ -123,14 +123,14 @@ BOOST_AUTO_TEST_CASE(unparameterized_valued_output_action)
 BOOST_AUTO_TEST_CASE(parameterized_valued_output_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
 
   int parameter;
   ioa::parameter_handle<int> p_h = a.declare_parameter (&parameter);
 
-  ioa::action<automaton::p_v_output_action> action (a_h, &automaton::p_v_output, p_h);
+  ioa::action<automaton1::p_v_output_action> action (a_h, &automaton1::p_v_output, p_h);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ()); 
   BOOST_CHECK (action == action);
@@ -144,10 +144,10 @@ BOOST_AUTO_TEST_CASE(parameterized_valued_output_action)
 BOOST_AUTO_TEST_CASE(unparameterized_internal_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::up_internal_action> action (a_h, &automaton::up_internal);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::up_internal_action> action (a_h, &automaton1::up_internal);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   action.execute ();
@@ -157,14 +157,14 @@ BOOST_AUTO_TEST_CASE(unparameterized_internal_action)
 BOOST_AUTO_TEST_CASE(parameterized_internal_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
 
   int parameter;
   ioa::parameter_handle<int> p_h = a.declare_parameter (&parameter);
 
-  ioa::action<automaton::p_internal_action> action (a_h, &automaton::p_internal, p_h);
+  ioa::action<automaton1::p_internal_action> action (a_h, &automaton1::p_internal, p_h);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   action.execute ();
@@ -175,10 +175,10 @@ BOOST_AUTO_TEST_CASE(parameterized_internal_action)
 BOOST_AUTO_TEST_CASE(unvalued_event_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::uv_event_action> action (a_h, &automaton::uv_event);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::uv_event_action> action (a_h, &automaton1::uv_event);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   action.execute ();
@@ -188,10 +188,10 @@ BOOST_AUTO_TEST_CASE(unvalued_event_action)
 BOOST_AUTO_TEST_CASE(valued_event_action)
 {
   ioa::locker<ioa::automaton_interface*> automata;
-  automaton* z = new automaton ();
-  ioa::automaton<automaton> a (z);
-  ioa::automaton_handle<automaton> a_h = automata.insert (&a);
-  ioa::action<automaton::v_event_action> action (a_h, &automaton::v_event, 9845);
+  automaton1* z = new automaton1 ();
+  ioa::automaton<automaton1> a (z);
+  ioa::automaton_handle<automaton1> a_h = automata.insert (&a);
+  ioa::action<automaton1::v_event_action> action (a_h, &automaton1::v_event, 9845);
 
   BOOST_CHECK (a_h == action.get_automaton_handle ());
   action.execute ();
