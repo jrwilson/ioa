@@ -11,7 +11,8 @@
 
 namespace ioa {
   
-  class system
+  class system :
+    public system_interface
   {
   private:    
     struct automaton_interface_instance_equal
@@ -79,17 +80,19 @@ namespace ioa {
     };
     
     boost::shared_mutex m_mutex;
-    locker<automaton_interface*> m_automata;
+    locker<void*> m_instances;
+    std::map<generic_automaton_handle, automaton_interface*> m_automata;
     std::list<std::pair<generic_automaton_handle, generic_automaton_handle> > m_parent_child;
     std::list<binding_interface*> m_bindings;
     
   public:
     
     void clear (void) {
-      for (locker<automaton_interface*>::const_iterator pos = m_automata.begin ();
+      m_instances.clear ();
+      for (std::map<generic_automaton_handle, automaton_interface*>::const_iterator pos = m_automata.begin ();
 	   pos != m_automata.end ();
 	   ++pos) {
-	delete pos->first;
+	delete pos->second;
       }
       m_automata.clear ();
       m_parent_child.clear ();
@@ -134,16 +137,13 @@ namespace ioa {
     {
       BOOST_ASSERT (instance != 0);
       
-      locker<automaton_interface*>::const_iterator pos = std::find_if (m_automata.begin (),
-								       m_automata.end (),
-								       automaton_interface_instance_equal (instance));
-      
-      if (pos != m_automata.end ()) {
+      if (m_instances.contains (instance)) {
       	return create_result (CREATE_EXISTS);
       }
       
       automaton<T>* created = new automaton<T> (instance);
-      automaton_handle<T> handle = m_automata.insert (created);
+      automaton_handle<T> handle = m_instances.insert (instance);
+      m_automata.insert (std::make_pair (handle, created));
       
       return create_result (handle);
     }
@@ -169,7 +169,7 @@ namespace ioa {
     
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
     
-      if (!m_automata.contains (creator)) {
+      if (!m_instances.contains (creator)) {
 	delete instance;
      	return create_result (CREATE_CREATOR_DNE);
       }
@@ -212,11 +212,11 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_automata.contains (a)) {
+      if (!m_instances.contains (a)) {
   	return declare_result (DECLARE_AUTOMATON_DNE);	
       }
       
-      automaton_interface* pa = a.value ();
+      automaton_interface* pa = m_automata[a];
       
       if (pa->parameter_exists (parameter)) {
   	return declare_result (DECLARE_EXISTS);
@@ -247,30 +247,39 @@ namespace ioa {
     };
     
   private:
+    bool parameter_exists (const action_interface& ac) {
+      if (ac.is_parameterized ()) {
+	return m_automata[ac.get_automaton_handle ()]->parameter_exists (ac.get_parameter_handle ());
+      }
+      else {
+	return true;
+      }
+    }
+
     template <class OM, class IM>
     bind_result
     _bind (const action<OM>& output,
 	   const action<IM>& input,
 	   const generic_automaton_handle& binder)
     {
-      if (!m_automata.contains (output.get_automaton_handle ())) {
+      if (!m_instances.contains (output.get_automaton_handle ())) {
 	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
       }
 
-      if (!m_automata.contains (input.get_automaton_handle ())) {
+      if (!m_instances.contains (input.get_automaton_handle ())) {
 	return bind_result (BIND_INPUT_AUTOMATON_DNE);
       }
 
-      if (!m_automata.contains (binder)) {
+      if (!m_instances.contains (binder)) {
   	// Binder DNE.
   	return bind_result (BIND_BINDER_AUTOMATON_DNE);
       }
       
-      if (!output.parameter_exists ()) {
+      if (!parameter_exists (output)) {
   	return bind_result (BIND_OUTPUT_PARAMETER_DNE);
       }
       
-      if (!input.parameter_exists ()) {
+      if (!parameter_exists (input)) {
   	return bind_result (BIND_INPUT_PARAMETER_DNE);
       }
       
@@ -413,24 +422,24 @@ namespace ioa {
 	     const action<IM>& input,
 	     const generic_automaton_handle& binder)
     {
-      if (!m_automata.contains (output.get_automaton_handle ())) {
+      if (!m_instances.contains (output.get_automaton_handle ())) {
         return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
       }
 
-      if (!m_automata.contains (input.get_automaton_handle ())) {
+      if (!m_instances.contains (input.get_automaton_handle ())) {
         return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
       }
 
-      if (!m_automata.contains (binder)) {
+      if (!m_instances.contains (binder)) {
 	// Owner DNE.
 	return unbind_result (UNBIND_BINDER_AUTOMATON_DNE);
       }
       
-      if (!output.parameter_exists ()) {
+      if (!parameter_exists (output)) {
 	return unbind_result (UNBIND_OUTPUT_PARAMETER_DNE);
       }
       
-      if (!input.parameter_exists ()) {
+      if (!parameter_exists (input)) {
 	return unbind_result (UNBIND_INPUT_PARAMETER_DNE);
       }
       
@@ -541,11 +550,11 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_automata.contains (a)) {
+      if (!m_instances.contains (a)) {
   	return rescind_result<T> (RESCIND_AUTOMATON_DNE);	
       }
       
-      automaton_interface* pa = a.value ();
+      automaton_interface* pa = m_automata[a];
       
       if (!pa->parameter_exists (p)) {
   	return rescind_result<T> (RESCIND_EXISTS);
@@ -602,7 +611,7 @@ namespace ioa {
     destroy_result inner_destroy (const generic_automaton_handle& automaton,
 				  destroy_listener_interface& listener)
     {
-      if (!m_automata.contains (automaton)) {
+      if (!m_instances.contains (automaton)) {
 	return destroy_result (DESTROY_EXISTS);
       }
 
@@ -634,28 +643,35 @@ namespace ioa {
       }
 
       BOOST_FOREACH (generic_automaton_handle handle, closed_list) {
-	// Update the list of automata.
-	m_automata.erase (handle);
-	delete handle.value ();
+	{
+	  // Update the list of automata.
+	  m_instances.erase (handle);
+	  delete m_automata[handle];
+	  m_automata.erase (handle);
+	}
 
-	// Update parent-child relationships.
-	std::list<std::pair<generic_automaton_handle, generic_automaton_handle> >::iterator pos = std::find_if (m_parent_child.begin (), m_parent_child.end (), child_automaton (handle));
-	if (pos != m_parent_child.end ()) {
-	  listener.destroyed (pos->first, pos->second);
-	  m_parent_child.erase (pos);
+	{
+	  // Update parent-child relationships.
+	  std::list<std::pair<generic_automaton_handle, generic_automaton_handle> >::iterator pos = std::find_if (m_parent_child.begin (), m_parent_child.end (), child_automaton (handle));
+	  if (pos != m_parent_child.end ()) {
+	    listener.destroyed (pos->first, pos->second);
+	    m_parent_child.erase (pos);
+	  }
 	}
 	
-	// Update bindings.
-	for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
-	     pos != m_bindings.end ();
-	     ) {
-	  (*pos)->unbind_automaton (handle, listener);
-	  if ((*pos)->empty ()) {
-	    delete *pos;
-	    pos = m_bindings.erase (pos);
-	  }
-	  else {
-	    ++pos;
+	{
+	  // Update bindings.
+	  for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
+	       pos != m_bindings.end ();
+	       ) {
+	    (*pos)->unbind_automaton (handle, listener);
+	    if ((*pos)->empty ()) {
+	      delete *pos;
+	      pos = m_bindings.erase (pos);
+	    }
+	    else {
+	      ++pos;
+	    }
 	  }
 	}
       }
@@ -679,7 +695,7 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      if (!m_automata.contains (destroyer)) {
+      if (!m_instances.contains (destroyer)) {
 	return destroy_result (DESTROY_DESTROYER_DNE);
       }
 
@@ -708,15 +724,25 @@ namespace ioa {
     };
 
   private:
+    void lock_automaton (const generic_automaton_handle& handle)
+    {
+      m_automata[handle]->lock ();
+    }
+
+    void unlock_automaton (const generic_automaton_handle& handle)
+    {
+      m_automata[handle]->unlock ();
+    }
+
     execute_result
     execute_executable (const executable_action_interface& ac,
 			scheduler_interface& scheduler)
     {
-      ac.lock_automaton ();
+      lock_automaton (ac.get_automaton_handle ());
       scheduler.set_current_handle (ac.get_automaton_handle ());
       ac.execute ();
       scheduler.clear_current_handle ();
-      ac.unlock_automaton ();
+      unlock_automaton (ac.get_automaton_handle ());
       return execute_result (EXECUTE_SUCCESS);
     }
 
@@ -727,11 +753,11 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
 
-      if (!m_automata.contains (ac.get_automaton_handle ())) {
+      if (!m_instances.contains (ac.get_automaton_handle ())) {
 	return execute_result (EXECUTE_AUTOMATON_DNE);
       }
-      
-      if (!ac.parameter_exists ()) {
+
+      if (!parameter_exists (ac)) {
 	return execute_result (EXECUTE_PARAMETER_DNE);
       }
 
@@ -744,7 +770,7 @@ namespace ioa {
 	return execute_executable (ac, scheduler);
       }
       else {	
-	(*out_pos)->execute (scheduler);
+	(*out_pos)->execute (scheduler, *this);
 	return execute_result (EXECUTE_SUCCESS);
       }
     }
@@ -755,11 +781,11 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_automata.contains (ac.get_automaton_handle ())) {
+      if (!m_instances.contains (ac.get_automaton_handle ())) {
 	return execute_result (EXECUTE_AUTOMATON_DNE);
       }
-      
-      if (!ac.parameter_exists ()) {
+
+      if (!parameter_exists (ac)) {
 	return execute_result (EXECUTE_PARAMETER_DNE);
       }
       
@@ -771,7 +797,7 @@ namespace ioa {
   template <class T>
   automaton_handle<T> cast_automaton (const generic_automaton_handle& handle)
   {
-    locker_key<automaton<T>*> key (handle.serial (), static_cast<automaton<T>*> (handle.value ()));
+    locker_key<T*> key (handle.serial (), static_cast<T*> (handle.value ()));
     return automaton_handle<T> (key);
   }
 

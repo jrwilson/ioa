@@ -13,11 +13,18 @@ public:
   void clear_current_handle (void) { }
 };
 
+class dummy_system :
+  public ioa::system_interface
+{
+public:
+  void lock_automaton (const ioa::generic_automaton_handle&) { }
+  void unlock_automaton (const ioa::generic_automaton_handle&) { }
+};
+
 BOOST_AUTO_TEST_SUITE(binding_suite)
 
 BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -26,10 +33,10 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
@@ -51,7 +58,8 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
   dummy_scheduler scheduler;
-  binding.execute (scheduler);
+  dummy_system system;
+  binding.execute (scheduler, system);
 
   BOOST_CHECK (output_instance->up_uv_output.state);
   BOOST_CHECK (input1_instance->up_uv_input.state);
@@ -61,7 +69,6 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_unvalued_output_action)
 
 BOOST_AUTO_TEST_CASE(bind_parameterized_unvalued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -70,10 +77,10 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_unvalued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int output_parameter;
   ioa::parameter_handle<int> output_parameter_handle = output_automaton.declare_parameter (&output_parameter);
@@ -97,7 +104,8 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_unvalued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
   dummy_scheduler scheduler;
-  binding.execute (scheduler);
+  dummy_system system;
+  binding.execute (scheduler, system);
 
   BOOST_CHECK (output_instance->p_uv_output.state);
   BOOST_CHECK_EQUAL (output_instance->p_uv_output.last_parameter, &output_parameter);
@@ -108,7 +116,6 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_unvalued_output_action)
 
 BOOST_AUTO_TEST_CASE(bind_unparameterized_valued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -117,10 +124,10 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_valued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
@@ -142,7 +149,8 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_valued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
   dummy_scheduler scheduler;
-  binding.execute (scheduler);
+  dummy_system system;
+  binding.execute (scheduler, system);
 
   BOOST_CHECK (output_instance->up_v_output.state);
   BOOST_CHECK_EQUAL (input1_instance->up_v_input.value, 9845);
@@ -152,7 +160,6 @@ BOOST_AUTO_TEST_CASE(bind_unparameterized_valued_output_action)
 
 BOOST_AUTO_TEST_CASE(bind_parameterized_valued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -161,10 +168,10 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_valued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int output_parameter;
   ioa::parameter_handle<int> output_parameter_handle = output_automaton.declare_parameter (&output_parameter);
@@ -188,7 +195,8 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_valued_output_action)
   BOOST_CHECK (binding.involves_input_automaton (input2_handle));
 
   dummy_scheduler scheduler;
-  binding.execute (scheduler);
+  dummy_system system;
+  binding.execute (scheduler, system);
 
   BOOST_CHECK (output_instance->p_v_output.state);
   BOOST_CHECK_EQUAL (output_instance->p_v_output.last_parameter, &output_parameter);
@@ -199,7 +207,6 @@ BOOST_AUTO_TEST_CASE(bind_parameterized_valued_output_action)
 
 BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -208,10 +215,10 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
@@ -237,7 +244,6 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
 
 BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -246,10 +252,10 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int output_parameter;
   ioa::parameter_handle<int> output_parameter_handle = output_automaton.declare_parameter (&output_parameter);
@@ -277,7 +283,6 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
 
 BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -286,10 +291,10 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int input_parameter;
   ioa::parameter_handle<int> input_parameter_handle = input2_automaton.declare_parameter (&input_parameter);
@@ -315,7 +320,6 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
 
 BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
 {
-  ioa::locker<ioa::automaton_interface*> automata;
   automaton1* binder_instance = new automaton1 ();
   automaton1* output_instance = new automaton1 ();
   automaton1* input1_instance = new automaton1 ();
@@ -324,10 +328,10 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
   ioa::automaton<automaton1> output_automaton (output_instance);
   ioa::automaton<automaton1> input1_automaton (input1_instance);
   ioa::automaton<automaton1> input2_automaton (input2_instance);
-  ioa::automaton_handle<automaton1> binder_handle = automata.insert (&binder_automaton);
-  ioa::automaton_handle<automaton1> output_handle = automata.insert (&output_automaton);
-  ioa::automaton_handle<automaton1> input1_handle = automata.insert (&input1_automaton);
-  ioa::automaton_handle<automaton1> input2_handle = automata.insert (&input2_automaton);
+  ioa::automaton_handle<automaton1> binder_handle (binder_instance);
+  ioa::automaton_handle<automaton1> output_handle (output_instance);
+  ioa::automaton_handle<automaton1> input1_handle (input1_instance);
+  ioa::automaton_handle<automaton1> input2_handle (input2_instance);
 
   int output_parameter;
   ioa::parameter_handle<int> output_parameter_handle = output_automaton.declare_parameter (&output_parameter);

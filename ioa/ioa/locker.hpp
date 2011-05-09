@@ -20,6 +20,12 @@ namespace ioa {
       m_serial (0)
     { }
 
+    locker_key (T const value)
+    :
+      m_serial (0),
+      m_value (value)
+    { }
+
     locker_key (serial_type const serial_number,
 		T const value)
       :
@@ -56,7 +62,10 @@ namespace ioa {
   template <class U, class V>
   bool operator< (const locker_key<U>& u,
 		  const locker_key<V>& v) {
-    return u.serial () < v.serial ();
+    if (u.serial () != v.serial ()) {
+      return u.serial () < v.serial ();
+    }
+    return u.value () < v.value ();
   }
 
   template <class T>

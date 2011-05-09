@@ -14,6 +14,14 @@ namespace ioa {
     virtual void clear_current_handle () = 0;
   };
 
+  class system_interface
+  {
+  public:
+    virtual ~system_interface () { }
+    virtual void lock_automaton (const generic_automaton_handle& handle) = 0;
+    virtual void unlock_automaton (const generic_automaton_handle& handle) = 0;
+  };
+
   class rescind_listener_interface
   {
   public:
@@ -115,7 +123,7 @@ namespace ioa {
 
     virtual bool involves_input_automaton (const generic_automaton_handle& automaton) const = 0;
     virtual bool empty () const = 0;
-    virtual void execute (scheduler_interface& scheduler) = 0;
+    virtual void execute (scheduler_interface& scheduler, system_interface& system) = 0;
     virtual void unbind_parameter (const generic_automaton_handle& automaton,
 				   const generic_parameter_handle& parameter,
 				   rescind_listener_interface& listener) = 0;
@@ -198,7 +206,8 @@ namespace ioa {
       return m_inputs.empty ();
     }
 
-    void execute (scheduler_interface& scheduler) {
+    void execute (scheduler_interface& scheduler,
+		  system_interface& system) {
       bool output_processed;
 
       // Lock in order.
@@ -207,10 +216,10 @@ namespace ioa {
 	   pos != m_inputs.end ();
 	   ++pos) {
 	if (!output_processed && m_output->get_automaton_handle () < pos->first->get_automaton_handle ()) {
-	  m_output->lock_automaton ();
+	  system.lock_automaton (m_output->get_automaton_handle ());
 	  output_processed = true;
 	}
-	pos->first->lock_automaton ();
+	system.lock_automaton (pos->first->get_automaton_handle ());
       }
 
       // Execute.
@@ -222,10 +231,10 @@ namespace ioa {
 	   pos != m_inputs.end ();
 	   ++pos) {
 	if (!output_processed && m_output->get_automaton_handle () < pos->first->get_automaton_handle ()) {
-	  m_output->unlock_automaton ();
+	  system.unlock_automaton (m_output->get_automaton_handle ());
 	  output_processed = true;
 	}
-	pos->first->unlock_automaton ();
+	system.unlock_automaton (pos->first->get_automaton_handle ());
       }
 
     }

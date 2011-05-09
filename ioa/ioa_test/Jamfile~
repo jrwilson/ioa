@@ -7,3 +7,38 @@ run automaton.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run action.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run binding.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
 run system.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
+run scheduler.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
+
+#run create_exists.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
+#run create_success.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
+
+#      DECLARE_EXISTS,
+#      DECLARE_SUCCESS,
+#run declare_success.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
+
+#      BIND_OUTPUT_AUTOMATON_DNE,
+#      BIND_INPUT_AUTOMATON_DNE,
+#      BIND_OUTPUT_PARAMETER_DNE,
+#      BIND_INPUT_PARAMETER_DNE,
+#      BIND_EXISTS,
+#      BIND_INPUT_ACTION_UNAVAILABLE,
+#      BIND_OUTPUT_ACTION_UNAVAILABLE,
+#      BIND_SUCCESS,
+
+#      UNBIND_OUTPUT_AUTOMATON_DNE,
+#      UNBIND_INPUT_AUTOMATON_DNE,
+#      UNBIND_OUTPUT_PARAMETER_DNE,
+#      UNBIND_INPUT_PARAMETER_DNE,
+#      UNBIND_EXISTS,
+#      UNBIND_SUCCESS,
+
+#      RESCIND_EXISTS,
+#      RESCIND_SUCCESS,
+
+#      DESTROY_DESTROYER_NOT_CREATOR,
+#      DESTROY_EXISTS,
+#      DESTROY_SUCCESS
+
+#      EXECUTE_AUTOMATON_DNE,
+#      EXECUTE_PARAMETER_DNE,
+#      EXECUTE_SUCCESS,

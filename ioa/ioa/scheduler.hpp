@@ -34,82 +34,6 @@ namespace ioa {
 
   };
 
-  template <class S>
-  class scheduler_wrapper
-  {
-  private:
-    S& m_scheduler;
-  public:
-    scheduler_wrapper (S& scheduler) :
-      m_scheduler (scheduler)
-    { }
-
-    template <class C, class I>
-    void create (const C* ptr,
-		 I* instance) {
-      m_scheduler.create (ptr, instance);
-    }
-
-    template <class C, class OI, class OM, class II, class IM, class M>
-    void bind (const C* ptr,
-	       const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr,
-	       M C::*member_ptr) {
-      m_scheduler.bind (ptr, output_automaton, output_member_ptr, input_automaton, input_member_ptr, member_ptr);
-    }
-
-    template <class C, class I, class M>
-    void destroy (const C* ptr,
-		  const automaton_handle<I>& automaton,
-		  M C::*member_ptr) {
-      m_scheduler.destroy (ptr, automaton, member_ptr);
-    }
-
-    template <class I, class M>
-    void schedule (const I* ptr,
-		   M I::*member_ptr) {
-      m_scheduler.schedule (ptr, member_ptr);
-    }
-
-    template <class T>
-    void run (T* instance) {
-      m_scheduler.run (instance);
-    }
-
-    void clear (void) {
-      m_scheduler.clear ();
-    }
-  };
-
-  template <class T>
-  class executable :
-    public runnable
-  {
-  private:
-    T m_t;
-
-  public:
-    executable (internal_scheduler_interface& scheduler,
-		const T& t) :
-      runnable (scheduler),
-      m_t (t)
-    { }
-
-    void operator () (system& system) {
-      // TODO:  Do something with the result.
-      system.execute (m_t, m_scheduler);
-    }
-  };
-
-  template <class T>
-  executable<T>* make_executable (internal_scheduler_interface& scheduler,
-				  const T& t)
-  {
-    return new executable<T> (scheduler, t);
-  }
-
   template <class C, class I>
   class create :
     public runnable
@@ -151,7 +75,44 @@ namespace ioa {
     return new create<C, I> (scheduler, creator, instance);
   }
 
-  template <class C, class OM, class IM, class M>
+  template <class C, class P>
+  class declare :
+    public runnable
+  {
+  private:
+    automaton_handle<C> m_automaton;
+    P* m_parameter;
+  public:
+    declare (internal_scheduler_interface& scheduler,
+	     const automaton_handle<C>& automaton,
+	     P* parameter) :
+      runnable (scheduler),
+      m_automaton (automaton),
+      m_parameter (parameter)
+    { }
+
+    void operator () (system& system) {
+      system::declare_result r = system.declare (m_automaton, m_parameter);
+      switch (r.type) {
+      case system::DECLARE_AUTOMATON_DNE:
+      	// Do nothing.
+      	break;
+      case system::DECLARE_SUCCESS:
+      case system::DECLARE_EXISTS:
+  	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_automaton, &C::declared, r)));
+      	break;
+      }
+    }
+  };
+
+  template <class C, class P>
+  declare<C, P>* make_declare (internal_scheduler_interface& scheduler,
+			       const automaton_handle<C>& automaton,
+			       P* parameter) {
+    return new declare<C, P> (scheduler, automaton, parameter);
+  }
+
+  template <class C, class OM, class IM>
   class bind :
     public runnable
   {
@@ -159,18 +120,15 @@ namespace ioa {
     automaton_handle<C> m_binder;
     action<OM> m_output_action;
     action<IM> m_input_action;
-    M C::*m_member_ptr;
   public:
     bind (internal_scheduler_interface& scheduler,
 	  const automaton_handle<C>& binder,
 	  const action<OM>& output_action,
-	  const action<IM>& input_action,
-	  M C::*member_ptr) :
+	  const action<IM>& input_action) :
       runnable (scheduler),
       m_binder (binder),
       m_output_action (output_action),
-      m_input_action (input_action),
-      m_member_ptr (member_ptr)
+      m_input_action (input_action)
     { }
 
     void operator() (system& system) {
@@ -189,20 +147,19 @@ namespace ioa {
       case system::BIND_EXISTS:
       case system::BIND_OUTPUT_ACTION_UNAVAILABLE:
       case system::BIND_INPUT_ACTION_UNAVAILABLE:
-	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_binder, m_member_ptr, r)));
+	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_binder, &C::bound, r)));
 	break;
       }
     }
   };
 
-  template <class C, class OM, class IM, class M>
-  bind<C, OM, IM, M>* make_bind (internal_scheduler_interface& scheduler,
-				 const automaton_handle<C>& binder,
-				 const action<OM>& output_action, 
-				 const action<IM>& input_action,
-				 M C::*member_ptr)
+  template <class C, class OM, class IM>
+  bind<C, OM, IM>* make_bind (internal_scheduler_interface& scheduler,
+			      const automaton_handle<C>& binder,
+			      const action<OM>& output_action, 
+			      const action<IM>& input_action)
   {
-    return new bind<C, OM, IM, M> (scheduler, binder, output_action, input_action, member_ptr);
+    return new bind<C, OM, IM> (scheduler, binder, output_action, input_action);
   }
 
   template <class C, class I, class M>
@@ -252,6 +209,104 @@ namespace ioa {
     return new destroy<C, I, M> (scheduler, creator, automaton, member_ptr);
   }
 
+  template <class T>
+  class executable :
+    public runnable
+  {
+  private:
+    T m_t;
+
+  public:
+    executable (internal_scheduler_interface& scheduler,
+		const T& t) :
+      runnable (scheduler),
+      m_t (t)
+    { }
+
+    void operator () (system& system) {
+      // TODO:  Do something with the result.
+      system.execute (m_t, m_scheduler);
+    }
+  };
+
+  template <class T>
+  executable<T>* make_executable (internal_scheduler_interface& scheduler,
+				  const T& t)
+  {
+    return new executable<T> (scheduler, t);
+  }
+
+  template <class S>
+  class scheduler_wrapper
+  {
+  private:
+    S& m_scheduler;
+  public:
+    scheduler_wrapper (S& scheduler) :
+      m_scheduler (scheduler)
+    { }
+
+    template <class C, class I>
+    void create (const C* ptr,
+		 I* instance) {
+      m_scheduler.schedule (make_create (m_scheduler, m_scheduler.get_current_handle (ptr), instance));
+    }
+
+    template <class C, class P>
+    void declare (const C* ptr,
+		  P* parameter) {
+      m_scheduler.schedule (make_declare (m_scheduler, m_scheduler.get_current_handle (ptr), parameter));
+    }
+
+    template <class C, class OI, class OM, class II, class IM>
+    void bind (const C* ptr,
+	       const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr) {
+      m_scheduler.schedule (make_bind (m_scheduler, m_scheduler.get_current_handle (ptr),
+      				       make_action (output_automaton, output_member_ptr),
+      				       make_action (input_automaton, input_member_ptr)));
+    }
+
+    template <class C, class I, class M>
+    void destroy (const C* ptr,
+		  const automaton_handle<I>& automaton,
+		  M C::*member_ptr) {
+      m_scheduler.destroy (ptr, automaton, member_ptr);
+    }
+
+  private:
+    template <class M>
+    void schedule (const action<M>& ac,
+  		   output_category /* */) {
+      m_scheduler.schedule (make_executable (m_scheduler, ac));
+    }
+    
+    template <class M>
+    void schedule (const action<M>& ac,
+  		   internal_category /* */) {
+      m_scheduler.schedule (make_executable (m_scheduler, ac));
+    }
+
+  public:
+    template <class I, class M>
+    void schedule (const I* ptr,
+		   M I::*member_ptr) {
+      action<M> ac = make_action (m_scheduler.get_current_handle (ptr), member_ptr);
+      schedule (ac, typename action<M>::action_category ());
+    }
+
+    template <class T>
+    void run (T* instance) {
+      m_scheduler.run (instance);
+    }
+
+    void clear (void) {
+      m_scheduler.clear ();
+    }
+  };
+
   class simple_scheduler :
     public internal_scheduler_interface
   {
@@ -268,24 +323,6 @@ namespace ioa {
       m_current_handle = generic_automaton_handle ();
     }
 
-    void schedule (runnable* r) {
-      m_runq.push (r);
-    }
-
-    template <class I>
-    automaton_handle<I> get_current_handle (const I* ptr) const {
-      // An automaton is executing an action.
-      // Someone forgot to set the current handle.
-      BOOST_ASSERT (m_current_handle.serial () != 0);
-      // We require the user to pass a pointer to an instance which should always be "this."
-      // We then check if the pointer in the handle matches the supplied pointer.
-      BOOST_ASSERT (m_current_handle.value ()->get_instance () == ptr);
-      // Unless the user has casted "this" to a different type, we can convert the generic handle to a typed handle.
-      locker_key<automaton<I>*> key (m_current_handle.serial (), static_cast<automaton<I>*> (m_current_handle.value ()));
-      automaton_handle<I> handle (key);
-      return handle;
-    }
-
     static bool keep_going () {
       return runnable::count () != 0;
     }
@@ -294,51 +331,22 @@ namespace ioa {
     simple_scheduler ()
     { }
 
-    template <class C, class I>
-    void create (const C* ptr,
-		 I* instance) {
-      m_runq.push (make_create (*this, get_current_handle (ptr), instance));
-    }
-    
-    template <class C, class OI, class OM, class II, class IM, class M>
-    void bind (const C* ptr,
-	       const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr,
-	       M C::*member_ptr) {
-      m_runq.push (make_bind (*this, get_current_handle (ptr),
-			      make_action (output_automaton, output_member_ptr),
-			      make_action (input_automaton, input_member_ptr),
-			      member_ptr));
+    template <class I>
+    automaton_handle<I> get_current_handle (const I* ptr) const {
+      // An automaton is executing an action.
+      // Someone forgot to set the current handle.
+      BOOST_ASSERT (m_current_handle.serial () != 0);
+      // We require the user to pass a pointer to an instance which should always be "this."
+      // We then check if the pointer in the handle matches the supplied pointer.
+      BOOST_ASSERT (m_current_handle.value () == ptr);
+      // Unless the user has casted "this" to a different type, we can convert the generic handle to a typed handle.
+      locker_key<I*> key (m_current_handle.serial (), static_cast<I*> (m_current_handle.value ()));
+      automaton_handle<I> handle (key);
+      return handle;
     }
 
-    template <class C, class I, class M>
-    void destroy (const C* ptr,
-		  const automaton_handle<I>& automaton,
-		  M C::*member_ptr) {
-      m_runq.push (make_destroy (*this, get_current_handle (ptr), automaton, member_ptr));
-    }
-
-  private:
-    template <class M>
-    void schedule (const action<M>& ac,
-		   output_category /* */) {
-      m_runq.push (make_executable (*this, ac));
-    }
-
-    template <class M>
-    void schedule (const action<M>& ac,
-		   internal_category /* */) {
-      m_runq.push (make_executable (*this, ac));
-    }
-
-  public:
-    template <class I, class M>
-    void schedule (const I* ptr,
-		   M I::*member_ptr) {
-      action<M> ac = make_action (get_current_handle (ptr), member_ptr);
-      schedule (ac, typename action<M>::action_category ());
+    void schedule (runnable* r) {
+      m_runq.push (r);
     }
 
     template <class T>
@@ -362,8 +370,6 @@ namespace ioa {
       m_system.clear ();
     }
   };
-
-  // TODO:  Send event to destroyed automaton.
 
   simple_scheduler ss;
   scheduler_wrapper<simple_scheduler> scheduler (ss);

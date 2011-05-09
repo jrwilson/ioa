@@ -7,7 +7,21 @@
 
 namespace ioa {
 
-  typedef locker_key<void*> generic_parameter_handle;
+  class generic_parameter_handle :
+    public locker_key<void*>
+  {
+  public:
+    generic_parameter_handle ()
+      :
+      locker_key<void*> ()
+    { }
+
+    generic_parameter_handle (serial_type const serial,
+			      void* const value)
+      :
+      locker_key<void*> (serial, value)
+    { }
+  };
 
   template <class T>
   class parameter_handle :
@@ -21,6 +35,48 @@ namespace ioa {
       :
       locker_key<T*> (key)
     { }
+
+    operator generic_parameter_handle () const {
+      return generic_parameter_handle (this->serial (), this->value ());
+    }
+  };
+
+  class generic_automaton_handle :
+    public locker_key<void*>
+  {
+  public:
+    generic_automaton_handle ()
+      :
+      locker_key<void*> ()
+    { }
+
+    generic_automaton_handle (serial_type const serial,
+			      void* const value)
+      :
+      locker_key<void*> (serial, value)
+    { }
+  };
+
+  template <class T>
+  class automaton_handle :
+    public locker_key<T*>
+  {
+  public:
+    automaton_handle ()
+    { }
+
+    automaton_handle (T* t) :
+      locker_key<T*> (t)
+    { }
+
+    automaton_handle (const locker_key<T*>& key)
+      :
+      locker_key<T*> (key)
+    { }
+
+    operator generic_automaton_handle () const {
+      return generic_automaton_handle (this->serial (), this->value ());
+    }
   };
 
   class automaton_interface
@@ -73,23 +129,6 @@ namespace ioa {
     T* get_typed_instance () const {
       return m_instance.get ();
     }
-  };
-
-  typedef locker_key<automaton_interface*> generic_automaton_handle;
-
-  template <class T>
-  class automaton_handle :
-    public locker_key<automaton<T>*>
-  {
-  public:
-    automaton_handle ()
-    { }
-
-    automaton_handle (const locker_key<automaton<T>*>& key)
-      :
-      locker_key<automaton<T>*> (key)
-    { }
-    
   };
 
 }

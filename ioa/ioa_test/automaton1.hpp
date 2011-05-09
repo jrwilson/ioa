@@ -1,7 +1,7 @@
 #ifndef __automaton1_hpp__
 #define __automaton1_hpp__
 
-#include <scheduler.hpp>
+#include <action.hpp>
 
 struct automaton1 {
 

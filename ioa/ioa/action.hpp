@@ -48,18 +48,9 @@ namespace ioa {
       return m_handle;
     }
 
-    void lock_automaton () const {
-      m_handle.value ()->lock ();
-    }
-
-    void unlock_automaton () const {
-      m_handle.value ()->unlock ();
-    }
-
     virtual const void* get_member_ptr () const = 0;
     virtual bool is_parameterized () const = 0;
     virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
-    virtual bool parameter_exists () const = 0;
     virtual generic_parameter_handle get_parameter_handle () const = 0;
   };
 
@@ -283,10 +274,6 @@ namespace ioa {
       return false;
     }
 
-    bool parameter_exists () const {
-      return true;
-    }
-    
     bool operator== (const input_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr ();
     }
@@ -325,10 +312,6 @@ namespace ioa {
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;
-    }
-
-    bool parameter_exists () const {
-      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     bool operator== (const input_action_interface& oa) const {
@@ -370,10 +353,6 @@ namespace ioa {
       return false;
     }
 
-    bool parameter_exists () const {
-      return true;
-    }
-
     bool operator== (const input_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr ();
     }
@@ -413,10 +392,6 @@ namespace ioa {
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;
-    }
-
-    bool parameter_exists () const {
-      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     const void* get_member_ptr () const {
@@ -466,10 +441,6 @@ namespace ioa {
       return false;
     }
 
-    bool parameter_exists () const {
-      return true;
-    }
-
     bool operator() () const {
       return this->m_member ();
     }
@@ -504,10 +475,6 @@ namespace ioa {
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return this->m_parameter == parameter;
-    }
-
-    bool parameter_exists () const {
-      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
     }
 
     bool operator== (const output_action_interface& oa) const {
@@ -551,10 +518,6 @@ namespace ioa {
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
-    }
-
-    bool parameter_exists () const {
-      return true;
     }
 
     bool operator== (const output_action_interface& oa) const {
@@ -602,10 +565,6 @@ namespace ioa {
       return this->m_parameter == parameter;
     }
 
-    bool parameter_exists () const {
-      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
-    }
-
     bool operator== (const output_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr () &&
   	oa.involves_parameter (this->m_parameter);
@@ -649,10 +608,6 @@ namespace ioa {
       return false;
     }
 
-    bool parameter_exists () const {
-      return true;
-    }
-
     generic_parameter_handle get_parameter_handle () const {
       return generic_parameter_handle ();
     }
@@ -689,10 +644,6 @@ namespace ioa {
       return this->m_parameter == parameter;
     }
 
-    bool parameter_exists () const {
-      return this->m_handle.value ()->parameter_exists (this->m_parameter.value ());
-    }
-
     generic_parameter_handle get_parameter_handle () const {
       return this->m_parameter;
     }
@@ -725,10 +676,6 @@ namespace ioa {
 
     bool involves_parameter (const generic_parameter_handle& parameter) const {
       return false;
-    }
-
-    bool parameter_exists () const {
-      return true;
     }
 
     generic_parameter_handle get_parameter_handle () const {
@@ -769,10 +716,6 @@ namespace ioa {
       return false;
     }
 
-    bool parameter_exists () const {
-      return true;
-    }
-
     generic_parameter_handle get_parameter_handle () const {
       return generic_parameter_handle ();
     }
@@ -811,10 +754,6 @@ namespace ioa {
       return false;
     }
 
-    bool parameter_exists () const {
-      return true;
-    }
-
     generic_parameter_handle get_parameter_handle () const {
       return generic_parameter_handle ();
     }
@@ -839,8 +778,8 @@ namespace ioa {
     ptr_to_member (const automaton_handle<I>& handle,
   		   Member I::*member_ptr)
     {
-      automaton<I>* toa = handle.value ();
-      return ((*(toa->get_typed_instance ())).*member_ptr);
+      I* instance = handle.value ();
+      return ((*instance).*member_ptr);
     }
 
   public:
