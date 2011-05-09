@@ -112,23 +112,23 @@ namespace ioa {
     return new declare<C, P> (scheduler, automaton, parameter);
   }
 
-  template <class C, class OM, class IM>
-  class bind :
+  template <class OM, class IM, class C>
+  class bind3 :
     public runnable
   {
   private:
-    automaton_handle<C> m_binder;
     action<OM> m_output_action;
     action<IM> m_input_action;
+    automaton_handle<C> m_binder;
   public:
-    bind (internal_scheduler_interface& scheduler,
-	  const automaton_handle<C>& binder,
-	  const action<OM>& output_action,
-	  const action<IM>& input_action) :
+    bind3 (internal_scheduler_interface& scheduler,
+	   const action<OM>& output_action,
+	   const action<IM>& input_action,
+	   const automaton_handle<C>& binder) :
       runnable (scheduler),
-      m_binder (binder),
       m_output_action (output_action),
-      m_input_action (input_action)
+      m_input_action (input_action),
+      m_binder (binder)
     { }
 
     void operator() (system& system) {
@@ -153,13 +153,63 @@ namespace ioa {
     }
   };
 
-  template <class C, class OM, class IM>
-  bind<C, OM, IM>* make_bind (internal_scheduler_interface& scheduler,
-			      const automaton_handle<C>& binder,
-			      const action<OM>& output_action, 
-			      const action<IM>& input_action)
+  template <class OM, class IM, class C>
+  bind3<OM, IM, C>* make_bind3 (internal_scheduler_interface& scheduler,
+				const action<OM>& output_action, 
+				const action<IM>& input_action,
+				const automaton_handle<C>& binder)
   {
-    return new bind<C, OM, IM> (scheduler, binder, output_action, input_action);
+    return new bind3<OM, IM, C> (scheduler, output_action, input_action, binder);
+  }
+
+  template <class OM, class IM, class C>
+  class bind2 :
+    public runnable
+  {
+  private:
+    action<OM> m_output_action;
+    action<IM> m_input_action;
+    automaton_handle<C> m_binder;
+  public:
+    bind2 (internal_scheduler_interface& scheduler,
+	   const action<OM>& output_action,
+	   const action<IM>& input_action,
+	   const automaton_handle<C>& binder) :
+      runnable (scheduler),
+      m_output_action (output_action),
+      m_input_action (input_action),
+      m_binder (binder)
+    { }
+
+    void operator() (system& system) {
+      system::bind_result r = system.bind (m_output_action, m_input_action);
+      switch (r.type) {
+      case system::BIND_BINDER_AUTOMATON_DNE:
+	// Do nothing.
+	break;
+      case system::BIND_SUCCESS:
+	// TODO:  Tell the output and input that they are composed.
+	// Fall through.
+      case system::BIND_OUTPUT_AUTOMATON_DNE:
+      case system::BIND_INPUT_AUTOMATON_DNE:
+      case system::BIND_OUTPUT_PARAMETER_DNE:
+      case system::BIND_INPUT_PARAMETER_DNE:
+      case system::BIND_EXISTS:
+      case system::BIND_OUTPUT_ACTION_UNAVAILABLE:
+      case system::BIND_INPUT_ACTION_UNAVAILABLE:
+	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_binder, &C::bound, r)));
+	break;
+      }
+    }
+  };
+
+  template <class OM, class IM, class C>
+  bind2<OM, IM, C>* make_bind2 (internal_scheduler_interface& scheduler,
+				const action<OM>& output_action, 
+				const action<IM>& input_action,
+				const automaton_handle<C>& binder)
+  {
+    return new bind2<OM, IM, C> (scheduler, output_action, input_action, binder);
   }
 
   template <class C, class I, class M>
@@ -264,9 +314,35 @@ namespace ioa {
 	       OM OI::*output_member_ptr,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr) {
-      m_scheduler.schedule (make_bind (m_scheduler, m_scheduler.get_current_handle (ptr),
-      				       make_action (output_automaton, output_member_ptr),
-      				       make_action (input_automaton, input_member_ptr)));
+      m_scheduler.schedule (make_bind3 (m_scheduler,
+					make_action (output_automaton, output_member_ptr),
+					make_action (input_automaton, input_member_ptr),
+					m_scheduler.get_current_handle (ptr)));
+    }
+
+    template <class OI, class OM, class OP, class II, class IM>
+    void bind (const OI* ptr,
+	       OM OI::*output_member_ptr,
+	       const parameter_handle<OP>& output_parameter,
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr) {
+      m_scheduler.schedule (make_bind2 (m_scheduler,
+					make_action (m_scheduler.get_current_handle (ptr), output_member_ptr, output_parameter),
+					make_action (input_automaton, input_member_ptr),
+					m_scheduler.get_current_handle (ptr)));
+    }
+
+    template <class OI, class OM, class II, class IM, class IP>
+    void bind (const II* ptr,
+	       const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       IM II::*input_member_ptr,
+	       const parameter_handle<IP>& input_parameter) {
+      m_scheduler.schedule (make_bind2 (m_scheduler,
+					make_action (output_automaton, output_member_ptr),
+					make_action (m_scheduler.get_current_handle (ptr), input_member_ptr, input_parameter),
+					m_scheduler.get_current_handle (ptr)));
+
     }
 
     template <class C, class I, class M>

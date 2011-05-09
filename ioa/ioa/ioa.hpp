@@ -55,6 +55,28 @@ namespace ioa {
       std::cout << "input composed" << std::endl;
     }
   };
+
+  template <class C, class P, void (C::*member)(P*)>
+  class void_parameter_input_wrapper :
+    public input,
+    public no_value,
+    public parameter<P>
+  {
+  private:
+    C& m_c;
+    
+  public:
+    void_parameter_input_wrapper (C& c)
+      : m_c (c) { }
+    
+    void operator() (P* p) {
+      (m_c.*member) (p);
+    }
+
+    void composed (bool c) {
+      std::cout << "input composed" << std::endl;
+    }
+  };
   
   template <class C, class T, std::pair<bool, T> (C::*member)(void)>
   class output_wrapper :
@@ -93,6 +115,28 @@ namespace ioa {
     
     bool operator() () {
       return (m_c.*member) ();
+    }
+
+    void composed (bool c) {
+      std::cout << "output composed" << std::endl;
+    }
+  };
+
+  template <class C, class P, bool (C::*member)(P*)>
+  class void_parameter_output_wrapper :
+    public output,
+    public no_value,
+    public parameter<P>
+  {
+  private:
+    C& m_c;
+    
+  public:
+    void_parameter_output_wrapper (C& c) :
+      m_c (c) { }
+    
+    bool operator() (P* p) {
+      return (m_c.*member) (p);
     }
 
     void composed (bool c) {
