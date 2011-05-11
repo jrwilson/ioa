@@ -67,106 +67,108 @@ namespace ioa {
       m_system.clear ();
     }
 
-  private:
+  public:
 
     void automaton_dne () {
       // Do nothing.
     }
-
-    // create_listener_interface
 
     void instance_exists (const void* instance) {
       // Create without a creator failed so do nothing.
     }
 
     void automaton_created (const generic_automaton_handle& automaton) {
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::init, automaton.value ())));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::init, automaton.value ())));
     }
 
     void instance_exists (const generic_automaton_handle& creator,
     			  const void* instance) {
-      m_runq.push (make_system_event (*this, m_system, creator, boost::bind (&automaton_interface::instance_exists, creator.value (), instance)));
+      schedule (make_system_event (*this, m_system, creator, boost::bind (&automaton_interface::instance_exists, creator.value (), instance)));
     }
     
     void automaton_created (const generic_automaton_handle& creator,
     			    const generic_automaton_handle& automaton) {
-      m_runq.push (make_system_event (*this, m_system, creator, boost::bind (&automaton_interface::automaton_created, creator.value (), automaton)));
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::init, automaton.value ())));
+      schedule (make_system_event (*this, m_system, creator, boost::bind (&automaton_interface::automaton_created, creator.value (), automaton)));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::init, automaton.value ())));
     }
     
-    // declare_listener_interface
-
     void parameter_exists (const generic_automaton_handle& automaton,
     			   void* parameter) {
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_exists, automaton.value (), parameter)));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_exists, automaton.value (), parameter)));
     }
 
     void parameter_declared (const generic_automaton_handle& automaton,
     			     const generic_parameter_handle& parameter) {
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_declared, automaton.value (), parameter)));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_declared, automaton.value (), parameter)));
     }
 
-    // bind_listener_interface
-
     void bind_output_automaton_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_output_automaton_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_output_automaton_dne, binder.value ())));
     }
 
     void bind_input_automaton_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_input_automaton_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_input_automaton_dne, binder.value ())));
     }
 
     void bind_output_parameter_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_output_parameter_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_output_parameter_dne, binder.value ())));
     }
 
     void bind_input_parameter_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_input_parameter_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bind_input_parameter_dne, binder.value ())));
     }
 
     void binding_exists (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::binding_exists, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::binding_exists, binder.value ())));
     }
 
     void input_action_unavailable (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::input_action_unavailable, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::input_action_unavailable, binder.value ())));
     }
 
     void output_action_unavailable (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::output_action_unavailable, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::output_action_unavailable, binder.value ())));
     }
 
-    void bound (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bound, binder.value ())));
-      // TODO:  Send bound signals to input and output.
-      // 	m_scheduler.schedule (make_bound (m_scheduler, m_output_action));
-      // 	m_scheduler.schedule (make_bound (m_scheduler, m_input_action));
+    template <class OM, class IM>
+    void bound (const action<OM>& output_action,
+		const action<IM>& input_action,
+		const generic_automaton_handle& binder) {
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::bound, binder.value ())));
+      schedule (make_runnable (boost::bind (&system::bound,
+					    boost::ref (m_system),
+					    output_action,
+					    boost::ref (*this),
+					    boost::ref (*this))));
+      schedule (make_runnable (boost::bind (&system::bound,
+					    boost::ref (m_system),
+					    input_action,
+					    boost::ref (*this),
+					    boost::ref (*this))));
     }
-
-    // unbind_listener_interface
 
     void unbind_output_automaton_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_output_automaton_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_output_automaton_dne, binder.value ())));
     }
 
     void unbind_input_automaton_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_input_automaton_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_input_automaton_dne, binder.value ())));
     }
 
     void unbind_output_parameter_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_output_parameter_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_output_parameter_dne, binder.value ())));
     }
 
     void unbind_input_parameter_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_input_parameter_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbind_input_parameter_dne, binder.value ())));
     }
 
     void binding_dne (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::binding_dne, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::binding_dne, binder.value ())));
     }
 
     void unbound (const generic_automaton_handle& binder) {
-      m_runq.push (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbound, binder.value ())));
+      schedule (make_system_event (*this, m_system, binder, boost::bind (&automaton_interface::unbound, binder.value ())));      
       // TODO:  Send bound signals to input and output.
       // 	m_scheduler.schedule (make_bound (m_scheduler, m_output_action));
       // 	m_scheduler.schedule (make_bound (m_scheduler, m_input_action));
@@ -181,7 +183,6 @@ namespace ioa {
 		  const generic_automaton_handle& binder_automaton) {
       // TODO
       BOOST_ASSERT (false);
-
     }
 
     void unbound (const generic_automaton_handle& output_automaton,
@@ -191,7 +192,6 @@ namespace ioa {
 		  const void* input_member_ptr) {
       // TODO
       BOOST_ASSERT (false);
-
     }
 
     void unbound (const generic_automaton_handle& output_automaton,
@@ -201,17 +201,16 @@ namespace ioa {
 		  const generic_parameter_handle& input_parameter) {
       // TODO
       BOOST_ASSERT (false);
-
     }
 
     void parameter_dne (const generic_automaton_handle& automaton,
 			const generic_parameter_handle& parameter) {
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_dne, automaton.value (), parameter)));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_dne, automaton.value (), parameter)));
     }
     
     void parameter_rescinded (const generic_automaton_handle& automaton,
 			      void* parameter) {
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_rescinded, automaton.value (), parameter)));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::parameter_rescinded, automaton.value (), parameter)));
     }
 
     void target_automaton_dne (const generic_automaton_handle& automaton) {
@@ -220,12 +219,12 @@ namespace ioa {
 
     void target_automaton_dne (const generic_automaton_handle& automaton,
 			       const generic_automaton_handle& target) {
-      m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::target_automaton_dne, automaton.value (), target)));
+      schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::target_automaton_dne, automaton.value (), target)));
     }
 
     void destroyer_not_creator (const generic_automaton_handle& automaton,
 				const generic_automaton_handle& target) {
- m_runq.push (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::destroyer_not_creator, automaton.value (), target)));
+ schedule (make_system_event (*this, m_system, automaton, boost::bind (&automaton_interface::destroyer_not_creator, automaton.value (), target)));
     }
 
     void automaton_destroyed (const generic_automaton_handle& automaton) {
@@ -234,7 +233,7 @@ namespace ioa {
 
     void automaton_destroyed (const generic_automaton_handle& parent,
 			      const generic_automaton_handle& child) {
-      m_runq.push (make_system_event (*this, m_system, parent, boost::bind (&automaton_interface::automaton_destroyed, parent.value (), child)));
+      schedule (make_system_event (*this, m_system, parent, boost::bind (&automaton_interface::automaton_destroyed, parent.value (), child)));
     }
 
     // execute_listener_interface

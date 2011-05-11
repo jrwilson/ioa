@@ -125,7 +125,6 @@ namespace ioa {
       // Do we already have the value?
       typename vs_type::iterator pos = m_value_serial.find (value);
       if (pos != m_value_serial.end ()) {
-
 	m_serial_value.erase (pos->second);
 	m_value_serial.erase (pos);
       }
@@ -168,6 +167,11 @@ namespace ioa {
       else {
 	return false;
       }
+    }
+
+    locker_key<T> find (const T& value) const {
+      typename vs_type::const_iterator pos = m_value_serial.find (value);
+      return locker_key<T> (pos->second, pos->first);
     }
 
   };

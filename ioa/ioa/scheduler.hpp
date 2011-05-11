@@ -56,54 +56,6 @@ namespace ioa {
     return new runnable<T> (t);
   }
 
-  // template <class M>
-  // class bound :
-  //   public runnable_interface
-  // {
-  // private:
-  //   action<M> m_action;
-  // public:
-  //   bound (internal_scheduler_interface& scheduler,
-  // 		  const action<M>& action) :
-  //     runnable_interface (scheduler),
-  //     m_action (action)
-  //   { }
-
-  //   void operator() (system& system) {
-  //     //system.bound (m_action, m_scheduler);
-  //   }
-  // };
-
-  // template <class M>
-  // bound<M>* make_bound (internal_scheduler_interface& scheduler,
-  // 				      const action<M>& action) {
-  //   return new bound<M> (scheduler, action);
-  // }
-
-  // template <class M>
-  // class unbound :
-  //   public runnable_interface
-  // {
-  // private:
-  //   action<M> m_action;
-  // public:
-  //   unbound (internal_scheduler_interface& scheduler,
-  // 		  const action<M>& action) :
-  //     runnable_interface (scheduler),
-  //     m_action (action)
-  //   { }
-
-  //   void operator() (system& system) {
-  //     //system.unbound (m_action, m_scheduler);
-  //   }
-  // };
-
-  // template <class M>
-  // unbound<M>* make_unbound (internal_scheduler_interface& scheduler,
-  // 				      const action<M>& action) {
-  //   return new unbound<M> (scheduler, action);
-  // }
-
   template <class T>
   class system_event :
     public runnable_interface
@@ -148,10 +100,12 @@ namespace ioa {
       m_scheduler (scheduler)
     { }
 
-    template <class C, class I>
+    template <class C>
     void create (const C* ptr,
-		 I* instance) {
-      void (system::*create_ptr) (const generic_automaton_handle&, I*, create_listener_interface&) = &system::create;
+		 automaton_interface* instance) {
+      void (system::*create_ptr) (const generic_automaton_handle&,
+				  automaton_interface*,
+				  create_listener_interface&) = &system::create;
       m_scheduler.schedule (make_runnable (boost::bind (create_ptr,
 							boost::ref (m_scheduler.get_system ()),
 							m_scheduler.get_current_handle (ptr),
@@ -162,7 +116,7 @@ namespace ioa {
     template <class C>
     void declare (const C* ptr,
 		  void* parameter) {
-      m_scheduler.schedule (make_runnable (boost::bind (&system::declare,
+      m_scheduler.schedule (make_runnable (boost::bind (&system::declare<declare_listener_interface>,
 							boost::ref (m_scheduler.get_system ()),
 							m_scheduler.get_current_handle (ptr),
 							parameter,
@@ -272,7 +226,7 @@ namespace ioa {
     template <class C>
     void rescind (const C* ptr,
 		  const generic_parameter_handle& parameter) {
-      m_scheduler.schedule (make_runnable (boost::bind (&system::rescind,
+      m_scheduler.schedule (make_runnable (boost::bind (&system::rescind<rescind_listener_interface>,
       							boost::ref (m_scheduler.get_system ()),
       							m_scheduler.get_current_handle (ptr),
       							parameter,
@@ -282,7 +236,7 @@ namespace ioa {
     template <class C>
     void destroy (const C* ptr,
 		  const generic_automaton_handle& automaton) {
-      m_scheduler.schedule (make_runnable (boost::bind (&system::destroy,
+      m_scheduler.schedule (make_runnable (boost::bind (&system::destroy<destroy_listener_interface>,
       							boost::ref (m_scheduler.get_system ()),
       							m_scheduler.get_current_handle (ptr),
       							automaton,

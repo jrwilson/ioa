@@ -49,6 +49,10 @@ namespace ioa {
       locker_key<void*> ()
     { }
 
+    generic_parameter_handle (const locker_key<void*>& key) :
+      locker_key<void*> (key)
+    { }
+
     generic_parameter_handle (serial_type const serial,
 			      void* const value)
       :
@@ -83,6 +87,10 @@ namespace ioa {
       locker_key<automaton_interface*> ()
     { }
 
+    generic_automaton_handle (const locker_key<automaton_interface*>& key) :
+      locker_key<automaton_interface*> (key)
+    { }
+
     generic_automaton_handle (serial_type const serial,
 			      automaton_interface* const value)
       :
@@ -112,57 +120,19 @@ namespace ioa {
     }
   };
 
-  class generic_automaton_record
-    :
-    public boost::mutex
+  template <class T>
+  automaton_handle<T> cast_automaton (const generic_automaton_handle& handle)
   {
-  private:
-    locker<void*> m_parameters;
-    
-  public:
-    virtual ~generic_automaton_record () { }
-    
-    virtual void* get_instance () const = 0;
-
-    bool parameter_exists (void* parameter) const {
-      return m_parameters.contains (parameter);
-    }
-
-    bool parameter_exists (const generic_parameter_handle& parameter) const {
-      return m_parameters.contains (parameter);
-    }
-    
-    template <class T>
-    parameter_handle<T> declare_parameter (T* parameter) {
-      return m_parameters.insert (parameter);
-    }
-
-    void rescind_parameter (const generic_parameter_handle& parameter) {
-      m_parameters.erase (parameter);
-    }
-
-  };
+    locker_key<T*> key (handle.serial (), static_cast<T*> (handle.value ()));
+    return automaton_handle<T> (key);
+  }
 
   template <class T>
-  class automaton_record :
-    public generic_automaton_record
+  parameter_handle<T> cast_parameter (const generic_parameter_handle& handle)
   {
-  private:
-    std::auto_ptr<T> m_instance;
-    
-  public:
-    automaton_record (T* instance) :
-      m_instance (instance)
-    { }
-    
-    void* get_instance () const {
-      return m_instance.get ();
-    }
-    
-    T* get_typed_instance () const {
-      return m_instance.get ();
-    }
-  };
+    locker_key<T*> key (handle.serial (), static_cast<T*> (handle.value ()));
+    return parameter_handle<T> (key);
+  }
 
 }
 
