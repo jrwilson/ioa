@@ -3,10 +3,12 @@
 
 #include <ioa.hpp>
 
-class trigger {
+class trigger :
+  public ioa::automaton_interface
+{
 private:
 
-  void init_ () {
+  void init () {
     ioa::scheduler.schedule (this, &trigger::request);
   }
 
@@ -17,24 +19,21 @@ private:
   }
 
 public:
+  ioa::void_output_wrapper<trigger, &trigger::request_> request;
 
-  ioa::internal_wrapper<trigger, &trigger::init_> init;  
-
-  typedef ioa::void_output_wrapper<trigger, &trigger::request_> request_type;
-  request_type request;
-
-  trigger ()
-    : init (*this),
-      request (*this)
+  trigger () :
+    request (*this)
   { }
 };
 
-class ioa_clock {
+class ioa_clock :
+  public ioa::automaton_interface
+{
 private:
   int m_counter;
   int m_flag;
 
-  void init_ () {
+  void init () {
     ioa::scheduler.schedule (this, &ioa_clock::tick);
   }
 
@@ -43,12 +42,16 @@ private:
     m_flag = true;
     ioa::scheduler.schedule (this, &ioa_clock::clock);
   }
+public:
+  ioa::void_input_wrapper<ioa_clock, &ioa_clock::request_> request;
 
+private:
   void tick_ () {
     // std::cout << "ioa_clock tick" << std::endl;
     m_counter = m_counter + 1;
     ioa::scheduler.schedule (this, &ioa_clock::tick);
   }
+  ioa::internal_wrapper<ioa_clock, &ioa_clock::tick_> tick;
 
   std::pair<bool, int> clock_ () {
     // std::cout << "ioa_clock clock" << std::endl;
@@ -60,125 +63,141 @@ private:
       return std::make_pair (false, 0);
     }
   }
-
-  ioa::internal_wrapper<ioa_clock, &ioa_clock::tick_> tick;
-  
 public:
+  ioa::output_wrapper<ioa_clock, int, &ioa_clock::clock_> clock;
 
-  ioa::internal_wrapper<ioa_clock, &ioa_clock::init_> init;  
-
-  typedef ioa::void_input_wrapper<ioa_clock, &ioa_clock::request_> request_type;
-  request_type request;
-  typedef ioa::output_wrapper<ioa_clock, int, &ioa_clock::clock_> clock_type;
-  clock_type clock;
-
-  ioa_clock ()
-    : m_counter (0),
-      m_flag (false),
-      tick (*this),
-      init (*this),
-      request (*this),
-      clock (*this)
+  ioa_clock () :
+    m_counter (0),
+    m_flag (false),
+    request (*this),
+    tick (*this),
+    clock (*this)
   { }
 };
 
-class display {
+class display :
+  public ioa::automaton_interface
+{
 private:
 
-  void init_ () {
+  void init () {
     // Do nothing.
   }
 
   void clock_ (int t) {
     std::cout << "t = " << t << std::endl;
   }
-
 public:
+  ioa::input_wrapper<display, int, &display::clock_> clock;
 
-  ioa::internal_wrapper<display, &display::init_> init;  
-
-  typedef ioa::input_wrapper<display, int, &display::clock_> clock_type;
-  clock_type clock;
-
-  display ()
-    : init (*this),
+  display () :
       clock (*this)
   { }
 };
 
-class composer {
+class composer :
+  public ioa::automaton_interface
+{
 private:
   enum state_type {
-    CREATE_TRIGGER,
-    CREATE_IOA_CLOCK,
-    CREATE_DISPLAY,
-    BIND1,
+    START,
+    CREATE_TRIGGER_SENT,
+    CREATE_TRIGGER_RECV,
+    CREATE_IOA_CLOCK_SENT,
+    CREATE_IOA_CLOCK_RECV,
+    CREATE_DISPLAY_SENT,
+    CREATE_DISPLAY_RECV,
+    BIND1_SENT,
+    BIND1_RECV,
+    BIND2_SENT,
+    BIND2_RECV,
+    STOP
   };
   state_type m_state;
   ioa::automaton_handle<trigger> m_trigger_handle;
   ioa::automaton_handle<ioa_clock> m_ioa_clock_handle;
   ioa::automaton_handle<display> m_display_handle;
 
-  void init_ () {
-    ioa::scheduler.create (this, new trigger ());
+  void transition_ () {
+    switch (m_state) {
+    case START:
+      ioa::scheduler.create (this, new trigger ());
+      m_state = CREATE_TRIGGER_SENT;
+      break;
+    case CREATE_TRIGGER_RECV:
+      ioa::scheduler.create (this, new ioa_clock ());
+      m_state = CREATE_IOA_CLOCK_SENT;
+      break;
+    case CREATE_IOA_CLOCK_RECV:
+      ioa::scheduler.create (this, new display ());
+      m_state = CREATE_DISPLAY_SENT;
+      break;
+    case CREATE_DISPLAY_RECV:
+      ioa::scheduler.bind (this, m_trigger_handle, &trigger::request, m_ioa_clock_handle, &ioa_clock::request);
+      m_state = BIND1_SENT;
+      break;
+    case BIND1_RECV:
+      ioa::scheduler.bind (this, m_ioa_clock_handle, &ioa_clock::clock, m_display_handle, &display::clock);
+      m_state = BIND2_SENT;
+      break;
+    case BIND2_RECV:
+      m_state = STOP;
+      break;
+    default:
+      BOOST_ASSERT (false);
+      break;
+    }
+  }
+  ioa::internal_wrapper<composer, &composer::transition_> transition;
+
+  void init () {
+    ioa::scheduler.schedule (this, &composer::transition);
   }
 
-  void created_ (const ioa::system::create_result& r) {
+  void automaton_created (const ioa::generic_automaton_handle& automaton) {
     switch (m_state) {
-    case CREATE_TRIGGER:
-      BOOST_ASSERT (r.type == ioa::system::CREATE_SUCCESS);
-      m_trigger_handle = ioa::cast_automaton<trigger> (r.automaton);
-      ioa::scheduler.create (this, new ioa_clock ());
-      m_state = CREATE_IOA_CLOCK;
+    case CREATE_TRIGGER_SENT:
+      m_trigger_handle = ioa::cast_automaton<trigger> (automaton);
+      m_state = CREATE_TRIGGER_RECV;
+      ioa::scheduler.schedule (this, &composer::transition);
       break;
-    case CREATE_IOA_CLOCK:
-      BOOST_ASSERT (r.type == ioa::system::CREATE_SUCCESS);
-      m_ioa_clock_handle = ioa::cast_automaton<ioa_clock> (r.automaton);
-      ioa::scheduler.create (this, new display ());
-      m_state = CREATE_DISPLAY;
+    case CREATE_IOA_CLOCK_SENT:
+      m_ioa_clock_handle = ioa::cast_automaton<ioa_clock> (automaton);
+      m_state = CREATE_IOA_CLOCK_RECV;
+      ioa::scheduler.schedule (this, &composer::transition);
       break;
-    case CREATE_DISPLAY:
-      BOOST_ASSERT (r.type == ioa::system::CREATE_SUCCESS);
-      m_display_handle = ioa::cast_automaton<display> (r.automaton);
-      ioa::scheduler.bind (this,
-			   m_trigger_handle,
-			   &trigger::request,
-			   m_ioa_clock_handle,
-			   &ioa_clock::request,
-			   &composer::bound1);
-      m_state = BIND1;
-    case BIND1:
+    case CREATE_DISPLAY_SENT:
+      m_display_handle = ioa::cast_automaton<display> (automaton);
+      m_state = CREATE_DISPLAY_RECV;
+      ioa::scheduler.schedule (this, &composer::transition);
+      break;
+    default:
+      BOOST_ASSERT (false);
       break;
     }
   }
 
-  void bound1_ (const ioa::system::bind_result& r) {
-    BOOST_ASSERT (r.type == ioa::system::BIND_SUCCESS);
-    ioa::scheduler.bind (this,
-			 m_ioa_clock_handle,
-			 &ioa_clock::clock,
-			 m_display_handle,
-			 &display::clock,
-			 &composer::bound2);
-  }
-
-  void bound2_ (const ioa::system::bind_result& r) {
-    BOOST_ASSERT (r.type == ioa::system::BIND_SUCCESS);
+  void bound () {
+    switch (m_state) {
+    case BIND1_SENT:
+      m_state = BIND1_RECV;
+      ioa::scheduler.schedule (this, &composer::transition);
+      break;
+    case BIND2_SENT:
+      m_state = BIND2_RECV;
+      ioa::scheduler.schedule (this, &composer::transition);
+      break;
+    default:
+      BOOST_ASSERT (false);
+      break;
+    }
   }
 
 public:
 
-  ioa::internal_wrapper<composer, &composer::init_> init;
-  ioa::system_event_wrapper<composer, ioa::system::create_result, &composer::created_> created;
-  ioa::system_event_wrapper<composer, ioa::system::bind_result, &composer::bound1_> bound1;
-  ioa::system_event_wrapper<composer, ioa::system::bind_result, &composer::bound2_> bound2;
-
   composer () :
-    m_state (CREATE_TRIGGER),
-    init (*this),
-    created (*this),
-    bound1 (*this),
-    bound2 (*this)
+    m_state (START),
+    transition (*this)
   { }
 };
 

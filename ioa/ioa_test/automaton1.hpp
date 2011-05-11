@@ -3,7 +3,34 @@
 
 #include <action.hpp>
 
-struct automaton1 {
+struct automaton1 :
+  public ioa::automaton_interface
+{
+
+  void init () { }
+  void instance_exists (const void*) { }
+  void automaton_created (const ioa::generic_automaton_handle&) { }
+  void parameter_exists (void*) { }
+  void parameter_declared (const ioa::generic_parameter_handle&) { }
+  void bind_output_automaton_dne () { }
+  void bind_input_automaton_dne () { }
+  void bind_output_parameter_dne () { }
+  void bind_input_parameter_dne () { }
+  void binding_exists () { }
+  void input_action_unavailable () { }
+  void output_action_unavailable () { }
+  void bound () { }
+  void unbind_output_automaton_dne () { }
+  void unbind_input_automaton_dne () { }
+  void unbind_output_parameter_dne () { }
+  void unbind_input_parameter_dne () { }
+  void binding_dne () { }
+  void unbound () { }
+  void parameter_dne (const ioa::generic_parameter_handle&) { }
+  void parameter_rescinded (void*) { }
+  void target_automaton_dne (const ioa::generic_automaton_handle&) { }
+  void destroyer_not_creator (const ioa::generic_automaton_handle&) { }
+  void automaton_destroyed (const ioa::generic_automaton_handle&) { }
 
   struct up_uv_input_action :
     public ioa::input,
@@ -19,6 +46,8 @@ struct automaton1 {
       state = true;
     }
 
+    void bound () { }
+    void unbound () { }
   };
   up_uv_input_action up_uv_input;
 
@@ -40,6 +69,8 @@ struct automaton1 {
       last_parameter = parameter;
     }
 
+    void bound (int*) { }
+    void unbound (int*) { }
   };
   p_uv_input_action p_uv_input;
 
@@ -57,6 +88,8 @@ struct automaton1 {
       value = t;
     }
 
+    void bound () { }
+    void unbound () { }
   };
   up_v_input_action up_v_input;
 
@@ -78,6 +111,8 @@ struct automaton1 {
       last_parameter = parameter;
     }
 
+    void bound (int*) { }
+    void unbound (int*) { }
   };
   p_v_input_action p_v_input;
 
@@ -96,6 +131,8 @@ struct automaton1 {
       return true;
     }
 
+    void bound () { }
+    void unbound () { }
   };
   up_uv_output_action up_uv_output;
 
@@ -118,6 +155,8 @@ struct automaton1 {
       return true;
     }
 
+    void bound (int*) { }
+    void unbound (int*) { }
   };
   p_uv_output_action p_uv_output;
 
@@ -137,6 +176,8 @@ struct automaton1 {
       return std::make_pair (true, 9845);
     }
 
+    void bound () { }
+    void unbound () { }
   };
   up_v_output_action up_v_output;
 
@@ -159,6 +200,8 @@ struct automaton1 {
       return std::make_pair (true, 9845);
     }
 
+    void bound (int*) { }
+    void unbound (int*) { }
   };
   p_v_output_action p_v_output;
   

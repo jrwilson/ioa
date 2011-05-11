@@ -3,63 +3,9 @@
 
 #include <boost/foreach.hpp>
 #include "action.hpp"
+#include "system_interface.hpp"
 
 namespace ioa {
-
-  class scheduler_interface
-  {
-  public:
-    virtual ~scheduler_interface () { }
-    virtual void set_current_handle (const generic_automaton_handle& handle) = 0;
-    virtual void clear_current_handle () = 0;
-  };
-
-  class system_interface
-  {
-  public:
-    virtual ~system_interface () { }
-    virtual void lock_automaton (const generic_automaton_handle& handle) = 0;
-    virtual void unlock_automaton (const generic_automaton_handle& handle) = 0;
-  };
-
-  class rescind_listener_interface
-  {
-  public:
-    virtual ~rescind_listener_interface () { }
-    virtual void unbound (const generic_automaton_handle& output_automaton,
-			  const void* output_member_ptr,
-			  const generic_parameter_handle& output_parameter,
-			  const generic_automaton_handle& input_automaton,
-			  const void* input_member_ptr) = 0;
-    virtual void unbound (const generic_automaton_handle& output_automaton,
-			  const void* output_member_ptr,
-			  const generic_automaton_handle& input_automaton,
-			  const void* input_member_ptr,
-			  const generic_parameter_handle& input_parameter) = 0;
-  };
-  
-  class destroy_listener_interface
-  {
-  public:
-    virtual ~destroy_listener_interface () { }
-    virtual void destroyed (const generic_automaton_handle& parent,
-			    const generic_automaton_handle& child) = 0;
-    virtual void unbound (const generic_automaton_handle& output_automaton,
-			  const void* output_member_ptr,
-			  const generic_automaton_handle& input_automaton,
-			  const void* input_member_ptr,
-			  const generic_automaton_handle& binder_automaton) = 0;
-    virtual void unbound (const generic_automaton_handle& output_automaton,
-			  const void* output_member_ptr,
-			  const generic_parameter_handle& output_parameter,
-			  const generic_automaton_handle& input_automaton,
-			  const void* input_member_ptr) = 0;
-    virtual void unbound (const generic_automaton_handle& output_automaton,
-			  const void* output_member_ptr,
-			  const generic_automaton_handle& input_automaton,
-			  const void* input_member_ptr,
-			  const generic_parameter_handle& input_parameter) = 0;
-  };
   
   class input_and_binder_equal
   {

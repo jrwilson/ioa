@@ -1,4 +1,4 @@
 #include "runnable.hpp"
 
-boost::shared_mutex ioa::runnable::m_mutex;
-size_t ioa::runnable::m_count = 0;
+boost::shared_mutex ioa::runnable_interface::m_mutex;
+size_t ioa::runnable_interface::m_count = 0;

@@ -2,35 +2,22 @@
 #define __runnable_hpp__
 
 #include <boost/thread/shared_mutex.hpp>
-#include "system.hpp"
 
 namespace ioa {
 
-  class runnable;
-
-  class internal_scheduler_interface :
-    public scheduler_interface
-  {
-  public:
-    virtual void schedule (runnable*) = 0;
-  };
-
-  class runnable
+  class runnable_interface
   {
   private:
     static boost::shared_mutex m_mutex;
     static size_t m_count;
 
-  protected:
-    internal_scheduler_interface& m_scheduler;
   public:
-    runnable (internal_scheduler_interface& scheduler) :
-      m_scheduler (scheduler)
+    runnable_interface ()
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       ++m_count;
     }
-    virtual ~runnable () {
+    virtual ~runnable_interface () {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       --m_count;
     }
@@ -38,7 +25,8 @@ namespace ioa {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       return m_count;
     }
-    virtual void operator() (system&) = 0;
+
+    virtual void operator() () = 0;
   };
 
 }

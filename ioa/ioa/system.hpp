@@ -3,16 +3,17 @@
 
 #include <boost/foreach.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include <boost/utility.hpp>
 #include <set>
 #include <list>
 #include "automaton.hpp"
-#include "action.hpp"
 #include "binding.hpp"
 
 namespace ioa {
-  
+
   class system :
-    public system_interface
+    public system_interface,
+    public boost::noncopyable
   {
   private:    
     struct automaton_interface_instance_equal
@@ -23,7 +24,7 @@ namespace ioa {
     	instance (instance)
       { }
       
-      bool operator() (const std::pair<automaton_interface* const, serial_type>& automaton) const {
+      bool operator() (const std::pair<generic_automaton_record* const, serial_type>& automaton) const {
     	return instance == automaton.first->get_instance ();
       }
     };
@@ -81,7 +82,7 @@ namespace ioa {
     
     boost::shared_mutex m_mutex;
     locker<void*> m_instances;
-    std::map<generic_automaton_handle, automaton_interface*> m_automata;
+    std::map<generic_automaton_handle, generic_automaton_record*> m_automata;
     std::list<std::pair<generic_automaton_handle, generic_automaton_handle> > m_parent_child;
     std::list<binding_interface*> m_bindings;
     
@@ -89,7 +90,7 @@ namespace ioa {
     
     void clear (void) {
       m_instances.clear ();
-      for (std::map<generic_automaton_handle, automaton_interface*>::const_iterator pos = m_automata.begin ();
+      for (std::map<generic_automaton_handle, generic_automaton_record*>::const_iterator pos = m_automata.begin ();
 	   pos != m_automata.end ();
 	   ++pos) {
 	delete pos->second;
@@ -108,62 +109,35 @@ namespace ioa {
       clear ();
     }
     
-    enum create_result_type {
-      CREATE_CREATOR_DNE,
-      CREATE_EXISTS,
-      CREATE_SUCCESS,
-    };
-    
-    struct create_result
-    {
-      create_result_type type;
-      generic_automaton_handle automaton;
-      
-      create_result (const generic_automaton_handle& automaton) :
-  	type (CREATE_SUCCESS),
-  	automaton (automaton)
-      { }
-      
-      create_result (const create_result_type type) :
-  	type (type)
-      {
-  	BOOST_ASSERT (type != CREATE_SUCCESS);
-      }
-    };
-
-  private:
-    template <class T>
-    create_result inner_create (T* instance)
-    {
-      BOOST_ASSERT (instance != 0);
-      
-      if (m_instances.contains (instance)) {
-      	return create_result (CREATE_EXISTS);
-      }
-      
-      automaton<T>* created = new automaton<T> (instance);
-      automaton_handle<T> handle = m_instances.insert (instance);
-      m_automata.insert (std::make_pair (handle, created));
-      
-      return create_result (handle);
-    }
-
   public:
     
     template <class T>
-    create_result create (T* instance)
+    void
+    create (T*& instance,
+	    create_listener_interface& listener)
     {
       BOOST_ASSERT (instance != 0);
       
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (m_instances.contains (instance)) {
+	listener.instance_exists (instance);
+	return;
+      }
+      
+      automaton_record<T>* created = new automaton_record<T> (instance);
+      automaton_handle<T> handle = m_instances.insert (instance);
+      m_automata.insert (std::make_pair (handle, created));
 
-      return inner_create (instance);
+      listener.automaton_created (handle);
+      return;
     }
     
     template <class T>
-    create_result
+    void
     create (const generic_automaton_handle& creator,
-    	    T* instance)
+    	    T* instance,
+	    create_listener_interface& listener)
     {
       BOOST_ASSERT (instance != 0);
     
@@ -171,80 +145,46 @@ namespace ioa {
     
       if (!m_instances.contains (creator)) {
 	delete instance;
-     	return create_result (CREATE_CREATOR_DNE);
+	listener.automaton_dne ();
+	return;
       }
 
-      create_result result = inner_create (instance);
-      if (result.type == CREATE_SUCCESS) {
-	m_parent_child.push_back (std::make_pair (creator, result.automaton));
+      if (m_instances.contains (instance)) {
+	listener.instance_exists (creator, instance);
+	return;
       }
+      
+      automaton_record<T>* created = new automaton_record<T> (instance);
+      automaton_handle<T> handle = m_instances.insert (instance);
+      m_automata.insert (std::make_pair (handle, created));
+      m_parent_child.push_back (std::make_pair (creator, handle));
 
-      return result;
+      listener.automaton_created (creator, handle);
+      return;
     }
     
-    enum declare_result_type {
-      DECLARE_AUTOMATON_DNE,
-      DECLARE_EXISTS,
-      DECLARE_SUCCESS,
-    };
-    
-    struct declare_result
-    {
-      declare_result_type type;
-      generic_parameter_handle parameter;
-      
-      declare_result (const generic_parameter_handle& param) :
-	type (DECLARE_SUCCESS),
-	parameter (param)
-      { }
-      
-      declare_result (declare_result_type type) :
-  	type (type)
-      {
-	BOOST_ASSERT (type != DECLARE_SUCCESS);
-      }
-    };
-    
-    template <class T>
-    declare_result
+    void
     declare (const generic_automaton_handle& a,
-  	     T* parameter)
+  	     void* parameter,
+	     declare_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_instances.contains (a)) {
-  	return declare_result (DECLARE_AUTOMATON_DNE);	
+	listener.automaton_dne ();
+  	return;
       }
       
-      automaton_interface* pa = m_automata[a];
+      generic_automaton_record* pa = m_automata[a];
       
       if (pa->parameter_exists (parameter)) {
-  	return declare_result (DECLARE_EXISTS);
+	listener.parameter_exists (a, parameter);
+	return;
       }
       
-      return declare_result (pa->declare_parameter (parameter));
+      listener.parameter_declared (a, pa->declare_parameter (parameter));
+      return;
     }
-    
-    enum bind_result_type {
-      BIND_BINDER_AUTOMATON_DNE,
-      BIND_OUTPUT_AUTOMATON_DNE,
-      BIND_INPUT_AUTOMATON_DNE,
-      BIND_OUTPUT_PARAMETER_DNE,
-      BIND_INPUT_PARAMETER_DNE,
-      BIND_EXISTS,
-      BIND_INPUT_ACTION_UNAVAILABLE,
-      BIND_OUTPUT_ACTION_UNAVAILABLE,
-      BIND_SUCCESS,
-    };
-    
-    struct bind_result
-    {
-      bind_result_type type;
-      
-      bind_result (bind_result_type type) :
-  	type (type)
-      { }
-    };
     
   private:
     bool parameter_exists (const action_interface& ac) {
@@ -257,30 +197,36 @@ namespace ioa {
     }
 
     template <class OM, class IM>
-    bind_result
+    void
     _bind (const action<OM>& output,
 	   const action<IM>& input,
-	   const generic_automaton_handle& binder)
+	   const generic_automaton_handle& binder,
+	   bind_listener_interface& listener)
     {
+      if (!m_instances.contains (binder)) {
+  	// Binder DNE.
+	listener.automaton_dne ();
+  	return;
+      }
+
       if (!m_instances.contains (output.get_automaton_handle ())) {
-	return bind_result (BIND_OUTPUT_AUTOMATON_DNE);
+	listener.bind_output_automaton_dne (binder);
+	return;
       }
 
       if (!m_instances.contains (input.get_automaton_handle ())) {
-	return bind_result (BIND_INPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_instances.contains (binder)) {
-  	// Binder DNE.
-  	return bind_result (BIND_BINDER_AUTOMATON_DNE);
+	listener.bind_input_automaton_dne (binder);
+	return;
       }
       
       if (!parameter_exists (output)) {
-  	return bind_result (BIND_OUTPUT_PARAMETER_DNE);
+	listener.bind_output_parameter_dne (binder);
+	return;
       }
       
       if (!parameter_exists (input)) {
-  	return bind_result (BIND_INPUT_PARAMETER_DNE);
+	listener.bind_input_parameter_dne (binder);
+	return;
       }
       
       std::list<binding_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
@@ -289,7 +235,8 @@ namespace ioa {
       
       if (pos != m_bindings.end ()) {
   	// Bound.
-  	return bind_result (BIND_EXISTS);
+	listener.binding_exists (binder);
+	return;
       }
       
       std::list<binding_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
@@ -298,7 +245,8 @@ namespace ioa {
       
       if (in_pos != m_bindings.end ()) {
   	// Input unavailable.
-  	return bind_result (BIND_INPUT_ACTION_UNAVAILABLE);
+	listener.input_action_unavailable (binder);
+	return;
       }
       
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
@@ -308,7 +256,8 @@ namespace ioa {
       if (output.get_automaton_handle () == input.get_automaton_handle () ||
   	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_automaton_handle ()))) {
   	// Output unavailable.
-  	return bind_result (BIND_OUTPUT_ACTION_UNAVAILABLE);
+	listener.output_action_unavailable (binder);
+	return;
       }
       
       binding<OM>* c;
@@ -323,52 +272,58 @@ namespace ioa {
     
       // Bind.
       c->bind (input, binder);
-      return bind_result (BIND_SUCCESS);
+
+      listener.bound (binder);
+      return;
     }
 
     template <class OM, class IM>
-    bind_result
+    void
     bind (const action<OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
 	  const action<IM>& input,
 	  input_category /* */,
 	  unparameterized /* */,
-	  const generic_automaton_handle& binder)
+	  const generic_automaton_handle& binder,
+	  bind_listener_interface& listener)
     {
-      return _bind (output, input, binder);
+      return _bind (output, input, binder, listener);
     }    
 
     template <class OM, class IM>
-    bind_result
+    void
     bind (const action<OM>& output,
 	  output_category /* */,
 	  parameterized /* */,
 	  const action<IM>& input,
 	  input_category /* */,
-	  unparameterized /* */)
+	  unparameterized /* */,
+	  bind_listener_interface& listener)
     {
-      return _bind (output, input, output.get_automaton_handle ());
+      return _bind (output, input, output.get_automaton_handle (), listener);
     }    
 
     template <class OM, class IM>
-    bind_result
+    void
     bind (const action<OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
 	  const action<IM>& input,
 	  input_category /* */,
-	  parameterized /* */)
+	  parameterized /* */,
+	  bind_listener_interface& listener)
     {
-      return _bind (output, input, input.get_automaton_handle ());
+      return _bind (output, input, input.get_automaton_handle (), listener);
     }    
 
   public:
     template <class OM, class IM>
-    bind_result
+    void
     bind (const action<OM>& output,
 	  const action<IM>& input,
-	  const generic_automaton_handle& binder)
+	  const generic_automaton_handle& binder,
+	  bind_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
@@ -378,13 +333,15 @@ namespace ioa {
 		   input,
 		   typename action<IM>::action_category (),
 		   typename action<IM>::parameter_status (),
-		   binder);
+		   binder,
+		   listener);
     }
 
     template <class OM, class IM>
-    bind_result
+    void
     bind (const action<OM>& output,
-	  const action<IM>& input)
+	  const action<IM>& input,
+	  bind_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
@@ -393,54 +350,41 @@ namespace ioa {
 		   typename action<OM>::parameter_status (),
 		   input,
 		   typename action<IM>::action_category (),
-		   typename action<IM>::parameter_status ());
+		   typename action<IM>::parameter_status (),
+		   listener);
     }
-    
-    enum unbind_result_type {
-      UNBIND_BINDER_AUTOMATON_DNE,
-      UNBIND_OUTPUT_AUTOMATON_DNE,
-      UNBIND_INPUT_AUTOMATON_DNE,
-      UNBIND_OUTPUT_PARAMETER_DNE,
-      UNBIND_INPUT_PARAMETER_DNE,
-      UNBIND_EXISTS,
-      UNBIND_SUCCESS,
-    };
-    
-    struct unbind_result
-    {
-      unbind_result_type type;
-    
-      unbind_result (unbind_result_type type) :
-	type (type)
-      { }
-    };
   
   private:
     template <class OM, class IM>
-    unbind_result
+    void
     _unbind (const action<OM>& output,
 	     const action<IM>& input,
-	     const generic_automaton_handle& binder)
+	     const generic_automaton_handle& binder,
+	     unbind_listener_interface& listener)
     {
+      if (!m_instances.contains (binder)) {
+	listener.automaton_dne ();
+	return;
+      }
+
       if (!m_instances.contains (output.get_automaton_handle ())) {
-        return unbind_result (UNBIND_OUTPUT_AUTOMATON_DNE);
+	listener.unbind_output_automaton_dne (binder);
+	return;
       }
 
       if (!m_instances.contains (input.get_automaton_handle ())) {
-        return unbind_result (UNBIND_INPUT_AUTOMATON_DNE);
-      }
-
-      if (!m_instances.contains (binder)) {
-	// Owner DNE.
-	return unbind_result (UNBIND_BINDER_AUTOMATON_DNE);
+	listener.unbind_input_automaton_dne (binder);
+	return;
       }
       
       if (!parameter_exists (output)) {
-	return unbind_result (UNBIND_OUTPUT_PARAMETER_DNE);
+	listener.unbind_output_parameter_dne (binder);
+	return;
       }
       
       if (!parameter_exists (input)) {
-	return unbind_result (UNBIND_INPUT_PARAMETER_DNE);
+	listener.unbind_input_parameter_dne (binder);
+	return;
       }
       
       std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
@@ -449,7 +393,8 @@ namespace ioa {
       
       if (pos == m_bindings.end ()) {
 	// Not bound.
-	return unbind_result (UNBIND_EXISTS);
+	listener.binding_dne (binder);
+	return;
       }
       
       binding<OM>* c = static_cast<binding<OM>*> (*pos);
@@ -461,107 +406,90 @@ namespace ioa {
 	delete c;
 	m_bindings.erase (pos);
       }
-      
-      return unbind_result (UNBIND_SUCCESS);
+
+      listener.unbound (binder);
+      return;
     }
 
     template <class OM, class IM>
-    unbind_result
+    void
     unbind (const action<OM>& output,
 	    unparameterized /* */,
 	    const action<IM>& input,
 	    unparameterized /* */,
-	    const generic_automaton_handle& binder)
+	    const generic_automaton_handle& binder,
+	    unbind_listener_interface& listener)
     {
-      return _unbind (output, input, binder);
+      return _unbind (output, input, binder, listener);
     }    
     
     template <class OM, class IM>
-    unbind_result
+    void
     unbind (const action<OM>& output,
 	    parameterized /* */,
 	    const action<IM>& input,
-	    unparameterized /* */)
+	    unparameterized /* */,
+	    unbind_listener_interface& listener)
     {
-      return _unbind (output, input, output.get_automaton_handle ());
+      return _unbind (output, input, output.get_automaton_handle (), listener);
     }    
     
     template <class OM, class IM>
-    unbind_result
+    void
     unbind (const action<OM>& output,
 	    unparameterized /* */,
 	    const action<IM>& input,
-	    parameterized /* */)
+	    parameterized /* */,
+	    unbind_listener_interface& listener)
     {
-      return _unbind (output, input, input.get_automaton_handle ());
+      return _unbind (output, input, input.get_automaton_handle (), listener);
     }    
     
   public:
     template <class OM, class IM>
-    unbind_result
+    void
     unbind (const action<OM>& output,
 	    const action<IM>& input,
-	    const generic_automaton_handle& binder)
+	    const generic_automaton_handle& binder,
+	    unbind_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), binder);
+      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), binder, listener);
     }
 
     template <class OM, class IM>
-    unbind_result
+    void
     unbind (const action<OM>& output,
-	    const action<IM>& input)
+	    const action<IM>& input,
+	    unbind_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status ());
+      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), listener);
     }
 
-    enum rescind_result_type {
-      RESCIND_AUTOMATON_DNE,
-      RESCIND_EXISTS,
-      RESCIND_SUCCESS,
-    };
-    
-    template <class T>
-    struct rescind_result
-    {
-      rescind_result_type type;
-      T* parameter;
-      
-      rescind_result (T* param) :
-	type (RESCIND_SUCCESS),
-	parameter (param)
-      { }
-      
-      rescind_result (rescind_result_type type) :
-  	type (type)
-      {
-	BOOST_ASSERT (type != RESCIND_SUCCESS);
-      }
-    };
-    
-    template <class T>
-    rescind_result<T>
+    void
     rescind (const generic_automaton_handle& a,
-  	     const parameter_handle<T>& p,
+  	     const generic_parameter_handle& p,
 	     rescind_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_instances.contains (a)) {
-  	return rescind_result<T> (RESCIND_AUTOMATON_DNE);	
+	listener.automaton_dne ();
+  	return;
       }
       
-      automaton_interface* pa = m_automata[a];
+      generic_automaton_record* pa = m_automata[a];
       
       if (!pa->parameter_exists (p)) {
-  	return rescind_result<T> (RESCIND_EXISTS);
+	listener.parameter_dne (a, p);
+	return;
       }
-
+      
       pa->rescind_parameter (p);
-
+      
       for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
 	   pos != m_bindings.end ();
 	   ) {
@@ -574,25 +502,10 @@ namespace ioa {
 	  ++pos;
 	}
       }
-
-      return rescind_result<T> (p.value ());
-    }
-
-    enum destroy_result_type {
-      DESTROY_DESTROYER_DNE,
-      DESTROY_DESTROYER_NOT_CREATOR,
-      DESTROY_EXISTS,
-      DESTROY_SUCCESS,
-    };
-    
-    struct destroy_result
-    {
-      destroy_result_type type;
       
-      destroy_result (const destroy_result_type type) :
-  	type (type)
-      { }
-    };
+      listener.parameter_rescinded (a, p.value ());
+      return;
+    }
 
   private:
     class child_automaton
@@ -608,13 +521,10 @@ namespace ioa {
       }
     };
 
-    destroy_result inner_destroy (const generic_automaton_handle& automaton,
-				  destroy_listener_interface& listener)
+    void
+    inner_destroy (const generic_automaton_handle& automaton,
+		   destroy_listener_interface& listener)
     {
-      if (!m_instances.contains (automaton)) {
-	return destroy_result (DESTROY_EXISTS);
-      }
-
       std::set<generic_automaton_handle> closed_list;
       std::set<generic_automaton_handle> open_list;
 
@@ -650,11 +560,13 @@ namespace ioa {
 	  m_automata.erase (handle);
 	}
 
+	listener.automaton_destroyed (handle);
+
 	{
 	  // Update parent-child relationships.
 	  std::list<std::pair<generic_automaton_handle, generic_automaton_handle> >::iterator pos = std::find_if (m_parent_child.begin (), m_parent_child.end (), child_automaton (handle));
 	  if (pos != m_parent_child.end ()) {
-	    listener.destroyed (pos->first, pos->second);
+	    listener.automaton_destroyed (pos->first, pos->second);
 	    m_parent_child.erase (pos);
 	  }
 	}
@@ -675,53 +587,50 @@ namespace ioa {
 	  }
 	}
       }
-
-      return destroy_result (DESTROY_SUCCESS);
     }
 
   public:
 
-    destroy_result destroy (const generic_automaton_handle& automaton,
-			    destroy_listener_interface& listener)
+    void
+    destroy (const generic_automaton_handle& target,
+	     destroy_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_instances.contains (target)) {
+	listener.target_automaton_dne (target);
+	return;
+      }
 
-      return inner_destroy (automaton, listener);
+      return inner_destroy (target, listener);
     }
 
-    destroy_result destroy (const generic_automaton_handle& destroyer,
-			    const generic_automaton_handle& automaton,
-			    destroy_listener_interface& listener)
+    void
+    destroy (const generic_automaton_handle& automaton,
+	     const generic_automaton_handle& target,
+	     destroy_listener_interface& listener)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      if (!m_instances.contains (destroyer)) {
-	return destroy_result (DESTROY_DESTROYER_DNE);
+      if (!m_instances.contains (automaton)) {
+	listener.automaton_dne ();
+	return;
+      }
+
+      if (!m_instances.contains (target)) {
+	listener.target_automaton_dne (automaton, target);
+	return;
       }
 
       if (std::find (m_parent_child.begin (),
 		     m_parent_child.end (),
-		     std::make_pair (destroyer, automaton)) == m_parent_child.end ()) {
-	return destroy_result (DESTROY_DESTROYER_NOT_CREATOR);
+		     std::make_pair (automaton, target)) == m_parent_child.end ()) {
+	listener.destroyer_not_creator (automaton, target);
+	return;
       }
 
-      return inner_destroy (automaton, listener);
+      return inner_destroy (target, listener);
     }
-
-    enum execute_result_type {
-      EXECUTE_AUTOMATON_DNE,
-      EXECUTE_PARAMETER_DNE,
-      EXECUTE_SUCCESS,
-    };
-
-    struct execute_result
-    {
-      execute_result_type type;
-
-      execute_result (execute_result_type type) :
-	type (type)
-      { }
-    };
 
   private:
     void lock_automaton (const generic_automaton_handle& handle)
@@ -734,7 +643,7 @@ namespace ioa {
       m_automata[handle]->unlock ();
     }
 
-    execute_result
+    void
     execute_executable (const executable_action_interface& ac,
 			scheduler_interface& scheduler)
     {
@@ -743,22 +652,24 @@ namespace ioa {
       ac.execute ();
       scheduler.clear_current_handle ();
       unlock_automaton (ac.get_automaton_handle ());
-      return execute_result (EXECUTE_SUCCESS);
     }
 
   public:
-    execute_result
+    void
     execute (const output_action_interface& ac,
-	     scheduler_interface& scheduler)
+	     scheduler_interface& scheduler,
+	     execute_listener_interface& listener)
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_instances.contains (ac.get_automaton_handle ())) {
-	return execute_result (EXECUTE_AUTOMATON_DNE);
+	listener.automaton_dne ();
+	return;
       }
 
       if (!parameter_exists (ac)) {
-	return execute_result (EXECUTE_PARAMETER_DNE);
+	listener.execute_parameter_dne ();
+	return;
       }
 
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
@@ -767,31 +678,52 @@ namespace ioa {
 
       if (out_pos == m_bindings.end ()) {
 	// Not bound.
-	return execute_executable (ac, scheduler);
+	execute_executable (ac, scheduler);
       }
       else {	
 	(*out_pos)->execute (scheduler, *this);
-	return execute_result (EXECUTE_SUCCESS);
       }
     }
 
-    execute_result
+    void
     execute (const independent_action_interface& ac,
-	     scheduler_interface& scheduler)
+	     scheduler_interface& scheduler,
+	     execute_listener_interface& listener)
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_instances.contains (ac.get_automaton_handle ())) {
-	return execute_result (EXECUTE_AUTOMATON_DNE);
+	listener.automaton_dne ();
+	return;
       }
 
       if (!parameter_exists (ac)) {
-	return execute_result (EXECUTE_PARAMETER_DNE);
+	listener.execute_parameter_dne ();
+	return;
       }
       
-      return execute_executable (ac, scheduler);
+      execute_executable (ac, scheduler);
     }
 
+    void
+    execute (const generic_automaton_handle& automaton,
+	     runnable_interface& c,
+	     scheduler_interface& scheduler,
+	     system_execute_listener_interface& listener) {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_instances.contains (automaton)) {
+	// The system deleted an automata that still had outstanding system events.
+	listener.automaton_dne ();
+	return;
+      }
+
+      lock_automaton (automaton);
+      scheduler.set_current_handle (automaton);
+      c ();
+      scheduler.clear_current_handle ();
+      unlock_automaton (automaton);
+    }
   };
 
   template <class T>

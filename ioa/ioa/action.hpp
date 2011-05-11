@@ -49,15 +49,31 @@ namespace ioa {
     }
 
     virtual const void* get_member_ptr () const = 0;
-    virtual bool is_parameterized () const = 0;
-    virtual bool involves_parameter (const generic_parameter_handle&) const = 0;
-    virtual generic_parameter_handle get_parameter_handle () const = 0;
+
+    virtual bool is_parameterized () const {
+      return false;
+    }
+
+    virtual bool involves_parameter (const generic_parameter_handle&) const {
+      return false;
+    }
+
+    virtual generic_parameter_handle get_parameter_handle () const {
+      return generic_parameter_handle ();
+    }
   };
 
-  // std::ostream& operator<<(std::ostream& output, const action_interface&);
+  class bindable_interface
+  {
+  public:
+    virtual ~bindable_interface () { }
+    virtual void bound () const = 0;
+    virtual void unbound () const = 0;
+  };
 
   class input_action_interface :
-    public action_interface
+    public action_interface,
+    public bindable_interface
   {
   public:
     input_action_interface (const generic_automaton_handle& handle) :
@@ -110,7 +126,8 @@ namespace ioa {
   };
 
   class output_action_interface :
-    public executable_action_interface
+    public executable_action_interface,
+    public bindable_interface
   {
   public:
     output_action_interface (const generic_automaton_handle& handle) :
@@ -118,8 +135,6 @@ namespace ioa {
     { }
 
     virtual bool operator== (const output_action_interface& oa) const = 0;
-    
-    virtual const void* get_member_ptr () const = 0;
   };
 
   class unvalued_output_action_interface :
@@ -190,7 +205,6 @@ namespace ioa {
   struct output_category { };
   struct internal_category { };
   struct event_category { };
-  struct system_event_category { };
 
   struct unvalued { };
   struct valued { };
@@ -236,10 +250,6 @@ namespace ioa {
     typedef event_category action_category;
   };
 
-  struct system_event : public no_parameter {
-    typedef system_event_category action_category;
-  };
-
   /*
     K - category
     M - member
@@ -262,18 +272,6 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle&) const {
-      return false;
-    }
-
     bool operator== (const input_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr ();
     }
@@ -285,6 +283,15 @@ namespace ioa {
     void operator() () const {
       this->m_member ();
     }
+
+    void bound () const {
+      this->m_member.bound ();
+    }
+
+    void unbound () const {
+      this->m_member.unbound ();
+    }
+
   };
 
   template <class M, class PT>
@@ -327,6 +334,14 @@ namespace ioa {
       this->m_member (this->m_parameter.value ());
     }
 
+    void bound () const {
+      this->m_member.bound (this->m_parameter.value ());
+    }
+
+    void unbound () const {
+      this->m_member.unbound (this->m_parameter.value ());
+    }
+
   };
 
   template <class M, class VT>
@@ -341,18 +356,6 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle& parameter) const {
-      return false;
-    }
-
     bool operator== (const input_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr ();
     }
@@ -363,6 +366,14 @@ namespace ioa {
 
     void operator() (const VT t) const {
       this->m_member (t);
+    }
+
+    void bound () const {
+      this->m_member.bound ();
+    }
+
+    void unbound () const {
+      this->m_member.unbound ();
     }
 
   };
@@ -407,6 +418,14 @@ namespace ioa {
       this->m_member (t, this->m_parameter.value ());
     }
 
+    void bound () const {
+      this->m_member.bound (this->m_parameter.value ());
+    }
+
+    void unbound () const {
+      this->m_member.unbound (this->m_parameter.value ());
+    }
+
   };
 
   template <class M>
@@ -429,18 +448,6 @@ namespace ioa {
       return &this->m_member;
     }
 
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle& parameter) const {
-      return false;
-    }
-
     bool operator() () const {
       return this->m_member ();
     }
@@ -448,6 +455,15 @@ namespace ioa {
     void execute () const {
       (*this) ();
     }
+
+    void bound () const {
+      this->m_member.bound ();
+    }
+
+    void unbound () const {
+      this->m_member.unbound ();
+    }
+
   };
 
   template <class M, class PT>
@@ -493,6 +509,14 @@ namespace ioa {
     void execute () const {
       (*this) ();
     }
+
+    void bound () const {
+      this->m_member.bound (this->m_parameter.value ());
+    }
+
+    void unbound () const {
+      this->m_member.unbound (this->m_parameter.value ());
+    }
     
   };
 
@@ -508,18 +532,6 @@ namespace ioa {
       member_ref<M> (m)
     { }
 
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle& parameter) const {
-      return false;
-    }
-
     bool operator== (const output_action_interface& oa) const {
       return &this->m_member == oa.get_member_ptr ();
     }
@@ -534,6 +546,14 @@ namespace ioa {
 
     void execute () const {
       (*this) ();
+    }
+
+    void bound () const {
+      this->m_member.bound ();
+    }
+
+    void unbound () const {
+      this->m_member.unbound ();
     }
 
   };
@@ -582,6 +602,14 @@ namespace ioa {
       (*this) ();
     }
 
+    void bound () const {
+      this->m_member.bound (this->m_parameter.value ());
+    }
+
+    void unbound () const {
+      this->m_member.unbound (this->m_parameter.value ());
+    }
+
   };
 
   template <class M>
@@ -598,18 +626,6 @@ namespace ioa {
 
     const void* get_member_ptr () const {
       return &this->m_member;
-    }
-
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle&) const {
-      return false;
-    }
-
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
     }
 
     void execute () const {
@@ -670,18 +686,6 @@ namespace ioa {
       return &this->m_member;
     }
 
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle& parameter) const {
-      return false;
-    }
-
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
     void execute () const {
       this->m_member ();
     }    
@@ -708,60 +712,36 @@ namespace ioa {
       return &this->m_member;
     }
 
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle& parameter) const {
-      return false;
-    }
-
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
     void execute () const {
       this->m_member (m_t);
     }    
   };
 
-  template <class M, class VT>
-  class action_impl<system_event_category, M, valued, VT, unparameterized, null_type> :
-    public independent_action_interface,
-    private member_ref<M>
-  {
-  private:
-    const VT m_t;
+  // template <class M, class VT>
+  // class action_impl<system_event_category, M, valued, VT, unparameterized, null_type> :
+  //   public independent_action_interface,
+  //   private member_ref<M>
+  // {
+  // private:
+  //   const VT m_t;
 
-  public:
-    action_impl (const generic_automaton_handle handle,
-  		 M& m,
-  		 const VT& t) :
-      independent_action_interface (handle),
-      member_ref<M> (m),
-      m_t (t)
-    { }
+  // public:
+  //   action_impl (const generic_automaton_handle handle,
+  // 		 M& m,
+  // 		 const VT& t) :
+  //     independent_action_interface (handle),
+  //     member_ref<M> (m),
+  //     m_t (t)
+  //   { }
 
-    const void* get_member_ptr () const {
-      return &this->m_member;
-    }
+  //   const void* get_member_ptr () const {
+  //     return &this->m_member;
+  //   }
 
-    bool is_parameterized () const {
-      return false;
-    }
-
-    bool involves_parameter (const generic_parameter_handle& parameter) const {
-      return false;
-    }
-
-    generic_parameter_handle get_parameter_handle () const {
-      return generic_parameter_handle ();
-    }
-
-    void execute () const {
-      this->m_member (m_t);
-    }    
-  };
+  //   void execute () const {
+  //     this->m_member (m_t);
+  //   }    
+  // };
   
   template <class Member>
   class action :

@@ -34,256 +34,108 @@ namespace ioa {
 
   };
 
-  template <class C, class I>
-  class create :
-    public runnable
-  {
-  private:
-    automaton_handle<C> m_creator;
-    I* m_instance;
-  public:
-    create (internal_scheduler_interface& scheduler,
-	    const automaton_handle<C>& creator,
-	    I* instance) :
-      runnable (scheduler),
-      m_creator (creator),
-      m_instance (instance)
-    { }
-
-    void operator () (system& system) {
-      system::create_result r = system.create (m_creator, m_instance);
-      switch (r.type) {
-      case system::CREATE_CREATOR_DNE:
-	// Do nothing.
-	break;
-      case system::CREATE_SUCCESS:
-	m_scheduler.schedule (make_executable (m_scheduler, make_action (cast_automaton<I> (r.automaton), &I::init)));
-	// Fall through.
-      case system::CREATE_EXISTS:
-	// Tell the creator.
-	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_creator, &C::created, r)));
-	break;
-      }
-    }
-  };
-
-  template <class C, class I>
-  create<C, I>* make_create (internal_scheduler_interface& scheduler,
-			     const automaton_handle<C>& creator,
-			     I* instance)
-  {
-    return new create<C, I> (scheduler, creator, instance);
-  }
-
-  template <class C, class P>
-  class declare :
-    public runnable
-  {
-  private:
-    automaton_handle<C> m_automaton;
-    P* m_parameter;
-  public:
-    declare (internal_scheduler_interface& scheduler,
-	     const automaton_handle<C>& automaton,
-	     P* parameter) :
-      runnable (scheduler),
-      m_automaton (automaton),
-      m_parameter (parameter)
-    { }
-
-    void operator () (system& system) {
-      system::declare_result r = system.declare (m_automaton, m_parameter);
-      switch (r.type) {
-      case system::DECLARE_AUTOMATON_DNE:
-      	// Do nothing.
-      	break;
-      case system::DECLARE_SUCCESS:
-      case system::DECLARE_EXISTS:
-  	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_automaton, &C::declared, r)));
-      	break;
-      }
-    }
-  };
-
-  template <class C, class P>
-  declare<C, P>* make_declare (internal_scheduler_interface& scheduler,
-			       const automaton_handle<C>& automaton,
-			       P* parameter) {
-    return new declare<C, P> (scheduler, automaton, parameter);
-  }
-
-  template <class OM, class IM, class C>
-  class bind3 :
-    public runnable
-  {
-  private:
-    action<OM> m_output_action;
-    action<IM> m_input_action;
-    automaton_handle<C> m_binder;
-  public:
-    bind3 (internal_scheduler_interface& scheduler,
-	   const action<OM>& output_action,
-	   const action<IM>& input_action,
-	   const automaton_handle<C>& binder) :
-      runnable (scheduler),
-      m_output_action (output_action),
-      m_input_action (input_action),
-      m_binder (binder)
-    { }
-
-    void operator() (system& system) {
-      system::bind_result r = system.bind (m_output_action, m_input_action, m_binder);
-      switch (r.type) {
-      case system::BIND_BINDER_AUTOMATON_DNE:
-	// Do nothing.
-	break;
-      case system::BIND_SUCCESS:
-	// TODO:  Tell the output and input that they are composed.
-	// Fall through.
-      case system::BIND_OUTPUT_AUTOMATON_DNE:
-      case system::BIND_INPUT_AUTOMATON_DNE:
-      case system::BIND_OUTPUT_PARAMETER_DNE:
-      case system::BIND_INPUT_PARAMETER_DNE:
-      case system::BIND_EXISTS:
-      case system::BIND_OUTPUT_ACTION_UNAVAILABLE:
-      case system::BIND_INPUT_ACTION_UNAVAILABLE:
-	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_binder, &C::bound, r)));
-	break;
-      }
-    }
-  };
-
-  template <class OM, class IM, class C>
-  bind3<OM, IM, C>* make_bind3 (internal_scheduler_interface& scheduler,
-				const action<OM>& output_action, 
-				const action<IM>& input_action,
-				const automaton_handle<C>& binder)
-  {
-    return new bind3<OM, IM, C> (scheduler, output_action, input_action, binder);
-  }
-
-  template <class OM, class IM, class C>
-  class bind2 :
-    public runnable
-  {
-  private:
-    action<OM> m_output_action;
-    action<IM> m_input_action;
-    automaton_handle<C> m_binder;
-  public:
-    bind2 (internal_scheduler_interface& scheduler,
-	   const action<OM>& output_action,
-	   const action<IM>& input_action,
-	   const automaton_handle<C>& binder) :
-      runnable (scheduler),
-      m_output_action (output_action),
-      m_input_action (input_action),
-      m_binder (binder)
-    { }
-
-    void operator() (system& system) {
-      system::bind_result r = system.bind (m_output_action, m_input_action);
-      switch (r.type) {
-      case system::BIND_BINDER_AUTOMATON_DNE:
-	// Do nothing.
-	break;
-      case system::BIND_SUCCESS:
-	// TODO:  Tell the output and input that they are composed.
-	// Fall through.
-      case system::BIND_OUTPUT_AUTOMATON_DNE:
-      case system::BIND_INPUT_AUTOMATON_DNE:
-      case system::BIND_OUTPUT_PARAMETER_DNE:
-      case system::BIND_INPUT_PARAMETER_DNE:
-      case system::BIND_EXISTS:
-      case system::BIND_OUTPUT_ACTION_UNAVAILABLE:
-      case system::BIND_INPUT_ACTION_UNAVAILABLE:
-	m_scheduler.schedule (make_executable (m_scheduler, make_action (m_binder, &C::bound, r)));
-	break;
-      }
-    }
-  };
-
-  template <class OM, class IM, class C>
-  bind2<OM, IM, C>* make_bind2 (internal_scheduler_interface& scheduler,
-				const action<OM>& output_action, 
-				const action<IM>& input_action,
-				const automaton_handle<C>& binder)
-  {
-    return new bind2<OM, IM, C> (scheduler, output_action, input_action, binder);
-  }
-
-  template <class C, class I, class M>
-  class destroy :
-    public runnable
-  {
-  private:
-    automaton_handle<C> m_destroyer;
-    automaton_handle<I> m_automaton;
-    M C::*m_member_ptr;
-  public:
-    destroy (internal_scheduler_interface& scheduler,
-	     const automaton_handle<C>& destroyer,
-	     const automaton_handle<I>& automaton,
-	     M C::*member_ptr) :
-      runnable (scheduler),
-      m_destroyer (destroyer),
-      m_automaton (automaton),
-      m_member_ptr (member_ptr)
-    { }
-
-    void operator () (system& system) {
-      BOOST_ASSERT (false);
-      // system::destroy_result r = system.destroy (m_destroyer, m_automaton);
-      // switch (r.type) {
-      // case system::DESTROY_DESTROYER_DNE:
-      // 	// Do nothing.
-      // 	break;
-      // case system::DESTROY_DESTROYER_NOT_CREATOR:
-      // case system::DESTROY_SUCCESS:
-      // 	// m_scheduler.schedule (make_executable (m_scheduler, make_action (r.automaton, &I::init)));
-      // 	// Fall through.
-      // case system::DESTROY_EXISTS:
-      // 	// Tell the creator.
-      // 	// m_scheduler.schedule (make_executable (m_scheduler, make_action (m_creator, m_member_ptr, r)));
-      // 	break;
-      // }
-    }
-  };
-
-  template <class C, class I, class M>
-  destroy<C, I, M>* make_destroy (internal_scheduler_interface& scheduler,
-				  const automaton_handle<C>& creator,
-				  const automaton_handle<I>& automaton,
-				  M C::*member_ptr)
-  {
-    return new destroy<C, I, M> (scheduler, creator, automaton, member_ptr);
-  }
-
   template <class T>
-  class executable :
-    public runnable
+  class runnable :
+    public runnable_interface
   {
   private:
     T m_t;
-
+    
   public:
-    executable (internal_scheduler_interface& scheduler,
-		const T& t) :
-      runnable (scheduler),
+    runnable (const T& t) :
       m_t (t)
     { }
 
-    void operator () (system& system) {
-      // TODO:  Do something with the result.
-      system.execute (m_t, m_scheduler);
+    void operator() () {
+      m_t ();
     }
   };
 
   template <class T>
-  executable<T>* make_executable (internal_scheduler_interface& scheduler,
-				  const T& t)
+  runnable<T>* make_runnable (const T& t) {
+    return new runnable<T> (t);
+  }
+
+  // template <class M>
+  // class bound :
+  //   public runnable_interface
+  // {
+  // private:
+  //   action<M> m_action;
+  // public:
+  //   bound (internal_scheduler_interface& scheduler,
+  // 		  const action<M>& action) :
+  //     runnable_interface (scheduler),
+  //     m_action (action)
+  //   { }
+
+  //   void operator() (system& system) {
+  //     //system.bound (m_action, m_scheduler);
+  //   }
+  // };
+
+  // template <class M>
+  // bound<M>* make_bound (internal_scheduler_interface& scheduler,
+  // 				      const action<M>& action) {
+  //   return new bound<M> (scheduler, action);
+  // }
+
+  // template <class M>
+  // class unbound :
+  //   public runnable_interface
+  // {
+  // private:
+  //   action<M> m_action;
+  // public:
+  //   unbound (internal_scheduler_interface& scheduler,
+  // 		  const action<M>& action) :
+  //     runnable_interface (scheduler),
+  //     m_action (action)
+  //   { }
+
+  //   void operator() (system& system) {
+  //     //system.unbound (m_action, m_scheduler);
+  //   }
+  // };
+
+  // template <class M>
+  // unbound<M>* make_unbound (internal_scheduler_interface& scheduler,
+  // 				      const action<M>& action) {
+  //   return new unbound<M> (scheduler, action);
+  // }
+
+  template <class T>
+  class system_event :
+    public runnable_interface
   {
-    return new executable<T> (scheduler, t);
+  private:
+    internal_scheduler_interface& m_scheduler;
+    system& m_system;
+    generic_automaton_handle m_automaton;
+    runnable<T> m_t;
+    
+  public:
+    system_event (internal_scheduler_interface& scheduler,
+		  system& system,
+  		  const generic_automaton_handle& automaton,
+  		  const T& t) :
+      m_scheduler (scheduler),
+      m_system (system),
+      m_automaton (automaton),
+      m_t (t)
+    { }
+    
+    void operator () () {
+      m_system.execute (m_automaton, m_t, m_scheduler, m_scheduler);      
+    }
+  };
+
+  template <class T>
+  system_event<T>* make_system_event (internal_scheduler_interface& scheduler,
+				      system& system,
+  				      const generic_automaton_handle& automaton,
+  				      const T& t) {
+    return new system_event<T> (scheduler, system, automaton, t);
   }
 
   template <class S>
@@ -299,13 +151,22 @@ namespace ioa {
     template <class C, class I>
     void create (const C* ptr,
 		 I* instance) {
-      m_scheduler.schedule (make_create (m_scheduler, m_scheduler.get_current_handle (ptr), instance));
+      void (system::*create_ptr) (const generic_automaton_handle&, I*, create_listener_interface&) = &system::create;
+      m_scheduler.schedule (make_runnable (boost::bind (create_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							m_scheduler.get_current_handle (ptr),
+							instance,
+							boost::ref (m_scheduler))));
     }
-
-    template <class C, class P>
+    
+    template <class C>
     void declare (const C* ptr,
-		  P* parameter) {
-      m_scheduler.schedule (make_declare (m_scheduler, m_scheduler.get_current_handle (ptr), parameter));
+		  void* parameter) {
+      m_scheduler.schedule (make_runnable (boost::bind (&system::declare,
+							boost::ref (m_scheduler.get_system ()),
+							m_scheduler.get_current_handle (ptr),
+							parameter,
+							boost::ref (m_scheduler))));
     }
 
     template <class C, class OI, class OM, class II, class IM>
@@ -314,10 +175,16 @@ namespace ioa {
 	       OM OI::*output_member_ptr,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr) {
-      m_scheduler.schedule (make_bind3 (m_scheduler,
-					make_action (output_automaton, output_member_ptr),
-					make_action (input_automaton, input_member_ptr),
-					m_scheduler.get_current_handle (ptr)));
+      void (system::*bind_ptr) (const action<OM>&,
+				const action<IM>&,
+				const generic_automaton_handle&,
+				bind_listener_interface&) = &system::bind<OM, IM>;
+      m_scheduler.schedule (make_runnable (boost::bind (bind_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							make_action (output_automaton, output_member_ptr),
+							make_action (input_automaton, input_member_ptr),
+							m_scheduler.get_current_handle (ptr),
+							boost::ref (m_scheduler))));
     }
 
     template <class OI, class OM, class OP, class II, class IM>
@@ -326,45 +193,129 @@ namespace ioa {
 	       const parameter_handle<OP>& output_parameter,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr) {
-      m_scheduler.schedule (make_bind2 (m_scheduler,
-					make_action (m_scheduler.get_current_handle (ptr), output_member_ptr, output_parameter),
-					make_action (input_automaton, input_member_ptr),
-					m_scheduler.get_current_handle (ptr)));
+      void (system::*bind_ptr) (const action<OM>&,
+				const action<IM>&,
+				bind_listener_interface&) = &system::bind<OM, IM>;
+      m_scheduler.schedule (make_runnable (boost::bind (bind_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							make_action (m_scheduler.get_current_handle (ptr), output_member_ptr, output_parameter),
+							make_action (input_automaton, input_member_ptr),
+							boost::ref (m_scheduler))));
     }
-
+    
     template <class OI, class OM, class II, class IM, class IP>
     void bind (const II* ptr,
 	       const automaton_handle<OI>& output_automaton,
 	       OM OI::*output_member_ptr,
 	       IM II::*input_member_ptr,
 	       const parameter_handle<IP>& input_parameter) {
-      m_scheduler.schedule (make_bind2 (m_scheduler,
-					make_action (output_automaton, output_member_ptr),
-					make_action (m_scheduler.get_current_handle (ptr), input_member_ptr, input_parameter),
-					m_scheduler.get_current_handle (ptr)));
-
+      void (system::*bind_ptr) (const action<OM>&,
+				const action<IM>&,
+				bind_listener_interface&) = &system::bind<OM, IM>;
+      m_scheduler.schedule (make_runnable (boost::bind (bind_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							make_action (output_automaton, output_member_ptr),
+							make_action (m_scheduler.get_current_handle (ptr), input_member_ptr, input_parameter),
+							boost::ref (m_scheduler))));
     }
 
-    template <class C, class I, class M>
+    template <class C, class OI, class OM, class II, class IM>
+    void unbind (const C* ptr,
+	       const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr) {
+      void (system::*unbind_ptr) (const action<OM>&,
+				const action<IM>&,
+				const generic_automaton_handle&,
+				unbind_listener_interface&) = &system::unbind<OM, IM>;
+      m_scheduler.schedule (make_runnable (boost::bind (unbind_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							make_action (output_automaton, output_member_ptr),
+							make_action (input_automaton, input_member_ptr),
+							m_scheduler.get_current_handle (ptr),
+							boost::ref (m_scheduler))));
+    }
+
+    template <class OI, class OM, class OP, class II, class IM>
+    void unbind (const OI* ptr,
+	       OM OI::*output_member_ptr,
+	       const parameter_handle<OP>& output_parameter,
+	       const automaton_handle<II>& input_automaton,
+	       IM II::*input_member_ptr) {
+      void (system::*unbind_ptr) (const action<OM>&,
+				const action<IM>&,
+				unbind_listener_interface&) = &system::unbind<OM, IM>;
+      m_scheduler.schedule (make_runnable (boost::bind (unbind_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							make_action (m_scheduler.get_current_handle (ptr), output_member_ptr, output_parameter),
+							make_action (input_automaton, input_member_ptr),
+							boost::ref (m_scheduler))));
+    }
+    
+    template <class OI, class OM, class II, class IM, class IP>
+    void unbind (const II* ptr,
+	       const automaton_handle<OI>& output_automaton,
+	       OM OI::*output_member_ptr,
+	       IM II::*input_member_ptr,
+	       const parameter_handle<IP>& input_parameter) {
+      void (system::*unbind_ptr) (const action<OM>&,
+				const action<IM>&,
+				unbind_listener_interface&) = &system::unbind<OM, IM>;
+      m_scheduler.schedule (make_runnable (boost::bind (unbind_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							make_action (output_automaton, output_member_ptr),
+							make_action (m_scheduler.get_current_handle (ptr), input_member_ptr, input_parameter),
+							boost::ref (m_scheduler))));
+    }
+
+    template <class C>
+    void rescind (const C* ptr,
+		  const generic_parameter_handle& parameter) {
+      m_scheduler.schedule (make_runnable (boost::bind (&system::rescind,
+      							boost::ref (m_scheduler.get_system ()),
+      							m_scheduler.get_current_handle (ptr),
+      							parameter,
+      							boost::ref (m_scheduler))));
+    }
+
+    template <class C>
     void destroy (const C* ptr,
-		  const automaton_handle<I>& automaton,
-		  M C::*member_ptr) {
-      m_scheduler.destroy (ptr, automaton, member_ptr);
+		  const generic_automaton_handle& automaton) {
+      m_scheduler.schedule (make_runnable (boost::bind (&system::destroy,
+      							boost::ref (m_scheduler.get_system ()),
+      							m_scheduler.get_current_handle (ptr),
+      							automaton,
+      							boost::ref (m_scheduler))));
     }
 
   private:
     template <class M>
     void schedule (const action<M>& ac,
   		   output_category /* */) {
-      m_scheduler.schedule (make_executable (m_scheduler, ac));
+      void (system::*execute_ptr) (const output_action_interface&,
+				   scheduler_interface&,
+				   execute_listener_interface&) = &system::execute;
+      m_scheduler.schedule (make_runnable (boost::bind (execute_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							ac,
+							boost::ref (m_scheduler),
+							boost::ref (m_scheduler))));
     }
     
     template <class M>
     void schedule (const action<M>& ac,
   		   internal_category /* */) {
-      m_scheduler.schedule (make_executable (m_scheduler, ac));
+      void (system::*execute_ptr) (const independent_action_interface&,
+				   scheduler_interface&,
+				   execute_listener_interface&) = &system::execute;
+      m_scheduler.schedule (make_runnable (boost::bind (execute_ptr,
+							boost::ref (m_scheduler.get_system ()),
+							ac,
+							boost::ref (m_scheduler),
+							boost::ref (m_scheduler))));
     }
-
+    
   public:
     template <class I, class M>
     void schedule (const I* ptr,
@@ -382,73 +333,6 @@ namespace ioa {
       m_scheduler.clear ();
     }
   };
-
-  class simple_scheduler :
-    public internal_scheduler_interface
-  {
-  private:
-    system m_system;
-    blocking_queue<runnable*> m_runq;
-    generic_automaton_handle m_current_handle;
-
-    void set_current_handle (const generic_automaton_handle& handle) {
-      m_current_handle = handle;
-    }
-
-    void clear_current_handle () {
-      m_current_handle = generic_automaton_handle ();
-    }
-
-    static bool keep_going () {
-      return runnable::count () != 0;
-    }
-
-  public:
-    simple_scheduler ()
-    { }
-
-    template <class I>
-    automaton_handle<I> get_current_handle (const I* ptr) const {
-      // An automaton is executing an action.
-      // Someone forgot to set the current handle.
-      BOOST_ASSERT (m_current_handle.serial () != 0);
-      // We require the user to pass a pointer to an instance which should always be "this."
-      // We then check if the pointer in the handle matches the supplied pointer.
-      BOOST_ASSERT (m_current_handle.value () == ptr);
-      // Unless the user has casted "this" to a different type, we can convert the generic handle to a typed handle.
-      locker_key<I*> key (m_current_handle.serial (), static_cast<I*> (m_current_handle.value ()));
-      automaton_handle<I> handle (key);
-      return handle;
-    }
-
-    void schedule (runnable* r) {
-      m_runq.push (r);
-    }
-
-    template <class T>
-    void run (T* instance) {
-      system::create_result r = m_system.create (instance);
-      BOOST_ASSERT (r.type == system::CREATE_SUCCESS);
-
-      m_runq.push (make_executable (*this, make_action (cast_automaton<T> (r.automaton), &T::init)));
-
-      for (;;) {
-	runnable* r = m_runq.pop ();
-	(*r) (m_system);
-	delete r;
-	if (!keep_going ()) {
-	  break;
-	}
-      }
-    }
-
-    void clear (void) {
-      m_system.clear ();
-    }
-  };
-
-  simple_scheduler ss;
-  scheduler_wrapper<simple_scheduler> scheduler (ss);
 
 }
 

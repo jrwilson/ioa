@@ -7,6 +7,39 @@
 
 namespace ioa {
 
+  class generic_automaton_handle;
+  class generic_parameter_handle;
+
+  class automaton_interface
+  {
+  public:
+    virtual ~automaton_interface () { }
+    virtual void init () { }
+    virtual void instance_exists (const void*) { }
+    virtual void automaton_created (const generic_automaton_handle&) { }
+    virtual void parameter_exists (void*) { }
+    virtual void parameter_declared (const generic_parameter_handle&) { }
+    virtual void bind_output_automaton_dne () { }
+    virtual void bind_input_automaton_dne () { }
+    virtual void bind_output_parameter_dne () { }
+    virtual void bind_input_parameter_dne () { }
+    virtual void binding_exists () { }
+    virtual void input_action_unavailable () { }
+    virtual void output_action_unavailable () { }
+    virtual void bound () { }
+    virtual void unbind_output_automaton_dne () { }
+    virtual void unbind_input_automaton_dne () { }
+    virtual void unbind_output_parameter_dne () { }
+    virtual void unbind_input_parameter_dne () { }
+    virtual void binding_dne () { }
+    virtual void unbound () { }
+    virtual void parameter_dne (const generic_parameter_handle&) { }
+    virtual void parameter_rescinded (void*) { }
+    virtual void target_automaton_dne (const generic_automaton_handle&) { }
+    virtual void destroyer_not_creator (const generic_automaton_handle&) { }
+    virtual void automaton_destroyed (const generic_automaton_handle&) { }
+  };
+
   class generic_parameter_handle :
     public locker_key<void*>
   {
@@ -42,18 +75,18 @@ namespace ioa {
   };
 
   class generic_automaton_handle :
-    public locker_key<void*>
+    public locker_key<automaton_interface*>
   {
   public:
     generic_automaton_handle ()
       :
-      locker_key<void*> ()
+      locker_key<automaton_interface*> ()
     { }
 
     generic_automaton_handle (serial_type const serial,
-			      void* const value)
+			      automaton_interface* const value)
       :
-      locker_key<void*> (serial, value)
+      locker_key<automaton_interface*> (serial, value)
     { }
   };
 
@@ -79,7 +112,7 @@ namespace ioa {
     }
   };
 
-  class automaton_interface
+  class generic_automaton_record
     :
     public boost::mutex
   {
@@ -87,7 +120,7 @@ namespace ioa {
     locker<void*> m_parameters;
     
   public:
-    virtual ~automaton_interface () { }
+    virtual ~generic_automaton_record () { }
     
     virtual void* get_instance () const = 0;
 
@@ -111,14 +144,14 @@ namespace ioa {
   };
 
   template <class T>
-  class automaton :
-    public automaton_interface
+  class automaton_record :
+    public generic_automaton_record
   {
   private:
     std::auto_ptr<T> m_instance;
     
   public:
-    automaton (T* instance) :
+    automaton_record (T* instance) :
       m_instance (instance)
     { }
     
