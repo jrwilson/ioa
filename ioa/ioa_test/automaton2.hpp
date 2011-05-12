@@ -8,7 +8,7 @@ private:
   void init () { }
   void instance_exists (const void*) { }
   void automaton_created (const ioa::generic_automaton_handle&) { }
-  void parameter_exists (void*) { }
+  void parameter_exists (const ioa::generic_parameter_handle&) { }
   void parameter_declared (const ioa::generic_parameter_handle&) { }
   void bind_output_automaton_dne () { }
   void bind_input_automaton_dne () { }
@@ -25,7 +25,7 @@ private:
   void binding_dne () { }
   void unbound () { }
   void parameter_dne (const ioa::generic_parameter_handle&) { }
-  void parameter_rescinded (void*) { }
+  void parameter_rescinded (const ioa::generic_parameter_handle&) { }
   void target_automaton_dne (const ioa::generic_automaton_handle&) { }
   void destroyer_not_creator (const ioa::generic_automaton_handle&) { }
   void automaton_destroyed (const ioa::generic_automaton_handle&) { }

@@ -13,7 +13,7 @@ class automaton_impl :
   virtual void init () { BOOST_CHECK (false); }
   virtual void instance_exists (const void*) { BOOST_CHECK (false); }
   virtual void automaton_created (const ioa::generic_automaton_handle&) { BOOST_CHECK (false); }
-  virtual void parameter_exists (void*) { BOOST_CHECK (false); }
+  virtual void parameter_exists (const ioa::generic_parameter_handle&) { BOOST_CHECK (false); }
   virtual void parameter_declared (const ioa::generic_parameter_handle&) { BOOST_CHECK (false); }
   virtual void bind_output_automaton_dne () { BOOST_CHECK (false); }
   virtual void bind_input_automaton_dne () { BOOST_CHECK (false); }
@@ -30,7 +30,7 @@ class automaton_impl :
   virtual void binding_dne () { BOOST_CHECK (false); }
   virtual void unbound () { BOOST_CHECK (false); }
   virtual void parameter_dne (const ioa::generic_parameter_handle&) { BOOST_CHECK (false); }
-  virtual void parameter_rescinded (void*) { BOOST_CHECK (false); }
+  virtual void parameter_rescinded (const ioa::generic_parameter_handle&) { BOOST_CHECK (false); }
   virtual void target_automaton_dne (const ioa::generic_automaton_handle&) { BOOST_CHECK (false); }
   virtual void destroyer_not_creator (const ioa::generic_automaton_handle&) { BOOST_CHECK (false); }
   virtual void automaton_destroyed (const ioa::generic_automaton_handle&) { BOOST_CHECK (false); }
@@ -222,7 +222,7 @@ private:
     ioa::scheduler.schedule (this, &declare_exists::transition);
   }
 
-  void parameter_exists (void*) {
+  void parameter_exists (const ioa::generic_parameter_handle&) {
     switch (m_state) {
     case DECLARE2_SENT:
       m_state = DECLARE2_RECV;
@@ -1761,7 +1761,7 @@ private:
     }
   }
 
-  void parameter_rescinded (void*) {
+  void parameter_rescinded (const ioa::generic_parameter_handle& parameter) {
     switch (m_state) {
     case RESCIND1_SENT:
       m_state = RESCIND1_RECV;
@@ -2067,10 +2067,49 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_automaton_destroyed)
   ioa::scheduler.clear ();
 }
 
-// TODO      EXECUTE_AUTOMATON_DNE,
-// TODO      EXECUTE_PARAMETER_DNE,
-// TODO      EXECUTE_SUCCESS,
+class schedule_output :
+  public automaton_impl
+{
+public:
+  enum state_type {
+    START,
+    STOP
+  };
+  state_type m_state;
 
-// TODO:  Send event to destroyed automaton.
+private:
+
+  bool output_ () {
+    switch (m_state) {
+    case START:
+      m_state = STOP;
+      break;
+    default:
+      BOOST_CHECK (false);
+      break;
+    }
+    return false;
+  }
+  ioa::void_output_wrapper<schedule_output, &schedule_output::output_> output;
+
+  void init () {
+    ioa::scheduler.schedule (this, &schedule_output::output);
+  }
+
+public:
+  schedule_output () :
+    m_state (START),
+    output (*this)
+  { }
+};
+
+BOOST_AUTO_TEST_CASE (scheduler_schedule_output)
+{
+  schedule_output* instance = new schedule_output ();
+  ioa::scheduler.run (instance);
+  BOOST_CHECK_EQUAL (instance->m_state, schedule_output::STOP); // 
+  ioa::scheduler.clear ();
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

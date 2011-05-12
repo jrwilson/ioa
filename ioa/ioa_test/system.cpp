@@ -21,7 +21,8 @@ struct dummy_create_listener
     m_created = true;
   }
 
-  void automaton_dne () {
+  void automaton_dne (const ioa::generic_automaton_handle&,
+		      ioa::automaton_interface*) {
     m_creator_dne = true;
   }
 
@@ -50,7 +51,8 @@ struct dummy_declare_listener
   bool m_parameter_exists;
   ioa::generic_parameter_handle m_parameter;
 
-  void automaton_dne () {
+  void automaton_dne (const ioa::generic_automaton_handle&,
+		      void*) {
     m_automaton_dne = true;
   }
 
@@ -266,7 +268,8 @@ struct dummy_rescind_failure_listener
   bool m_parameter_dne;
   bool m_any;
 
-  void automaton_dne () {
+  void automaton_dne (const ioa::generic_automaton_handle& automaton,
+		      const ioa::generic_parameter_handle& parameter) {
     m_automaton_dne = true;
     m_any = true;
   }
@@ -426,7 +429,7 @@ struct dummy_execute_listener
   bool m_parameter_dne;
 
   void automaton_dne () { m_automaton_dne = true; }
-  void execute_parameter_dne () { m_parameter_dne = true; }
+  void parameter_dne () { m_parameter_dne = true; }
 
   dummy_execute_listener () :
     m_automaton_dne (false),

@@ -291,7 +291,7 @@ namespace ioa {
     
       if (!m_instances.contains (automaton)) {
 	delete instance;
-	csfl.automaton_dne ();
+	csfl.automaton_dne (automaton, instance);
 	return;
       }
 
@@ -319,7 +319,7 @@ namespace ioa {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_instances.contains (automaton)) {
-	dsfl.automaton_dne ();
+	dsfl.automaton_dne (automaton, parameter);
   	return;
       }
       
@@ -633,7 +633,7 @@ namespace ioa {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_instances.contains (automaton)) {
-	rfl.automaton_dne ();
+	rfl.automaton_dne (automaton, parameter);
   	return;
       }
       
@@ -785,8 +785,6 @@ namespace ioa {
       return inner_destroy (target);
     }
 
-    // TODO:  Execute failure listeners.
-
   private:
     void lock_automaton (const generic_automaton_handle& handle)
     {
@@ -810,6 +808,8 @@ namespace ioa {
     }
 
   public:
+    // TODO:  Execute failure listeners.
+
     template <class L>
     void
     execute (const output_action_interface& ac,
@@ -824,7 +824,7 @@ namespace ioa {
       }
 
       if (!parameter_exists (ac)) {
-	listener.execute_parameter_dne ();
+	listener.parameter_dne ();
 	return;
       }
 
@@ -855,7 +855,7 @@ namespace ioa {
       }
 
       if (!parameter_exists (ac)) {
-	listener.execute_parameter_dne ();
+	listener.parameter_dne ();
 	return;
       }
       
@@ -897,7 +897,32 @@ namespace ioa {
       }
 
       if (!parameter_exists (ac)) {
-	listener.execute_parameter_dne ();
+	listener.parameter_dne ();
+	return;
+      }
+
+      lock_automaton (ac.get_automaton_handle ());
+      scheduler.set_current_handle (ac.get_automaton_handle ());
+      ac.bound ();
+      scheduler.clear_current_handle ();
+      unlock_automaton (ac.get_automaton_handle ());
+    }
+
+    template <class L>
+    void
+    bound (const input_action_interface& ac,
+	   scheduler_interface& scheduler,
+	   L& listener)
+    {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_instances.contains (ac.get_automaton_handle ())) {
+	listener.automaton_dne ();
+	return;
+      }
+
+      if (!parameter_exists (ac)) {
+	listener.parameter_dne ();
 	return;
       }
 
@@ -922,7 +947,32 @@ namespace ioa {
       }
       
       if (!parameter_exists (ac)) {
-	listener.execute_parameter_dne ();
+	listener.parameter_dne ();
+	return;
+      }
+      
+      lock_automaton (ac.get_automaton_handle ());
+      scheduler.set_current_handle (ac.get_automaton_handle ());
+      ac.unbound ();
+      scheduler.clear_current_handle ();
+      unlock_automaton (ac.get_automaton_handle ());
+    }
+
+    template <class L>
+    void
+    unbound (const input_action_interface& ac,
+	     scheduler_interface& scheduler,
+	     L& listener)
+    {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_instances.contains (ac.get_automaton_handle ())) {
+	listener.automaton_dne ();
+	return;
+      }
+      
+      if (!parameter_exists (ac)) {
+	listener.parameter_dne ();
 	return;
       }
       

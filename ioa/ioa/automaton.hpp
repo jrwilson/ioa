@@ -17,7 +17,7 @@ namespace ioa {
     virtual void init () { }
     virtual void instance_exists (const void*) { }
     virtual void automaton_created (const generic_automaton_handle&) { }
-    virtual void parameter_exists (void*) { }
+    virtual void parameter_exists (const generic_parameter_handle&) { }
     virtual void parameter_declared (const generic_parameter_handle&) { }
     virtual void bind_output_automaton_dne () { }
     virtual void bind_input_automaton_dne () { }
@@ -34,7 +34,7 @@ namespace ioa {
     virtual void binding_dne () { }
     virtual void unbound () { }
     virtual void parameter_dne (const generic_parameter_handle&) { }
-    virtual void parameter_rescinded (void*) { }
+    virtual void parameter_rescinded (const generic_parameter_handle&) { }
     virtual void target_automaton_dne (const generic_automaton_handle&) { }
     virtual void destroyer_not_creator (const generic_automaton_handle&) { }
     virtual void automaton_destroyed (const generic_automaton_handle&) { }
