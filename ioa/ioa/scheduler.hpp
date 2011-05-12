@@ -18,15 +18,15 @@ namespace ioa {
       m_scheduler (scheduler)
     { }
 
-    template <class C>
+    template <class C, class I>
     void create (const C* ptr,
-		 automaton_interface* instance) {
+		 I* instance) {
       m_scheduler.create (ptr, instance);
     }
     
-    template <class C>
+    template <class C, class P>
     void declare (const C* ptr,
-		  void* parameter) {
+		  P* parameter) {
       m_scheduler.declare (ptr, parameter);
     }
 
@@ -84,15 +84,15 @@ namespace ioa {
       m_scheduler.unbind (ptr, output_automaton, output_member_ptr, input_member_ptr, input_parameter);
     }
 
-    template <class C>
+    template <class C, class P>
     void rescind (const C* ptr,
-		  const generic_parameter_handle& parameter) {
+		  const parameter_handle<P>& parameter) {
       m_scheduler.rescind (ptr, parameter);
     }
 
-    template <class C>
+    template <class C, class I>
     void destroy (const C* ptr,
-		  const generic_automaton_handle& automaton) {
+		  const automaton_handle<I>& automaton) {
       m_scheduler.destroy (ptr, automaton);
     }
 

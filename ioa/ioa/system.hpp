@@ -15,20 +15,24 @@ namespace ioa {
   {
   public:
     virtual ~parameter_record_interface () { }
+
+    virtual void* get_parameter () const = 0;
+
+    virtual const generic_automaton_handle get_automaton () const = 0;
   };
 
-  template <class RSL>
+  template <class I, class P, class RSL>
   class parameter_record :
     public parameter_record_interface
   {
   private:
-    generic_automaton_handle m_automaton;
-    generic_parameter_handle m_parameter;
+    automaton_handle<I> m_automaton;
+    parameter_handle<P> m_parameter;
     RSL& m_rsl;
 
   public:
-    parameter_record (const generic_automaton_handle& automaton,
-		      const generic_parameter_handle& parameter,
+    parameter_record (const automaton_handle<I>& automaton,
+		      const parameter_handle<P>& parameter,
 		      RSL& rsl) :
       m_automaton (automaton),
       m_parameter (parameter),
@@ -38,26 +42,24 @@ namespace ioa {
     ~parameter_record () {
       m_rsl.parameter_rescinded (m_automaton, m_parameter);
     }
+    
+    void* get_parameter () const {
+      return m_parameter.value ();
+    }
 
+    const generic_automaton_handle get_automaton () const {
+      return m_automaton;
+    }
   };
 
   class automaton_record_interface :
     public boost::mutex
   {
   private:
-    std::auto_ptr<automaton_interface> m_instance;
     locker<void*> m_parameters;
     std::map<void*, parameter_record_interface*> m_records;
 
-  protected:
-    generic_automaton_handle m_automaton;
-    
   public:
-    automaton_record_interface (const generic_automaton_handle& automaton) :
-      m_instance (automaton.value ()),
-      m_automaton (automaton)
-    { }
-
     virtual ~automaton_record_interface () {
       for (std::map<void*, parameter_record_interface*>::const_iterator pos = m_records.begin ();
 	   pos != m_records.end ();
@@ -65,10 +67,9 @@ namespace ioa {
 	delete pos->second;
       }
     }
-    
-    automaton_interface* get_instance () const {
-      return m_instance.get ();
-    }
+
+    virtual const generic_automaton_handle get_handle () const = 0;
+    virtual void* get_instance () const = 0;
 
     bool parameter_exists (void* parameter) const {
       return m_parameters.contains (parameter);
@@ -78,12 +79,16 @@ namespace ioa {
       return m_parameters.contains (parameter);
     }
 
-    template <class RSL>
-    generic_parameter_handle declare_parameter (void* parameter,
-						RSL& rsl) {
+    template <class P>
+    parameter_handle<P> get_parameter_handle (P* parameter) {
+      return m_parameters.find (parameter);
+    }
+
+    template <class P, class RSL>
+    parameter_handle<P> declare_parameter (P* parameter,
+					   RSL& rsl) {
       BOOST_ASSERT (!parameter_exists (parameter));
-      generic_parameter_handle handle = m_parameters.insert (parameter);
-      m_records.insert (std::make_pair (parameter, new parameter_record<RSL> (m_automaton, handle, rsl)));
+      parameter_handle<P> handle = m_parameters.insert (parameter);
       return handle;
     }
 
@@ -94,50 +99,80 @@ namespace ioa {
       m_parameters.erase (parameter);
     }
 
-    generic_parameter_handle parameter_handle (void* parameter) {
-      return m_parameters.find (parameter);
+    void insert_parameter_record (parameter_record_interface* record) {
+      BOOST_ASSERT (get_handle () == record->get_automaton ());
+      BOOST_ASSERT (parameter_exists (record->get_parameter ()));
+      BOOST_ASSERT (m_records.find (record->get_parameter ()) == m_records.end ());
+      m_records.insert (std::make_pair (record->get_parameter (), record));
     }
   };
 
-  template <class DSL>
-  class root_automaton_record :
+  template <class I>
+  class automaton_record_impl :
     public automaton_record_interface
+  {
+  private:
+    std::auto_ptr<I> m_instance;
+
+  protected:
+    automaton_handle<I> m_automaton;
+    
+  public:
+    automaton_record_impl (const automaton_handle<I>& automaton) :
+      m_instance (automaton.value ()),
+      m_automaton (automaton)
+    { }
+
+    virtual ~automaton_record_impl () { }
+
+    void* get_instance () const {
+      return m_instance.get ();
+    }
+
+    const generic_automaton_handle get_handle () const {
+      return m_automaton;
+    }
+  };
+
+  template <class I, class DSL>
+  class root_automaton_record :
+    public automaton_record_impl<I>
   {
   private:
     DSL& m_dsl;
 
   public:
-    root_automaton_record (const generic_automaton_handle& automaton,
+    root_automaton_record (const automaton_handle<I>& automaton,
 			   DSL& dsl) :
-      automaton_record_interface (automaton),
+      automaton_record_impl<I> (automaton),
       m_dsl (dsl)
     { }
 
     ~root_automaton_record () {
-      m_dsl.automaton_destroyed (m_automaton);
+      m_dsl.automaton_destroyed (this->m_automaton);
     }
 
   };
 
-  template <class DSL>
+  template <class P, class I, class DSL>
   class automaton_record :
-    public automaton_record_interface
+    public automaton_record_impl<I>
   {
   private:
-    generic_automaton_handle m_parent;
+    automaton_handle<P> m_parent;
     DSL& m_dsl;
 
   public:
-    automaton_record (const generic_automaton_handle& parent,
-		      const generic_automaton_handle& automaton,
+    automaton_record (const automaton_handle<P>& parent,
+		      const automaton_handle<I>& automaton,
 		      DSL& dsl) :
-      automaton_record_interface (automaton),
+      automaton_record_impl<I> (automaton),
       m_parent (parent),
       m_dsl (dsl)
     { }
     
     ~automaton_record () {
-      m_dsl.automaton_destroyed (m_parent, m_automaton);
+      m_dsl.automaton_destroyed (m_parent, this->m_automaton);
     }
 
   };
@@ -147,18 +182,6 @@ namespace ioa {
     public boost::noncopyable
   {
   private:    
-    struct automaton_interface_instance_equal
-    {
-      void* instance;
-      
-      automaton_interface_instance_equal (void* instance) :
-    	instance (instance)
-      { }
-      
-      bool operator() (const std::pair<automaton_record_interface* const, serial_type>& automaton) const {
-    	return instance == automaton.first->get_instance ();
-      }
-    };
     
     class binding_equal
     {
@@ -255,9 +278,9 @@ namespace ioa {
       DFL = Destroy Failure Listener
     */
     
-    template <class CSFL, class DSL>
+    template <class I, class CSFL, class DSL>
     void
-    create (automaton_interface* instance,
+    create (I* instance,
 	    CSFL& csfl,
 	    DSL& dsl)
     {
@@ -270,18 +293,18 @@ namespace ioa {
 	return;
       }
 
-      generic_automaton_handle handle = m_instances.insert (instance);      
-      automaton_record_interface* record = new root_automaton_record<DSL> (handle, dsl);
+      automaton_handle<I> handle = m_instances.insert (instance);      
+      automaton_record_interface* record = new root_automaton_record<I, DSL> (handle, dsl);
       m_automata.insert (std::make_pair (handle, record));
 
       csfl.automaton_created (handle);
       return;
     }
 
-    template <class CSFL, class DSL>
+    template <class P, class I, class CSFL, class DSL>
     void
-    create (const generic_automaton_handle& automaton,
-    	    automaton_interface* instance,
+    create (const automaton_handle<P>& automaton,
+    	    I* instance,
 	    CSFL& csfl,
 	    DSL& dsl)
     {
@@ -300,8 +323,8 @@ namespace ioa {
 	return;
       }
 
-      generic_automaton_handle handle = m_instances.insert (instance);      
-      automaton_record_interface* record = new automaton_record<DSL> (automaton, handle, dsl);
+      automaton_handle<I> handle = m_instances.insert (instance);      
+      automaton_record_interface* record = new automaton_record<P, I, DSL> (automaton, handle, dsl);
       m_automata.insert (std::make_pair (handle, record));
       m_parent_child.push_back (std::make_pair (automaton, handle));
 
@@ -309,10 +332,10 @@ namespace ioa {
       return;
     }
     
-    template <class DSFL, class RSL>
+    template <class I, class P, class DSFL, class RSL>
     void
-    declare (const generic_automaton_handle& automaton,
-  	     void* parameter,
+    declare (const automaton_handle<I>& automaton,
+  	     P* parameter,
 	     DSFL& dsfl,
 	     RSL& rsl)
     {
@@ -326,11 +349,16 @@ namespace ioa {
       automaton_record_interface* record = m_automata[automaton];
       
       if (record->parameter_exists (parameter)) {
-	dsfl.parameter_exists (automaton, record->parameter_handle (parameter));
+	parameter_handle<P> handle = record->get_parameter_handle (parameter);
+	dsfl.parameter_exists (automaton, handle);
 	return;
       }
-      
-      dsfl.parameter_declared (automaton, record->declare_parameter (parameter, rsl));
+
+      parameter_handle<P> handle = record->declare_parameter (parameter, rsl);
+      parameter_record_interface* p_record = new parameter_record<I, P, RSL> (automaton, handle, rsl);
+      record->insert_parameter_record (p_record);
+
+      dsfl.parameter_declared (automaton, handle);
       return;
     }
     
@@ -344,11 +372,11 @@ namespace ioa {
       }
     }
 
-    template <class OM, class IM, class BSFL, class USL>
+    template <class OI, class OM, class II, class IM, class I, class BSFL, class USL>
     void
-    _bind (const action<OM>& output,
-	   const action<IM>& input,
-	   const generic_automaton_handle& binder,
+    _bind (const action<OI, OM>& output,
+	   const action<II, IM>& input,
+	   const automaton_handle<I>& binder,
 	   BSFL& bsfl,
 	   USL& usl)
     {
@@ -426,96 +454,96 @@ namespace ioa {
       return;
     }
 
-    template <class OM, class IM, class BSFL, class USL>
+    template <class OI, class OM, class II, class IM, class I, class BSFL, class USL>
     void
-    bind (const action<OM>& output,
+    bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
-	  const action<IM>& input,
+	  const action<II, IM>& input,
 	  input_category /* */,
 	  unparameterized /* */,
-	  const generic_automaton_handle& binder,
+	  const automaton_handle<I>& binder,
 	  BSFL& bsfl,
 	  USL& usl)
     {
       return _bind (output, input, binder, bsfl, usl);
     }    
 
-    template <class OM, class IM, class BSFL, class USL>
+    template <class OI, class OM, class II, class IM, class BSFL, class USL>
     void
-    bind (const action<OM>& output,
+    bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  parameterized /* */,
-	  const action<IM>& input,
+	  const action<II, IM>& input,
 	  input_category /* */,
 	  unparameterized /* */,
 	  BSFL& bsfl,
 	  USL& usl)
     {
-      return _bind (output, input, output.get_automaton_handle (), bsfl, usl);
+      return _bind (output, input, output.get_typed_automaton_handle (), bsfl, usl);
     }    
 
-    template <class OM, class IM, class BSFL, class USL>
+    template <class OI, class OM, class II, class IM, class BSFL, class USL>
     void
-    bind (const action<OM>& output,
+    bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
-	  const action<IM>& input,
+	  const action<II, IM>& input,
 	  input_category /* */,
 	  parameterized /* */,
 	  BSFL& bsfl,
 	  USL& usl)
     {
-      return _bind (output, input, input.get_automaton_handle (), bsfl, usl);
+      return _bind (output, input, input.get_typed_automaton_handle (), bsfl, usl);
     }    
 
   public:
-    template <class OM, class IM, class BSFL, class USL>
+    template <class OI, class OM, class II, class IM, class I, class BSFL, class USL>
     void
-    bind (const action<OM>& output,
-	  const action<IM>& input,
-	  const generic_automaton_handle& binder,
+    bind (const action<OI, OM>& output,
+	  const action<II, IM>& input,
+	  const automaton_handle<I>& binder,
 	  BSFL& bsfl,
 	  USL& usl)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       return bind (output,
-		   typename action<OM>::action_category (),
-		   typename action<OM>::parameter_status (),
+		   typename action<OI, OM>::action_category (),
+		   typename action<OI, OM>::parameter_status (),
 		   input,
-		   typename action<IM>::action_category (),
-		   typename action<IM>::parameter_status (),
+		   typename action<II, IM>::action_category (),
+		   typename action<II, IM>::parameter_status (),
 		   binder,
 		   bsfl,
 		   usl);
     }
 
-    template <class OM, class IM, class BSFL, class USL>
+    template <class OI, class OM, class II, class IM, class BSFL, class USL>
     void
-    bind (const action<OM>& output,
-	  const action<IM>& input,
+    bind (const action<OI, OM>& output,
+	  const action<II, IM>& input,
 	  BSFL& bsfl,
 	  USL& usl)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       return bind (output,
-		   typename action<OM>::action_category (),
-		   typename action<OM>::parameter_status (),
+		   typename action<OI, OM>::action_category (),
+		   typename action<OI, OM>::parameter_status (),
 		   input,
-		   typename action<IM>::action_category (),
-		   typename action<IM>::parameter_status (),
+		   typename action<II, IM>::action_category (),
+		   typename action<II, IM>::parameter_status (),
 		   bsfl,
 		   usl);
     }
   
   private:
-    template <class OM, class IM, class UFL>
+    template <class OI, class OM, class II, class IM, class I, class UFL>
     void
-    _unbind (const action<OM>& output,
-	     const action<IM>& input,
-	     const generic_automaton_handle& binder,
+    _unbind (const action<OI, OM>& output,
+	     const action<II, IM>& input,
+	     const automaton_handle<I>& binder,
 	     UFL& ufl)
     {
       if (!m_instances.contains (binder)) {
@@ -566,68 +594,68 @@ namespace ioa {
       return;
     }
 
-    template <class OM, class IM, class UFL>
+    template <class OI, class OM, class II, class IM, class I, class UFL>
     void
-    unbind (const action<OM>& output,
+    unbind (const action<OI, OM>& output,
 	    unparameterized /* */,
-	    const action<IM>& input,
+	    const action<II, IM>& input,
 	    unparameterized /* */,
-	    const generic_automaton_handle& binder,
+	    const automaton_handle<I>& binder,
 	    UFL& ufl)
     {
       return _unbind (output, input, binder, ufl);
     }    
     
-    template <class OM, class IM, class UFL>
+    template <class OI, class OM, class II, class IM, class UFL>
     void
-    unbind (const action<OM>& output,
+    unbind (const action<OI, OM>& output,
 	    parameterized /* */,
-	    const action<IM>& input,
+	    const action<II, IM>& input,
 	    unparameterized /* */,
 	    UFL& ufl)
     {
-      return _unbind (output, input, output.get_automaton_handle (), ufl);
+      return _unbind (output, input, output.get_typed_automaton_handle (), ufl);
     }    
     
-    template <class OM, class IM, class UFL>
+    template <class OI, class OM, class II, class IM, class UFL>
     void
-    unbind (const action<OM>& output,
+    unbind (const action<OI, OM>& output,
 	    unparameterized /* */,
-	    const action<IM>& input,
+	    const action<II, IM>& input,
 	    parameterized /* */,
 	    UFL& ufl)
     {
-      return _unbind (output, input, input.get_automaton_handle (), ufl);
+      return _unbind (output, input, input.get_typed_automaton_handle (), ufl);
     }    
     
   public:
-    template <class OM, class IM, class UFL>
+    template <class OI, class OM, class II, class IM, class I, class UFL>
     void
-    unbind (const action<OM>& output,
-	    const action<IM>& input,
-	    const generic_automaton_handle& binder,
+    unbind (const action<OI, OM>& output,
+	    const action<II, IM>& input,
+	    const automaton_handle<I>& binder,
 	    UFL& ufl)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), binder, ufl);
+      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), binder, ufl);
     }
 
-    template <class OM, class IM, class UFL>
+    template <class OI, class OM, class II, class IM, class UFL>
     void
-    unbind (const action<OM>& output,
-	    const action<IM>& input,
+    unbind (const action<OI, OM>& output,
+	    const action<II, IM>& input,
 	    UFL& ufl)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      return unbind (output, typename action<OM>::parameter_status (), input, typename action<IM>::parameter_status (), ufl);
+      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), ufl);
     }
 
-    template <class RFL>
+    template <class I, class P, class RFL>
     void
-    rescind (const generic_automaton_handle& automaton,
-  	     const generic_parameter_handle& parameter,
+    rescind (const automaton_handle<I>& automaton,
+  	     const parameter_handle<P>& parameter,
 	     RFL& rfl)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
@@ -757,10 +785,10 @@ namespace ioa {
       return inner_destroy (target);
     }
 
-    template <class DFL>
+    template <class P, class I, class DFL>
     void
-    destroy (const generic_automaton_handle& automaton,
-	     const generic_automaton_handle& target,
+    destroy (const automaton_handle<P>& automaton,
+	     const automaton_handle<I>& target,
 	     DFL& dfl)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
@@ -775,9 +803,11 @@ namespace ioa {
 	return;
       }
 
+      
+
       if (std::find (m_parent_child.begin (),
 		     m_parent_child.end (),
-		     std::make_pair (automaton, target)) == m_parent_child.end ()) {
+		     std::make_pair (generic_automaton_handle (automaton), generic_automaton_handle (target))) == m_parent_child.end ()) {
 	dfl.destroyer_not_creator (automaton, target);
 	return;
       }

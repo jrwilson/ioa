@@ -135,44 +135,52 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      void instance_exists (const void* instance) {
+      template <class I>
+      void instance_exists (const I* instance) {
 	// Create without a creator failed.  Something is wrong.
 	BOOST_ASSERT (false);
       }
 
-      void automaton_created (const generic_automaton_handle& automaton) {
+      template <class I>
+      void automaton_created (const automaton_handle<I>& automaton) {
 	// Initialize the new created root automaton.
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::init,
+						 boost::bind (&I::init,
 							      automaton.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      void automaton_dne (const generic_automaton_handle& automaton,
-			  automaton_interface* instance) {
+      template <class P, class I>
+      void automaton_dne (const automaton_handle<P>& automaton,
+			  I* instance) {
 	// An automaton attempting to create another automaton was destroyed.
 	// Do nothing.
+	// NB: The system called delete on instance.
       }
 
-      void instance_exists (const generic_automaton_handle& automaton,
-			    void* instance) {
+      template <class P, class I>
+      void instance_exists (const automaton_handle<P>& automaton,
+			    I* instance) {
+	void (P::*ptr) (const I*) = &P::instance_exists;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::instance_exists,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      instance),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      void automaton_created (const generic_automaton_handle& automaton,
-			      const generic_automaton_handle& child) {
+      template <class P, class I>
+      void automaton_created (const automaton_handle<P>& automaton,
+			      const automaton_handle<I>& child) {
 	// Tell the parent about its child.
+	void (P::*ptr1) (const automaton_handle<I>&) = &P::automaton_created;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::automaton_created,
+						 boost::bind (ptr1,
 							      automaton.value (),
 							      child),
 						 m_scheduler,
@@ -180,7 +188,7 @@ namespace ioa {
 	// Initialize the child.
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 child,
-						 boost::bind (&automaton_interface::init,
+						 boost::bind (&I::init,
 							      child.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
@@ -196,34 +204,39 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      void automaton_dne (const generic_automaton_handle&,
-			  void*) {
+      template <class I, class P>
+      void automaton_dne (const automaton_handle<I>&,
+			  P*) {
 	// An automaton attempted to declare a parameter was destroyed.
 	// Do nothing.
       }
 
-      void parameter_exists (const generic_automaton_handle& automaton,
-			     const generic_parameter_handle& parameter) {
+      template <class I, class P>
+      void parameter_exists (const automaton_handle<I>& automaton,
+			     const parameter_handle<P>& parameter) {
+	void (I::*ptr) (const parameter_handle<P>&) = &I::parameter_exists;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::parameter_exists,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      parameter),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      void parameter_declared (const generic_automaton_handle& automaton,
-			       const generic_parameter_handle& parameter) {
+      template <class I, class P>
+      void parameter_declared (const automaton_handle<I>& automaton,
+			       const parameter_handle<P>& parameter) {
+	void (I::*ptr) (const parameter_handle<P>&) = &I::parameter_declared;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::parameter_declared,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      parameter),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
-
+      
       declare_proxy (simple_scheduler& scheduler) :
 	m_scheduler (scheduler)
       { }
@@ -235,105 +248,105 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      template <class OM, class IM>
-      void automaton_dne (const action<OM>& output_action,
-			  const action<IM>& input_action,
-			  const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void automaton_dne (const action<OI, OM>& output_action,
+			  const action<II, IM>& input_action,
+			  const automaton_handle<I>& binder) {
 	// An automaton attempting to bind was destroyed.
 	// Do nothing.
       }
 
-      template <class OM, class IM>
-      void output_automaton_dne (const action<OM>& output_action,
-				 const action<IM>& input_action,
-				 const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void output_automaton_dne (const action<OI, OM>& output_action,
+				 const action<II, IM>& input_action,
+				 const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::bind_output_automaton_dne,
+						 boost::bind (&I::bind_output_automaton_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void input_automaton_dne (const action<OM>& output_action,
-				const action<IM>& input_action,
-				const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void input_automaton_dne (const action<OI, OM>& output_action,
+				const action<II, IM>& input_action,
+				const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::bind_input_automaton_dne,
+						 boost::bind (&I::bind_input_automaton_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void output_parameter_dne (const action<OM>& output_action,
-				 const action<IM>& input_action,
-				 const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void output_parameter_dne (const action<OI, OM>& output_action,
+				 const action<II, IM>& input_action,
+				 const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::bind_output_parameter_dne,
+						 boost::bind (&I::bind_output_parameter_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void input_parameter_dne (const action<OM>& output_action,
-				const action<IM>& input_action,
-				const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void input_parameter_dne (const action<OI, OM>& output_action,
+				const action<II, IM>& input_action,
+				const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::bind_input_parameter_dne,
+						 boost::bind (&I::bind_input_parameter_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void binding_exists (const action<OM>& output_action,
-			   const action<IM>& input_action,
-			   const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void binding_exists (const action<OI, OM>& output_action,
+			   const action<II, IM>& input_action,
+			   const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::binding_exists,
+						 boost::bind (&I::binding_exists,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void input_action_unavailable (const action<OM>& output_action,
-				     const action<IM>& input_action,
-				     const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void input_action_unavailable (const action<OI, OM>& output_action,
+				     const action<II, IM>& input_action,
+				     const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::input_action_unavailable,
+						 boost::bind (&I::input_action_unavailable,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void output_action_unavailable (const action<OM>& output_action,
-				      const action<IM>& input_action,
-				      const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void output_action_unavailable (const action<OI, OM>& output_action,
+				      const action<II, IM>& input_action,
+				      const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::output_action_unavailable,
+						 boost::bind (&I::output_action_unavailable,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void bound (const action<OM>& output_action,
-		  const action<IM>& input_action,
-		  const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void bound (const action<OI, OM>& output_action,
+		  const action<II, IM>& input_action,
+		  const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::bound,
+						 boost::bind (&I::bound,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
@@ -365,13 +378,13 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
       
-      template <class OM, class IM>
-      void unbound (const action<OM>& output_action,
-		    const action<IM>& input_action,
-		    const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void unbound (const action<OI, OM>& output_action,
+		    const action<II, IM>& input_action,
+		    const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::unbound,
+						 boost::bind (&I::unbound,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
@@ -403,74 +416,74 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      template <class OM, class IM>
-      void automaton_dne (const action<OM>& output_action,
-			  const action<IM>& input_action,
-			  const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void automaton_dne (const action<OI, OM>& output_action,
+			  const action<II, IM>& input_action,
+			  const automaton_handle<I>& binder) {
 	// An automaton attempted to unbind was destroyed.
 	// Do nothing.
       }
 
-      template <class OM, class IM>
-      void output_automaton_dne (const action<OM>& output_action,
-				 const action<IM>& input_action,
-				 const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void output_automaton_dne (const action<OI, OM>& output_action,
+				 const action<II, IM>& input_action,
+				 const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::unbind_output_automaton_dne,
+						 boost::bind (&I::unbind_output_automaton_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void input_automaton_dne (const action<OM>& output_action,
-				const action<IM>& input_action,
-				const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void input_automaton_dne (const action<OI, OM>& output_action,
+				const action<II, IM>& input_action,
+				const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::unbind_input_automaton_dne,
+						 boost::bind (&I::unbind_input_automaton_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void output_parameter_dne (const action<OM>& output_action,
-				 const action<IM>& input_action,
-				 const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void output_parameter_dne (const action<OI, OM>& output_action,
+				 const action<II, IM>& input_action,
+				 const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::unbind_output_parameter_dne,
+						 boost::bind (&I::unbind_output_parameter_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void input_parameter_dne (const action<OM>& output_action,
-				const action<IM>& input_action,
-				const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void input_parameter_dne (const action<OI, OM>& output_action,
+				const action<II, IM>& input_action,
+				const automaton_handle<I>& binder) {
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 binder,
-						 boost::bind (&automaton_interface::unbind_input_parameter_dne,
+						 boost::bind (&I::unbind_input_parameter_dne,
 							      binder.value ()),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      template <class OM, class IM>
-      void binding_dne (const action<OM>& output_action,
-			const action<IM>& input_action,
-			const generic_automaton_handle& binder) {
+      template <class OI, class OM, class II, class IM, class I>
+      void binding_dne (const action<OI, OM>& output_action,
+			const action<II, IM>& input_action,
+			const automaton_handle<I>& binder) {
       	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
       						 binder,
-      						 boost::bind (&automaton_interface::binding_dne,
+      						 boost::bind (&I::binding_dne,
       							      binder.value ()),
       						 m_scheduler,
       						 m_scheduler.m_execute_proxy));
       }
-
+      
       unbind_failure_proxy (simple_scheduler& scheduler) :
 	m_scheduler (scheduler)
       { }
@@ -481,17 +494,19 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      void parameter_rescinded (const generic_automaton_handle& automaton,
-				const generic_parameter_handle& parameter) {
+      template <class I, class P>
+      void parameter_rescinded (const automaton_handle<I>& automaton,
+				const parameter_handle<P>& parameter) {
+	void (I::*ptr) (const parameter_handle<P>&) = &I::parameter_rescinded;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::parameter_rescinded,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      parameter),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
-
+      
       rescind_success_proxy (simple_scheduler& scheduler) :
 	m_scheduler (scheduler)
       { }
@@ -502,18 +517,20 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      void automaton_dne (const generic_automaton_handle&,
-			  const generic_parameter_handle&) {
+      template <class I, class P>
+      void automaton_dne (const automaton_handle<I>&,
+			  const parameter_handle<P>&) {
 	// An automaton attempting to rescind a parameter was destroyed.
 	// Do nothing.
       }
 
-      void parameter_dne (const generic_automaton_handle& automaton,
-			  const generic_parameter_handle& parameter) {
-
+      template <class I, class P>
+      void parameter_dne (const automaton_handle<I>& automaton,
+			  const parameter_handle<P>& parameter) {
+	void (I::*ptr) (const parameter_handle<P>&) = &I::parameter_dne;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::parameter_dne,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      parameter),
 						 m_scheduler,
@@ -530,15 +547,18 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      void automaton_destroyed (const generic_automaton_handle& automaton) {
+      template <class I>
+      void automaton_destroyed (const automaton_handle<I>& automaton) {
 	// Root automaton destroyed.
       }
 
-      void automaton_destroyed (const generic_automaton_handle& automaton,
-				const generic_automaton_handle& child) {
+      template <class I, class T>
+      void automaton_destroyed (const automaton_handle<I>& automaton,
+				const automaton_handle<T>& child) {
+	void (I::*ptr) (const automaton_handle<T>&) = &I::automaton_destroyed;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::automaton_destroyed,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      child),
 						 m_scheduler,
@@ -555,28 +575,33 @@ namespace ioa {
     {
       simple_scheduler& m_scheduler;
 
-      void automaton_dne (const generic_automaton_handle&,
-			  const generic_automaton_handle&) {
+      template <class P, class I>
+      void automaton_dne (const automaton_handle<P>&,
+			  const automaton_handle<I>&) {
 	// An automaton attempting to destroy another automaton was itself destroyed.
 	// Do nothing.
       }
 
-      void target_automaton_dne (const generic_automaton_handle& automaton,
-				 const generic_automaton_handle& target) {
+      template <class P, class I>
+      void target_automaton_dne (const automaton_handle<P>& automaton,
+				 const automaton_handle<I>& target) {
+	void (P::*ptr) (const automaton_handle<I>&) = &P::target_automaton_dne;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::target_automaton_dne,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      target),
 						 m_scheduler,
 						 m_scheduler.m_execute_proxy));
       }
 
-      void destroyer_not_creator (const generic_automaton_handle& automaton,
-				  const generic_automaton_handle& target) {
+      template <class P, class I>
+      void destroyer_not_creator (const automaton_handle<P>& automaton,
+				  const automaton_handle<I>& target) {
+	void (P::*ptr) (const automaton_handle<I>&) = &P::destroyer_not_creator;
 	m_scheduler.schedule (make_system_event (m_scheduler.m_system,
 						 automaton,
-						 boost::bind (&automaton_interface::destroyer_not_creator,
+						 boost::bind (ptr,
 							      automaton.value (),
 							      target),
 						 m_scheduler,
@@ -621,11 +646,11 @@ namespace ioa {
       m_destroy_failure_proxy (*this)
     { }
 
-    template <class C>
+    template <class C, class I>
     void create (const C* ptr,
-		 automaton_interface* instance) {
-      void (system::*create_ptr) (const generic_automaton_handle&,
-      				  automaton_interface*,
+		 I* instance) {
+      void (system::*create_ptr) (const automaton_handle<C>&,
+      				  I*,
       				  create_proxy&,
 				  destroy_success_proxy&) = &system::create;
       schedule (make_runnable (boost::bind (create_ptr,
@@ -636,10 +661,14 @@ namespace ioa {
 					    boost::ref (m_destroy_success_proxy))));
     }
     
-    template <class C>
+    template <class C, class P>
     void declare (const C* ptr,
-		  void* parameter) {
-      schedule (make_runnable (boost::bind (&system::declare<declare_proxy, rescind_success_proxy>,
+		  P* parameter) {
+      void (system::*declare_ptr) (const automaton_handle<C>&,
+				   P*,
+				   declare_proxy&,
+				   rescind_success_proxy&) = &system::declare;
+      schedule (make_runnable (boost::bind (declare_ptr,
 					    boost::ref (m_system),
 					    get_current_handle (ptr),
 					    parameter,
@@ -653,11 +682,11 @@ namespace ioa {
 	       OM OI::*output_member_ptr,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr) {
-      void (system::*bind_ptr) (const action<OM>&,
-      				const action<IM>&,
-      				const generic_automaton_handle&,
+      void (system::*bind_ptr) (const action<OI, OM>&,
+      				const action<II, IM>&,
+      				const automaton_handle<C>&,
       				bind_proxy&,
-				unbind_success_proxy&) = &system::bind<OM, IM>;
+				unbind_success_proxy&) = &system::bind;
       schedule (make_runnable (boost::bind (bind_ptr,
 					    boost::ref (m_system),
 					    make_action (output_automaton, output_member_ptr),
@@ -673,10 +702,10 @@ namespace ioa {
 	       const parameter_handle<OP>& output_parameter,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr) {
-      void (system::*bind_ptr) (const action<OM>&,
-      				const action<IM>&,
+      void (system::*bind_ptr) (const action<OI, OM>&,
+      				const action<II, IM>&,
       				bind_proxy&,
-				unbind_success_proxy&) = &system::bind<OM, IM>;
+				unbind_success_proxy&) = &system::bind;
       schedule (make_runnable (boost::bind (bind_ptr,
 					    boost::ref (m_system),
 					    make_action (get_current_handle (ptr), output_member_ptr, output_parameter),
@@ -691,10 +720,10 @@ namespace ioa {
 	       OM OI::*output_member_ptr,
 	       IM II::*input_member_ptr,
 	       const parameter_handle<IP>& input_parameter) {
-      void (system::*bind_ptr) (const action<OM>&,
-      				const action<IM>&,
+      void (system::*bind_ptr) (const action<OI, OM>&,
+      				const action<II, IM>&,
       				bind_proxy&,
-				unbind_success_proxy&) = &system::bind<OM, IM>;
+				unbind_success_proxy&) = &system::bind;
       schedule (make_runnable (boost::bind (bind_ptr,
 					    boost::ref (m_system),
 					    make_action (output_automaton, output_member_ptr),
@@ -705,14 +734,14 @@ namespace ioa {
 
     template <class C, class OI, class OM, class II, class IM>
     void unbind (const C* ptr,
-	       const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr) {
-      void (system::*unbind_ptr) (const action<OM>&,
-				  const action<IM>&,
-				  const generic_automaton_handle&,
-				  unbind_failure_proxy&) = &system::unbind<OM, IM>;
+		 const automaton_handle<OI>& output_automaton,
+		 OM OI::*output_member_ptr,
+		 const automaton_handle<II>& input_automaton,
+		 IM II::*input_member_ptr) {
+      void (system::*unbind_ptr) (const action<OI, OM>&,
+				  const action<II, IM>&,
+				  const automaton_handle<C>&,
+				  unbind_failure_proxy&) = &system::unbind;
       schedule (make_runnable (boost::bind (unbind_ptr,
 					    boost::ref (m_system),
 					    make_action (output_automaton, output_member_ptr),
@@ -727,9 +756,9 @@ namespace ioa {
 	       const parameter_handle<OP>& output_parameter,
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr) {
-      void (system::*unbind_ptr) (const action<OM>&,
-				  const action<IM>&,
-				  unbind_failure_proxy&) = &system::unbind<OM, IM>;
+      void (system::*unbind_ptr) (const action<OI, OM>&,
+				  const action<II, IM>&,
+				  unbind_failure_proxy&) = &system::unbind;
       schedule (make_runnable (boost::bind (unbind_ptr,
 					    boost::ref (m_system),
 					    make_action (get_current_handle (ptr), output_member_ptr, output_parameter),
@@ -743,9 +772,9 @@ namespace ioa {
 	       OM OI::*output_member_ptr,
 	       IM II::*input_member_ptr,
 	       const parameter_handle<IP>& input_parameter) {
-      void (system::*unbind_ptr) (const action<OM>&,
-				  const action<IM>&,
-				  unbind_failure_proxy&) = &system::unbind<OM, IM>;
+      void (system::*unbind_ptr) (const action<OI, OM>&,
+				  const action<II, IM>&,
+				  unbind_failure_proxy&) = &system::unbind;
       schedule (make_runnable (boost::bind (unbind_ptr,
 					    boost::ref (m_system),
 					    make_action (output_automaton, output_member_ptr),
@@ -753,20 +782,26 @@ namespace ioa {
 					    boost::ref (m_unbind_failure_proxy))));
     }
 
-    template <class C>
+    template <class C, class P>
     void rescind (const C* ptr,
-		  const generic_parameter_handle& parameter) {
-      schedule (make_runnable (boost::bind (&system::rescind<rescind_failure_proxy>,
+		  const parameter_handle<P>& parameter) {
+      void (system::*rescind_ptr) (const automaton_handle<C>&,
+				   const parameter_handle<P>&,
+				   rescind_failure_proxy&) = &system::rescind;
+      schedule (make_runnable (boost::bind (rescind_ptr,
 					    boost::ref (m_system),
 					    get_current_handle (ptr),
 					    parameter,
 					    boost::ref (m_rescind_failure_proxy))));
     }
 
-    template <class C>
+    template <class C, class I>
     void destroy (const C* ptr,
-		  const generic_automaton_handle& automaton) {
-      schedule (make_runnable (boost::bind (&system::destroy<destroy_failure_proxy>,
+		  const automaton_handle<I>& automaton) {
+      void (system::*destroy_ptr) (const automaton_handle<C>&,
+				   const automaton_handle<I>&,
+				   destroy_failure_proxy&) = &system::destroy;
+      schedule (make_runnable (boost::bind (destroy_ptr,
 					    boost::ref (m_system),
 					    get_current_handle (ptr),
 					    automaton,
@@ -774,8 +809,8 @@ namespace ioa {
     }
 
   private:
-    template <class M>
-    void schedule (const action<M>& ac,
+    template <class I, class M>
+    void schedule (const action<I, M>& ac,
   		   output_category /* */) {
       void (system::*execute_ptr) (const output_action_interface&,
       				   scheduler_interface&,
@@ -787,8 +822,8 @@ namespace ioa {
 					    boost::ref (m_execute_proxy))));
     }
     
-    template <class M>
-    void schedule (const action<M>& ac,
+    template <class I, class M>
+    void schedule (const action<I, M>& ac,
   		   internal_category /* */) {
       void (system::*execute_ptr) (const independent_action_interface&,
       				   scheduler_interface&,
@@ -804,8 +839,8 @@ namespace ioa {
     template <class I, class M>
     void schedule (const I* ptr,
 		   M I::*member_ptr) {
-      action<M> ac = make_action (get_current_handle (ptr), member_ptr);
-      schedule (ac, typename action<M>::action_category ());
+      action<I, M> ac = make_action (get_current_handle (ptr), member_ptr);
+      schedule (ac, typename action<I, M>::action_category ());
     }
 
     template <class T>

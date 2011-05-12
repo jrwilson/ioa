@@ -169,9 +169,10 @@ namespace ioa {
       }
     }
 
-    locker_key<T> find (const T& value) const {
+    template <class U>
+    locker_key<U> find (const U& value) const {
       typename vs_type::const_iterator pos = m_value_serial.find (value);
-      return locker_key<T> (pos->second, pos->first);
+      return locker_key<U> (pos->second, value);
     }
 
   };

@@ -20,36 +20,36 @@ namespace ioa {
   class default_unbind_success_listener
   {
   public:
-    template <class OM, class IM>
-    void unbound (const action<OM>& output_action,
-		  const action<IM>& input_action,
+    template <class OI, class OM, class II, class IM>
+    void unbound (const action<OI, OM>& output_action,
+		  const action<II, IM>& input_action,
 		  const generic_automaton_handle& binder) { }
   };
 
-  template <class OA, class IA, class OM, class IM, class USL = default_unbind_success_listener>
+  template <class OA, class IA, class OI, class OM, class II, class IM, class I, class USL = default_unbind_success_listener>
   class binding_record :
     public binding_record_interface<OA, IA>
   {
   private:
-    action<OM> m_output_action;
-    action<IM> m_input_action;
-    generic_automaton_handle m_binder;
+    action<OI, OM> m_output_action;
+    action<II, IM> m_input_action;
+    automaton_handle<I> m_binder;
     default_unbind_success_listener m_default;
     USL& m_usl;
 
   public:
-    binding_record (const action<OM>& output_action,
-		    const action<IM>& input_action,
-		    const generic_automaton_handle& binder) :
+    binding_record (const action<OI, OM>& output_action,
+		    const action<II, IM>& input_action,
+		    const automaton_handle<I>& binder) :
       m_output_action (output_action),
       m_input_action (input_action),
       m_binder (binder),
       m_usl (m_default)
     { }
 
-    binding_record (const action<OM>& output_action,
-		    const action<IM>& input_action,
-		    const generic_automaton_handle& binder,
+    binding_record (const action<OI, OM>& output_action,
+		    const action<II, IM>& input_action,
+		    const automaton_handle<I>& binder,
 		    USL& usl) :
       m_output_action (output_action),
       m_input_action (input_action),
@@ -209,24 +209,24 @@ namespace ioa {
   			   input_automaton_equal<OA, IA> (automaton)) != m_inputs.end ();
     }
     
-    template <class OM, class IM, class USL>
-    void bind (const action<OM>& output_action,
-	       const action<IM>& input_action,
-	       const generic_automaton_handle& binder,
+    template <class OI, class OM, class II, class IM, class I, class USL>
+    void bind (const action<OI, OM>& output_action,
+	       const action<II, IM>& input_action,
+	       const automaton_handle<I>& binder,
 	       USL& usl) {
       if (!m_inputs.empty ()) {
 	BOOST_ASSERT (output_action == get_output ());
       }
-      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OM, IM, USL> (output_action, input_action, binder, usl);
+      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, USL> (output_action, input_action, binder, usl);
       m_inputs.insert (record);
     }
 
-    template <class OM, class IM>
-    void unbind (const action<OM>& output_action,
-		 const action<IM>& input_action,
-		 const generic_automaton_handle& binder) {
+    template <class OI, class OM, class II, class IM, class I>
+    void unbind (const action<OI, OM>& output_action,
+		 const action<II, IM>& input_action,
+		 const automaton_handle<I>& binder) {
       BOOST_ASSERT (!m_inputs.empty ());
-      binding_record<OA, IA, OM, IM> t (output_action, input_action, binder);
+      binding_record<OA, IA, OI, OM, II, IM, I> t (output_action, input_action, binder);
       typename set_type::iterator pos = m_inputs.find (&t);
       if (pos != m_inputs.end ()) {
 	binding_record_interface<OA, IA>* record = *pos;
