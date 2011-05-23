@@ -26,4 +26,33 @@ public:
   { }
 };
 
+struct automaton2_generator
+{
+  typedef automaton2 result_type;
+
+  automaton2* operator() () {
+    return new automaton2 ();
+  }
+};
+
+template <class T>
+class instance_holder
+{
+private:
+  T* m_instance;
+
+public:
+
+  typedef T result_type;
+
+  instance_holder (T* instance) :
+    m_instance (instance)
+  { }
+
+  T* operator() () {
+    return m_instance;
+  }
+  
+};
+
 #endif

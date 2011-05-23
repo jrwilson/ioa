@@ -7,7 +7,8 @@
 
 BOOST_AUTO_TEST_SUITE(scheduler_suite)
 
-class create_exists
+class create_exists :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -21,16 +22,82 @@ public:
   state_type m_state;
 
 private:
-  automaton2* m_instance;
+  class gen
+  {
+  public:
+    typedef automaton2 result_type;
+
+    automaton2* m_instance;
+
+    gen (automaton2* instance) :
+      m_instance (instance)
+    { }
+
+    automaton2* operator() () {
+      return m_instance;
+    }
+  };
+
+  struct create1_d
+  {
+    create_exists& m_ce;
+
+    create1_d (create_exists& ce) :
+      m_ce (ce)
+    { }
+
+    template <class I>
+    void automaton_created (const ioa::automaton_handle<I>&) {
+      m_ce.m_state = CREATE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &create_exists::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    create_exists& m_ce;
+
+    create2_d (create_exists& ce) :
+      m_ce (ce)
+    { }
+
+    template <class I>
+    void automaton_created (const ioa::automaton_handle<I>&) {
+      BOOST_CHECK (false);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      m_ce.m_state = CREATE2_RECV;
+      ioa::scheduler.schedule (&m_ce, &create_exists::transition);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  gen m_g;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, m_instance);
+      ioa::scheduler.create (this, m_g, m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
-      ioa::scheduler.create (this, m_instance);
+      ioa::scheduler.create (this, m_g, m_create2_d);
       m_state = CREATE2_SENT;
       break;
     case CREATE2_RECV:
@@ -48,41 +115,11 @@ public:
     ioa::scheduler.schedule (this, &create_exists::transition);
   }
 
-  template <class I>
-  void instance_exists (const I* instance) {
-    switch (m_state) {
-    case CREATE2_SENT:
-      BOOST_CHECK_EQUAL (m_instance, instance);
-      m_state = CREATE2_RECV;
-      ioa::scheduler.schedule (this, &create_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_created (const ioa::automaton_handle<I>&) {
-    switch (m_state) {
-    case CREATE1_SENT:
-      m_state = CREATE1_RECV;
-      ioa::scheduler.schedule (this, &create_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
   create_exists () :
     m_state (START),
-    m_instance (new automaton2 ()),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_g (new automaton2 ()),
     transition (*this)
   { }
 };
@@ -95,7 +132,8 @@ BOOST_AUTO_TEST_CASE (scheduler_create_exists)
   ioa::scheduler.clear ();
 }
 
-class create_automaton_created
+class create_automaton_created :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -107,12 +145,37 @@ public:
   state_type m_state;
 
 private:
-  automaton2* m_instance;
+  struct create1_d
+  {
+    create_automaton_created& m_ce;
+
+    create1_d (create_automaton_created& ce) :
+      m_ce (ce)
+    { }
+
+    template <class I>
+    void automaton_created (const ioa::automaton_handle<I>&) {
+      m_ce.m_state = CREATE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &create_automaton_created::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  create1_d m_create1_d;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, m_instance);
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
@@ -130,32 +193,9 @@ public:
     ioa::scheduler.schedule (this, &create_automaton_created::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  template <class I>
-  void automaton_created (const ioa::automaton_handle<I>&) {
-    switch (m_state) {
-    case CREATE1_SENT:
-      m_state = CREATE1_RECV;
-      ioa::scheduler.schedule (this, &create_automaton_created::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
   create_automaton_created () :
     m_state (START),
-    m_instance (new automaton2 ()),
+    m_create1_d (*this),
     transition (*this)
   { }
 };
@@ -168,7 +208,8 @@ BOOST_AUTO_TEST_CASE (scheduler_create_automaton_created)
   ioa::scheduler.clear ();
 }
 
-class declare_exists
+class declare_exists :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -182,16 +223,67 @@ public:
   state_type m_state;
 
 private:
-  int m_parameter;
 
+  struct declare1_d
+  {
+    declare_exists& m_ce;
+
+    declare1_d (declare_exists& ce) :
+      m_ce (ce)
+    { }
+
+    template <class P>
+    void parameter_declared (const ioa::parameter_handle<P>&) {
+      m_ce.m_state = DECLARE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &declare_exists::transition);
+    }
+
+    void parameter_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void parameter_rescinded () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  struct declare2_d
+  {
+    declare_exists& m_ce;
+
+    declare2_d (declare_exists& ce) :
+      m_ce (ce)
+    { }
+
+    template <class P>
+    void parameter_declared (const ioa::parameter_handle<P>&) {
+      BOOST_CHECK (false);
+    }
+
+    void parameter_exists () {
+      m_ce.m_state = DECLARE2_RECV;
+      ioa::scheduler.schedule (&m_ce, &declare_exists::transition);
+    }
+
+    void parameter_rescinded () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  declare1_d m_declare1_d;
+  declare2_d m_declare2_d;
+  int m_parameter;
+  
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.declare (this, &m_parameter);
+      ioa::scheduler.declare (this, &m_parameter, m_declare1_d);
       m_state = DECLARE1_SENT;
       break;
     case DECLARE1_RECV:
-      ioa::scheduler.declare (this, &m_parameter);
+      ioa::scheduler.declare (this, &m_parameter, m_declare2_d);
       m_state = DECLARE2_SENT;
       break;
     case DECLARE2_RECV:
@@ -209,39 +301,10 @@ public:
     ioa::scheduler.schedule (this, &declare_exists::transition);
   }
 
-  template <class P>
-  void parameter_exists (const ioa::parameter_handle<P>&) {
-    switch (m_state) {
-    case DECLARE2_SENT:
-      m_state = DECLARE2_RECV;
-      ioa::scheduler.schedule (this, &declare_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-  
-  template <class P>
-  void parameter_declared (const ioa::parameter_handle<P>&) {
-    switch (m_state) {
-    case DECLARE1_SENT:
-      m_state = DECLARE1_RECV;
-      ioa::scheduler.schedule (this, &declare_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class P>
-  void parameter_rescinded (const ioa::parameter_handle<P>&) {
-    BOOST_CHECK (false);
-  }
-
   declare_exists () :
     m_state (START),
+    m_declare1_d (*this),
+    m_declare2_d (*this),
     transition (*this)
   { }
 };
@@ -254,7 +317,8 @@ BOOST_AUTO_TEST_CASE (scheduler_declare_exists)
   ioa::scheduler.clear ();
 }
 
-class declare_parameter_declared
+class declare_parameter_declared :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -266,12 +330,39 @@ public:
   state_type m_state;
 
 private:
+
+  struct declare1_d
+  {
+    declare_parameter_declared& m_ce;
+
+    declare1_d (declare_parameter_declared& ce) :
+      m_ce (ce)
+    { }
+
+    template <class P>
+    void parameter_declared (const ioa::parameter_handle<P>&) {
+      m_ce.m_state = DECLARE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &declare_parameter_declared::transition);
+    }
+
+    void parameter_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void parameter_rescinded () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  declare1_d m_declare1_d;
+
   int m_parameter;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.declare (this, &m_parameter);
+      ioa::scheduler.declare (this, &m_parameter, m_declare1_d);
       m_state = DECLARE1_SENT;
       break;
     case DECLARE1_RECV:
@@ -289,31 +380,9 @@ public:
     ioa::scheduler.schedule (this, &declare_parameter_declared::transition);
   }
 
-  template <class P>
-  void parameter_exists (const ioa::parameter_handle<P>&) {
-    BOOST_CHECK (false);
-  }
-
-  template <class P>
-  void parameter_declared (const ioa::parameter_handle<P>&) {
-    switch (m_state) {
-    case DECLARE1_SENT:
-      m_state = DECLARE1_RECV;
-      ioa::scheduler.schedule (this, &declare_parameter_declared::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class P>
-  void parameter_rescinded (const ioa::parameter_handle<P>&) {
-    BOOST_CHECK (false);
-  }
-
   declare_parameter_declared () :
     m_state (START),
+    m_declare1_d (*this),
     transition (*this)
   { }
 };
@@ -326,7 +395,8 @@ BOOST_AUTO_TEST_CASE (scheduler_declare_parameter_declared)
   ioa::scheduler.clear ();
 }
 
-class bind_output_automaton_dne_
+class bind_output_automaton_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -340,17 +410,91 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_output_automaton_dne_& m_ce;
+
+    create1_d (bind_output_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_automaton_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_output_automaton_dne_& m_ce;
+
+    bind1_d (bind_output_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_automaton_dne_::transition);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+    
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  bind1_d m_bind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
@@ -368,75 +512,10 @@ public:
     ioa::scheduler.schedule (this, &bind_output_automaton_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &bind_output_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_output_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    BOOST_CHECK (false);
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_output_automaton_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_bind1_d (*this),
     transition (*this)
   { }
 };
@@ -449,7 +528,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_output_automaton_dne)
   ioa::scheduler.clear ();
 }
 
-class bind_input_automaton_dne_
+class bind_input_automaton_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -463,17 +543,91 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_input_automaton_dne_& m_ce;
+
+    create1_d (bind_input_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_automaton_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_input_automaton_dne_& m_ce;
+
+    bind1_d (bind_input_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_automaton_dne_::transition);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+    
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  bind1_d m_bind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
@@ -492,75 +646,10 @@ public:
     ioa::scheduler.schedule (this, &bind_input_automaton_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    BOOST_CHECK (false);
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_input_automaton_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_bind1_d (*this),
     transition (*this)
   { }
 };
@@ -573,7 +662,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_input_automaton_dne)
   ioa::scheduler.clear ();
 }
 
-class bind_output_parameter_dne_
+class bind_output_parameter_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -587,6 +677,80 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_output_parameter_dne_& m_ce;
+
+    create1_d (bind_output_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_parameter_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_output_parameter_dne_& m_ce;
+
+    bind1_d (bind_output_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_parameter_dne_::transition);
+    }
+    
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  bind1_d m_bind1_d;
   ioa::parameter_handle<int> m_parameter;
   ioa::automaton_handle<automaton2> m_child2;
 
@@ -598,11 +762,11 @@ private:
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.bind (this, &bind_output_parameter_dne_::output, m_parameter, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, &bind_output_parameter_dne_::output, m_parameter, m_child2, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
@@ -621,75 +785,10 @@ public:
     ioa::scheduler.schedule (this, &bind_output_parameter_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &bind_output_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_output_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    BOOST_CHECK (false);
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_output_parameter_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_bind1_d (*this),
     output (*this),
     transition (*this)
   { }
@@ -703,7 +802,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_output_parameter_dne_)
   ioa::scheduler.clear ();
 }
 
-class bind_input_parameter_dne_
+class bind_input_parameter_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -717,6 +817,79 @@ public:
   state_type m_state;
 
 private:
+  struct create1_d
+  {
+    bind_input_parameter_dne_& m_ce;
+
+    create1_d (bind_input_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_parameter_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_input_parameter_dne_& m_ce;
+
+    bind1_d (bind_input_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_parameter_dne_::transition);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  create1_d m_create1_d;
+  bind1_d m_bind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::parameter_handle<int> m_parameter;
 
@@ -727,11 +900,11 @@ private:
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, &bind_input_parameter_dne_::input, m_parameter);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, &bind_input_parameter_dne_::input, m_parameter, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
@@ -750,75 +923,10 @@ public:
     ioa::scheduler.schedule (this, &bind_input_parameter_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    BOOST_CHECK (false);
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_input_parameter_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_bind1_d (*this),
     input (*this),
     transition (*this)
   { }
@@ -832,7 +940,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_input_parameter_dne_)
   ioa::scheduler.clear ();
 }
 
-class bind_exists
+class bind_exists :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -850,25 +959,173 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_exists& m_ce;
+    
+    create1_d (bind_exists& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_exists::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    bind_exists& m_ce;
+    
+    create2_d (bind_exists& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_exists::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_exists& m_ce;
+
+    bind1_d (bind_exists& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_exists::transition);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  struct bind2_d
+  {
+    bind_exists& m_ce;
+
+    bind2_d (bind_exists& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      m_ce.m_state = BIND2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_exists::transition);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  bind1_d m_bind1_d;
+  bind2_d m_bind2_d;
+
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_bind2_d);
       m_state = BIND2_SENT;
       break;
     case BIND2_RECV:
@@ -887,88 +1144,12 @@ public:
     ioa::scheduler.schedule (this, &bind_exists::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &bind_exists::transition);
-      break;
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &bind_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    switch (m_state) {
-    case BIND2_SENT:
-      m_state = BIND2_RECV;
-      ioa::scheduler.schedule (this, &bind_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_exists::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_exists () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_bind1_d (*this),
+    m_bind2_d (*this),
     transition (*this)
   { }
 };
@@ -981,7 +1162,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_exists)
   ioa::scheduler.clear ();
 }
 
-class bind_input_action_unavailable
+class bind_input_action_unavailable :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1001,6 +1183,178 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_input_action_unavailable& m_ce;
+    
+    create1_d (bind_input_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_output1 = automaton;
+      m_ce.m_state = CREATE_OUTPUT1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_action_unavailable::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    bind_input_action_unavailable& m_ce;
+    
+    create2_d (bind_input_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_output2 = automaton;
+      m_ce.m_state = CREATE_OUTPUT2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_action_unavailable::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create3_d
+  {
+    bind_input_action_unavailable& m_ce;
+    
+    create3_d (bind_input_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_input1 = automaton;
+      m_ce.m_state = CREATE_INPUT1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_action_unavailable::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_input_action_unavailable& m_ce;
+
+    bind1_d (bind_input_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_action_unavailable::transition);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  struct bind2_d
+  {
+    bind_input_action_unavailable& m_ce;
+
+    bind2_d (bind_input_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      m_ce.m_state = BIND2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_input_action_unavailable::transition);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  create3_d m_create3_d;
+  bind1_d m_bind1_d;
+  bind2_d m_bind2_d;
   ioa::automaton_handle<automaton2> m_output1;
   ioa::automaton_handle<automaton2> m_output2;
   ioa::automaton_handle<automaton2> m_input1;
@@ -1008,23 +1362,23 @@ private:
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_OUTPUT1_SENT;
       break;
     case CREATE_OUTPUT1_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
       m_state = CREATE_OUTPUT2_SENT;
       break;
     case CREATE_OUTPUT2_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create3_d);
       m_state = CREATE_INPUT1_SENT;
       break;
     case CREATE_INPUT1_RECV:
-      ioa::scheduler.bind (this, m_output1, &automaton2::output, m_input1, &automaton2::input);
+      ioa::scheduler.bind (this, m_output1, &automaton2::output, m_input1, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
-      ioa::scheduler.bind (this, m_output2, &automaton2::output, m_input1, &automaton2::input);
+      ioa::scheduler.bind (this, m_output2, &automaton2::output, m_input1, &automaton2::input, m_bind2_d);
       m_state = BIND2_SENT;
       break;
     case BIND2_RECV:
@@ -1043,93 +1397,13 @@ public:
     ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_OUTPUT1_SENT:
-      m_output1 = automaton;
-      m_state = CREATE_OUTPUT1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
-      break;
-    case CREATE_OUTPUT2_SENT:
-      m_output2 = automaton;
-      m_state = CREATE_OUTPUT2_RECV;
-      ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
-      break;
-    case CREATE_INPUT1_SENT:
-      m_input1 = automaton;
-      m_state = CREATE_INPUT1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    switch (m_state) {
-    case BIND2_SENT:
-      m_state = BIND2_RECV;
-      ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_input_action_unavailable () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_create3_d (*this),
+    m_bind1_d (*this),
+    m_bind2_d (*this),
     transition (*this)
   { }
 };
@@ -1142,7 +1416,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_input_action_unavailable)
   ioa::scheduler.clear ();
 }
 
-class bind_output_action_unavailable
+class bind_output_action_unavailable :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1160,25 +1435,172 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_output_action_unavailable& m_ce;
+    
+    create1_d (bind_output_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_output1 = automaton;
+      m_ce.m_state = CREATE_OUTPUT1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_action_unavailable::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    bind_output_action_unavailable& m_ce;
+    
+    create2_d (bind_output_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_input1 = automaton;
+      m_ce.m_state = CREATE_INPUT1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_action_unavailable::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_output_action_unavailable& m_ce;
+
+    bind1_d (bind_output_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_action_unavailable::transition);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  struct bind2_d
+  {
+    bind_output_action_unavailable& m_ce;
+
+    bind2_d (bind_output_action_unavailable& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      m_ce.m_state = BIND2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_output_action_unavailable::transition);
+    }
+
+    void bound () {
+      BOOST_CHECK (false);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  bind1_d m_bind1_d;
+  bind2_d m_bind2_d;
   ioa::automaton_handle<automaton2> m_output1;
   ioa::automaton_handle<automaton2> m_input1;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_OUTPUT1_SENT;
       break;
     case CREATE_OUTPUT1_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
       m_state = CREATE_INPUT1_SENT;
       break;
     case CREATE_INPUT1_RECV:
-      ioa::scheduler.bind (this, m_output1, &automaton2::output, m_input1, &automaton2::input);
+      ioa::scheduler.bind (this, m_output1, &automaton2::output, m_input1, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
-      ioa::scheduler.bind (this, m_output1, &automaton2::output, m_input1, &automaton2::input2);
+      ioa::scheduler.bind (this, m_output1, &automaton2::output, m_input1, &automaton2::input2, m_bind2_d);
       m_state = BIND2_SENT;
       break;
     case BIND2_RECV:
@@ -1197,88 +1619,12 @@ public:
     ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_OUTPUT1_SENT:
-      m_output1 = automaton;
-      m_state = CREATE_OUTPUT1_RECV;
-      ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
-      break;
-    case CREATE_INPUT1_SENT:
-      m_input1 = automaton;
-      m_state = CREATE_INPUT1_RECV;
-      ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    switch (m_state) {
-    case BIND2_SENT:
-      m_state = BIND2_RECV;
-      ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void bound () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_output_action_unavailable () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_bind1_d (*this),
+    m_bind2_d (*this),
     transition (*this)
   { }
 };
@@ -1291,7 +1637,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_output_action_unavailable)
   ioa::scheduler.clear ();
 }
 
-class bind_bound
+class bind_bound :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1307,21 +1654,120 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    bind_bound& m_ce;
+    
+    create1_d (bind_bound& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_bound::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    bind_bound& m_ce;
+    
+    create2_d (bind_bound& ce) :
+      m_ce (ce)
+    { }
+    
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_bound::transition);
+    }
+    
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+    
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    bind_bound& m_ce;
+
+    bind1_d (bind_bound& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &bind_bound::transition);
+    }
+
+    void unbound () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  bind1_d m_bind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
@@ -1340,80 +1786,11 @@ public:
     ioa::scheduler.schedule (this, &bind_bound::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &bind_bound::transition);
-      break;
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &bind_bound::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_bound::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbound () {
-    BOOST_CHECK (false);
-  }
-
   bind_bound () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_bind1_d (*this),
     transition (*this)
   { }
 };
@@ -1426,7 +1803,8 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_bound)
   ioa::scheduler.clear ();
 }
 
-class unbind_output_automaton_dne_
+class unbind_output_automaton_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1440,17 +1818,75 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    unbind_output_automaton_dne_& m_ce;
+
+    create1_d (unbind_output_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_output_automaton_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct unbind1_d
+  {
+    unbind_output_automaton_dne_& m_ce;
+
+    unbind1_d (unbind_output_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void unbind_output_automaton_dne () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_output_automaton_dne_::transition);
+    }
+
+    void unbind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+    
+    void unbind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_dne () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  unbind1_d m_unbind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_unbind1_d);
       m_state = UNBIND1_SENT;
       break;
     case UNBIND1_RECV:
@@ -1464,64 +1900,14 @@ private:
   ioa::internal_wrapper<unbind_output_automaton_dne_, &unbind_output_automaton_dne_::transition_> transition;
 
 public:
-
   void init () {
     ioa::scheduler.schedule (this, &unbind_output_automaton_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &unbind_output_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_automaton_dne () {
-    switch (m_state) {
-    case UNBIND1_SENT:
-      m_state = UNBIND1_RECV;
-      ioa::scheduler.schedule (this, &unbind_output_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_dne () {
-    BOOST_CHECK (false);
-  }
-
   unbind_output_automaton_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_unbind1_d (*this),
     transition (*this)
   { }
 };
@@ -1534,7 +1920,8 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_output_automaton_dne)
   ioa::scheduler.clear ();
 }
 
-class unbind_input_automaton_dne_
+class unbind_input_automaton_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1548,17 +1935,75 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    unbind_input_automaton_dne_& m_ce;
+
+    create1_d (unbind_input_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_input_automaton_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct unbind1_d
+  {
+    unbind_input_automaton_dne_& m_ce;
+
+    unbind1_d (unbind_input_automaton_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void unbind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_automaton_dne () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_input_automaton_dne_::transition);
+    }
+
+    void unbind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+    
+    void unbind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_dne () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  unbind1_d m_unbind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_unbind1_d);
       m_state = UNBIND1_SENT;
       break;
     case UNBIND1_RECV:
@@ -1577,59 +2022,10 @@ public:
     ioa::scheduler.schedule (this, &unbind_input_automaton_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &unbind_input_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_automaton_dne () {
-    switch (m_state) {
-    case UNBIND1_SENT:
-      m_state = UNBIND1_RECV;
-      ioa::scheduler.schedule (this, &unbind_input_automaton_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_dne () {
-    BOOST_CHECK (false);
-  }
-
   unbind_input_automaton_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_unbind1_d (*this),
     transition (*this)
   { }
 };
@@ -1642,7 +2038,8 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_input_automaton_dne)
   ioa::scheduler.clear ();
 }
 
-class unbind_output_parameter_dne_
+class unbind_output_parameter_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1656,6 +2053,64 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    unbind_output_parameter_dne_& m_ce;
+
+    create1_d (unbind_output_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_output_parameter_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct unbind1_d
+  {
+    unbind_output_parameter_dne_& m_ce;
+
+    unbind1_d (unbind_output_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void unbind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_output_parameter_dne () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_output_parameter_dne_::transition);
+    }
+    
+    void unbind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_dne () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  unbind1_d m_unbind1_d;
   ioa::parameter_handle<int> m_parameter;
   ioa::automaton_handle<automaton2> m_child2;
 
@@ -1667,11 +2122,11 @@ private:
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.unbind (this, &unbind_output_parameter_dne_::output, m_parameter, m_child2, &automaton2::input);
+      ioa::scheduler.unbind (this, &unbind_output_parameter_dne_::output, m_parameter, m_child2, &automaton2::input, m_unbind1_d);
       m_state = UNBIND1_SENT;
       break;
     case UNBIND1_RECV:
@@ -1690,59 +2145,10 @@ public:
     ioa::scheduler.schedule (this, &unbind_output_parameter_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &unbind_output_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_parameter_dne () {
-    switch (m_state) {
-    case UNBIND1_SENT:
-      m_state = UNBIND1_RECV;
-      ioa::scheduler.schedule (this, &unbind_output_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_dne () {
-    BOOST_CHECK (false);
-  }
-
   unbind_output_parameter_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_unbind1_d (*this),
     output (*this),
     transition (*this)
   { }
@@ -1756,7 +2162,8 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_output_parameter_dne_)
   ioa::scheduler.clear ();
 }
 
-class unbind_input_parameter_dne_
+class unbind_input_parameter_dne_ :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1770,6 +2177,63 @@ public:
   state_type m_state;
 
 private:
+  struct create1_d
+  {
+    unbind_input_parameter_dne_& m_ce;
+
+    create1_d (unbind_input_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_input_parameter_dne_::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct unbind1_d
+  {
+    unbind_input_parameter_dne_& m_ce;
+
+    unbind1_d (unbind_input_parameter_dne_& ce) :
+      m_ce (ce)
+    { }
+    
+    void unbind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_parameter_dne () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_input_parameter_dne_::transition);
+    }
+
+    void binding_dne () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  create1_d m_create1_d;
+  unbind1_d m_unbind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::parameter_handle<int> m_parameter;
 
@@ -1780,11 +2244,11 @@ private:
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.unbind (this, m_child1, &automaton2::output, &unbind_input_parameter_dne_::input, m_parameter);
+      ioa::scheduler.unbind (this, m_child1, &automaton2::output, &unbind_input_parameter_dne_::input, m_parameter, m_unbind1_d);
       m_state = UNBIND1_SENT;
       break;
     case UNBIND1_RECV:
@@ -1803,59 +2267,10 @@ public:
     ioa::scheduler.schedule (this, &unbind_input_parameter_dne_::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &unbind_input_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_parameter_dne () {
-    switch (m_state) {
-    case UNBIND1_SENT:
-      m_state = UNBIND1_RECV;
-      ioa::scheduler.schedule (this, &unbind_input_parameter_dne_::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void binding_dne () {
-    BOOST_CHECK (false);
-  }
-
   unbind_input_parameter_dne_ () :
     m_state (START),
+    m_create1_d (*this),
+    m_unbind1_d (*this),
     input (*this),
     transition (*this)
   { }
@@ -1869,7 +2284,8 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_input_parameter_dne_)
   ioa::scheduler.clear ();
 }
 
-class bind_binding_dne
+class unbind_binding_dne :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -1885,21 +2301,104 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    unbind_binding_dne& m_ce;
+
+    create1_d (unbind_binding_dne& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_binding_dne::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    unbind_binding_dne& m_ce;
+
+    create2_d (unbind_binding_dne& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_binding_dne::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct unbind1_d
+  {
+    unbind_binding_dne& m_ce;
+
+    unbind1_d (unbind_binding_dne& ce) :
+      m_ce (ce)
+    { }
+    
+    void unbind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_dne () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_binding_dne::transition);
+    }
+    
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  unbind1_d m_unbind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_unbind1_d);
       m_state = UNBIND1_SENT;
       break;
     case UNBIND1_RECV:
@@ -1910,85 +2409,33 @@ private:
       break;
     }
   }
-  ioa::internal_wrapper<bind_binding_dne, &bind_binding_dne::transition_> transition;
+  ioa::internal_wrapper<unbind_binding_dne, &unbind_binding_dne::transition_> transition;
 
 public:
 
   void init () {
-    ioa::scheduler.schedule (this, &bind_binding_dne::transition);
+    ioa::scheduler.schedule (this, &unbind_binding_dne::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &bind_binding_dne::transition);
-      break;
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &bind_binding_dne::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_dne () {
-    switch (m_state) {
-    case UNBIND1_SENT:
-      m_state = UNBIND1_RECV;
-      ioa::scheduler.schedule (this, &bind_binding_dne::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  bind_binding_dne () :
+  unbind_binding_dne () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_unbind1_d (*this),
     transition (*this)
   { }
 };
 
-BOOST_AUTO_TEST_CASE (scheduler_bind_binding_dne)
+BOOST_AUTO_TEST_CASE (scheduler_unbind_binding_dne)
 {
-  bind_binding_dne* instance = new bind_binding_dne ();
+  unbind_binding_dne* instance = new unbind_binding_dne ();
   ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_binding_dne::STOP);
+  BOOST_CHECK_EQUAL (instance->m_state, unbind_binding_dne::STOP);
   ioa::scheduler.clear ();
 }
 
-class unbind_unbound
+class unbind_unbound :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2006,25 +2453,157 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    unbind_unbound& m_ce;
+
+    create1_d (unbind_unbound& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE_CHILD1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    unbind_unbound& m_ce;
+
+    create2_d (unbind_unbound& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE_CHILD2_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct bind1_d
+  {
+    unbind_unbound& m_ce;
+
+    bind1_d (unbind_unbound& ce) :
+      m_ce (ce)
+    { }
+    
+    void bind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void bind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void input_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void output_action_unavailable () {
+      BOOST_CHECK (false);
+    }
+
+    void bound () {
+      m_ce.m_state = BIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
+    }
+
+    void unbound () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
+    }
+
+  };
+
+  struct unbind1_d
+  {
+    unbind_unbound& m_ce;
+
+    unbind1_d (unbind_unbound& ce) :
+      m_ce (ce)
+    { }
+    
+    void unbind_output_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_output_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void unbind_input_parameter_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void binding_dne () {
+      m_ce.m_state = UNBIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
+    }
+    
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
+  bind1_d m_bind1_d;
+  unbind1_d m_unbind1_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
-      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.bind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_bind1_d);
       m_state = BIND1_SENT;
       break;
     case BIND1_RECV:
-      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input);
+      ioa::scheduler.unbind (this, m_child1, &automaton2::output, m_child2, &automaton2::input, m_unbind1_d);
       m_state = UNBIND1_SENT;
       break;
     case UNBIND1_RECV:
@@ -2043,108 +2622,12 @@ public:
     ioa::scheduler.schedule (this, &unbind_unbound::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE_CHILD1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE_CHILD1_RECV;
-      ioa::scheduler.schedule (this, &unbind_unbound::transition);
-      break;
-    case CREATE_CHILD2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE_CHILD2_RECV;
-      ioa::scheduler.schedule (this, &unbind_unbound::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void bind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_exists () {
-    BOOST_CHECK (false);
-  }
-
-  void input_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void output_action_unavailable () {
-    BOOST_CHECK (false);
-  }
-
-  void bound () {
-    switch (m_state) {
-    case BIND1_SENT:
-      m_state = BIND1_RECV;
-      ioa::scheduler.schedule (this, &unbind_unbound::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbound () {
-    switch (m_state) {
-    case UNBIND1_SENT:
-      m_state = UNBIND1_RECV;
-      ioa::scheduler.schedule (this, &unbind_unbound::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void unbind_output_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_automaton_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_output_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void unbind_input_parameter_dne () {
-    BOOST_CHECK (false);
-  }
-
-  void binding_dne () {
-    BOOST_CHECK (false);
-  }
-
   unbind_unbound () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
+    m_bind1_d (*this),
+    m_unbind1_d (*this),
     transition (*this)
   { }
 };
@@ -2157,7 +2640,8 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_unbound)
   ioa::scheduler.clear ();
 }
 
-class rescind_parameter_dne
+class rescind_parameter_dne :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2169,12 +2653,29 @@ public:
   state_type m_state;
 
 private:
+
+  struct rescind1_d
+  {
+    rescind_parameter_dne& m_ce;
+
+    rescind1_d (rescind_parameter_dne& ce) :
+      m_ce (ce)
+    { }
+
+    void parameter_dne () {
+      m_ce.m_state = RESCIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &rescind_parameter_dne::transition);
+    }
+
+  };
+
+  rescind1_d m_rescind1_d;
   ioa::parameter_handle<int> m_parameter;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.rescind (this, m_parameter);
+      ioa::scheduler.rescind (this, m_parameter, m_rescind1_d);
       m_state = RESCIND1_SENT;
       break;
     case RESCIND1_RECV:
@@ -2193,21 +2694,9 @@ public:
     ioa::scheduler.schedule (this, &rescind_parameter_dne::transition);
   }
 
-  template <class P>
-  void parameter_dne (const ioa::parameter_handle<P>&) {
-    switch (m_state) {
-    case RESCIND1_SENT:
-      m_state = RESCIND1_RECV;
-      ioa::scheduler.schedule (this, &rescind_parameter_dne::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
   rescind_parameter_dne () :
     m_state (START),
+    m_rescind1_d (*this),
     transition (*this)
   { }
 };
@@ -2220,7 +2709,8 @@ BOOST_AUTO_TEST_CASE (scheduler_rescind_parameter_dne)
   ioa::scheduler.clear ();
 }
 
-class rescind_parameter_rescinded
+class rescind_parameter_rescinded :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2234,17 +2724,59 @@ public:
   state_type m_state;
 
 private:
+
+  struct declare1_d
+  {
+    rescind_parameter_rescinded& m_ce;
+
+    declare1_d (rescind_parameter_rescinded& ce) :
+      m_ce (ce)
+    { }
+
+    template <class P>
+    void parameter_declared (const ioa::parameter_handle<P>&) {
+      m_ce.m_state = DECLARE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &rescind_parameter_rescinded::transition);
+    }
+
+    void parameter_exists () {
+      BOOST_CHECK (false);
+    }
+
+    void parameter_rescinded () {
+      BOOST_CHECK (false);
+    }
+    
+  };
+
+  struct rescind1_d
+  {
+    rescind_parameter_rescinded& m_ce;
+
+    rescind1_d (rescind_parameter_rescinded& ce) :
+      m_ce (ce)
+    { }
+
+    void parameter_dne () {
+      m_ce.m_state = RESCIND1_RECV;
+      ioa::scheduler.schedule (&m_ce, &rescind_parameter_rescinded::transition);
+    }
+
+  };
+
+  declare1_d m_declare1_d;
+  rescind1_d m_rescind1_d;
   int m_parameter1;
   ioa::parameter_handle<int> m_parameter2;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.declare (this, &m_parameter1);
+      ioa::scheduler.declare (this, &m_parameter1, m_declare1_d);
       m_state = DECLARE1_SENT;
       break;
     case DECLARE1_RECV:
-      ioa::scheduler.rescind (this, m_parameter2);
+      ioa::scheduler.rescind (this, m_parameter2, m_rescind1_d);
       m_state = RESCIND1_SENT;
       break;
     case RESCIND1_RECV:
@@ -2264,44 +2796,10 @@ public:
     ioa::scheduler.schedule (this, &rescind_parameter_rescinded::transition);
   }
 
-  template <class P>
-  void parameter_exists (const ioa::parameter_handle<P>&) {
-    BOOST_CHECK (false);
-  }
-
-  void parameter_declared (const ioa::parameter_handle<int>& parameter) {
-    switch (m_state) {
-    case DECLARE1_SENT:
-      m_parameter2 = parameter;
-      m_state = DECLARE1_RECV;
-      ioa::scheduler.schedule (this, &rescind_parameter_rescinded::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class P>
-  void parameter_dne (const ioa::parameter_handle<P>&) {
-    BOOST_CHECK (false);
-  }
-
-  template <class P>
-  void parameter_rescinded (const ioa::parameter_handle<P>& parameter) {
-    switch (m_state) {
-    case RESCIND1_SENT:
-      m_state = RESCIND1_RECV;
-      ioa::scheduler.schedule (this, &rescind_parameter_rescinded::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
   rescind_parameter_rescinded () :
     m_state (START),
+    m_declare1_d (*this),
+    m_rescind1_d (*this),
     transition (*this)
   { }
 };
@@ -2314,7 +2812,8 @@ BOOST_AUTO_TEST_CASE (scheduler_rescind_parameter_rescinded)
   ioa::scheduler.clear ();
 }
 
-class destroy_helper
+class destroy_helper :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2326,12 +2825,34 @@ public:
   state_type m_state;
 
 private:
+
+  struct destroy1_d
+  {
+    
+    destroy_helper& m_ce;
+
+    destroy1_d (destroy_helper& ce) :
+      m_ce (ce)
+    { }
+
+    void target_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void destroyer_not_creator () {
+      m_ce.m_state = DESTROY1_RECV;
+      ioa::scheduler.schedule (&m_ce, &destroy_helper::transition);
+    }
+
+  };
+
+  destroy1_d m_destroy1_d;
   ioa::automaton_handle<automaton2> m_automaton;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.destroy (this, m_automaton);
+      ioa::scheduler.destroy (this, m_automaton, m_destroy1_d);
       m_state = DESTROY1_SENT;
       break;
     case DESTROY1_RECV:
@@ -2350,32 +2871,16 @@ public:
     ioa::scheduler.schedule (this, &destroy_helper::transition);
   }
 
-  void destroyer_not_creator (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-     case DESTROY1_SENT:
-       BOOST_CHECK (m_automaton == automaton);
-       m_state = DESTROY1_RECV;
-       ioa::scheduler.schedule (this, &destroy_helper::transition);
-       break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void target_automaton_dne (const ioa::automaton_handle<I>& automaton) {
-    BOOST_CHECK (false);
-  }
-
   destroy_helper (const ioa::automaton_handle<automaton2>& automaton) :
     m_state (START),
+    m_destroy1_d (*this),
     m_automaton (automaton),
     transition (*this)
   { }
 };
 
-class destroy_destroyer_not_creator
+class destroy_destroyer_not_creator :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2390,18 +2895,69 @@ public:
   destroy_helper* m_instance;
 
 private:
+
+  struct create1_d
+  {
+    destroy_destroyer_not_creator& m_ce;
+
+    create1_d (destroy_destroyer_not_creator& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child1 = automaton;
+      m_ce.m_state = CREATE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &destroy_destroyer_not_creator::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  struct create2_d
+  {
+    destroy_destroyer_not_creator& m_ce;
+
+    create2_d (destroy_destroyer_not_creator& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<destroy_helper>& automaton) {
+      m_ce.m_child2 = automaton;
+      m_ce.m_state = CREATE2_RECV;
+      ioa::scheduler.schedule (&m_ce, &destroy_destroyer_not_creator::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      BOOST_CHECK (false);
+    }
+  };
+
+  create1_d m_create1_d;
+  create2_d m_create2_d;
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<destroy_helper> m_child2;
-
+  
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
       m_instance = new destroy_helper (m_child1);
-      ioa::scheduler.create (this, m_instance);
+      ioa::scheduler.create (this, instance_holder<destroy_helper> (m_instance), m_create2_d);
       m_state = CREATE2_SENT;
       break;
     case CREATE2_RECV:
@@ -2420,44 +2976,10 @@ public:
     ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE1_SENT:
-      m_child1 = automaton;
-      m_state = CREATE1_RECV;
-      ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void automaton_created (const ioa::automaton_handle<destroy_helper>& automaton) {
-    switch (m_state) {
-    case CREATE2_SENT:
-      m_child2 = automaton;
-      m_state = CREATE2_RECV;
-      ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void automaton_destroyed (const ioa::automaton_handle<I>&) {
-    BOOST_CHECK (false);
-  }
-
   destroy_destroyer_not_creator () :
     m_state (START),
+    m_create1_d (*this),
+    m_create2_d (*this),
     transition (*this)
   { }
 };
@@ -2471,7 +2993,8 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_destroyer_not_creator)
   ioa::scheduler.clear ();
 }
 
-class destroy_target_automaton_dne
+class destroy_target_automaton_dne :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2483,12 +3006,34 @@ public:
   state_type m_state;
 
 private:
-  ioa::automaton_handle<automaton2> m_child;
 
+  struct destroy1_d
+  {
+    
+    destroy_target_automaton_dne& m_ce;
+
+    destroy1_d (destroy_target_automaton_dne& ce) :
+      m_ce (ce)
+    { }
+
+    void target_automaton_dne () {
+      m_ce.m_state = DESTROY1_RECV;
+      ioa::scheduler.schedule (&m_ce, &destroy_target_automaton_dne::transition);
+    }
+
+    void destroyer_not_creator () {
+      BOOST_CHECK (false);
+    }
+
+  };
+  
+  destroy1_d m_destroy1_d;
+  ioa::automaton_handle<automaton2> m_child;
+  
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.destroy (this, m_child);
+      ioa::scheduler.destroy (this, m_child, m_destroy1_d);
       m_state = DESTROY1_SENT;
       break;
     case DESTROY1_RECV:
@@ -2507,26 +3052,9 @@ public:
     ioa::scheduler.schedule (this, &destroy_target_automaton_dne::transition);
   }
 
-  void target_automaton_dne (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case DESTROY1_SENT:
-      BOOST_CHECK (m_child == automaton);
-      m_state = DESTROY1_RECV;
-      ioa::scheduler.schedule (this, &destroy_target_automaton_dne::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  template <class I>
-  void destroyer_not_creator (const ioa::automaton_handle<I>& automaton) {
-    BOOST_CHECK (false);
-  }
-
   destroy_target_automaton_dne () :
     m_state (START),
+    m_destroy1_d (*this),
     transition (*this)
   { }
 };
@@ -2535,11 +3063,12 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_target_automaton_dne)
 {
   destroy_target_automaton_dne* instance = new destroy_target_automaton_dne ();
   ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, destroy_target_automaton_dne::STOP); // 
+  BOOST_CHECK_EQUAL (instance->m_state, destroy_target_automaton_dne::STOP);
   ioa::scheduler.clear ();
 }
 
-class destroy_automaton_destroyed
+class destroy_automaton_destroyed :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {
@@ -2553,16 +3082,63 @@ public:
   state_type m_state;
 
 private:
+
+  struct create1_d
+  {
+    destroy_automaton_destroyed& m_ce;
+
+    create1_d (destroy_automaton_destroyed& ce) :
+      m_ce (ce)
+    { }
+
+    void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
+      m_ce.m_child = automaton;
+      m_ce.m_state = CREATE1_RECV;
+      ioa::scheduler.schedule (&m_ce, &destroy_automaton_destroyed::transition);
+    }
+
+    template <class I>
+    void instance_exists (const I*) {
+      BOOST_CHECK (false);
+    }
+
+    void automaton_destroyed () {
+      m_ce.m_state = DESTROY1_RECV;
+      ioa::scheduler.schedule (&m_ce, &destroy_automaton_destroyed::transition);
+    }
+  };
+
+  struct destroy1_d
+  {
+
+    destroy_automaton_destroyed& m_ce;
+
+    destroy1_d (destroy_automaton_destroyed& ce) :
+      m_ce (ce)
+    { }
+
+    void target_automaton_dne () {
+      BOOST_CHECK (false);
+    }
+
+    void destroyer_not_creator () {
+      BOOST_CHECK (false);
+    }
+
+  };
+
+  create1_d m_create1_d;
+  destroy1_d m_destroy1_d;
   ioa::automaton_handle<automaton2> m_child;
 
   void transition_ () {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, new automaton2 ());
+      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
-      ioa::scheduler.destroy (this, m_child);
+      ioa::scheduler.destroy (this, m_child, m_destroy1_d);
       m_state = DESTROY1_SENT;
       break;
     case DESTROY1_RECV:
@@ -2581,48 +3157,10 @@ public:
     ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
   }
 
-  template <class I>
-  void instance_exists (const I*) {
-    BOOST_CHECK (false);
-  }
-
-  void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case CREATE1_SENT:
-      m_child = automaton;
-      m_state = CREATE1_RECV;
-      ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void automaton_destroyed (const ioa::automaton_handle<automaton2>& automaton) {
-    switch (m_state) {
-    case DESTROY1_SENT:
-      BOOST_CHECK (m_child == automaton);
-      m_state = DESTROY1_RECV;
-      ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
-      break;
-    default:
-      BOOST_CHECK (false);
-      break;
-    }
-  }
-
-  void target_automaton_dne (const ioa::automaton_handle<automaton2>& automaton) {
-    BOOST_CHECK (false);
-  }
-
-  template <class I>
-  void destroyer_not_creator (const ioa::automaton_handle<I>& automaton) {
-    BOOST_CHECK (false);
-  }
-
   destroy_automaton_destroyed () :
     m_state (START),
+    m_create1_d (*this),
+    m_destroy1_d (*this),
     transition (*this)
   { }
 };
@@ -2631,11 +3169,12 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_automaton_destroyed)
 {
   destroy_automaton_destroyed* instance = new destroy_automaton_destroyed ();
   ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, destroy_automaton_destroyed::STOP); // 
+  BOOST_CHECK_EQUAL (instance->m_state, destroy_automaton_destroyed::STOP);
   ioa::scheduler.clear ();
 }
 
-class schedule_output
+class schedule_output :
+  public ioa::generic_automaton
 {
 public:
   enum state_type {

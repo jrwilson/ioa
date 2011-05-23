@@ -29,6 +29,23 @@ namespace ioa {
     virtual void operator() () = 0;
   };
 
+  template <class T>
+  class runnable :
+    public runnable_interface
+  {
+  private:
+    T m_t;
+    
+  public:
+    runnable (const T& t) :
+      m_t (t)
+    { }
+
+    void operator() () {
+      m_t ();
+    }
+  };
+
 }
 
 #endif

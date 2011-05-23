@@ -3,15 +3,10 @@
 
 #include <ioa.hpp>
 
-class count_to_ten :
-  public ioa::automaton_interface
+class count_to_ten
 {
 private:
   int m_count;
-
-  void init () {
-    ioa::scheduler.schedule (this, &count_to_ten::increment);
-  }
 
   void increment_ () {
     ++m_count;
@@ -23,6 +18,11 @@ private:
   ioa::internal_wrapper<count_to_ten, &count_to_ten::increment_> increment;
 
 public:
+
+  void init () {
+    ioa::scheduler.schedule (this, &count_to_ten::increment);
+  }
+
   count_to_ten ()
     : m_count (0),
       increment (*this)

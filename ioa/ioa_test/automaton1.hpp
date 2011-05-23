@@ -3,31 +3,64 @@
 
 #include <action.hpp>
 
+template <class T>
+struct bindable
+{
+  bool bound_;
+  T* bound_parameter;
+  bool unbound_;
+  T* unbound_parameter;
+  
+  void bound () {
+    bound_ = true;
+  }
+  
+  void unbound () {
+    unbound_ = true;
+  }
+
+  void bound (T* param) {
+    bound_ = true;
+    bound_parameter = param;
+  }
+  
+  void unbound (T* param) {
+    unbound_ = true;
+    unbound_parameter = param;
+  }
+  
+  bindable () :
+    bound_ (false),
+    unbound_ (false)
+  { }
+    
+};
+
 struct automaton1
 {
   struct up_uv_input_action :
     public ioa::input,
     public ioa::no_value,
-    public ioa::no_parameter
+    public ioa::no_parameter,
+    public bindable<int>
   {
     bool state;
 
     up_uv_input_action () :
-      state (false) { }
+      state (false)
+    { }
 
     void operator() () {
       state = true;
     }
-
-    void bound () { }
-    void unbound () { }
   };
   up_uv_input_action up_uv_input;
 
   struct p_uv_input_action :
     public ioa::input,
     public ioa::no_value,
-    public ioa::parameter<int>
+    public ioa::parameter<int>,
+    public bindable<int>
   {
     bool state;
     int* last_parameter;
@@ -42,15 +75,14 @@ struct automaton1
       last_parameter = parameter;
     }
 
-    void bound (int*) { }
-    void unbound (int*) { }
   };
   p_uv_input_action p_uv_input;
 
   struct up_v_input_action :
     public ioa::input,
     public ioa::value<int>,
-    public ioa::no_parameter
+    public ioa::no_parameter,
+    public bindable<int>
   {
     int value;
 
@@ -60,16 +92,14 @@ struct automaton1
     void operator() (const int t) {
       value = t;
     }
-
-    void bound () { }
-    void unbound () { }
   };
   up_v_input_action up_v_input;
 
   struct p_v_input_action :
     public ioa::input,
     public ioa::value<int>,
-    public ioa::parameter<int>
+    public ioa::parameter<int>,
+    public bindable<int>
   {
     int value;
     int* last_parameter;
@@ -83,16 +113,14 @@ struct automaton1
       value = t;
       last_parameter = parameter;
     }
-
-    void bound (int*) { }
-    void unbound (int*) { }
   };
   p_v_input_action p_v_input;
 
   struct up_uv_output_action :
     public ioa::output,
     public ioa::no_value,
-    public ioa::no_parameter
+    public ioa::no_parameter,
+    public bindable<int>
   {
     bool state;
 
@@ -103,16 +131,14 @@ struct automaton1
       state = true;
       return true;
     }
-
-    void bound () { }
-    void unbound () { }
   };
   up_uv_output_action up_uv_output;
 
   struct p_uv_output_action :
     public ioa::output,
     public ioa::no_value,
-    public ioa::parameter<int>
+    public ioa::parameter<int>,
+    public bindable<int>
   {
     bool state;
     int* last_parameter;
@@ -127,16 +153,14 @@ struct automaton1
       last_parameter = parameter;
       return true;
     }
-
-    void bound (int*) { }
-    void unbound (int*) { }
   };
   p_uv_output_action p_uv_output;
 
   struct up_v_output_action :
     public ioa::output,
     public ioa::value<int>,
-    public ioa::no_parameter
+    public ioa::no_parameter,
+    public bindable<int>
   {
     bool state;
 
@@ -148,16 +172,14 @@ struct automaton1
       state = true;
       return std::make_pair (true, 9845);
     }
-
-    void bound () { }
-    void unbound () { }
   };
   up_v_output_action up_v_output;
 
   struct p_v_output_action :
     public ioa::output,
     public ioa::value<int>,
-    public ioa::parameter<int>
+    public ioa::parameter<int>,
+    public bindable<int>
   {
     bool state;
     int* last_parameter;
@@ -172,9 +194,6 @@ struct automaton1
       last_parameter = parameter;
       return std::make_pair (true, 9845);
     }
-
-    void bound (int*) { }
-    void unbound (int*) { }
   };
   p_v_output_action p_v_output;
   

@@ -5,6 +5,19 @@
 #include <system.hpp>
 #include "automaton1.hpp"
 
+class empty_class
+{
+};
+
+struct automaton_generator
+{
+  typedef automaton1 result_type;
+
+  automaton1* operator() () {
+    return new automaton1 ();
+  }
+};
+
 template <class T>
 struct dummy_create_listener
 {
@@ -22,21 +35,23 @@ struct dummy_create_listener
     m_created = true;
   }
 
-  template <class I>
+  template <class I, class D>
   void automaton_dne (const ioa::automaton_handle<I>&,
-		      T*) {
+		      D&) {
     m_creator_dne = true;
   }
 
-  template <class I>
+  template <class I, class D>
   void instance_exists (const ioa::automaton_handle<I>& automaton,
-			const T*) {
+			const T*,
+			D&) {
     m_instance_exists = true;
   }
 
-  template <class I>
+  template <class I, class D>
   void automaton_created (const ioa::automaton_handle<I>& parent,
-			  const ioa::automaton_handle<T>& automaton) {
+			  const ioa::automaton_handle<T>& automaton,
+			  D&) {
     m_automaton = automaton;
     m_created = true;
   }
@@ -56,21 +71,23 @@ struct dummy_declare_listener
   bool m_parameter_exists;
   ioa::parameter_handle<T> m_parameter;
 
-  template <class I>
+  template <class I, class D>
   void automaton_dne (const ioa::automaton_handle<I>&,
-		      T*) {
+		      T*,
+		      D&) {
     m_automaton_dne = true;
   }
 
-  template <class I>
+  template <class I, class D>
   void parameter_exists (const ioa::automaton_handle<I>&,
-			 const ioa::parameter_handle<T>&) {
+			 D&) {
     m_parameter_exists = true;
   }
 
-  template <class I>
+  template <class I, class D>
   void parameter_declared (const ioa::automaton_handle<I>&,
-			   const ioa::parameter_handle<T>& parameter) {
+			   const ioa::parameter_handle<T>& parameter,
+			   D&) {
     m_declared = true;
     m_parameter = parameter;
   }
@@ -94,66 +111,74 @@ struct dummy_bind_listener
   bool m_output_action_unavailable;
   bool m_bound;
 
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I>
   void automaton_dne (const ioa::action<OI, OM>&,
 		      const ioa::action<II, IM>&,
-		      const ioa::generic_automaton_handle&) {
+		      const ioa::automaton_handle<I>&) {
     m_binder_automaton_dne = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void output_automaton_dne (const ioa::action<OI, OM>&,
 			     const ioa::action<II, IM>&,
-			     const ioa::generic_automaton_handle&) {
+			     const ioa::automaton_handle<I>&,
+			     D&) {
     m_output_automaton_dne = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void input_automaton_dne (const ioa::action<OI, OM>&,
 			    const ioa::action<II, IM>&,
-			    const ioa::generic_automaton_handle&) {
+			    const ioa::automaton_handle<I>&,
+			    D&) {
     m_input_automaton_dne = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void output_parameter_dne (const ioa::action<OI, OM>&,
 			     const ioa::action<II, IM>&,
-			     const ioa::generic_automaton_handle&) {
+			     const ioa::automaton_handle<I>&,
+			     D&) {
     m_output_parameter_dne = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void input_parameter_dne (const ioa::action<OI, OM>&,
 			    const ioa::action<II, IM>&,
-			    const ioa::generic_automaton_handle&) {
+			    const ioa::automaton_handle<I>&,
+			    D&) {
     m_input_parameter_dne = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void binding_exists (const ioa::action<OI, OM>&,
 		       const ioa::action<II, IM>&,
-		       const ioa::generic_automaton_handle&) {
+		       const ioa::automaton_handle<I>&,
+		       D&) {
     m_binding_exists = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void input_action_unavailable (const ioa::action<OI, OM>&,
 				 const ioa::action<II, IM>&,
-				 const ioa::generic_automaton_handle&) {
+				 const ioa::automaton_handle<I>&,
+				 D&) {
     m_input_action_unavailable= true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void output_action_unavailable (const ioa::action<OI, OM>&,
 				  const ioa::action<II, IM>&,
-				  const ioa::generic_automaton_handle&) {
+				  const ioa::automaton_handle<I>&,
+				  D&) {
     m_output_action_unavailable = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void bound (const ioa::action<OI, OM>&,
 	      const ioa::action<II, IM>&,
-	      const ioa::generic_automaton_handle&) {
+	      const ioa::automaton_handle<I>&,
+	      D&) {
     m_bound = true;
   }
 
@@ -174,10 +199,11 @@ struct dummy_unbind_success_listener
 {
   bool m_unbound;
 
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void unbound (const ioa::action<OI, OM>&,
 		const ioa::action<II, IM>&,
-		const ioa::generic_automaton_handle&) {
+		const ioa::automaton_handle<I>&,
+		D&) {
     m_unbound = true;
   }
 
@@ -196,50 +222,55 @@ struct dummy_unbind_failure_listener
   bool m_binding_dne;
   bool m_any;
 
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I>
   void automaton_dne (const ioa::action<OI, OM>&,
 		      const ioa::action<II, IM>&,
-		      const ioa::generic_automaton_handle&) {
+		      const ioa::automaton_handle<I>&) {
     m_binder_automaton_dne = true;
     m_any = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void output_automaton_dne (const ioa::action<OI, OM>&,
 			     const ioa::action<II, IM>&,
-			     const ioa::generic_automaton_handle&) {
+			     const ioa::automaton_handle<I>&,
+			     D&) {
     m_output_automaton_dne = true;
     m_any = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void input_automaton_dne (const ioa::action<OI, OM>&,
 			    const ioa::action<II, IM>&,
-			    const ioa::generic_automaton_handle&) {
+			    const ioa::automaton_handle<I>&,
+			    D&) {
     m_input_automaton_dne = true;
     m_any = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void output_parameter_dne (const ioa::action<OI, OM>&,
 			     const ioa::action<II, IM>&,
-			     const ioa::generic_automaton_handle&) {
+			     const ioa::automaton_handle<I>&,
+			     D&) {
     m_output_parameter_dne = true;
     m_any = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void input_parameter_dne (const ioa::action<OI, OM>&,
 			    const ioa::action<II, IM>&,
-			    const ioa::generic_automaton_handle&) {
+			    const ioa::automaton_handle<I>&,
+			    D&) {
     m_input_parameter_dne = true;
     m_any = true;
   }
   
-  template <class OI, class OM, class II, class IM>
+  template <class OI, class OM, class II, class IM, class I, class D>
   void binding_dne (const ioa::action<OI, OM>&,
 		    const ioa::action<II, IM>&,
-		    const ioa::generic_automaton_handle&) {
+		    const ioa::automaton_handle<I>&,
+		    D&) {
     m_binding_dne = true;
     m_any = true;
   }
@@ -259,8 +290,9 @@ struct dummy_rescind_success_listener
 {
   bool m_parameter_rescinded;
 
-  void parameter_rescinded (const ioa::generic_automaton_handle&,
-  			    const ioa::generic_parameter_handle&) {
+  template <class I, class D>
+  void parameter_rescinded (const ioa::automaton_handle<I>&,
+			    D&) {
     m_parameter_rescinded = true;
   }
 
@@ -276,14 +308,16 @@ struct dummy_rescind_failure_listener
   bool m_parameter_dne;
   bool m_any;
 
-  void automaton_dne (const ioa::generic_automaton_handle& automaton,
-		      const ioa::generic_parameter_handle& parameter) {
+  template <class I, class P>
+  void automaton_dne (const ioa::automaton_handle<I>& automaton,
+		      const ioa::parameter_handle<P>& parameter) {
     m_automaton_dne = true;
     m_any = true;
   }
 
-  void parameter_dne (const ioa::generic_automaton_handle& automaton,
-		      const ioa::generic_parameter_handle& parameter) {
+  template <class I, class D>
+  void parameter_dne (const ioa::automaton_handle<I>& automaton,
+		      D&) {
     m_parameter_dne = true;
     m_any = true;
   }
@@ -299,12 +333,14 @@ struct dummy_destroy_success_listener
 {
   bool m_automaton_destroyed;
 
-  void automaton_destroyed (const ioa::generic_automaton_handle&) {
+  template <class I>
+  void automaton_destroyed (const ioa::automaton_handle<I>&) {
     m_automaton_destroyed = true;
   }
 
-  void automaton_destroyed (const ioa::generic_automaton_handle&,
-  			    const ioa::generic_automaton_handle&) {
+  template <class I, class D>
+  void automaton_destroyed (const ioa::automaton_handle<I>&,
+			    D&) {
     m_automaton_destroyed = true;
   }
 
@@ -320,25 +356,30 @@ struct dummy_destroy_failure_listener
   bool m_automaton_dne;
   bool m_any;
 
-  void target_automaton_dne (const ioa::generic_automaton_handle&) {
+  template <class I>
+  void target_automaton_dne (const ioa::automaton_handle<I>&) {
     m_any = true;
     m_automaton_dne = true;
   }
 
-  void automaton_dne (const ioa::generic_automaton_handle&,
-		      const ioa::generic_automaton_handle&) {
+  template <class I, class T, class D>
+  void automaton_dne (const ioa::automaton_handle<I>&,
+		      const ioa::automaton_handle<T>&,
+		      D&) {
     m_destroyer_dne = true;
     m_any = true;
   }
 
-  void target_automaton_dne (const ioa::generic_automaton_handle&,
-			     const ioa::generic_automaton_handle&) {
+  template <class I, class D>
+  void target_automaton_dne (const ioa::automaton_handle<I>&,
+			     D&) {
     m_any = true;
     m_automaton_dne = true;
   }
 
-  void destroyer_not_creator (const ioa::generic_automaton_handle&,
-			      const ioa::generic_automaton_handle&) {
+  template <class I, class D>
+  void destroyer_not_creator (const ioa::automaton_handle<I>&,
+			      D&) {
     m_any = true;
     m_destroyer_not_creator = true;
   }
@@ -358,19 +399,18 @@ ioa::automaton_handle<T> create (ioa::system& system,
   dummy_create_listener<T> listener;
   system.create (instance, listener, dsl);
   BOOST_CHECK (listener.m_created);
-  BOOST_CHECK_EQUAL (listener.m_automaton.value (), instance);
   return listener.m_automaton;
 }
 
-template <class P, class T>
-ioa::automaton_handle<T> create (ioa::system& system,
-				 const ioa::automaton_handle<P>& creator,
-				 T* instance,
-				 dummy_destroy_success_listener& dsl) {
-  dummy_create_listener<T> listener;
-  system.create (creator, instance, listener, dsl);
+template <class P, class G>
+ioa::automaton_handle<typename G::result_type> create (ioa::system& system,
+						       const ioa::automaton_handle<P>& creator,
+						       G generator,
+						       dummy_destroy_success_listener& dsl) {
+  dummy_create_listener<typename G::result_type> listener;
+  empty_class d;
+  system.create (creator, generator, listener, dsl, d);
   BOOST_CHECK (listener.m_created);
-  BOOST_CHECK_EQUAL (listener.m_automaton.value (), instance);
   return listener.m_automaton;
 }
 
@@ -380,9 +420,9 @@ ioa::parameter_handle<T> declare (ioa::system& system,
 				  T* parameter,
 				  dummy_rescind_success_listener& rsl) {
   dummy_declare_listener<T> listener;
-  system.declare (automaton, parameter, listener, rsl);
+  empty_class d;
+  system.declare (automaton, parameter, listener, rsl, d);
   BOOST_CHECK (listener.m_declared);
-  BOOST_CHECK_EQUAL (listener.m_parameter.value (), parameter);
   return listener.m_parameter;
 }
 
@@ -393,7 +433,8 @@ void bind (ioa::system& system,
 	   const ioa::automaton_handle<I>& binder,
 	   dummy_unbind_success_listener& usl) {
   dummy_bind_listener listener;
-  system.bind (output_action, input_action, binder, listener, usl);
+  empty_class d;
+  system.bind (output_action, input_action, binder, listener, usl, d);
   BOOST_CHECK (listener.m_bound);
 }
 
@@ -403,7 +444,8 @@ void bind (ioa::system& system,
 	   const ioa::action<II, IM>& input_action,
 	   dummy_unbind_success_listener& usl) {
   dummy_bind_listener listener;
-  system.bind (output_action, input_action, listener, usl);
+  empty_class d;
+  system.bind (output_action, input_action, listener, usl, d);
   BOOST_CHECK (listener.m_bound);
 }
 
@@ -412,12 +454,14 @@ void rescind (ioa::system& system,
 	      const ioa::automaton_handle<I>& automaton,
 	      const ioa::parameter_handle<P>& parameter) {
   dummy_rescind_failure_listener rfl;
-  system.rescind (automaton, parameter, rfl);
+  empty_class d;
+  system.rescind (automaton, parameter, rfl, d);
   BOOST_CHECK (!rfl.m_any);
 }
 
+template <class I>
 void destroy (ioa::system& system,
-	      const ioa::generic_automaton_handle& automaton)
+	      const ioa::automaton_handle<I>& automaton)
 {
   dummy_destroy_failure_listener listener;
   system.destroy (automaton, listener);
@@ -428,8 +472,8 @@ class dummy_scheduler :
   public ioa::scheduler_interface
 {
 public:
-  void set_current_handle (const ioa::generic_automaton_handle&) { }
-  void clear_current_handle (void) { }
+  void set_current_aid (const ioa::aid_t) { }
+  void clear_current_aid (void) { }
 };
 
 struct dummy_execute_listener
@@ -448,26 +492,6 @@ struct dummy_execute_listener
 
 BOOST_AUTO_TEST_SUITE(system_suite)
 
-BOOST_AUTO_TEST_CASE(ctor)
-{
-  int* x = new int ();
-  ioa::automaton_handle<int> handle (x);
-  ioa::automaton_record_impl<int> automaton (handle);
-  BOOST_CHECK_EQUAL (x, automaton.get_instance ());
-}
-
-BOOST_AUTO_TEST_CASE(declare_parameter)
-{
-  int parameter;
-  ioa::automaton_handle<int> handle (new int ());
-  ioa::automaton_record_impl<int> automaton (handle);
-
-  BOOST_CHECK (!automaton.parameter_exists (&parameter));
-  dummy_rescind_success_listener rsl;
-  automaton.declare_parameter (&parameter, rsl);
-  BOOST_CHECK (automaton.parameter_exists (&parameter));
-}
-
 BOOST_AUTO_TEST_CASE (system_create_creator_dne)
 {
   ioa::system system;
@@ -480,7 +504,8 @@ BOOST_AUTO_TEST_CASE (system_create_creator_dne)
   destroy (system, creator_handle);
   dummy_create_listener<automaton1> create_listener2;
   dummy_destroy_success_listener dsl2;
-  system.create (creator_handle, new automaton1 (), create_listener2, dsl2);
+  empty_class d;
+  system.create (creator_handle, automaton_generator (), create_listener2, dsl2, d);
   BOOST_CHECK (create_listener2.m_creator_dne);
 }
 
@@ -518,7 +543,8 @@ BOOST_AUTO_TEST_CASE (system_declare_automaton_dne)
   destroy (system, handle);
   dummy_declare_listener<int> declare_listener;
   dummy_rescind_success_listener rsl;
-  system.declare (handle, &parameter, declare_listener, rsl);
+  empty_class d;
+  system.declare (handle, &parameter, declare_listener, rsl, d);
   BOOST_CHECK (declare_listener.m_automaton_dne);
 }
 
@@ -531,11 +557,12 @@ BOOST_AUTO_TEST_CASE (system_declare_exists)
   ioa::automaton_handle<automaton1> handle = create (system, new automaton1 (), dsl);
   dummy_declare_listener<int> declare_listener1;
   dummy_rescind_success_listener rsl1;
-  system.declare (handle, &parameter, declare_listener1, rsl1);
+  empty_class d;
+  system.declare (handle, &parameter, declare_listener1, rsl1, d);
   BOOST_CHECK (declare_listener1.m_declared);
   dummy_declare_listener<int> declare_listener2;
   dummy_rescind_success_listener rsl2;
-  system.declare (handle, &parameter, declare_listener2, rsl2);
+  system.declare (handle, &parameter, declare_listener2, rsl2, d);
   BOOST_CHECK (declare_listener2.m_parameter_exists);
 }
 
@@ -548,9 +575,9 @@ BOOST_AUTO_TEST_CASE (system_declare_success)
   ioa::automaton_handle<automaton1> handle = create (system, new automaton1 (), dsl);
   dummy_declare_listener<int> declare_listener;
   dummy_rescind_success_listener rsl;
-  system.declare (handle, &parameter, declare_listener, rsl);
+  empty_class d;
+  system.declare (handle, &parameter, declare_listener, rsl, d);
   BOOST_CHECK (declare_listener.m_declared);
-  BOOST_CHECK_EQUAL (declare_listener.m_parameter.value (), &parameter);
 }
 
 BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
@@ -572,10 +599,11 @@ BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
 
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener, usl);
+	       bind_listener, usl, d);
 
   BOOST_CHECK (bind_listener.m_binder_automaton_dne);
 }
@@ -599,10 +627,11 @@ BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
   
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener, usl);
+	       bind_listener, usl, d);
   BOOST_CHECK (bind_listener.m_output_automaton_dne);
 }
 
@@ -626,10 +655,11 @@ BOOST_AUTO_TEST_CASE (system_bind_input_automaton_dne)
   
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener, usl);
+	       bind_listener, usl, d);
   BOOST_CHECK (bind_listener.m_input_automaton_dne);
 }
 
@@ -657,9 +687,10 @@ BOOST_AUTO_TEST_CASE (system_bind_output_parameter_dne)
 
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::p_uv_output, param),
 	       ioa::make_action (input, &automaton1::up_uv_input),
-	       bind_listener, usl);
+	       bind_listener, usl, d);
   BOOST_CHECK (bind_listener.m_output_parameter_dne);
 }
 
@@ -687,9 +718,10 @@ BOOST_AUTO_TEST_CASE (system_bind_input_parameter_dne)
 
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::p_uv_input, param),
-	       bind_listener, usl);
+	       bind_listener, usl, d);
   BOOST_CHECK (bind_listener.m_input_parameter_dne);
 }
 
@@ -711,10 +743,11 @@ BOOST_AUTO_TEST_CASE (system_bind_exists)
   
   dummy_bind_listener bind_listener1;
   dummy_unbind_success_listener usl1;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener1, usl1);
+	       bind_listener1, usl1, d);
   BOOST_CHECK (bind_listener1.m_bound);
 
   dummy_bind_listener bind_listener2;
@@ -722,7 +755,7 @@ BOOST_AUTO_TEST_CASE (system_bind_exists)
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener2, usl2);
+	       bind_listener2, usl2, d);
   BOOST_CHECK (bind_listener2.m_binding_exists);
 }
 
@@ -748,10 +781,11 @@ BOOST_AUTO_TEST_CASE (system_bind_input_action_unavailable)
 
   dummy_bind_listener bind_listener1;
   dummy_unbind_success_listener usl1;
+  empty_class d;
   system.bind (ioa::make_action (output1, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener1, usl1);
+	       bind_listener1, usl1, d);
   BOOST_CHECK (bind_listener1.m_bound);
 
   dummy_bind_listener bind_listener2;
@@ -759,7 +793,7 @@ BOOST_AUTO_TEST_CASE (system_bind_input_action_unavailable)
   system.bind (ioa::make_action (output2, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener2,usl2);
+	       bind_listener2,usl2, d);
   BOOST_CHECK (bind_listener2.m_input_action_unavailable);
 }
 
@@ -785,17 +819,18 @@ BOOST_AUTO_TEST_CASE (system_bind_output_action_unavailable)
 
   dummy_bind_listener bind_listener1;
   dummy_unbind_success_listener usl1;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::up_uv_input),
 	       binder,
-	       bind_listener1, usl1);
+	       bind_listener1, usl1, d);
   BOOST_CHECK (bind_listener1.m_bound);
 
   dummy_bind_listener bind_listener2;
   dummy_unbind_success_listener usl2;
   system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 	       ioa::make_action (input, &automaton1::p_uv_input, param),
-	       bind_listener2, usl2);
+	       bind_listener2, usl2, d);
   BOOST_CHECK (bind_listener2.m_output_action_unavailable);
 }
 
@@ -821,9 +856,10 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
 
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
+  empty_class d;
   system.bind (ioa::make_action (output, &automaton1::p_uv_output, param),
 	       ioa::make_action (input, &automaton1::up_uv_input),
-	       bind_listener, usl);
+	       bind_listener, usl, d);
   BOOST_CHECK (bind_listener.m_bound);
 
   dummy_scheduler scheduler;
@@ -858,10 +894,12 @@ BOOST_AUTO_TEST_CASE (system_unbind_binder_automaton_dne)
   destroy (system, binder);
 
   dummy_unbind_failure_listener unbind_listener;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::up_uv_output),
 		 ioa::make_action (input, &automaton1::up_uv_input),
 		 binder,
-		 unbind_listener);
+		 unbind_listener,
+		 d);
   BOOST_CHECK (unbind_listener.m_binder_automaton_dne);
 }
 
@@ -890,10 +928,12 @@ BOOST_AUTO_TEST_CASE (system_unbind_output_automaton_dne)
   destroy (system, output);
 
   dummy_unbind_failure_listener unbind_listener;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::up_uv_output), 
 		 ioa::make_action (input, &automaton1::up_uv_input),
 		 binder,
-		 unbind_listener);
+		 unbind_listener,
+		 d);
   BOOST_CHECK (unbind_listener.m_output_automaton_dne);
 }
 
@@ -922,10 +962,12 @@ BOOST_AUTO_TEST_CASE (system_unbind_input_automaton_dne)
   destroy (system, input);
 
   dummy_unbind_failure_listener unbind_listener;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::up_uv_output),
 		 ioa::make_action (input, &automaton1::up_uv_input),
 		 binder,
-		 unbind_listener);
+		 unbind_listener,
+		 d);
   BOOST_CHECK (unbind_listener.m_input_automaton_dne);
 }
 
@@ -952,9 +994,10 @@ BOOST_AUTO_TEST_CASE (system_unbind_output_parameter_dne)
   rescind (system, output, param);
 
   dummy_unbind_failure_listener unbind_listener;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::p_uv_output, param),
 		 ioa::make_action (input, &automaton1::up_uv_input),
-		 unbind_listener);
+		 unbind_listener, d);
   BOOST_CHECK (unbind_listener.m_output_parameter_dne);
 }
 
@@ -981,9 +1024,10 @@ BOOST_AUTO_TEST_CASE (system_unbind_input_parameter_dne)
   rescind (system, input, param);
 
   dummy_unbind_failure_listener unbind_listener;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::up_uv_output), 
 		 ioa::make_action (input, &automaton1::p_uv_input, param),
-		 unbind_listener);
+		 unbind_listener, d);
   BOOST_CHECK (unbind_listener.m_input_parameter_dne);
 }
 
@@ -1004,9 +1048,11 @@ BOOST_AUTO_TEST_CASE (system_unbind_exists)
   ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
   
   dummy_unbind_failure_listener unbind_listener;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::up_uv_output),
 		 ioa::make_action (input, &automaton1::up_uv_input), binder,
-		 unbind_listener);
+		 unbind_listener,
+		 d);
   BOOST_CHECK (unbind_listener.m_binding_dne);
 }
 
@@ -1037,9 +1083,10 @@ BOOST_AUTO_TEST_CASE (system_unbind_success)
 	usl);
 
   dummy_unbind_failure_listener ufl;
+  empty_class d;
   system.unbind (ioa::make_action (output, &automaton1::p_uv_output, param),
 		 ioa::make_action (input, &automaton1::up_uv_input),
-		 ufl);
+		 ufl, d);
   // No failures.
   BOOST_CHECK (!ufl.m_any);
   // Success.
@@ -1060,7 +1107,8 @@ BOOST_AUTO_TEST_CASE (system_rescind_automaton_dne)
   destroy (system, automaton);
 
   dummy_rescind_failure_listener listener;
-  system.rescind (automaton, param, listener);
+  empty_class d;
+  system.rescind (automaton, param, listener, d);
   BOOST_CHECK (listener.m_automaton_dne);
 }
 
@@ -1076,11 +1124,12 @@ BOOST_AUTO_TEST_CASE (system_rescind_exists)
   ioa::parameter_handle<int> param = declare (system, automaton, &parameter, rsl);
 
   dummy_rescind_failure_listener rfl1;
-  system.rescind (automaton, param, rfl1);
+  empty_class d;
+  system.rescind (automaton, param, rfl1, d);
   BOOST_CHECK (!rfl1.m_any);
 
   dummy_rescind_failure_listener rfl2;
-  system.rescind (automaton, param, rfl2);
+  system.rescind (automaton, param, rfl2, d);
   BOOST_CHECK (rfl2.m_parameter_dne);
 }
 
@@ -1117,7 +1166,8 @@ BOOST_AUTO_TEST_CASE (system_rescind_success)
 	usl2);
 
   dummy_rescind_failure_listener rfl;
-  system.rescind (binder, param, rfl);
+  empty_class d;
+  system.rescind (binder, param, rfl, d);
   // No failures.
   BOOST_CHECK (!rfl.m_any);
   // Success.
@@ -1132,12 +1182,13 @@ BOOST_AUTO_TEST_CASE (system_destroy_destroyer_dne)
   dummy_destroy_success_listener parent_dsl;
   ioa::automaton_handle<automaton1> parent_handle = create (system, new automaton1 (), parent_dsl);
   dummy_destroy_success_listener child_dsl;
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, new automaton1 (), child_dsl);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton_generator (), child_dsl);
 
   destroy (system, parent_handle);
   
   dummy_destroy_failure_listener listener2;
-  system.destroy (parent_handle, child_handle, listener2);
+  empty_class d;
+  system.destroy (parent_handle, child_handle, listener2, d);
   BOOST_CHECK (listener2.m_destroyer_dne);
 }
 
@@ -1149,13 +1200,14 @@ BOOST_AUTO_TEST_CASE (system_destroy_destroyer_not_creator)
   ioa::automaton_handle<automaton1> parent_handle = create (system, new automaton1 (), parent_dsl);
 
   dummy_destroy_success_listener child_dsl;
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, new automaton1 (), child_dsl);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton_generator (), child_dsl);
 
   dummy_destroy_success_listener third_party_dsl;
   ioa::automaton_handle<automaton1> third_party_handle = create (system, new automaton1 (), third_party_dsl);
 
    dummy_destroy_failure_listener listener;
-   system.destroy (third_party_handle, child_handle, listener);
+   empty_class d;
+   system.destroy (third_party_handle, child_handle, listener, d);
    BOOST_CHECK (listener.m_destroyer_not_creator);
 }
 
@@ -1178,17 +1230,15 @@ BOOST_AUTO_TEST_CASE (system_destroy_success)
   int parameter;
 
   automaton1* alpha_instance = new automaton1 ();
-  automaton1* beta_instance = new automaton1 ();
-  automaton1* gamma_instance = new automaton1 ();
 
   dummy_destroy_success_listener alpha_dsl;
   ioa::automaton_handle<automaton1> alpha = create (system, alpha_instance, alpha_dsl);
 
   dummy_destroy_success_listener beta_dsl;
-  ioa::automaton_handle<automaton1> beta = create (system, alpha, beta_instance, beta_dsl);
+  ioa::automaton_handle<automaton1> beta = create (system, alpha, automaton_generator (), beta_dsl);
 
   dummy_destroy_success_listener gamma_dsl;
-  ioa::automaton_handle<automaton1> gamma = create (system, beta, gamma_instance, gamma_dsl);
+  ioa::automaton_handle<automaton1> gamma = create (system, beta, automaton_generator (), gamma_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, beta, &parameter, rsl);
