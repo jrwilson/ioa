@@ -4,6 +4,7 @@
 #include "scheduler.hpp"
 #include "simple_scheduler.hpp"
 #include "dispatching_automaton.hpp"
+#include "instance_generator.hpp"
 
 namespace ioa {
 

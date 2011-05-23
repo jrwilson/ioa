@@ -18,19 +18,16 @@ private:
   ioa::internal_wrapper<count_to_ten, &count_to_ten::increment_> increment;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &count_to_ten::increment);
-  }
-
   count_to_ten ()
     : m_count (0),
       increment (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &count_to_ten::increment);
+  }
 };
 
 int
 main () {
-  ioa::scheduler.run (new count_to_ten ());
+  ioa::scheduler.run (ioa::instance_generator<count_to_ten> ());
   return 0; 
 }

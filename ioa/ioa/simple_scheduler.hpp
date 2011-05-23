@@ -8,10 +8,10 @@
 
 namespace ioa {
 
-  // TODO:  DUPLICATES!!!
+  // TODO:  DUPLICATE ACTIONS!!!
+  // TODO:  SYSTEM CALL FAIRNESS!!!
   // TODO:  EVENTS!!!
-  // TODO:  Send event to destroyed automaton.
-  // TODO:  System call fairness!!!
+  // TODO:  automaton_dne consistency.
 
   class simple_scheduler :
     public scheduler_interface
@@ -64,15 +64,7 @@ namespace ioa {
 
       template <class I>
       void automaton_created (const automaton_handle<I>& automaton) {
-	// Initialize the new created root automaton.
-	void (system::*ptr2) (const automaton_handle<I>&,
-			      scheduler_interface&,
-			      execute_proxy&) = &system::init;
-	m_scheduler.schedule (make_runnable (boost::bind (ptr2,
-							  boost::ref (m_scheduler.m_system),
-							  automaton,
-							  boost::ref (m_scheduler),
-							  boost::ref (m_scheduler.m_execute_proxy))));
+	// Do nothing.
       }
 
       template <class P, class D>
@@ -104,7 +96,6 @@ namespace ioa {
       void automaton_created (const automaton_handle<P>& automaton,
 			      const automaton_handle<I>& child,
 			      D& d) {
-	// Tell the parent about its child.
 	void (system::*ptr1) (const automaton_handle<P>&,
 			      const automaton_handle<I>&,
 			      scheduler_interface&,
@@ -117,15 +108,6 @@ namespace ioa {
 							  boost::ref (m_scheduler),
 							  boost::ref (m_scheduler.m_execute_proxy),
 							  boost::ref (d))));
-	// Initialize the child.
-	void (system::*ptr2) (const automaton_handle<I>&,
-			      scheduler_interface&,
-			      execute_proxy&) = &system::init;
-	m_scheduler.schedule (make_runnable (boost::bind (ptr2,
-							  boost::ref (m_scheduler.m_system),
-							  child,
-							  boost::ref (m_scheduler),
-							  boost::ref (m_scheduler.m_execute_proxy))));
       }
 
       create_proxy (simple_scheduler& scheduler) :
@@ -185,7 +167,6 @@ namespace ioa {
     };
     declare_proxy m_declare_proxy;
 
-    // TODO:  Pass more information back to caller on failure.
     struct bind_proxy
     {
       simple_scheduler& m_scheduler;
@@ -678,6 +659,7 @@ namespace ioa {
 		 D& d) {
       void (system::*create_ptr) (const automaton_handle<C>&,
       				  G,
+				  scheduler_interface&,
       				  create_proxy&,
 				  destroy_success_proxy&,
 				  D&) = &system::create;
@@ -685,6 +667,7 @@ namespace ioa {
 					    boost::ref (m_system),
 					    get_current_aid (ptr),
 					    generator,  // We want a copy, not a reference.
+					    boost::ref (*this),
 					    boost::ref (m_create_proxy),
 					    boost::ref (m_destroy_success_proxy),
 					    boost::ref (d))));
@@ -878,9 +861,9 @@ namespace ioa {
 					    boost::ref (m_execute_proxy))));
     }
 
-    template <class T>
-    void run (T* instance) {
-      m_system.create (instance, m_create_proxy, m_destroy_success_proxy);
+    template <class G>
+    void run (G generator) {
+      m_system.create (generator, *this, m_create_proxy, m_destroy_success_proxy);
 
       for (;;) {
 	runnable_interface* r = m_runq.pop ();

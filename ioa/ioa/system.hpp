@@ -13,7 +13,6 @@
 namespace ioa {
 
   // TODO:  Memory allocation.
-  // TODO:  No more init.
 
   class parameter_record_interface
   {
@@ -309,27 +308,37 @@ namespace ioa {
       DFL = Destroy Failure Listener
     */
     
-    template <class I, class CSFL, class DSL>
+    template <class G, class CSFL, class DSL>
     void
-    create (I* instance,
+    create (G generator,
+	    scheduler_interface& scheduler,
 	    CSFL& csfl,
 	    DSL& dsl)
     {
+      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+
+      // Take an aid.
+      automaton_handle<typename G::result_type> handle (m_aids.take ());
+
+      // Set the current aid.
+      scheduler.set_current_aid (handle.aid ());
+
+      // Run the generator.
+      typename G::result_type* instance = generator ();
       BOOST_ASSERT (instance != 0);
 
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      // Clear the current aid.
+      scheduler.clear_current_aid ();
       
       if (m_instances.count (instance) != 0) {
+	// Return the aid.
+	m_aids.replace (handle.aid ());
 	csfl.instance_exists (instance);
 	return;
       }
 
-      // TODO:  Generate instance, set current aid.
-
-      // NB: Casting.
-      automaton_handle<I> handle (m_aids.take ());
       m_instances.insert (instance);
-      automaton_record_interface* record = new root_automaton_record<I, DSL> (instance, handle, dsl);
+      automaton_record_interface* record = new root_automaton_record<typename G::result_type, DSL> (instance, handle, dsl);
       m_records.insert (std::make_pair (handle.aid (), record));
 
       csfl.automaton_created (handle);
@@ -340,6 +349,7 @@ namespace ioa {
     void
     create (const automaton_handle<P>& automaton,
     	    G generator,
+	    scheduler_interface& scheduler,
 	    CSFL& csfl,
 	    DSL& dsl,
 	    D& d)
@@ -350,19 +360,27 @@ namespace ioa {
 	csfl.automaton_dne (automaton, d);
 	return;
       }
-      
+
+      // Take an aid.
+      automaton_handle<typename G::result_type> handle (m_aids.take ());
+
+      // Set the current aid.
+      scheduler.set_current_aid (handle.aid ());
+
+      // Run the generator.
       typename G::result_type* instance = generator ();
       BOOST_ASSERT (instance != 0);
 
+      // Clear the current aid.
+      scheduler.clear_current_aid ();
+
       if (m_instances.count (instance) != 0) {
+	// Return the aid.
+	m_aids.replace (handle.aid ());
 	csfl.instance_exists (automaton, instance, d);
 	return;
       }
 
-      // TODO:  Generate instance, set current aid.
-
-      // NB: Casting.
-      automaton_handle<typename G::result_type> handle (m_aids.take ());
       m_instances.insert (instance);      
       automaton_record_interface* record = new automaton_record<P, typename G::result_type, DSL, D> (automaton, instance, handle, dsl, d);
       m_records.insert (std::make_pair (handle.aid (), record));
@@ -920,14 +938,11 @@ namespace ioa {
       clear_and_unlock (scheduler, ac.automaton.aid ());
     }
 
-    // TODO:  Execute failure listeners.
-
-    template <class I, class M, class L>
+    template <class I, class M>
     void
     execute1 (const concrete_action<I, M>& ac,
 	      output_category /* */,
-	      scheduler_interface& scheduler,
-	      L& listener)
+	      scheduler_interface& scheduler)
     {      
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
 									    m_bindings.end (),
@@ -942,22 +957,20 @@ namespace ioa {
       }
     }
 
-    template <class I, class M, class L>
+    template <class I, class M>
     void
     execute1 (const concrete_action<I, M>& ac,
 	      internal_category /* */,
-	      scheduler_interface& scheduler,
-	      L& listener)
+	      scheduler_interface& scheduler)
     {
       execute0 (ac, scheduler);
     }
 
-    template <class I, class M, class L>
+    template <class I, class M>
     void
     execute1 (const concrete_action<I, M>& ac,
 	      event_category /* */,
-	      scheduler_interface& scheduler,
-	      L& listener)
+	      scheduler_interface& scheduler)
     {
       execute0 (ac, scheduler);
     }
@@ -983,11 +996,10 @@ namespace ioa {
       }
 
       concrete_action<I, M> rac = reify (ac);
-      execute1 (rac, typename concrete_action<I, M>::action_category (), scheduler, listener);
+      execute1 (rac, typename concrete_action<I, M>::action_category (), scheduler);
     }
 
-    // TODO:  Test functions to follow.
-    // TODO:  Remove duplicated code.
+    // TODO:  Test following functions.
 
   private:
 
@@ -1042,24 +1054,6 @@ namespace ioa {
       lock_and_set (scheduler, automaton.aid ());
       I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->automaton_created (child, d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L>
-    void init (const automaton_handle<I>& automaton,
-	       scheduler_interface& scheduler,
-	       L& listener)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
-      instance->init ();
       clear_and_unlock (scheduler, automaton.aid ());
     }
 

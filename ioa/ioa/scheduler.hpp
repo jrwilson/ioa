@@ -110,9 +110,9 @@ namespace ioa {
       m_scheduler.schedule (ptr, member_ptr);
     }
 
-    template <class T>
-    void run (T* instance) {
-      m_scheduler.run (instance);
+    template <class G>
+    void run (G generator) {
+      m_scheduler.run (generator);
     }
 
     void clear (void) {

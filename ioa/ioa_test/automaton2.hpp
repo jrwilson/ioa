@@ -1,11 +1,10 @@
 #ifndef __automaton2_hpp__
 #define __automaton2_hpp__
 
+#include "instance_generator.hpp"
+
 class automaton2
 {
-public:
-  void init () { }
-
 private:
   bool output_ () {
     return false;
@@ -26,33 +25,10 @@ public:
   { }
 };
 
-struct automaton2_generator
+struct automaton2_generator :
+  public ioa::instance_generator<automaton2>
 {
-  typedef automaton2 result_type;
 
-  automaton2* operator() () {
-    return new automaton2 ();
-  }
-};
-
-template <class T>
-class instance_holder
-{
-private:
-  T* m_instance;
-
-public:
-
-  typedef T result_type;
-
-  instance_holder (T* instance) :
-    m_instance (instance)
-  { }
-
-  T* operator() () {
-    return m_instance;
-  }
-  
 };
 
 #endif

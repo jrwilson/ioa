@@ -2,6 +2,7 @@
 #define __automaton1_hpp__
 
 #include <action.hpp>
+#include "instance_generator.hpp"
 
 template <class T>
 struct bindable
@@ -257,6 +258,12 @@ struct automaton1
     }
   };
   v_event_action v_event;
+};
+
+struct automaton1_generator :
+  public ioa::instance_generator <automaton1>
+{
+
 };
 
 #endif

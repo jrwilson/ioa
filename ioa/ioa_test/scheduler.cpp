@@ -4,13 +4,14 @@
 
 #include <ioa.hpp>
 #include "automaton2.hpp"
+#include "instance_holder.hpp"
 
 BOOST_AUTO_TEST_SUITE(scheduler_suite)
 
 class create_exists :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE1_SENT,
@@ -20,23 +21,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
-  class gen
-  {
-  public:
-    typedef automaton2 result_type;
-
-    automaton2* m_instance;
-
-    gen (automaton2* instance) :
-      m_instance (instance)
-    { }
-
-    automaton2* operator() () {
-      return m_instance;
-    }
-  };
 
   struct create1_d
   {
@@ -88,7 +72,7 @@ private:
 
   create1_d m_create1_d;
   create2_d m_create2_d;
-  gen m_g;
+  instance_holder<automaton2> m_g;
 
   void transition_ () {
     switch (m_state) {
@@ -111,31 +95,31 @@ private:
   ioa::internal_wrapper<create_exists, &create_exists::transition_> transition;
 
 public:
-  void init () {
-    ioa::scheduler.schedule (this, &create_exists::transition);
-  }
-
   create_exists () :
     m_state (START),
     m_create1_d (*this),
     m_create2_d (*this),
     m_g (new automaton2 ()),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &create_exists::transition);
+  }
+
+  ~create_exists () {
+    BOOST_CHECK_EQUAL (m_state, STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_create_exists)
 {
-  create_exists* instance = new create_exists ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, create_exists::STOP);
+  ioa::scheduler.run (ioa::instance_generator<create_exists> ());
   ioa::scheduler.clear ();
 }
 
 class create_automaton_created :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE1_SENT,
@@ -144,7 +128,6 @@ public:
   };
   state_type m_state;
 
-private:
   struct create1_d
   {
     create_automaton_created& m_ce;
@@ -189,29 +172,30 @@ private:
   ioa::internal_wrapper<create_automaton_created, &create_automaton_created::transition_> transition;
 
 public:
-  void init () {
-    ioa::scheduler.schedule (this, &create_automaton_created::transition);
-  }
 
   create_automaton_created () :
     m_state (START),
     m_create1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &create_automaton_created::transition);
+  }
+
+  ~create_automaton_created () {
+    BOOST_CHECK_EQUAL (m_state, STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_create_automaton_created)
 {
-  create_automaton_created* instance = new create_automaton_created ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, create_automaton_created::STOP);
+  ioa::scheduler.run (ioa::instance_generator<create_automaton_created> ());
   ioa::scheduler.clear ();
 }
 
 class declare_exists :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     DECLARE1_SENT,
@@ -221,8 +205,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
 
   struct declare1_d
   {
@@ -297,30 +279,31 @@ private:
   ioa::internal_wrapper<declare_exists, &declare_exists::transition_> transition;
 
 public:
-  void init () {
-    ioa::scheduler.schedule (this, &declare_exists::transition);
-  }
 
   declare_exists () :
     m_state (START),
     m_declare1_d (*this),
     m_declare2_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &declare_exists::transition);
+  }
+
+  ~declare_exists () {
+    BOOST_CHECK_EQUAL (m_state, STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_declare_exists)
 {
-  declare_exists* instance = new declare_exists ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, declare_exists::STOP);
+  ioa::scheduler.run (ioa::instance_generator<declare_exists> ());
   ioa::scheduler.clear ();
 }
 
 class declare_parameter_declared :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     DECLARE1_SENT,
@@ -328,8 +311,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
 
   struct declare1_d
   {
@@ -376,29 +357,30 @@ private:
   ioa::internal_wrapper<declare_parameter_declared, &declare_parameter_declared::transition_> transition;
 
 public:
-  void init () {
-    ioa::scheduler.schedule (this, &declare_parameter_declared::transition);
-  }
 
   declare_parameter_declared () :
     m_state (START),
     m_declare1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &declare_parameter_declared::transition);
+  }
+
+  ~declare_parameter_declared () {
+    BOOST_CHECK_EQUAL (m_state, STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_declare_parameter_declared)
 {
-  declare_parameter_declared* instance = new declare_parameter_declared ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, declare_parameter_declared::STOP);
+  ioa::scheduler.run (ioa::instance_generator<declare_parameter_declared> ());
   ioa::scheduler.clear ();
 }
 
 class bind_output_automaton_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD2_SENT,
@@ -408,8 +390,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
 
   struct create1_d
   {
@@ -508,30 +488,30 @@ private:
   ioa::internal_wrapper<bind_output_automaton_dne_, &bind_output_automaton_dne_::transition_> transition;
 
 public:
-  void init () {
-    ioa::scheduler.schedule (this, &bind_output_automaton_dne_::transition);
-  }
-
   bind_output_automaton_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_bind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_output_automaton_dne_::transition);
+  }
+
+  ~bind_output_automaton_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, bind_output_automaton_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_output_automaton_dne)
 {
-  bind_output_automaton_dne_* instance = new bind_output_automaton_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_output_automaton_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_output_automaton_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class bind_input_automaton_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -541,8 +521,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
 
   struct create1_d
   {
@@ -641,31 +619,30 @@ private:
   ioa::internal_wrapper<bind_input_automaton_dne_, &bind_input_automaton_dne_::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_input_automaton_dne_::transition);
-  }
-
   bind_input_automaton_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_bind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_input_automaton_dne_::transition);
+  }
+
+  ~bind_input_automaton_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, bind_input_automaton_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_input_automaton_dne)
 {
-  bind_input_automaton_dne_* instance = new bind_input_automaton_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_input_automaton_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_input_automaton_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class bind_output_parameter_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD2_SENT,
@@ -675,8 +652,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
 
   struct create1_d
   {
@@ -780,32 +755,31 @@ private:
   ioa::internal_wrapper<bind_output_parameter_dne_, &bind_output_parameter_dne_::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_output_parameter_dne_::transition);
-  }
-
   bind_output_parameter_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_bind1_d (*this),
     output (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_output_parameter_dne_::transition);
+  }
+
+  ~bind_output_parameter_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, bind_output_parameter_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_output_parameter_dne_)
 {
-  bind_output_parameter_dne_* instance = new bind_output_parameter_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_output_parameter_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_output_parameter_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class bind_input_parameter_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -816,7 +790,6 @@ public:
   };
   state_type m_state;
 
-private:
   struct create1_d
   {
     bind_input_parameter_dne_& m_ce;
@@ -918,32 +891,31 @@ private:
   ioa::internal_wrapper<bind_input_parameter_dne_, &bind_input_parameter_dne_::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_input_parameter_dne_::transition);
-  }
-
   bind_input_parameter_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_bind1_d (*this),
     input (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_input_parameter_dne_::transition);
+  }
+
+  ~bind_input_parameter_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, bind_input_parameter_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_input_parameter_dne_)
 {
-  bind_input_parameter_dne_* instance = new bind_input_parameter_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_input_parameter_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_input_parameter_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class bind_exists :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -957,8 +929,6 @@ public:
     STOP
   };
   state_type m_state;
-
-private:
 
   struct create1_d
   {
@@ -1139,11 +1109,6 @@ private:
   ioa::internal_wrapper<bind_exists, &bind_exists::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_exists::transition);
-  }
-
   bind_exists () :
     m_state (START),
     m_create1_d (*this),
@@ -1151,21 +1116,25 @@ public:
     m_bind1_d (*this),
     m_bind2_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_exists::transition);
+  }
+
+  ~bind_exists () {
+    BOOST_CHECK_EQUAL (m_state, bind_exists::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_exists)
 {
-  bind_exists* instance = new bind_exists ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_exists::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_exists> ());
   ioa::scheduler.clear ();
 }
 
 class bind_input_action_unavailable :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_OUTPUT1_SENT,
@@ -1392,11 +1361,6 @@ private:
   ioa::internal_wrapper<bind_input_action_unavailable, &bind_input_action_unavailable::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
-  }
-
   bind_input_action_unavailable () :
     m_state (START),
     m_create1_d (*this),
@@ -1405,21 +1369,25 @@ public:
     m_bind1_d (*this),
     m_bind2_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
+  }
+
+  ~bind_input_action_unavailable () {
+    BOOST_CHECK_EQUAL (m_state, bind_input_action_unavailable::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_input_action_unavailable)
 {
-  bind_input_action_unavailable* instance = new bind_input_action_unavailable ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_input_action_unavailable::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_input_action_unavailable> ());
   ioa::scheduler.clear ();
 }
 
 class bind_output_action_unavailable :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_OUTPUT1_SENT,
@@ -1614,11 +1582,6 @@ private:
   ioa::internal_wrapper<bind_output_action_unavailable, &bind_output_action_unavailable::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
-  }
-
   bind_output_action_unavailable () :
     m_state (START),
     m_create1_d (*this),
@@ -1626,21 +1589,25 @@ public:
     m_bind1_d (*this),
     m_bind2_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
+  }
+
+  ~bind_output_action_unavailable () {
+    BOOST_CHECK_EQUAL (m_state, bind_output_action_unavailable::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_output_action_unavailable)
 {
-  bind_output_action_unavailable* instance = new bind_output_action_unavailable ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_output_action_unavailable::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_output_action_unavailable> ());
   ioa::scheduler.clear ();
 }
 
 class bind_bound :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -1781,32 +1748,31 @@ private:
   ioa::internal_wrapper<bind_bound, &bind_bound::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &bind_bound::transition);
-  }
-
   bind_bound () :
     m_state (START),
     m_create1_d (*this),
     m_create2_d (*this),
     m_bind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &bind_bound::transition);
+  }
+
+  ~bind_bound () {
+    BOOST_CHECK_EQUAL (m_state, bind_bound::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_bound)
 {
-  bind_bound* instance = new bind_bound ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, bind_bound::STOP);
+  ioa::scheduler.run (ioa::instance_generator<bind_bound> ());
   ioa::scheduler.clear ();
 }
 
 class unbind_output_automaton_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD2_SENT,
@@ -1900,30 +1866,30 @@ private:
   ioa::internal_wrapper<unbind_output_automaton_dne_, &unbind_output_automaton_dne_::transition_> transition;
 
 public:
-  void init () {
-    ioa::scheduler.schedule (this, &unbind_output_automaton_dne_::transition);
-  }
-
   unbind_output_automaton_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &unbind_output_automaton_dne_::transition);
+  }
+
+  ~unbind_output_automaton_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, unbind_output_automaton_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_output_automaton_dne)
 {
-  unbind_output_automaton_dne_* instance = new unbind_output_automaton_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, unbind_output_automaton_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<unbind_output_automaton_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class unbind_input_automaton_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -2017,31 +1983,30 @@ private:
   ioa::internal_wrapper<unbind_input_automaton_dne_, &unbind_input_automaton_dne_::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &unbind_input_automaton_dne_::transition);
-  }
-
   unbind_input_automaton_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &unbind_input_automaton_dne_::transition);
+  }
+
+  ~unbind_input_automaton_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, unbind_input_automaton_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_input_automaton_dne)
 {
-  unbind_input_automaton_dne_* instance = new unbind_input_automaton_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, unbind_input_automaton_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator <unbind_input_automaton_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class unbind_output_parameter_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD2_SENT,
@@ -2140,32 +2105,31 @@ private:
   ioa::internal_wrapper<unbind_output_parameter_dne_, &unbind_output_parameter_dne_::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &unbind_output_parameter_dne_::transition);
-  }
-
   unbind_output_parameter_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_unbind1_d (*this),
     output (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &unbind_output_parameter_dne_::transition);
+  }
+
+  ~unbind_output_parameter_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, unbind_output_parameter_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_output_parameter_dne_)
 {
-  unbind_output_parameter_dne_* instance = new unbind_output_parameter_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, unbind_output_parameter_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<unbind_output_parameter_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class unbind_input_parameter_dne_ :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -2262,32 +2226,31 @@ private:
   ioa::internal_wrapper<unbind_input_parameter_dne_, &unbind_input_parameter_dne_::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &unbind_input_parameter_dne_::transition);
-  }
-
   unbind_input_parameter_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_unbind1_d (*this),
     input (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &unbind_input_parameter_dne_::transition);
+  }
+
+  ~unbind_input_parameter_dne_ () {
+    BOOST_CHECK_EQUAL (m_state, unbind_input_parameter_dne_::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_input_parameter_dne_)
 {
-  unbind_input_parameter_dne_* instance = new unbind_input_parameter_dne_ ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, unbind_input_parameter_dne_::STOP);
+  ioa::scheduler.run (ioa::instance_generator<unbind_input_parameter_dne_> ());
   ioa::scheduler.clear ();
 }
 
 class unbind_binding_dne :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -2412,32 +2375,31 @@ private:
   ioa::internal_wrapper<unbind_binding_dne, &unbind_binding_dne::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &unbind_binding_dne::transition);
-  }
-
   unbind_binding_dne () :
     m_state (START),
     m_create1_d (*this),
     m_create2_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &unbind_binding_dne::transition);
+  }
+
+  ~unbind_binding_dne () {
+    BOOST_CHECK_EQUAL (m_state, unbind_binding_dne::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_binding_dne)
 {
-  unbind_binding_dne* instance = new unbind_binding_dne ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, unbind_binding_dne::STOP);
+  ioa::scheduler.run (ioa::instance_generator<unbind_binding_dne> ());
   ioa::scheduler.clear ();
 }
 
 class unbind_unbound :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE_CHILD1_SENT,
@@ -2617,11 +2579,6 @@ private:
   ioa::internal_wrapper<unbind_unbound, &unbind_unbound::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &unbind_unbound::transition);
-  }
-
   unbind_unbound () :
     m_state (START),
     m_create1_d (*this),
@@ -2629,21 +2586,25 @@ public:
     m_bind1_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &unbind_unbound::transition);
+  }
+
+  ~unbind_unbound () {
+    BOOST_CHECK_EQUAL (m_state, unbind_unbound::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_unbound)
 {
-  unbind_unbound* instance = new unbind_unbound ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, unbind_unbound::STOP);
+  ioa::scheduler.run (ioa::instance_generator <unbind_unbound> ());
   ioa::scheduler.clear ();
 }
 
 class rescind_parameter_dne :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     RESCIND1_SENT,
@@ -2689,30 +2650,29 @@ private:
   ioa::internal_wrapper<rescind_parameter_dne, &rescind_parameter_dne::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &rescind_parameter_dne::transition);
-  }
-
   rescind_parameter_dne () :
     m_state (START),
     m_rescind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &rescind_parameter_dne::transition);
+  }
+
+  ~rescind_parameter_dne () {
+    BOOST_CHECK_EQUAL (m_state, rescind_parameter_dne::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_rescind_parameter_dne)
 {
-  rescind_parameter_dne* instance = new rescind_parameter_dne ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, rescind_parameter_dne::STOP);
+  ioa::scheduler.run (ioa::instance_generator<rescind_parameter_dne> ());
   ioa::scheduler.clear ();
 }
 
 class rescind_parameter_rescinded :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     DECLARE1_SENT,
@@ -2791,31 +2751,30 @@ private:
   ioa::internal_wrapper<rescind_parameter_rescinded, &rescind_parameter_rescinded::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &rescind_parameter_rescinded::transition);
-  }
-
   rescind_parameter_rescinded () :
     m_state (START),
     m_declare1_d (*this),
     m_rescind1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &rescind_parameter_rescinded::transition);
+  }
+
+  ~rescind_parameter_rescinded () {
+    BOOST_CHECK_EQUAL (m_state, rescind_parameter_rescinded::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_rescind_parameter_rescinded)
 {
-  rescind_parameter_rescinded* instance = new rescind_parameter_rescinded ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, rescind_parameter_rescinded::STOP);
+  ioa::scheduler.run (ioa::instance_generator<rescind_parameter_rescinded> ());
   ioa::scheduler.clear ();
 }
 
 class destroy_helper :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     DESTROY1_SENT,
@@ -2866,23 +2825,24 @@ private:
   ioa::internal_wrapper<destroy_helper, &destroy_helper::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &destroy_helper::transition);
-  }
-
   destroy_helper (const ioa::automaton_handle<automaton2>& automaton) :
     m_state (START),
     m_destroy1_d (*this),
     m_automaton (automaton),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &destroy_helper::transition);
+  }
+
+  ~destroy_helper () {
+    BOOST_CHECK_EQUAL (m_state, destroy_helper::STOP);
+  }
 };
 
 class destroy_destroyer_not_creator :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE1_SENT,
@@ -2892,7 +2852,6 @@ public:
     STOP
   };
   state_type m_state;
-  destroy_helper* m_instance;
 
 private:
 
@@ -2956,8 +2915,7 @@ private:
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
-      m_instance = new destroy_helper (m_child1);
-      ioa::scheduler.create (this, instance_holder<destroy_helper> (m_instance), m_create2_d);
+      ioa::scheduler.create (this, ioa::instance_generator1<destroy_helper, ioa::automaton_handle<automaton2> > (m_child1), m_create2_d);
       m_state = CREATE2_SENT;
       break;
     case CREATE2_RECV:
@@ -2971,32 +2929,30 @@ private:
   ioa::internal_wrapper<destroy_destroyer_not_creator, &destroy_destroyer_not_creator::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
-  }
-
   destroy_destroyer_not_creator () :
     m_state (START),
     m_create1_d (*this),
     m_create2_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
+  }
+
+  ~destroy_destroyer_not_creator () {
+    BOOST_CHECK_EQUAL (m_state, destroy_destroyer_not_creator::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_destroy_destroyer_not_creator)
 {
-  destroy_destroyer_not_creator* instance = new destroy_destroyer_not_creator ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, destroy_destroyer_not_creator::STOP);
-  BOOST_CHECK_EQUAL (instance->m_instance->m_state, destroy_helper::STOP);
+  ioa::scheduler.run (ioa::instance_generator <destroy_destroyer_not_creator> ());
   ioa::scheduler.clear ();
 }
 
 class destroy_target_automaton_dne :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     DESTROY1_SENT,
@@ -3047,30 +3003,29 @@ private:
   ioa::internal_wrapper<destroy_target_automaton_dne, &destroy_target_automaton_dne::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &destroy_target_automaton_dne::transition);
-  }
-
   destroy_target_automaton_dne () :
     m_state (START),
     m_destroy1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &destroy_target_automaton_dne::transition);
+  }
+
+  ~destroy_target_automaton_dne () {
+    BOOST_CHECK_EQUAL (m_state, destroy_target_automaton_dne::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_destroy_target_automaton_dne)
 {
-  destroy_target_automaton_dne* instance = new destroy_target_automaton_dne ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, destroy_target_automaton_dne::STOP);
+  ioa::scheduler.run (ioa::instance_generator<destroy_target_automaton_dne> ());
   ioa::scheduler.clear ();
 }
 
 class destroy_automaton_destroyed :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     CREATE1_SENT,
@@ -3152,31 +3107,30 @@ private:
   ioa::internal_wrapper<destroy_automaton_destroyed, &destroy_automaton_destroyed::transition_> transition;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
-  }
-
   destroy_automaton_destroyed () :
     m_state (START),
     m_create1_d (*this),
     m_destroy1_d (*this),
     transition (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
+  }
+
+  ~destroy_automaton_destroyed () {
+    BOOST_CHECK_EQUAL (m_state, destroy_automaton_destroyed::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_destroy_automaton_destroyed)
 {
-  destroy_automaton_destroyed* instance = new destroy_automaton_destroyed ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, destroy_automaton_destroyed::STOP);
+  ioa::scheduler.run (ioa::instance_generator<destroy_automaton_destroyed> ());
   ioa::scheduler.clear ();
 }
 
 class schedule_output :
   public ioa::dispatching_automaton
 {
-public:
+private:
   enum state_type {
     START,
     STOP
@@ -3199,22 +3153,21 @@ private:
   ioa::void_output_wrapper<schedule_output, &schedule_output::output_> output;
 
 public:
-
-  void init () {
-    ioa::scheduler.schedule (this, &schedule_output::output);
-  }
-
   schedule_output () :
     m_state (START),
     output (*this)
-  { }
+  {
+    ioa::scheduler.schedule (this, &schedule_output::output);
+  }
+
+  ~schedule_output () {
+    BOOST_CHECK_EQUAL (m_state, schedule_output::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (scheduler_schedule_output)
 {
-  schedule_output* instance = new schedule_output ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_state, schedule_output::STOP);
+  ioa::scheduler.run (ioa::instance_generator<schedule_output> ());
   ioa::scheduler.clear ();
 }
 

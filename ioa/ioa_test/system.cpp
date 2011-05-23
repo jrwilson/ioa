@@ -4,18 +4,18 @@
 
 #include <system.hpp>
 #include "automaton1.hpp"
+#include "instance_holder.hpp"
 
 class empty_class
 {
 };
 
-struct automaton_generator
+class dummy_scheduler :
+  public ioa::scheduler_interface
 {
-  typedef automaton1 result_type;
-
-  automaton1* operator() () {
-    return new automaton1 ();
-  }
+public:
+  void set_current_aid (const ioa::aid_t) { }
+  void clear_current_aid (void) { }
 };
 
 template <class T>
@@ -392,12 +392,13 @@ struct dummy_destroy_failure_listener
   { }
 };
 
-template <class T>
-ioa::automaton_handle<T> create (ioa::system& system,
-				 T* instance,
-				 dummy_destroy_success_listener& dsl) {
-  dummy_create_listener<T> listener;
-  system.create (instance, listener, dsl);
+template <class G>
+ioa::automaton_handle<typename G::result_type> create (ioa::system& system,
+						       G generator,
+						       dummy_destroy_success_listener& dsl) {
+  dummy_create_listener<typename G::result_type> listener;
+  dummy_scheduler s;
+  system.create (generator, s, listener, dsl);
   BOOST_CHECK (listener.m_created);
   return listener.m_automaton;
 }
@@ -409,7 +410,8 @@ ioa::automaton_handle<typename G::result_type> create (ioa::system& system,
 						       dummy_destroy_success_listener& dsl) {
   dummy_create_listener<typename G::result_type> listener;
   empty_class d;
-  system.create (creator, generator, listener, dsl, d);
+  dummy_scheduler s;
+  system.create (creator, generator, s, listener, dsl, d);
   BOOST_CHECK (listener.m_created);
   return listener.m_automaton;
 }
@@ -468,14 +470,6 @@ void destroy (ioa::system& system,
   BOOST_CHECK (!listener.m_any);
 }
 
-class dummy_scheduler :
-  public ioa::scheduler_interface
-{
-public:
-  void set_current_aid (const ioa::aid_t) { }
-  void clear_current_aid (void) { }
-};
-
 struct dummy_execute_listener
 {
   bool m_automaton_dne;
@@ -497,39 +491,40 @@ BOOST_AUTO_TEST_CASE (system_create_creator_dne)
   ioa::system system;
   dummy_create_listener<automaton1> create_listener1;
   dummy_destroy_success_listener dsl1;
-  automaton1* instance = new automaton1 ();
-  system.create (instance, create_listener1, dsl1);
+  dummy_scheduler s;
+  system.create (automaton1_generator (), s, create_listener1, dsl1);
   BOOST_CHECK (create_listener1.m_created);
   ioa::automaton_handle<automaton1> creator_handle = create_listener1.m_automaton;
   destroy (system, creator_handle);
   dummy_create_listener<automaton1> create_listener2;
   dummy_destroy_success_listener dsl2;
   empty_class d;
-  system.create (creator_handle, automaton_generator (), create_listener2, dsl2, d);
+  system.create (creator_handle, automaton1_generator (), s, create_listener2, dsl2, d);
   BOOST_CHECK (create_listener2.m_creator_dne);
 }
 
 BOOST_AUTO_TEST_CASE (system_create_exists)
 {
   ioa::system system;
-  automaton1* a = new automaton1 ();
+  instance_holder<automaton1> holder (new automaton1 ());
   dummy_create_listener<automaton1> create_listener1;
   dummy_destroy_success_listener dsl1;
-  system.create (a, create_listener1, dsl1);
+  dummy_scheduler s;
+  system.create (holder, s, create_listener1, dsl1);
   BOOST_CHECK (create_listener1.m_created);
   dummy_create_listener<automaton1> create_listener2;
   dummy_destroy_success_listener dsl2;
-  system.create (a, create_listener2, dsl2);
+  system.create (holder, s, create_listener2, dsl2);
   BOOST_CHECK (create_listener2.m_instance_exists);
 }
 
 BOOST_AUTO_TEST_CASE (system_create_success)
 {
   ioa::system system;
-  automaton1* a = new automaton1 ();
   dummy_destroy_success_listener dsl;
   dummy_create_listener<automaton1> create_listener;
-  system.create (a, create_listener, dsl);
+  dummy_scheduler s;
+  system.create (automaton1_generator (), s, create_listener, dsl);
   BOOST_CHECK (create_listener.m_created);
 }
 
@@ -539,7 +534,7 @@ BOOST_AUTO_TEST_CASE (system_declare_automaton_dne)
   int parameter;
   
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> handle = create (system, new automaton1 (), dsl);
+  ioa::automaton_handle<automaton1> handle = create (system, automaton1_generator (), dsl);
   destroy (system, handle);
   dummy_declare_listener<int> declare_listener;
   dummy_rescind_success_listener rsl;
@@ -554,7 +549,7 @@ BOOST_AUTO_TEST_CASE (system_declare_exists)
   int parameter;
   
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> handle = create (system, new automaton1 (), dsl);
+  ioa::automaton_handle<automaton1> handle = create (system, automaton1_generator (), dsl);
   dummy_declare_listener<int> declare_listener1;
   dummy_rescind_success_listener rsl1;
   empty_class d;
@@ -572,7 +567,7 @@ BOOST_AUTO_TEST_CASE (system_declare_success)
   int parameter;
 
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> handle = create (system, new automaton1 (), dsl);
+  ioa::automaton_handle<automaton1> handle = create (system, automaton1_generator (), dsl);
   dummy_declare_listener<int> declare_listener;
   dummy_rescind_success_listener rsl;
   empty_class d;
@@ -583,19 +578,16 @@ BOOST_AUTO_TEST_CASE (system_declare_success)
 BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
   
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   destroy (system, binder);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
@@ -611,19 +603,16 @@ BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
 BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
   
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
   destroy (system, output);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
   
   dummy_bind_listener bind_listener;
   dummy_unbind_success_listener usl;
@@ -638,18 +627,15 @@ BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
 BOOST_AUTO_TEST_CASE (system_bind_input_automaton_dne)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   destroy (system, input);
   
@@ -667,18 +653,15 @@ BOOST_AUTO_TEST_CASE (system_bind_output_parameter_dne)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, output, &parameter, rsl);
@@ -698,18 +681,15 @@ BOOST_AUTO_TEST_CASE (system_bind_input_parameter_dne)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, input, &parameter, rsl);
@@ -728,18 +708,15 @@ BOOST_AUTO_TEST_CASE (system_bind_input_parameter_dne)
 BOOST_AUTO_TEST_CASE (system_bind_exists)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
   
   dummy_bind_listener bind_listener1;
   dummy_unbind_success_listener usl1;
@@ -762,22 +739,18 @@ BOOST_AUTO_TEST_CASE (system_bind_exists)
 BOOST_AUTO_TEST_CASE (system_bind_input_action_unavailable)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output1_instance = new automaton1 ();
-  automaton1* output2_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output1_dsl;
-  ioa::automaton_handle<automaton1> output1 = create (system, output1_instance, output1_dsl);
+  ioa::automaton_handle<automaton1> output1 = create (system, automaton1_generator (), output1_dsl);
 
   dummy_destroy_success_listener output2_dsl;
-  ioa::automaton_handle<automaton1> output2 = create (system, output2_instance, output2_dsl);
+  ioa::automaton_handle<automaton1> output2 = create (system, automaton1_generator (), output2_dsl);
   
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_bind_listener bind_listener1;
   dummy_unbind_success_listener usl1;
@@ -801,18 +774,15 @@ BOOST_AUTO_TEST_CASE (system_bind_output_action_unavailable)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, input, &parameter, rsl);
@@ -838,18 +808,18 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
+
   automaton1* input_instance = new automaton1 ();
+  instance_holder<automaton1> holder (input_instance);
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, holder, input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, output, &parameter, rsl);
@@ -871,18 +841,15 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
 BOOST_AUTO_TEST_CASE (system_unbind_binder_automaton_dne)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
   
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
   
   dummy_unbind_success_listener usl;
   bind (system,
@@ -906,18 +873,15 @@ BOOST_AUTO_TEST_CASE (system_unbind_binder_automaton_dne)
 BOOST_AUTO_TEST_CASE (system_unbind_output_automaton_dne)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
   
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
   
   dummy_unbind_success_listener usl;
   bind (system, ioa::make_action (output, &automaton1::up_uv_output),
@@ -940,18 +904,15 @@ BOOST_AUTO_TEST_CASE (system_unbind_output_automaton_dne)
 BOOST_AUTO_TEST_CASE (system_unbind_input_automaton_dne)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
   
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
   
   dummy_unbind_success_listener usl;
   bind (system, ioa::make_action (output, &automaton1::up_uv_output),
@@ -975,18 +936,15 @@ BOOST_AUTO_TEST_CASE (system_unbind_output_parameter_dne)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, output, &parameter, rsl);
@@ -1005,18 +963,15 @@ BOOST_AUTO_TEST_CASE (system_unbind_input_parameter_dne)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, input, &parameter, rsl);
@@ -1034,18 +989,15 @@ BOOST_AUTO_TEST_CASE (system_unbind_input_parameter_dne)
 BOOST_AUTO_TEST_CASE (system_unbind_exists)
 {
   ioa::system system;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
   
   dummy_unbind_failure_listener unbind_listener;
   empty_class d;
@@ -1060,18 +1012,15 @@ BOOST_AUTO_TEST_CASE (system_unbind_success)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, output, &parameter, rsl);
@@ -1099,7 +1048,7 @@ BOOST_AUTO_TEST_CASE (system_rescind_automaton_dne)
   int parameter;
   
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> automaton = create (system, new automaton1 (), dsl);
+  ioa::automaton_handle<automaton1> automaton = create (system, automaton1_generator (), dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, automaton, &parameter, rsl);
@@ -1118,7 +1067,7 @@ BOOST_AUTO_TEST_CASE (system_rescind_exists)
   int parameter;
   
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> automaton = create (system, new automaton1 (), dsl);
+  ioa::automaton_handle<automaton1> automaton = create (system, automaton1_generator (), dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, automaton, &parameter, rsl);
@@ -1137,18 +1086,15 @@ BOOST_AUTO_TEST_CASE (system_rescind_success)
 {
   ioa::system system;
   int parameter;
-  automaton1* binder_instance = new automaton1 ();
-  automaton1* output_instance = new automaton1 ();
-  automaton1* input_instance = new automaton1 ();
 
   dummy_destroy_success_listener binder_dsl;
-  ioa::automaton_handle<automaton1> binder = create (system, binder_instance, binder_dsl);
+  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), binder_dsl);
   
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_destroy_success_listener input_dsl;
-  ioa::automaton_handle<automaton1> input = create (system, input_instance, input_dsl);
+  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), input_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, binder, &parameter, rsl);
@@ -1180,9 +1126,9 @@ BOOST_AUTO_TEST_CASE (system_destroy_destroyer_dne)
 {
   ioa::system system;
   dummy_destroy_success_listener parent_dsl;
-  ioa::automaton_handle<automaton1> parent_handle = create (system, new automaton1 (), parent_dsl);
+  ioa::automaton_handle<automaton1> parent_handle = create (system, automaton1_generator (), parent_dsl);
   dummy_destroy_success_listener child_dsl;
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton_generator (), child_dsl);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton1_generator (), child_dsl);
 
   destroy (system, parent_handle);
   
@@ -1197,13 +1143,13 @@ BOOST_AUTO_TEST_CASE (system_destroy_destroyer_not_creator)
    ioa::system system;
 
   dummy_destroy_success_listener parent_dsl;
-  ioa::automaton_handle<automaton1> parent_handle = create (system, new automaton1 (), parent_dsl);
+  ioa::automaton_handle<automaton1> parent_handle = create (system, automaton1_generator (), parent_dsl);
 
   dummy_destroy_success_listener child_dsl;
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton_generator (), child_dsl);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton1_generator (), child_dsl);
 
   dummy_destroy_success_listener third_party_dsl;
-  ioa::automaton_handle<automaton1> third_party_handle = create (system, new automaton1 (), third_party_dsl);
+  ioa::automaton_handle<automaton1> third_party_handle = create (system, automaton1_generator (), third_party_dsl);
 
    dummy_destroy_failure_listener listener;
    empty_class d;
@@ -1216,7 +1162,7 @@ BOOST_AUTO_TEST_CASE (system_destroy_exists)
   ioa::system system;
 
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> automaton = create (system, new automaton1 (), dsl);
+  ioa::automaton_handle<automaton1> automaton = create (system, automaton1_generator (), dsl);
 
   destroy (system, automaton);
   dummy_destroy_failure_listener listener2;
@@ -1229,16 +1175,14 @@ BOOST_AUTO_TEST_CASE (system_destroy_success)
   ioa::system system;
   int parameter;
 
-  automaton1* alpha_instance = new automaton1 ();
-
   dummy_destroy_success_listener alpha_dsl;
-  ioa::automaton_handle<automaton1> alpha = create (system, alpha_instance, alpha_dsl);
+  ioa::automaton_handle<automaton1> alpha = create (system, automaton1_generator (), alpha_dsl);
 
   dummy_destroy_success_listener beta_dsl;
-  ioa::automaton_handle<automaton1> beta = create (system, alpha, automaton_generator (), beta_dsl);
+  ioa::automaton_handle<automaton1> beta = create (system, alpha, automaton1_generator (), beta_dsl);
 
   dummy_destroy_success_listener gamma_dsl;
-  ioa::automaton_handle<automaton1> gamma = create (system, beta, automaton_generator (), gamma_dsl);
+  ioa::automaton_handle<automaton1> gamma = create (system, beta, automaton1_generator (), gamma_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, beta, &parameter, rsl);
@@ -1275,10 +1219,9 @@ BOOST_AUTO_TEST_CASE (system_destroy_success)
 BOOST_AUTO_TEST_CASE (system_execute_output_automaton_dne)
 {
   ioa::system system;
-  automaton1* output_instance = new automaton1 ();
 
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   destroy (system, output);
 
@@ -1292,10 +1235,9 @@ BOOST_AUTO_TEST_CASE (system_execute_output_parameter_dne)
 {
   ioa::system system;
   int parameter;
-  automaton1* output_instance = new automaton1 ();
 
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), output_dsl);
 
   dummy_rescind_success_listener rsl;
   ioa::parameter_handle<int> param = declare (system, output, &parameter, rsl);
@@ -1312,9 +1254,10 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
 {
   ioa::system system;
   automaton1* output_instance = new automaton1 ();
+  instance_holder<automaton1> holder (output_instance);
 
   dummy_destroy_success_listener output_dsl;
-  ioa::automaton_handle<automaton1> output = create (system, output_instance, output_dsl);
+  ioa::automaton_handle<automaton1> output = create (system, holder, output_dsl);
 
   dummy_scheduler scheduler;
   dummy_execute_listener listener;
@@ -1325,10 +1268,9 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
 BOOST_AUTO_TEST_CASE (system_deliver_event_automaton_dne)
 {
   ioa::system system;
-  automaton1* instance = new automaton1 ();
 
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> handle = create (system, instance, dsl);
+  ioa::automaton_handle<automaton1> handle = create (system, automaton1_generator (), dsl);
 
   destroy (system, handle);
 
@@ -1345,9 +1287,10 @@ BOOST_AUTO_TEST_CASE (system_deliver_event_success)
 {
   ioa::system system;
   automaton1* instance = new automaton1 ();
+  instance_holder<automaton1> holder (instance);
 
   dummy_destroy_success_listener dsl;
-  ioa::automaton_handle<automaton1> handle = create (system, instance, dsl);
+  ioa::automaton_handle<automaton1> handle = create (system, holder, dsl);
 
   dummy_scheduler scheduler;
   dummy_execute_listener listener1;

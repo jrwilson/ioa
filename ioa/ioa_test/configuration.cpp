@@ -4,6 +4,7 @@
 
 #include <ioa.hpp>
 #include "automaton2.hpp"
+#include "instance_holder.hpp"
 
 namespace automaton_dfa {
 
@@ -182,20 +183,20 @@ struct automaton_helper_automaton_created :
 {
   automaton_helper<automaton_helper_automaton_created, automaton2_generator> m_helper;
 
-  void init () {
+  automaton_helper_automaton_created () :
+    m_helper (this, automaton2_generator ())
+  {
     m_helper.create ();
   }
 
-  automaton_helper_automaton_created () :
-    m_helper (this, automaton2_generator ())
-  { }
+  ~automaton_helper_automaton_created () {
+    BOOST_CHECK_EQUAL (m_helper.get_state (), automaton_dfa::CREATE_RECV1);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_created)
 {
-  automaton_helper_automaton_created* instance = new automaton_helper_automaton_created ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_helper.get_state (), automaton_dfa::CREATE_RECV1);
+  ioa::scheduler.run (ioa::instance_generator<automaton_helper_automaton_created> ());
   ioa::scheduler.clear ();
 }
 
@@ -206,24 +207,24 @@ struct automaton_helper_instance_exists
   automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper1;
   automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper2;
 
-  void init () {
-    m_helper1.create ();
-    m_helper2.create ();
-  }
-
   automaton_helper_instance_exists () :
     m_instance (new automaton2 ()),
     m_helper1 (this, m_instance),
     m_helper2 (this, m_instance)
-  { }
+  {
+    m_helper1.create ();
+    m_helper2.create ();
+  }
+ 
+  ~automaton_helper_instance_exists () {
+    BOOST_CHECK ((m_helper1.get_state () == automaton_dfa::ERROR) ||
+		 (m_helper2.get_state () == automaton_dfa::ERROR));
+  }
 };
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_instance_exists)
 {
-  automaton_helper_instance_exists* instance = new automaton_helper_instance_exists ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK ((instance->m_helper1.get_state () == automaton_dfa::ERROR) ||
-	       (instance->m_helper2.get_state () == automaton_dfa::ERROR));
+  ioa::scheduler.run (ioa::instance_generator<automaton_helper_instance_exists> ());
   ioa::scheduler.clear ();
 }
 
@@ -231,11 +232,6 @@ struct automaton_helper_automaton_destroyed :
   public ioa::dispatching_automaton
 {
   automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> m_helper;
-
-  void init () {
-    m_helper.create ();
-    ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
-  }
 
   void transition_ () {
     switch (m_helper.get_state ()) {
@@ -258,14 +254,19 @@ struct automaton_helper_automaton_destroyed :
   automaton_helper_automaton_destroyed () :
     m_helper (this, automaton2_generator ()),
     transition (*this)
-  { }
+  {
+    m_helper.create ();
+    ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
+  }
+
+  ~automaton_helper_automaton_destroyed () {
+    BOOST_CHECK_EQUAL (m_helper.get_state (), automaton_dfa::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed)
 {
-  automaton_helper_automaton_destroyed* instance = new automaton_helper_automaton_destroyed ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_helper.get_state (), automaton_dfa::STOP);
+  ioa::scheduler.run (ioa::instance_generator<automaton_helper_automaton_destroyed> ());
   ioa::scheduler.clear ();
 }
 
@@ -274,21 +275,21 @@ struct automaton_helper_automaton_destroyed_fast :
 {
   automaton_helper<automaton_helper_automaton_destroyed_fast, automaton2_generator> m_helper;
 
-  void init () {
+  automaton_helper_automaton_destroyed_fast () :
+    m_helper (this, automaton2_generator ())
+  {
     m_helper.create ();
     m_helper.destroy ();
   }
 
-  automaton_helper_automaton_destroyed_fast () :
-    m_helper (this, automaton2_generator ())
-  { }
+  ~automaton_helper_automaton_destroyed_fast () {
+    BOOST_CHECK_EQUAL (m_helper.get_state (), automaton_dfa::STOP);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed_fast)
 {
-  automaton_helper_automaton_destroyed_fast* instance = new automaton_helper_automaton_destroyed_fast ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_helper.get_state (), automaton_dfa::STOP);
+  ioa::scheduler.run (ioa::instance_generator<automaton_helper_automaton_destroyed_fast> ());
   ioa::scheduler.clear ();
 }
 
@@ -307,23 +308,23 @@ struct parameter_helper_parameter_exists :
   parameter_helper<int> m_helper1;
   parameter_helper<int> m_helper2;
 
-  void init () {
+  parameter_helper_parameter_exists () :
+    m_helper1 (&m_parameter),
+    m_helper2 (&m_parameter)
+  {
     m_helper1.declare (this);
     m_helper2.declare (this);
   }
 
-  parameter_helper_parameter_exists () :
-    m_helper1 (&m_parameter),
-    m_helper2 (&m_parameter)
-  { }
+  ~parameter_helper_parameter_exists () {
+    BOOST_CHECK ((m_helper1.get_state () == parameter_helper<int>::PARAMETER_EXISTS) ||
+		 (m_helper2.get_state () == parameter_helper<int>::PARAMETER_EXISTS));
+  }
 };
 
 BOOST_AUTO_TEST_CASE (config_parameter_helper_parameter_exists)
 {
-  parameter_helper_parameter_exists* instance = new parameter_helper_parameter_exists ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK ((instance->m_helper1.get_state () == parameter_helper<int>::PARAMETER_EXISTS) ||
-	       (instance->m_helper2.get_state () == parameter_helper<int>::PARAMETER_EXISTS));
+  ioa::scheduler.run (ioa::instance_generator<parameter_helper_parameter_exists> ());
   ioa::scheduler.clear ();
 }
 
@@ -333,20 +334,20 @@ struct parameter_helper_parameter_declared :
   int m_parameter;
   parameter_helper<int> m_helper;
 
-  void init () {
+  parameter_helper_parameter_declared () :
+    m_helper (&m_parameter)
+  {
     m_helper.declare (this);
   }
 
-  parameter_helper_parameter_declared () :
-    m_helper (&m_parameter)
-  { }
+  ~parameter_helper_parameter_declared () {
+    BOOST_CHECK_EQUAL (m_helper.get_state (), parameter_helper<int>::PARAMETER_DECLARED);
+  }
 };
 
 BOOST_AUTO_TEST_CASE (config_parameter_helper_parameter_declared)
 {
-  parameter_helper_parameter_declared* instance = new parameter_helper_parameter_declared ();
-  ioa::scheduler.run (instance);
-  BOOST_CHECK_EQUAL (instance->m_helper.get_state (), parameter_helper<int>::PARAMETER_DECLARED);
+  ioa::scheduler.run (ioa::instance_generator<parameter_helper_parameter_declared> ());
   ioa::scheduler.clear ();
 }
 
