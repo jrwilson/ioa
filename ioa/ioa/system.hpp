@@ -83,7 +83,7 @@ namespace ioa {
     }
 
     virtual const aid_t get_handle () const = 0;
-    virtual void* get_instance () const = 0;
+    virtual automaton_interface* get_instance () const = 0;
 
     bool parameter_exists (void* parameter) const {
       return m_param_to_record.count (parameter) != 0;
@@ -145,7 +145,7 @@ namespace ioa {
 
     virtual ~automaton_record_impl () { }
 
-    void* get_instance () const {
+    automaton_interface* get_instance () const {
       return m_instance.get ();
     }
 
@@ -434,14 +434,15 @@ namespace ioa {
     template <class I, class M>
     concrete_action<I, M> reify0 (const action<I, M>& ac,
 				  unparameterized /* */) {
-      I* instance = static_cast<I*> (m_records[ac.automaton.aid ()]->get_instance ());
+      I* instance = dynamic_cast<I*> (m_records[ac.automaton.aid ()]->get_instance ());
+      BOOST_ASSERT (instance != 0);
       return concrete_action<I, M> (ac, instance);
     }
 
     template <class I, class M>
     concrete_action<I, M> reify0 (const action<I, M>& ac,
 				  parameterized /* */) {
-      I* instance = static_cast<I*> (m_records[ac.automaton.aid ()]->get_instance ());
+      I* instance = dynamic_cast<I*> (m_records[ac.automaton.aid ()]->get_instance ());
       typename action<I,M>::parameter_type* parameter = m_records[ac.automaton.aid ()]->get_parameter (ac.parameter);
 
       return concrete_action<I, M> (ac, instance, parameter);
@@ -524,7 +525,8 @@ namespace ioa {
       binding<OM>* c;
       
       if (out_pos != m_bindings.end ()) {
-	c = static_cast<binding<OM>*> (*out_pos);
+	c = dynamic_cast<binding<OM>*> (*out_pos);
+	BOOST_ASSERT (c != 0);
       }
       else {
 	c = new binding<OM> ();
@@ -676,7 +678,8 @@ namespace ioa {
 	return;
       }
       
-      binding<OM>* c = static_cast<binding<OM>*> (*pos);
+      binding<OM>* c = dynamic_cast<binding<OM>*> (*pos);
+      BOOST_ASSERT (c != 0);
       
       // Unbind.
       c->unbind (c_output, c_input, binder);
@@ -933,7 +936,7 @@ namespace ioa {
     execute0 (const concrete_action<I, M>& ac,
 	      scheduler_interface& scheduler)
     {
-      lock_and_set (scheduler, ac.automaton.aid ());
+      lock_and_set (scheduler, ac.automaton.aid (), ac.get_instance ());
       ac.execute ();
       clear_and_unlock (scheduler, ac.automaton.aid ());
     }
@@ -1004,15 +1007,23 @@ namespace ioa {
   private:
 
     void lock_and_set (scheduler_interface& scheduler,
-		       const aid_t aid) {
+		       const aid_t aid,
+		       const automaton_interface* current_this) {
       lock_automaton (aid);
-      scheduler.set_current_aid (aid);
+      scheduler.set_current_aid (aid, current_this);
     }
 
     void clear_and_unlock (scheduler_interface& scheduler,
 			   const aid_t aid) {
       scheduler.clear_current_aid ();
       unlock_automaton (aid);
+    }
+
+    template <class I>
+    I* aid_to_instance (const aid_t aid) {
+      I* instance = dynamic_cast<I*> (m_records[aid]->get_instance ());
+      BOOST_ASSERT (instance != 0);
+      return instance;
     }
 
   public:
@@ -1031,8 +1042,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->instance_exists (i, d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1051,9 +1062,27 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->automaton_created (child, d);
+      clear_and_unlock (scheduler, automaton.aid ());
+    }
+
+    template <class I, class L>
+    void init (const automaton_handle<I>& automaton,
+	       scheduler_interface& scheduler,
+	       L& listener)
+    {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+      
+      if (!m_aids.contains (automaton.aid ())) {
+      	listener.automaton_dne ();
+      	return;
+      }
+
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
+      instance->init ();
       clear_and_unlock (scheduler, automaton.aid ());
     }
 
@@ -1070,8 +1099,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->parameter_exists (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1090,8 +1119,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->parameter_declared (parameter, d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1109,8 +1138,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->bind_output_automaton_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1128,8 +1157,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->bind_input_automaton_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1147,8 +1176,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->bind_output_parameter_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1166,8 +1195,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->bind_input_parameter_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1185,8 +1214,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->binding_exists (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1204,8 +1233,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->input_action_unavailable (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1223,8 +1252,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->output_action_unavailable (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1242,8 +1271,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->bound (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1268,7 +1297,7 @@ namespace ioa {
 
       concrete_action<I, M> rac = reify (ac);
 
-      lock_and_set (scheduler, rac.automaton.aid ());
+      lock_and_set (scheduler, rac.automaton.aid (), rac.get_instance ());
       rac.bound ();
       clear_and_unlock (scheduler, rac.automaton.aid ());
     }
@@ -1286,8 +1315,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->unbind_output_automaton_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1305,8 +1334,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->unbind_input_automaton_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1324,8 +1353,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->unbind_output_parameter_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1343,8 +1372,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->unbind_input_parameter_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1362,8 +1391,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->binding_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1381,8 +1410,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->unbound (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1407,7 +1436,7 @@ namespace ioa {
 
       concrete_action<I, M> rac = reify (ac);
 
-      lock_and_set (scheduler, rac.automaton.aid ());
+      lock_and_set (scheduler, rac.automaton.aid (), rac.get_instance ());
       rac.unbound ();
       clear_and_unlock (scheduler, rac.automaton.aid ());
     }
@@ -1425,8 +1454,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->parameter_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1444,8 +1473,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->parameter_rescinded (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1463,8 +1492,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->target_automaton_dne (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1482,8 +1511,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->destroyer_not_creator (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }
@@ -1501,8 +1530,8 @@ namespace ioa {
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid ());
-      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
+      I* instance = aid_to_instance<I> (automaton.aid ());
+      lock_and_set (scheduler, automaton.aid (), instance);
       instance->automaton_destroyed (d);
       clear_and_unlock (scheduler, automaton.aid ());
     }

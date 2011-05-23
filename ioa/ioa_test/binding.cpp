@@ -13,6 +13,8 @@ class dummy_scheduler :
 {
 public:
   void set_current_aid (const ioa::aid_t) { }
+  void set_current_aid (const ioa::aid_t,
+			const ioa::automaton_interface*) { }
   void clear_current_aid (void) { }
 };
 

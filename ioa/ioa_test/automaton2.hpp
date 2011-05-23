@@ -3,7 +3,8 @@
 
 #include "instance_generator.hpp"
 
-class automaton2
+class automaton2 :
+  public ioa::automaton_interface
 {
 private:
   bool output_ () {
@@ -23,6 +24,8 @@ public:
     input (*this),
     input2 (*this)
   { }
+
+  void init () { }
 };
 
 struct automaton2_generator :

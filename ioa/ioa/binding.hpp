@@ -360,12 +360,12 @@ namespace ioa {
     typedef generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface>::set_type set_type;
 
     void execute_dispatch (scheduler_interface& scheduler) {
-      scheduler.set_current_aid (get_output ().get_aid ());
+      scheduler.set_current_aid (get_output ().get_aid (), get_output ().get_instance ());
       if ((get_output ()) ()) {
 	for (set_type::iterator pos = m_inputs.begin ();
 	     pos != m_inputs.end ();
 	     ++pos) {
-	  scheduler.set_current_aid ((*pos)->input_action ().get_aid ());
+	  scheduler.set_current_aid ((*pos)->input_action ().get_aid (), (*pos)->input_action ().get_instance ());
 	  ((*pos)->input_action ()) ();
 	}
       }
@@ -381,13 +381,13 @@ namespace ioa {
     typedef typename generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >::set_type set_type;
 
     void execute_dispatch (scheduler_interface& scheduler) {
-      scheduler.set_current_aid (this->get_output ().get_aid ());
+      scheduler.set_current_aid (this->get_output ().get_aid (), this->get_output ().get_instance ());
       const std::pair<bool, T> p = (this->get_output ()) ();
       if (p.first) {
 	for (typename set_type::iterator pos = this->m_inputs.begin ();
 	     pos != this->m_inputs.end ();
 	     ++pos) {
-	  scheduler.set_current_aid ((*pos)->input_action ().get_aid ());
+	  scheduler.set_current_aid ((*pos)->input_action ().get_aid (), (*pos)->input_action ().get_instance ());
 	  ((*pos)->input_action ()) (p.second);
 	}
       }

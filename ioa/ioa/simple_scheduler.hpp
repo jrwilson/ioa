@@ -17,31 +17,49 @@ namespace ioa {
     public scheduler_interface
   {
   private:
+    bool m_running;
     system m_system;
     blocking_queue<runnable_interface*> m_runq;
     aid_t m_current_aid;
-
+    const automaton_interface* m_current_this;
+    
     template <class I>
     automaton_handle<I> get_current_aid (const I* ptr) const {
       // The system uses set_current_aid to alert the scheduler that the code that is executing belongs to the given automaton.
       // When the automaton invokes the scheduler, this ID is used in the production of the corresponding runnable.
-      // To be type-safe, we desire an automaton_handle<T> instead of an aid_t.
-      // Thus, we require a pointer to cast the current aid.
-      // We expect users to pass the "this" pointer of the current automaton.
-      // We hope that the user doesn't do something foolish, i.e., cast "this" to a different type before invoking the scheduler.
-      // TODO:  Don't hope, don't trust the user, make it happen.
-      // Check that an automaton is executing an action.
-      // Someone forgot to set the current handle.
+      // To be type-safe, we require an automaton_handle<T> instead of an aid_t.
+      // This function (get_current_aid) is responsible for producing the handle.
+
+      // First, we check that set_current_aid was called.
       BOOST_ASSERT (m_current_aid != -1);
+      BOOST_ASSERT (m_current_this != 0);
+
+      // Second, we need to make sure that the user didn't inappropriately cast "this."
+      const I* tmp = dynamic_cast<const I*> (m_current_this);
+      BOOST_ASSERT (tmp == ptr);
+
       return m_system.cast_aid (ptr, m_current_aid);
     }
 
     void set_current_aid (const aid_t aid) {
+      // This is to be used during generation so that any allocated memory can be associated with the automaton.
+      BOOST_ASSERT (aid != -1);
       m_current_aid = aid;
+      m_current_this = 0;
+    }
+
+    void set_current_aid (const aid_t aid,
+			  const automaton_interface* current_this) {
+      // This is for all cases except generation.
+      BOOST_ASSERT (aid != -1);
+      BOOST_ASSERT (current_this != 0);
+      m_current_aid = aid;
+      m_current_this = current_this;
     }
 
     void clear_current_aid () {
       m_current_aid = -1;
+      m_current_this = 0;
     }
 
     static bool keep_going () {
@@ -49,7 +67,12 @@ namespace ioa {
     }
 
     void schedule (runnable_interface* r) {
-      m_runq.push (r);
+      if (m_running) {
+	m_runq.push (r);
+      }
+      else {
+	delete r;
+      }
     }
 
     struct create_proxy
@@ -64,7 +87,15 @@ namespace ioa {
 
       template <class I>
       void automaton_created (const automaton_handle<I>& automaton) {
-	// Do nothing.
+	// Init the new automaton.
+	void (system::*ptr2) (const automaton_handle<I>&,
+			      scheduler_interface&,
+			      execute_proxy&) = &system::init;
+	m_scheduler.schedule (make_runnable (boost::bind (ptr2,
+							  boost::ref (m_scheduler.m_system),
+							  automaton,
+							  boost::ref (m_scheduler),
+							  boost::ref (m_scheduler.m_execute_proxy))));
       }
 
       template <class P, class D>
@@ -96,6 +127,7 @@ namespace ioa {
       void automaton_created (const automaton_handle<P>& automaton,
 			      const automaton_handle<I>& child,
 			      D& d) {
+	// Tell the parent.
 	void (system::*ptr1) (const automaton_handle<P>&,
 			      const automaton_handle<I>&,
 			      scheduler_interface&,
@@ -108,6 +140,15 @@ namespace ioa {
 							  boost::ref (m_scheduler),
 							  boost::ref (m_scheduler.m_execute_proxy),
 							  boost::ref (d))));
+	// Init the child.
+	void (system::*ptr2) (const automaton_handle<I>&,
+			      scheduler_interface&,
+			      execute_proxy&) = &system::init;
+	m_scheduler.schedule (make_runnable (boost::bind (ptr2,
+							  boost::ref (m_scheduler.m_system),
+							  child,
+							  boost::ref (m_scheduler),
+							  boost::ref (m_scheduler.m_execute_proxy))));
       }
 
       create_proxy (simple_scheduler& scheduler) :
@@ -863,19 +904,25 @@ namespace ioa {
 
     template <class G>
     void run (G generator) {
+      BOOST_ASSERT (m_runq.size () == 0);
+      BOOST_ASSERT (runnable_interface::count () == 0);
+      m_running = true;
       m_system.create (generator, *this, m_create_proxy, m_destroy_success_proxy);
-
-      for (;;) {
+      while (keep_going ()) {
 	runnable_interface* r = m_runq.pop ();
 	(*r) ();
 	delete r;
-	if (!keep_going ()) {
-	  break;
-	}
       }
+      m_running = false;
     }
 
     void clear (void) {
+      for (blocking_queue<runnable_interface*>::iterator pos = m_runq.begin ();
+	   pos != m_runq.end ();
+	   ++pos) {
+	delete (*pos);
+      }
+      m_runq.clear ();
       m_system.clear ();
     }
             

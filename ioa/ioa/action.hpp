@@ -252,18 +252,24 @@ namespace ioa {
 
   */
 
+  class automaton_interface {
+  public:
+    virtual void init () = 0;
+    virtual ~automaton_interface () { }
+  };
+
   class action_interface
   {
   private:
     const aid_t m_aid;
-    const void* const m_instance;
+    const automaton_interface* const m_instance;
     const void* const m_member_ptr;
     const pid_t m_pid;
 
   public:
 
     action_interface (const aid_t aid,
-		      const void* instance,
+		      const automaton_interface* instance,
 		      const void* member_ptr,
 		      const pid_t pid) :
       m_aid (aid),
@@ -273,7 +279,7 @@ namespace ioa {
     { }
     
     action_interface (const aid_t aid,
-		      const void* instance,
+		      const automaton_interface* instance,
 		      const void* member_ptr) :
       m_aid (aid),
       m_instance (instance),
@@ -287,7 +293,7 @@ namespace ioa {
       return m_aid;
     }
 
-    const void* get_instance () const {
+    const automaton_interface* get_instance () const {
       return m_instance;
     }
 
@@ -310,14 +316,14 @@ namespace ioa {
   {
   public:
     input_action_interface (const aid_t aid,
-			    const void* instance,
+			    const automaton_interface* instance,
 			    const void* member_ptr,
 			    const pid_t pid) :
       action_interface (aid, instance, member_ptr, pid)
     { }
 
     input_action_interface (const aid_t aid,
-			    const void* instance,
+			    const automaton_interface* instance,
 			    const void* member_ptr) :
       action_interface (aid, instance, member_ptr)
     { }
@@ -330,14 +336,14 @@ namespace ioa {
   {
   public:
     unvalued_input_action_interface (const aid_t aid,
-				     const void* instance,
+				     const automaton_interface* instance,
 				     const void* member_ptr,
 				     const pid_t pid) :
       input_action_interface (aid, instance, member_ptr, pid)
     { }
     
     unvalued_input_action_interface (const aid_t aid,
-				     const void* instance,
+				     const automaton_interface* instance,
 				     const void* member_ptr) :
       input_action_interface (aid, instance, member_ptr)
     { }
@@ -353,14 +359,14 @@ namespace ioa {
   {
   public:
     valued_input_action_interface (const aid_t aid,
-				   const void* instance,
+				   const automaton_interface* instance,
 				   const void* member_ptr,
 				   const pid_t pid) :
       input_action_interface (aid, instance, member_ptr, pid)
     { }
 
     valued_input_action_interface (const aid_t aid,
-				   const void* instance,
+				   const automaton_interface* instance,
 				   const void* member_ptr) :
       input_action_interface (aid, instance, member_ptr)
     { }
@@ -375,14 +381,14 @@ namespace ioa {
   {
   public:
     output_action_interface (const aid_t aid,
-			     const void* instance,
+			     const automaton_interface* instance,
 			     const void* member_ptr,
 			     const pid_t pid) :
       action_interface (aid, instance, member_ptr, pid)
     { }
     
     output_action_interface (const aid_t aid,
-			     const void* instance,
+			     const automaton_interface* instance,
 			     const void* member_ptr) :
       action_interface (aid, instance, member_ptr)
     { }
@@ -395,14 +401,14 @@ namespace ioa {
   {
   public:
     unvalued_output_action_interface (const aid_t aid,
-				      const void* instance,
+				      const automaton_interface* instance,
 				      const void* member_ptr,
 				      const pid_t pid) :
       output_action_interface (aid, instance, member_ptr, pid)
     { }
     
     unvalued_output_action_interface (const aid_t aid,
-				      const void* instance,
+				      const automaton_interface* instance,
 				      const void* member_ptr) :
       output_action_interface (aid, instance, member_ptr)
     { }
@@ -418,14 +424,14 @@ namespace ioa {
   {
   public:
     valued_output_action_interface (const aid_t aid,
-				    const void* instance,
+				    const automaton_interface* instance,
 				    const void* member_ptr,
 				    const pid_t pid) :
       output_action_interface (aid, instance, member_ptr, pid)
     { }
     
     valued_output_action_interface (const aid_t aid,
-				    const void* instance,
+				    const automaton_interface* instance,
 				    const void* member_ptr) :
       output_action_interface (aid, instance, member_ptr)
     { }

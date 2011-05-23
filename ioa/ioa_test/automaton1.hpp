@@ -37,7 +37,8 @@ struct bindable
     
 };
 
-struct automaton1
+struct automaton1 :
+  public ioa::automaton_interface
 {
   struct up_uv_input_action :
     public ioa::input,
@@ -258,6 +259,8 @@ struct automaton1
     }
   };
   v_event_action v_event;
+
+  void init () { }
 };
 
 struct automaton1_generator :

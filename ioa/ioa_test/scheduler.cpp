@@ -101,10 +101,12 @@ public:
     m_create2_d (*this),
     m_g (new automaton2 ()),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &create_exists::transition);
   }
-
+  
   ~create_exists () {
     BOOST_CHECK_EQUAL (m_state, STOP);
   }
@@ -177,7 +179,9 @@ public:
     m_state (START),
     m_create1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &create_automaton_created::transition);
   }
 
@@ -285,7 +289,9 @@ public:
     m_declare1_d (*this),
     m_declare2_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &declare_exists::transition);
   }
 
@@ -362,7 +368,9 @@ public:
     m_state (START),
     m_declare1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &declare_parameter_declared::transition);
   }
 
@@ -493,7 +501,9 @@ public:
     m_create1_d (*this),
     m_bind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_output_automaton_dne_::transition);
   }
 
@@ -624,7 +634,9 @@ public:
     m_create1_d (*this),
     m_bind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_input_automaton_dne_::transition);
   }
 
@@ -761,7 +773,9 @@ public:
     m_bind1_d (*this),
     output (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_output_parameter_dne_::transition);
   }
 
@@ -897,7 +911,9 @@ public:
     m_bind1_d (*this),
     input (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_input_parameter_dne_::transition);
   }
 
@@ -1116,7 +1132,9 @@ public:
     m_bind1_d (*this),
     m_bind2_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_exists::transition);
   }
 
@@ -1369,7 +1387,9 @@ public:
     m_bind1_d (*this),
     m_bind2_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_input_action_unavailable::transition);
   }
 
@@ -1589,7 +1609,9 @@ public:
     m_bind1_d (*this),
     m_bind2_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_output_action_unavailable::transition);
   }
 
@@ -1754,7 +1776,9 @@ public:
     m_create2_d (*this),
     m_bind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &bind_bound::transition);
   }
 
@@ -1871,7 +1895,9 @@ public:
     m_create1_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &unbind_output_automaton_dne_::transition);
   }
 
@@ -1988,7 +2014,9 @@ public:
     m_create1_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &unbind_input_automaton_dne_::transition);
   }
 
@@ -2111,7 +2139,9 @@ public:
     m_unbind1_d (*this),
     output (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &unbind_output_parameter_dne_::transition);
   }
 
@@ -2232,7 +2262,9 @@ public:
     m_unbind1_d (*this),
     input (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &unbind_input_parameter_dne_::transition);
   }
 
@@ -2381,7 +2413,9 @@ public:
     m_create2_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &unbind_binding_dne::transition);
   }
 
@@ -2586,7 +2620,9 @@ public:
     m_bind1_d (*this),
     m_unbind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &unbind_unbound::transition);
   }
 
@@ -2654,7 +2690,9 @@ public:
     m_state (START),
     m_rescind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &rescind_parameter_dne::transition);
   }
 
@@ -2756,7 +2794,9 @@ public:
     m_declare1_d (*this),
     m_rescind1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &rescind_parameter_rescinded::transition);
   }
 
@@ -2830,7 +2870,9 @@ public:
     m_destroy1_d (*this),
     m_automaton (automaton),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &destroy_helper::transition);
   }
 
@@ -2934,7 +2976,9 @@ public:
     m_create1_d (*this),
     m_create2_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
   }
 
@@ -3007,7 +3051,9 @@ public:
     m_state (START),
     m_destroy1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &destroy_target_automaton_dne::transition);
   }
 
@@ -3112,7 +3158,9 @@ public:
     m_create1_d (*this),
     m_destroy1_d (*this),
     transition (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
   }
 
@@ -3156,7 +3204,9 @@ public:
   schedule_output () :
     m_state (START),
     output (*this)
-  {
+  { }
+
+  void init () {
     ioa::scheduler.schedule (this, &schedule_output::output);
   }
 
@@ -3170,6 +3220,5 @@ BOOST_AUTO_TEST_CASE (scheduler_schedule_output)
   ioa::scheduler.run (ioa::instance_generator<schedule_output> ());
   ioa::scheduler.clear ();
 }
-
 
 BOOST_AUTO_TEST_SUITE_END()

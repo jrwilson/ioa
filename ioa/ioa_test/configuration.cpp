@@ -6,123 +6,6 @@
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
 
-namespace automaton_dfa {
-
-  typedef enum {
-    START,
-    CREATE_SENT,
-    CREATE_RECV1,
-    CREATE_RECV2,
-    DESTROY_SENT,
-    STOP,
-    ERROR,
-    STATE_COUNT,
-  } state_type;
-
-  typedef enum {
-    // User symbols.
-    CREATE,
-    DESTROY,
-    // System symbols.
-    AUTOMATON_CREATED,
-    INSTANCE_EXISTS,
-    AUTOMATON_DESTROYED,
-    TARGET_AUTOMATON_DNE,
-    DESTROYER_NOT_CREATOR,
-    SYMBOL_COUNT,
-  } symbol_type;
-
-  static const state_type transition[STATE_COUNT][SYMBOL_COUNT] =
-    {
-                        /* CREATE                      DESTROY                      AUTOMATON_CREATED            INSTANCE_EXISTS       AUTOMATON_DESTROYED   TARGET_AUTOMATON_DNE  DESTROYER_NOT_CREATOR */
-      /* START */        { automaton_dfa::CREATE_SENT, automaton_dfa::ERROR,        automaton_dfa::ERROR,        automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR },
-      /* CREATE_SENT */  { automaton_dfa::ERROR,       automaton_dfa::CREATE_RECV2, automaton_dfa::CREATE_RECV1, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR },
-      /* CREATE_RECV1 */ { automaton_dfa::ERROR,       automaton_dfa::DESTROY_SENT, automaton_dfa::ERROR,        automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR },
-      /* CREATE_RECV2 */ { automaton_dfa::ERROR,       automaton_dfa::ERROR,        automaton_dfa::DESTROY_SENT, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR },
-      /* DESTROY_SENT */ { automaton_dfa::ERROR,       automaton_dfa::ERROR,        automaton_dfa::ERROR,        automaton_dfa::ERROR, automaton_dfa::STOP,  automaton_dfa::ERROR, automaton_dfa::ERROR  },
-      /* STOP */         { automaton_dfa::ERROR,       automaton_dfa::ERROR,        automaton_dfa::ERROR,        automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR },
-      /* ERROR */        { automaton_dfa::ERROR,       automaton_dfa::ERROR,        automaton_dfa::ERROR,        automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR, automaton_dfa::ERROR }
-    };
-
-};
-
-template <class T, class G>
-class automaton_helper
-{
-private:
-  typedef typename G::result_type I;
-
-  automaton_dfa::state_type m_state;
-  const T* m_t;
-  G m_generator;
-  ioa::automaton_handle<I> m_handle;
-
-public:
-  automaton_helper (const T* t,
-		    G generator) :
-    m_state (automaton_dfa::START),
-    m_t (t),
-    m_generator (generator)
-  { }
-
-  void create () {
-    switch (m_state) {
-    case automaton_dfa::START:
-      ioa::scheduler.create (m_t, m_generator, *this);
-      break;
-    default:
-      break;
-    }
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::CREATE];
-  }
-
-  void destroy () {
-    switch (m_state) {
-    case automaton_dfa::CREATE_RECV1:
-      ioa::scheduler.destroy (m_t, m_handle, *this);
-      break;
-    default:
-      break;
-    }
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::DESTROY];
-  }
-  
-  void automaton_created (const ioa::automaton_handle<I>& automaton) {
-    switch (m_state) {
-    case automaton_dfa::CREATE_SENT:
-      m_handle = automaton;
-      break;
-    case automaton_dfa::CREATE_RECV2:
-      m_handle = automaton;
-      ioa::scheduler.destroy (m_t, m_handle, *this);
-      break;
-    default:
-      break;
-    }
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::AUTOMATON_CREATED];
-  }
-  
-  void instance_exists (const I* /* */) {
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::INSTANCE_EXISTS];
-  }
-  
-  void automaton_destroyed () {
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::AUTOMATON_DESTROYED];
-  }
-
-  void target_automaton_dne () {
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::TARGET_AUTOMATON_DNE];
-  }
-
-  void destroyer_not_creator () {
-    m_state = automaton_dfa::transition[m_state][automaton_dfa::DESTROYER_NOT_CREATOR];
-  }
-  
-  automaton_dfa::state_type get_state () const {
-    return m_state;
-  }
-};
-
 template <class P>
 class parameter_helper
 {
@@ -181,16 +64,18 @@ BOOST_AUTO_TEST_SUITE(configuration_suite)
 struct automaton_helper_automaton_created :
   public ioa::dispatching_automaton
 {
-  automaton_helper<automaton_helper_automaton_created, automaton2_generator> m_helper;
+  ioa::automaton_helper<automaton_helper_automaton_created, automaton2_generator> m_helper;
 
   automaton_helper_automaton_created () :
     m_helper (this, automaton2_generator ())
-  {
+  { }
+
+  void init () {
     m_helper.create ();
   }
 
   ~automaton_helper_automaton_created () {
-    BOOST_CHECK_EQUAL (m_helper.get_state (), automaton_dfa::CREATE_RECV1);
+    BOOST_CHECK_EQUAL (m_helper.get_state (), ioa::automaton_dfa::CREATE_RECV1);
   }
 };
 
@@ -204,21 +89,23 @@ struct automaton_helper_instance_exists
   : public ioa::dispatching_automaton
 {
   automaton2* m_instance;
-  automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper1;
-  automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper2;
+  ioa::automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper1;
+  ioa::automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper2;
 
   automaton_helper_instance_exists () :
     m_instance (new automaton2 ()),
     m_helper1 (this, m_instance),
     m_helper2 (this, m_instance)
-  {
+  { }
+
+  void init () {
     m_helper1.create ();
     m_helper2.create ();
   }
  
   ~automaton_helper_instance_exists () {
-    BOOST_CHECK ((m_helper1.get_state () == automaton_dfa::ERROR) ||
-		 (m_helper2.get_state () == automaton_dfa::ERROR));
+    BOOST_CHECK ((m_helper1.get_state () == ioa::automaton_dfa::ERROR) ||
+		 (m_helper2.get_state () == ioa::automaton_dfa::ERROR));
   }
 };
 
@@ -231,16 +118,16 @@ BOOST_AUTO_TEST_CASE (config_automaton_helper_instance_exists)
 struct automaton_helper_automaton_destroyed :
   public ioa::dispatching_automaton
 {
-  automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> m_helper;
+  ioa::automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> m_helper;
 
   void transition_ () {
     switch (m_helper.get_state ()) {
-    case automaton_dfa::START:
-    case automaton_dfa::CREATE_SENT:
+    case ioa::automaton_dfa::START:
+    case ioa::automaton_dfa::CREATE_SENT:
       // Poll.
       ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
       break;
-    case automaton_dfa::CREATE_RECV1:
+    case ioa::automaton_dfa::CREATE_RECV1:
       // Destroy once created.
       m_helper.destroy ();
       break;
@@ -254,13 +141,15 @@ struct automaton_helper_automaton_destroyed :
   automaton_helper_automaton_destroyed () :
     m_helper (this, automaton2_generator ()),
     transition (*this)
-  {
+  { }
+
+  void init () {
     m_helper.create ();
     ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
   }
 
   ~automaton_helper_automaton_destroyed () {
-    BOOST_CHECK_EQUAL (m_helper.get_state (), automaton_dfa::STOP);
+    BOOST_CHECK_EQUAL (m_helper.get_state (), ioa::automaton_dfa::STOP);
   }
 };
 
@@ -273,17 +162,19 @@ BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed)
 struct automaton_helper_automaton_destroyed_fast :
   public ioa::dispatching_automaton
 {
-  automaton_helper<automaton_helper_automaton_destroyed_fast, automaton2_generator> m_helper;
+  ioa::automaton_helper<automaton_helper_automaton_destroyed_fast, automaton2_generator> m_helper;
 
   automaton_helper_automaton_destroyed_fast () :
     m_helper (this, automaton2_generator ())
-  {
+  { }
+
+  void init () {
     m_helper.create ();
     m_helper.destroy ();
   }
 
   ~automaton_helper_automaton_destroyed_fast () {
-    BOOST_CHECK_EQUAL (m_helper.get_state (), automaton_dfa::STOP);
+    BOOST_CHECK_EQUAL (m_helper.get_state (), ioa::automaton_dfa::STOP);
   }
 };
 
@@ -311,7 +202,9 @@ struct parameter_helper_parameter_exists :
   parameter_helper_parameter_exists () :
     m_helper1 (&m_parameter),
     m_helper2 (&m_parameter)
-  {
+  { }
+
+  void init () {
     m_helper1.declare (this);
     m_helper2.declare (this);
   }
@@ -336,7 +229,9 @@ struct parameter_helper_parameter_declared :
 
   parameter_helper_parameter_declared () :
     m_helper (&m_parameter)
-  {
+  { }
+
+  void init () {
     m_helper.declare (this);
   }
 

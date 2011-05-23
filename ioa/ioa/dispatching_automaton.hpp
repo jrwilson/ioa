@@ -3,7 +3,8 @@
 
 namespace ioa {
 
-  class dispatching_automaton
+  class dispatching_automaton :
+    public automaton_interface
   {
   public:
     

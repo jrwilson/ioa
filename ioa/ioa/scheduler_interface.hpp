@@ -10,6 +10,8 @@ namespace ioa {
   public:
     virtual ~scheduler_interface () { }
     virtual void set_current_aid (const aid_t) = 0;
+    virtual void set_current_aid (const aid_t,
+				  const automaton_interface*) = 0;
     virtual void clear_current_aid () = 0;
   };
   

@@ -171,4 +171,7 @@ namespace ioa {
   scheduler_wrapper<simple_scheduler> scheduler (ss);
 }
 
+#include "automaton_helper.hpp"
+#include "bind_helper.hpp"
+
 #endif
