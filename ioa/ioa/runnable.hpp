@@ -8,6 +8,8 @@ namespace ioa {
   class runnable_interface
   {
   private:
+    // We keep track of the number of runnables in existence.
+    // When the count reaches 0, we can stop.
     static boost::shared_mutex m_mutex;
     static size_t m_count;
 
@@ -45,6 +47,11 @@ namespace ioa {
       m_t ();
     }
   };
+
+  template <class T>
+  runnable<T>* make_runnable (const T& t) {
+    return new runnable<T> (t);
+  }
 
 }
 

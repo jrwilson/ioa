@@ -2,6 +2,7 @@
 #define BOOST_TEST_MODULE binding
 #include <boost/test/unit_test.hpp>
 
+#define AUTOMATON_HANDLE_SETTER
 #include <binding.hpp>
 #include "automaton1.hpp"
 
@@ -40,13 +41,17 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
   std::auto_ptr<automaton1> output_instance (new automaton1 ());
   std::auto_ptr<automaton1> input1_instance (new automaton1 ());
   std::auto_ptr<automaton1> input2_instance (new automaton1 ());
-  ioa::automaton_handle<automaton1> binder_handle (0);
-  ioa::automaton_handle<automaton1> output_handle (1);
-  ioa::automaton_handle<automaton1> input1_handle (2);
-  ioa::automaton_handle<automaton1> input2_handle (3);
+  ioa::automaton_handle<automaton1> binder_handle;
+  binder_handle.set_aid (0);
+  ioa::automaton_handle<automaton1> output_handle;
+  output_handle.set_aid (1);
+  ioa::automaton_handle<automaton1> input1_handle;
+  input1_handle.set_aid (2);
+  ioa::automaton_handle<automaton1> input2_handle;
+  input2_handle.set_aid (3);
 
   int input_parameter;
-  ioa::parameter_handle<int> input_parameter_handle (843);
+  ioa::parameter_handle<int> input_parameter_handle;
 
   ioa::concrete_action<automaton1, automaton1::up_uv_output_action> output (ioa::make_action (output_handle, &automaton1::up_uv_output), output_instance.get ());
   ioa::concrete_action<automaton1, automaton1::up_uv_input_action> input1 (ioa::make_action (input1_handle, &automaton1::up_uv_input), input1_instance.get ());
@@ -61,12 +66,12 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   dummy_scheduler sched;
   dummy_system sys;
@@ -81,23 +86,23 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   binding.unbind (output, input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (!binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid ()));
 }
 
 BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
@@ -106,15 +111,19 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
   std::auto_ptr<automaton1> output_instance (new automaton1 ());
   std::auto_ptr<automaton1> input1_instance (new automaton1 ());
   std::auto_ptr<automaton1> input2_instance (new automaton1 ());
-  ioa::automaton_handle<automaton1> binder_handle (0);
-  ioa::automaton_handle<automaton1> output_handle (1);
-  ioa::automaton_handle<automaton1> input1_handle (2);
-  ioa::automaton_handle<automaton1> input2_handle (3);
+  ioa::automaton_handle<automaton1> binder_handle;
+  binder_handle.set_aid (0);
+  ioa::automaton_handle<automaton1> output_handle;
+  output_handle.set_aid (1);
+  ioa::automaton_handle<automaton1> input1_handle;
+  input1_handle.set_aid (2);
+  ioa::automaton_handle<automaton1> input2_handle;
+  input2_handle.set_aid (3);
 
   int output_parameter;
-  ioa::parameter_handle<int> output_parameter_handle (699);
+  ioa::parameter_handle<int> output_parameter_handle;
   int input_parameter;
-  ioa::parameter_handle<int> input_parameter_handle (843);
+  ioa::parameter_handle<int> input_parameter_handle;
 
   ioa::concrete_action<automaton1, automaton1::p_uv_output_action> output (ioa::make_action (output_handle, &automaton1::p_uv_output, output_parameter_handle), output_instance.get (), &output_parameter);
   ioa::concrete_action<automaton1, automaton1::up_uv_input_action> input1 (ioa::make_action (input1_handle, &automaton1::up_uv_input), input1_instance.get ());
@@ -129,12 +138,12 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   dummy_scheduler sched;
   dummy_system sys;
@@ -150,23 +159,23 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   binding.unbind (output, input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (!binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid ()));
 }
 
 BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
@@ -175,13 +184,17 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
   std::auto_ptr<automaton1> output_instance (new automaton1 ());
   std::auto_ptr<automaton1> input1_instance (new automaton1 ());
   std::auto_ptr<automaton1> input2_instance (new automaton1 ());
-  ioa::automaton_handle<automaton1> binder_handle (0);
-  ioa::automaton_handle<automaton1> output_handle (1);
-  ioa::automaton_handle<automaton1> input1_handle (2);
-  ioa::automaton_handle<automaton1> input2_handle (3);
+  ioa::automaton_handle<automaton1> binder_handle;
+  binder_handle.set_aid (0);
+  ioa::automaton_handle<automaton1> output_handle;
+  output_handle.set_aid (1);
+  ioa::automaton_handle<automaton1> input1_handle;
+  input1_handle.set_aid (2);
+  ioa::automaton_handle<automaton1> input2_handle;
+  input2_handle.set_aid (3);
 
   int input_parameter;
-  ioa::parameter_handle<int> input_parameter_handle (843);
+  ioa::parameter_handle<int> input_parameter_handle;
 
   ioa::concrete_action<automaton1, automaton1::up_v_output_action> output (ioa::make_action (output_handle, &automaton1::up_v_output), output_instance.get ());
   ioa::concrete_action<automaton1, automaton1::up_v_input_action> input1 (ioa::make_action (input1_handle, &automaton1::up_v_input), input1_instance.get ());
@@ -196,12 +209,12 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   dummy_scheduler sched;
   dummy_system sys;
@@ -216,23 +229,23 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   binding.unbind (output, input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (!binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid ()));
 }
 
 BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
@@ -241,15 +254,19 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
   std::auto_ptr<automaton1> output_instance (new automaton1 ());
   std::auto_ptr<automaton1> input1_instance (new automaton1 ());
   std::auto_ptr<automaton1> input2_instance (new automaton1 ());
-  ioa::automaton_handle<automaton1> binder_handle (0);
-  ioa::automaton_handle<automaton1> output_handle (1);
-  ioa::automaton_handle<automaton1> input1_handle (2);
-  ioa::automaton_handle<automaton1> input2_handle (3);
+  ioa::automaton_handle<automaton1> binder_handle;
+  binder_handle.set_aid (0);
+  ioa::automaton_handle<automaton1> output_handle;
+  output_handle.set_aid (1);
+  ioa::automaton_handle<automaton1> input1_handle;
+  input1_handle.set_aid (2);
+  ioa::automaton_handle<automaton1> input2_handle;
+  input2_handle.set_aid (3);
 
   int output_parameter;
-  ioa::parameter_handle<int> output_parameter_handle (543);
+  ioa::parameter_handle<int> output_parameter_handle;
   int input_parameter;
-  ioa::parameter_handle<int> input_parameter_handle (843);
+  ioa::parameter_handle<int> input_parameter_handle;
 
   ioa::concrete_action<automaton1, automaton1::p_v_output_action> output (ioa::make_action (output_handle, &automaton1::p_v_output, output_parameter_handle), output_instance.get (), &output_parameter);
   ioa::concrete_action<automaton1, automaton1::up_v_input_action> input1 (ioa::make_action (input1_handle, &automaton1::up_v_input), input1_instance.get ());
@@ -276,23 +293,23 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
   binding.unbind (output, input2, binder_handle);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
-  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid));
-  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid));
+  BOOST_CHECK (!binding.involves_binding (output, input1, binder_handle.aid ()));
+  BOOST_CHECK (!binding.involves_binding (output, input2, binder_handle.aid ()));
   BOOST_CHECK (!binding.involves_input (input1));
   BOOST_CHECK (!binding.involves_input (input2));
-  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid));
-  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid));
+  BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
+  BOOST_CHECK (!binding.involves_input_automaton (input2_handle.aid ()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

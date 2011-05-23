@@ -1,48 +1,9 @@
-#ifndef __automaton_hpp__
-#define __automaton_hpp__
+#ifndef __dispatching_automaton_hpp__
+#define __dispatching_automaton_hpp__
 
 namespace ioa {
 
-  typedef int aid_t;
-  typedef int pid_t;
-
-  template <class T>
-  struct automaton_handle
-  {
-    aid_t aid;
-
-    automaton_handle () :
-      aid (-1)
-    { }
-
-    // TODO:  Limit access.
-    automaton_handle (aid_t a) :
-      aid (a)
-    { }
-
-    bool operator== (const automaton_handle& handle) const {
-      return aid == handle.aid;
-    }
-  };
-
-  template <class T>
-  struct parameter_handle
-  {
-    pid_t pid;
-
-    parameter_handle () :
-      pid (-1)
-    { }
-
-    // TODO:  Limit access.
-    parameter_handle (pid_t p) :
-      pid (p)
-    { }
-  };
-
-  // TODO:  Move to different file and rename.
-
-  class generic_automaton
+  class dispatching_automaton
   {
   public:
     

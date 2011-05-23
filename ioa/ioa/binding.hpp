@@ -4,6 +4,7 @@
 #include <boost/foreach.hpp>
 #include "action.hpp"
 #include "system_interface.hpp"
+#include "scheduler_interface.hpp"
 
 namespace ioa {
 
@@ -78,7 +79,7 @@ namespace ioa {
     }
 
     aid_t binder () const {
-      return m_binder.aid;
+      return m_binder.aid ();
     }
   };
 
@@ -227,9 +228,15 @@ namespace ioa {
 	       const automaton_handle<I>& binder,
 	       USL& usl,
 	       D& d) {
+      // Can't bind to self.
+      BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
+      // Can't already involve input.
+      BOOST_ASSERT (!involves_input_automaton (input_action.automaton.aid ()));
+      // Sanity check.
       if (!m_inputs.empty ()) {
 	BOOST_ASSERT (output_action == get_output ());
       }
+
       binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, USL, D> (output_action, input_action, binder, usl, d);
       m_inputs.insert (record);
     }

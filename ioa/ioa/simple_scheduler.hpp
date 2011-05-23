@@ -1,43 +1,17 @@
 #ifndef __simple_scheduler_hpp__
 #define __simple_scheduler_hpp__
 
+#include "blocking_queue.hpp"
+#include "runnable.hpp"
+#include "system.hpp"
+#include <boost/bind.hpp>
+
 namespace ioa {
 
   // TODO:  DUPLICATES!!!
   // TODO:  EVENTS!!!
   // TODO:  Send event to destroyed automaton.
   // TODO:  System call fairness!!!
-
-  template <class T>
-  class blocking_queue
-  {
-  private:
-    boost::condition_variable m_condition;
-    boost::mutex m_mutex;
-    std::queue<T> m_queue;
-
-  public:
-    T pop () {
-      boost::unique_lock<boost::mutex> lock (m_mutex);
-      while (m_queue.empty ()) {
-	m_condition.wait (lock);
-      }
-      T retval = m_queue.front ();
-      m_queue.pop ();
-      return retval;
-    }
-
-    void push (const T& t) {
-      boost::unique_lock<boost::mutex> lock (m_mutex);
-      m_queue.push (t);
-    }
-
-  };
-
-  template <class T>
-  runnable<T>* make_runnable (const T& t) {
-    return new runnable<T> (t);
-  }
 
   class simple_scheduler :
     public scheduler_interface
@@ -48,8 +22,7 @@ namespace ioa {
     aid_t m_current_aid;
 
     template <class I>
-    automaton_handle<I> get_current_aid (const I* /* */) const {
-
+    automaton_handle<I> get_current_aid (const I* ptr) const {
       // The system uses set_current_aid to alert the scheduler that the code that is executing belongs to the given automaton.
       // When the automaton invokes the scheduler, this ID is used in the production of the corresponding runnable.
       // To be type-safe, we desire an automaton_handle<T> instead of an aid_t.
@@ -60,7 +33,7 @@ namespace ioa {
       // Check that an automaton is executing an action.
       // Someone forgot to set the current handle.
       BOOST_ASSERT (m_current_aid != -1);
-      return automaton_handle<I> (m_current_aid);
+      return m_system.cast_aid (ptr, m_current_aid);
     }
 
     void set_current_aid (const aid_t aid) {

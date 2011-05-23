@@ -178,7 +178,7 @@ public:
 BOOST_AUTO_TEST_SUITE(configuration_suite)
 
 struct automaton_helper_automaton_created :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
   automaton_helper<automaton_helper_automaton_created, automaton2_generator> m_helper;
 
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_created)
 }
 
 struct automaton_helper_instance_exists
-  : public ioa::generic_automaton
+  : public ioa::dispatching_automaton
 {
   automaton2* m_instance;
   automaton_helper<automaton_helper_instance_exists, instance_holder<automaton2> > m_helper1;
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE (config_automaton_helper_instance_exists)
 }
 
 struct automaton_helper_automaton_destroyed :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
   automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> m_helper;
 
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed)
 }
 
 struct automaton_helper_automaton_destroyed_fast :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
   automaton_helper<automaton_helper_automaton_destroyed_fast, automaton2_generator> m_helper;
 
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed_fast)
 
 
 struct parameter_helper_parameter_exists :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
   int m_parameter;
   parameter_helper<int> m_helper1;
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE (config_parameter_helper_parameter_exists)
 }
 
 struct parameter_helper_parameter_declared :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
   int m_parameter;
   parameter_helper<int> m_helper;

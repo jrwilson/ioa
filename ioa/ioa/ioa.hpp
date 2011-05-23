@@ -1,16 +1,13 @@
 #ifndef __ioa_hpp__
 #define __ioa_hpp__
 
-#include <memory>
-#include <set>
-#include <queue>
-#include <boost/foreach.hpp>
-#include <boost/thread.hpp>
-
 #include "scheduler.hpp"
 #include "simple_scheduler.hpp"
+#include "dispatching_automaton.hpp"
 
 namespace ioa {
+
+  // TODO:  Improve the wrappers.
 
   template <class C, class T, void (C::*member)(const T)>
   class input_wrapper :
@@ -33,7 +30,6 @@ namespace ioa {
    void unbound () { }
   };
 
-  // TODO: Combine with previous.
   template <class C, void (C::*member)()>
   class void_input_wrapper :
     public input,

@@ -8,7 +8,7 @@
 BOOST_AUTO_TEST_SUITE(scheduler_suite)
 
 class create_exists :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE (scheduler_create_exists)
 }
 
 class create_automaton_created :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE (scheduler_create_automaton_created)
 }
 
 class declare_exists :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE (scheduler_declare_exists)
 }
 
 class declare_parameter_declared :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE (scheduler_declare_parameter_declared)
 }
 
 class bind_output_automaton_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_output_automaton_dne)
 }
 
 class bind_input_automaton_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_input_automaton_dne)
 }
 
 class bind_output_parameter_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_output_parameter_dne_)
 }
 
 class bind_input_parameter_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -941,7 +941,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_input_parameter_dne_)
 }
 
 class bind_exists :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -1163,7 +1163,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_exists)
 }
 
 class bind_input_action_unavailable :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -1417,7 +1417,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_input_action_unavailable)
 }
 
 class bind_output_action_unavailable :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -1638,7 +1638,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_output_action_unavailable)
 }
 
 class bind_bound :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -1804,7 +1804,7 @@ BOOST_AUTO_TEST_CASE (scheduler_bind_bound)
 }
 
 class unbind_output_automaton_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -1921,7 +1921,7 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_output_automaton_dne)
 }
 
 class unbind_input_automaton_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2039,7 +2039,7 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_input_automaton_dne)
 }
 
 class unbind_output_parameter_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2163,7 +2163,7 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_output_parameter_dne_)
 }
 
 class unbind_input_parameter_dne_ :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2285,7 +2285,7 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_input_parameter_dne_)
 }
 
 class unbind_binding_dne :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2435,7 +2435,7 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_binding_dne)
 }
 
 class unbind_unbound :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2641,7 +2641,7 @@ BOOST_AUTO_TEST_CASE (scheduler_unbind_unbound)
 }
 
 class rescind_parameter_dne :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2710,7 +2710,7 @@ BOOST_AUTO_TEST_CASE (scheduler_rescind_parameter_dne)
 }
 
 class rescind_parameter_rescinded :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2813,7 +2813,7 @@ BOOST_AUTO_TEST_CASE (scheduler_rescind_parameter_rescinded)
 }
 
 class destroy_helper :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2880,7 +2880,7 @@ public:
 };
 
 class destroy_destroyer_not_creator :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -2994,7 +2994,7 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_destroyer_not_creator)
 }
 
 class destroy_target_automaton_dne :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -3068,7 +3068,7 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_target_automaton_dne)
 }
 
 class destroy_automaton_destroyed :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {
@@ -3174,7 +3174,7 @@ BOOST_AUTO_TEST_CASE (scheduler_destroy_automaton_destroyed)
 }
 
 class schedule_output :
-  public ioa::generic_automaton
+  public ioa::dispatching_automaton
 {
 public:
   enum state_type {

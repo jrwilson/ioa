@@ -2,34 +2,254 @@
 #define __action_hpp__
 
 #include <set>
-#include "automaton.hpp"
+#include "automaton_handle.hpp"
+#include "parameter_handle.hpp"
 
 namespace ioa {
 
+  /* Represents the absence of a type. */
+  class null_type { };
+
   /*
-    Interface Hierarchy
+    Action categories.
 
-    - action
-    - input
-    - unvalued
-    - valued
-    - executable
-    - output
-    - unvalued
-    - valued
-    - independent
-
-    The input and output interfaces are split by type to enable safe composition.
-    Namely, unvalued input actions can be composed with unvalued output actions and valued input actiosn can be composed with valued output actions of the same time.
-
-    The executable interface contains output and independent actions.
-    This split is necessary because outputs require special processing when they are executed, i.e., they can be composed and involve more than one automaton.
-    Independent actions only involve one automaton and include internal actions and events.
-    The intended usage of independent actions is that they will be executed after the automaton is locked.
-
+    Input, outputs, and internal actions come directly from the I/O automata formalism.
     Events are asynchronous messages from other automata.
-    Conceptually, events act like a permanent inbox and are a cross between an internal action and an input action.
-    Events allow arbitrary automata to coordinate are are necessary for dynamic interfaces.
+    Events allow arbitrary automata to coordinate.
+   */
+  struct input_category { };
+  struct output_category { };
+  struct internal_category { };
+  struct event_category { };
+
+  /* Indicates if an input, outputs, or events has an associated value. */
+  struct unvalued { };
+  struct valued { };
+
+  /* Indicates if an input, output, or internal action has an associated parameter.
+     Parameters are designed to solve the problem of fan-in as an input can only be composed with one output.
+     We can compose an input with multiple outputs by declaring a parameter for each output.
+     This idea can be extended to outputs and internal actions to capture the notion of a session where the parameter indicates that all interactions with another automaton are identified using a parameter.
+  */
+  struct unparameterized { };
+  struct parameterized { };
+
+  /* These are helpers that define action traits. */
+
+  struct no_value {
+    typedef unvalued value_status;
+    typedef null_type value_type;
+  };
+
+  template <class T>
+  struct value {
+    typedef valued value_status;
+    typedef T value_type;
+  };
+
+  struct no_parameter {
+    typedef unparameterized parameter_status;
+    typedef null_type parameter_type;
+  };
+
+  template <class T>
+  struct parameter {
+    typedef parameterized parameter_status;
+    typedef T parameter_type;
+  };
+
+  struct input {
+    typedef input_category action_category;
+  };
+
+  struct output {
+    typedef output_category action_category;
+  };
+
+  struct internal : public no_value {
+    typedef internal_category action_category;
+  };
+
+  struct event : public no_parameter {
+    typedef event_category action_category;
+  };
+
+  /*
+    Actions (or Action Descriptors)
+
+    An action descriptor contains the ID of the associated automaton, a pointer to a member, a parameter ID (optional), and an event value (optional).
+    Actions are flyweights that allow us to talk about actions that need to be scheduler or bound without having a pointer or reference to the actual automaton.
+   */
+
+  template <class I, class M>
+  struct action_core
+  {
+    const automaton_handle<I> automaton;
+    M I::*member_ptr;
+
+    action_core (const automaton_handle<I>& a,
+		 M I::*ptr) :
+      automaton (a),
+      member_ptr (ptr)
+    { }
+
+  };
+
+  /*
+    K - category
+    M - member
+    VS - value status
+    VT - value type
+    PS - parameter status
+    PT - parameter type
+  */
+  template <class K, class I, class M, class VS, class VT, class PS, class PT> class action_impl;
+
+  template <class K, class I, class M, class VS, class VT>
+  class action_impl<K, I, M, VS, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+		 M I::*ptr) :
+      action_core<I, M> (a, ptr)
+    { }
+    
+  };
+
+  template <class K, class I, class M, class VS, class VT, class PT>
+  class action_impl<K, I, M, VS, VT, parameterized, PT> :
+    public action_core<I, M>
+  {
+  public:
+    const parameter_handle<PT> parameter;
+    
+    action_impl (const automaton_handle<I>& a,
+		 M I::*ptr,
+		 const parameter_handle<PT>& p) :
+      action_core<I, M> (a, ptr),
+      parameter (p)
+    { }
+    
+  };
+
+  template <class I, class M, class VT>
+  class action_impl<event_category, I, M, valued, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  public:
+    const VT value;
+
+    action_impl (const automaton_handle<I>& a,
+		 M I::*ptr,
+		 const VT& v) :
+      action_core<I, M> (a, ptr),
+      value (v)
+    { }
+    
+  };
+
+  template <class I, class Member>
+  class action :
+    public action_impl<typename Member::action_category,
+		       I,
+		       Member,
+		       typename Member::value_status,
+		       typename Member::value_type,
+		       typename Member::parameter_status,
+		       typename Member::parameter_type>
+  {
+  public:
+    typedef typename Member::action_category action_category;
+    typedef typename Member::value_status value_status;
+    typedef typename Member::value_type value_type;
+    typedef typename Member::parameter_status parameter_status;
+    typedef typename Member::parameter_type parameter_type;
+
+    action (const automaton_handle<I>& a,
+  	    Member I::*ptr) :
+      action_impl <action_category,
+		   I,
+		   Member,
+		   value_status,
+		   value_type,
+		   parameter_status,
+		   parameter_type> (a, ptr)
+    { }
+
+    action (const automaton_handle<I>& a,
+    	    Member I::*ptr,
+    	    const parameter_handle<parameter_type>& p) :
+      action_impl <action_category,
+		   I,
+		   Member,
+		   value_status,
+		   value_type,
+		   parameter_status,
+		   parameter_type> (a, ptr, p)
+    { }
+    
+    action (const automaton_handle<I>& a,
+    	    Member I::*ptr,
+    	    const value_type& v) :
+      action_impl <action_category,
+		   I,
+		   Member,
+		   value_status,
+		   value_type,
+		   parameter_status,
+		   parameter_type> (a, ptr, v)
+    { }
+
+  };
+
+  template <class I, class M>
+  action<I, M>
+  make_action (const automaton_handle<I>& handle,
+	       M I::*member_ptr) {
+    return action<I, M> (handle, member_ptr);
+  }
+  
+  template <class I, class M>
+  action<I, M>
+  make_action (const automaton_handle<I>& handle,
+	       M I::*member_ptr,
+	       const parameter_handle<typename M::parameter_type>& parameter) {
+    return action<I, M> (handle, member_ptr, parameter);
+  }
+  
+  template <class I, class M>
+  action<I, M>
+  make_action (const automaton_handle<I>& handle,
+	       M I::*member_ptr,
+	       const typename M::value_type& v) {
+    return action<I, M> (handle, member_ptr, v);
+  }
+
+  /*
+    Concrete Actions
+
+    Concrete actions are described by the following formula
+    action + instance pointer = concrete action
+
+    The instance pointer allows us to get a reference to the member and execute the corresponding code.
+    The action interface captures this idea.
+
+    A number of inputs can be bound to a single output to create a binding (see binding.hpp).
+    Essentially, there are only two types of bindings:  those with an associated value and those without an associated value.
+    To facilitate the construction and execution of bindings, we create the following interface hierarchy:
+    
+    - action
+      - input
+        - unvalued
+        - valued
+      - output
+        - unvalued
+        - valued
+
+    Unvalued input actions can be bound to unvalued output actions and valued input actions can be bound to valued output actions of the same type.
+
   */
 
   class action_interface
@@ -215,203 +435,12 @@ namespace ioa {
     virtual std::pair<bool, T> operator() () const = 0;
   };
 
-  class null_type { };
-
-  struct input_category { };
-  struct output_category { };
-  struct internal_category { };
-  struct event_category { };
-
-  struct unvalued { };
-  struct valued { };
-
-  struct unparameterized { };
-  struct parameterized { };
-
-  struct no_value {
-    typedef unvalued value_status;
-    typedef null_type value_type;
-  };
-
-  template <class T>
-  struct value {
-    typedef valued value_status;
-    typedef T value_type;
-  };
-
-  struct no_parameter {
-    typedef unparameterized parameter_status;
-    typedef null_type parameter_type;
-  };
-
-  template <class T>
-  struct parameter {
-    typedef parameterized parameter_status;
-    typedef T parameter_type;
-  };
-
-  struct input {
-    typedef input_category action_category;
-  };
-
-  struct output {
-    typedef output_category action_category;
-  };
-
-  struct internal : public no_value {
-    typedef internal_category action_category;
-  };
-
-  struct event : public no_parameter {
-    typedef event_category action_category;
-  };
-
-  template <class I, class M>
-  struct action_core
-  {
-    const automaton_handle<I> automaton;
-    M I::*member_ptr;
-
-    action_core (const automaton_handle<I>& a,
-		 M I::*ptr) :
-      automaton (a),
-      member_ptr (ptr)
-    { }
-
-  };
-
   /*
-    K - category
-    M - member
-    VS - value status
-    VT - value type
-    PS - parameter status
-    PT - parameter type
+    A useful property exhibited in many systems that allow dynamic configuration is sensing the status of an input or output.
+    For example, a monitor might complain that it is not plugged into a video source.
+    Useful behavior can be associated with events that indicate a change in status.
+    In our system, we will deliver messages to inputs and outputs when they are bound and unbound.
   */
-  template <class K, class I, class M, class VS, class VT, class PS, class PT> class action_impl;
-
-  template <class K, class I, class M, class VS, class VT>
-  class action_impl<K, I, M, VS, VT, unparameterized, null_type> :
-    public action_core<I, M>
-  {
-  public:
-
-    action_impl (const automaton_handle<I>& a,
-		 M I::*ptr) :
-      action_core<I, M> (a, ptr)
-    { }
-    
-  };
-
-  template <class K, class I, class M, class VS, class VT, class PT>
-  class action_impl<K, I, M, VS, VT, parameterized, PT> :
-    public action_core<I, M>
-  {
-  public:
-    const parameter_handle<PT> parameter;
-    
-    action_impl (const automaton_handle<I>& a,
-		 M I::*ptr,
-		 const parameter_handle<PT>& p) :
-      action_core<I, M> (a, ptr),
-      parameter (p)
-    { }
-    
-  };
-
-  template <class I, class M, class VT>
-  class action_impl<event_category, I, M, valued, VT, unparameterized, null_type> :
-    public action_core<I, M>
-  {
-  public:
-    const VT value;
-
-    action_impl (const automaton_handle<I>& a,
-		 M I::*ptr,
-		 const VT& v) :
-      action_core<I, M> (a, ptr),
-      value (v)
-    { }
-    
-  };
-
-  template <class I, class Member>
-  class action :
-    public action_impl<typename Member::action_category,
-		       I,
-		       Member,
-		       typename Member::value_status,
-		       typename Member::value_type,
-		       typename Member::parameter_status,
-		       typename Member::parameter_type>
-  {
-  public:
-    typedef typename Member::action_category action_category;
-    typedef typename Member::value_status value_status;
-    typedef typename Member::value_type value_type;
-    typedef typename Member::parameter_status parameter_status;
-    typedef typename Member::parameter_type parameter_type;
-
-    action (const automaton_handle<I>& a,
-  	    Member I::*ptr) :
-      action_impl <action_category,
-		   I,
-		   Member,
-		   value_status,
-		   value_type,
-		   parameter_status,
-		   parameter_type> (a, ptr)
-    { }
-
-    action (const automaton_handle<I>& a,
-    	    Member I::*ptr,
-    	    const parameter_handle<parameter_type>& p) :
-      action_impl <action_category,
-		   I,
-		   Member,
-		   value_status,
-		   value_type,
-		   parameter_status,
-		   parameter_type> (a, ptr, p)
-    { }
-    
-    action (const automaton_handle<I>& a,
-    	    Member I::*ptr,
-    	    const value_type& v) :
-      action_impl <action_category,
-		   I,
-		   Member,
-		   value_status,
-		   value_type,
-		   parameter_status,
-		   parameter_type> (a, ptr, v)
-    { }
-
-  };
-
-  template <class I, class M>
-  action<I, M>
-  make_action (const automaton_handle<I>& handle,
-	       M I::*member_ptr) {
-    return action<I, M> (handle, member_ptr);
-  }
-  
-  template <class I, class M>
-  action<I, M>
-  make_action (const automaton_handle<I>& handle,
-	       M I::*member_ptr,
-	       const parameter_handle<typename M::parameter_type>& parameter) {
-    return action<I, M> (handle, member_ptr, parameter);
-  }
-  
-  template <class I, class M>
-  action<I, M>
-  make_action (const automaton_handle<I>& handle,
-	       M I::*member_ptr,
-	       const typename M::value_type& v) {
-    return action<I, M> (handle, member_ptr, v);
-  }
-
   template <class M>
   class unparameterized_bound
   {
@@ -478,7 +507,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      unvalued_input_action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      unvalued_input_action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       unparameterized_bound<M> ((*instance).*(ac.member_ptr)),
       m_member ((*instance).*(ac.member_ptr))
     { }
@@ -503,7 +532,7 @@ namespace ioa {
 			  I* instance,
 			  PT* parameter) :
       action<I, M> (ac),
-      unvalued_input_action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid),
+      unvalued_input_action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid ()),
       parameterized_bound<M, PT> ((*instance).*(ac.member_ptr), parameter),
       m_member ((*instance).*(ac.member_ptr)),
       m_parameter (parameter)
@@ -528,7 +557,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      valued_input_action_interface<VT> (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      valued_input_action_interface<VT> (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       unparameterized_bound<M> ((*instance).*(ac.member_ptr)),
       m_member ((*instance).*(ac.member_ptr))
     { }
@@ -554,7 +583,7 @@ namespace ioa {
 			  I* instance,
 			  PT* parameter) :
       action<I, M> (ac),
-      valued_input_action_interface<VT> (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid),
+      valued_input_action_interface<VT> (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid ()),
       parameterized_bound<M, PT> ((*instance).*(ac.member_ptr), parameter),
       m_member ((*instance).*(ac.member_ptr)),
       m_parameter (parameter)
@@ -579,7 +608,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      unvalued_output_action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      unvalued_output_action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       unparameterized_bound<M> ((*instance).*(ac.member_ptr)),
       m_member ((*instance).*(ac.member_ptr))
     { }
@@ -609,7 +638,7 @@ namespace ioa {
 			  I* instance,
 			  PT* parameter) :
       action<I, M> (ac),
-      unvalued_output_action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid),
+      unvalued_output_action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid ()),
       parameterized_bound<M, PT> ((*instance).*(ac.member_ptr), parameter),
       m_member ((*instance).*(ac.member_ptr)),
       m_parameter (parameter)
@@ -638,7 +667,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      valued_output_action_interface<VT> (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      valued_output_action_interface<VT> (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       unparameterized_bound<M> ((*instance).*(ac.member_ptr)),
       m_member ((*instance).*(ac.member_ptr))
     { }
@@ -668,7 +697,7 @@ namespace ioa {
 			  I* instance,
 			  PT* parameter) :
       action<I, M> (ac),
-      valued_output_action_interface<VT> (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid),
+      valued_output_action_interface<VT> (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid ()),
       parameterized_bound<M, PT> ((*instance).*(ac.member_ptr), parameter),
       m_member ((*instance).*(ac.member_ptr)),
       m_parameter (parameter)
@@ -696,7 +725,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       m_member ((*instance).*(ac.member_ptr))
     { }
 
@@ -719,7 +748,7 @@ namespace ioa {
 			  I* instance,
 			  PT* parameter) :
       action<I, M> (ac),
-      action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid),
+      action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr)), ac.parameter.pid ()),
       m_member ((*instance).*(ac.member_ptr)),
       m_parameter (parameter)
     { }
@@ -742,7 +771,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       m_member ((*instance).*(ac.member_ptr))
     { }
 
@@ -768,7 +797,7 @@ namespace ioa {
     concrete_action_impl (const action<I, M>& ac,
 			  I* instance) :
       action<I, M> (ac),
-      action_interface (ac.automaton.aid, instance, &((*instance).*(ac.member_ptr))),
+      action_interface (ac.automaton.aid (), instance, &((*instance).*(ac.member_ptr))),
       m_member ((*instance).*(ac.member_ptr))
     { }
 

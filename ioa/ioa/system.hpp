@@ -1,50 +1,19 @@
 #ifndef __system_hpp__
 #define __system_hpp__
 
+#include "sequential_set.hpp"
 #include <boost/foreach.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/utility.hpp>
-#include <set>
 #include <list>
-#include "automaton.hpp"
+#include "automaton_handle.hpp"
+#include "parameter_handle.hpp"
 #include "binding.hpp"
 
 namespace ioa {
 
-  template <class T>
-  class sequential_set
-  {
-  private:
-    T m_counter;
-    std::set<T> m_used;
-  public:
-    sequential_set () :
-      m_counter (0)
-      { }
-
-    T take () {
-      do {
-	++m_counter;
-	if (m_counter < 0) {
-	  m_counter = 0;
-	}
-      } while (m_used.count (m_counter) != 0);
-      m_used.insert (m_counter);
-      return m_counter;
-    }
-
-    void replace (const T& t) {
-      m_used.erase (t);
-    }
-
-    bool contains (const T& t) const {
-      return m_used.count (t) != 0;
-    }
-
-    void clear () {
-      m_used.clear ();
-    }
-  };
+  // TODO:  Memory allocation.
+  // TODO:  No more init.
 
   class parameter_record_interface
   {
@@ -84,11 +53,11 @@ namespace ioa {
     }
 
     const aid_t get_aid () const {
-      return m_automaton.aid;
+      return m_automaton.aid ();
     }
     
     const pid_t get_pid () const {
-      return m_parameter.pid;
+      return m_parameter.pid ();
     }
 
     void* get_parameter () const {
@@ -123,12 +92,12 @@ namespace ioa {
 
     template <class P>
     bool parameter_exists (const parameter_handle<P>& parameter) const {
-      return m_pid_to_record.count (parameter.pid) != 0;
+      return m_pid_to_record.count (parameter.pid ()) != 0;
     }
 
     template <class P>
     P* get_parameter (const parameter_handle<P>& parameter) const {
-      std::map<pid_t, parameter_record_interface*>::const_iterator pos = m_pid_to_record.find (parameter.pid);
+      std::map<pid_t, parameter_record_interface*>::const_iterator pos = m_pid_to_record.find (parameter.pid ());
       BOOST_ASSERT (pos != m_pid_to_record.end ());
       return static_cast<P*> (pos->second->get_parameter ());
     }
@@ -151,8 +120,8 @@ namespace ioa {
     template <class P>
     void rescind_parameter (const parameter_handle<P>& parameter) {
       BOOST_ASSERT (parameter_exists (parameter));
-      parameter_record_interface* record = m_pid_to_record[parameter.pid];
-      m_pid_to_record.erase (parameter.pid);
+      parameter_record_interface* record = m_pid_to_record[parameter.pid ()];
+      m_pid_to_record.erase (parameter.pid ());
       m_param_to_record.erase (record->get_parameter ());
       delete record;
     }
@@ -182,7 +151,7 @@ namespace ioa {
     }
 
     const aid_t get_handle () const {
-      return m_automaton.aid;
+      return m_automaton.aid ();
     }
   };
 
@@ -322,7 +291,10 @@ namespace ioa {
       clear ();
     }
     
-  public:
+    template <class I>
+    automaton_handle<I> cast_aid (const I* /* */, const aid_t aid) const {
+      return automaton_handle<I> (aid);
+    }
 
     /*
       Generative operations (create, declare, bind) take a listener that is sent a message with
@@ -358,7 +330,7 @@ namespace ioa {
       automaton_handle<I> handle (m_aids.take ());
       m_instances.insert (instance);
       automaton_record_interface* record = new root_automaton_record<I, DSL> (instance, handle, dsl);
-      m_records.insert (std::make_pair (handle.aid, record));
+      m_records.insert (std::make_pair (handle.aid (), record));
 
       csfl.automaton_created (handle);
       return;
@@ -374,7 +346,7 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
 	csfl.automaton_dne (automaton, d);
 	return;
       }
@@ -393,8 +365,8 @@ namespace ioa {
       automaton_handle<typename G::result_type> handle (m_aids.take ());
       m_instances.insert (instance);      
       automaton_record_interface* record = new automaton_record<P, typename G::result_type, DSL, D> (automaton, instance, handle, dsl, d);
-      m_records.insert (std::make_pair (handle.aid, record));
-      m_parent_child.push_back (std::make_pair (automaton.aid, handle.aid));
+      m_records.insert (std::make_pair (handle.aid (), record));
+      m_parent_child.push_back (std::make_pair (automaton.aid (), handle.aid ()));
       
       csfl.automaton_created (automaton, handle, d);
       return;
@@ -410,12 +382,12 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
 	dsfl.automaton_dne (automaton, parameter, d);
   	return;
       }
       
-      automaton_record_interface* record = m_records[automaton.aid];
+      automaton_record_interface* record = m_records[automaton.aid ()];
       
       if (record->parameter_exists (parameter)) {
 	dsfl.parameter_exists (automaton, d);
@@ -438,21 +410,21 @@ namespace ioa {
 
     template <class I, class M>
     bool parameter_exists (const action<I, M>& ac, parameterized /* */) {
-      return m_records[ac.automaton.aid]->parameter_exists (ac.parameter);
+      return m_records[ac.automaton.aid ()]->parameter_exists (ac.parameter);
     }
 
     template <class I, class M>
     concrete_action<I, M> reify0 (const action<I, M>& ac,
 				  unparameterized /* */) {
-      I* instance = static_cast<I*> (m_records[ac.automaton.aid]->get_instance ());
+      I* instance = static_cast<I*> (m_records[ac.automaton.aid ()]->get_instance ());
       return concrete_action<I, M> (ac, instance);
     }
 
     template <class I, class M>
     concrete_action<I, M> reify0 (const action<I, M>& ac,
 				  parameterized /* */) {
-      I* instance = static_cast<I*> (m_records[ac.automaton.aid]->get_instance ());
-      typename action<I,M>::parameter_type* parameter = m_records[ac.automaton.aid]->get_parameter (ac.parameter);
+      I* instance = static_cast<I*> (m_records[ac.automaton.aid ()]->get_instance ());
+      typename action<I,M>::parameter_type* parameter = m_records[ac.automaton.aid ()]->get_parameter (ac.parameter);
 
       return concrete_action<I, M> (ac, instance, parameter);
     }
@@ -471,18 +443,18 @@ namespace ioa {
 	   USL& usl,
 	   D& d)
     {
-      if (!m_aids.contains (binder.aid)) {
+      if (!m_aids.contains (binder.aid ())) {
   	// Binder DNE.
 	bsfl.automaton_dne (output, input, binder);
   	return;
       }
 
-      if (!m_aids.contains (output.automaton.aid)) {
+      if (!m_aids.contains (output.automaton.aid ())) {
 	bsfl.output_automaton_dne (output, input, binder, d);
 	return;
       }
 
-      if (!m_aids.contains (input.automaton.aid)) {
+      if (!m_aids.contains (input.automaton.aid ())) {
 	bsfl.input_automaton_dne (output, input, binder, d);
 	return;
       }
@@ -502,7 +474,7 @@ namespace ioa {
 
       std::list<binding_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
 									m_bindings.end (),
-									binding_equal (c_output, c_input, binder.aid));
+									binding_equal (c_output, c_input, binder.aid ()));
       
       if (pos != m_bindings.end ()) {
   	// Bound.
@@ -524,8 +496,8 @@ namespace ioa {
 									    m_bindings.end (),
 									    binding_output_equal (c_output));
       
-      if (output.automaton.aid == input.automaton.aid ||
-  	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.automaton.aid))) {
+      if (output.automaton.aid () == input.automaton.aid () ||
+  	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.automaton.aid ()))) {
   	// Output unavailable.
 	bsfl.output_action_unavailable (output, input, binder, d);
 	return;
@@ -648,17 +620,17 @@ namespace ioa {
 	     UFL& ufl,
 	     D& d)
     {
-      if (!m_aids.contains (binder.aid)) {
+      if (!m_aids.contains (binder.aid ())) {
 	ufl.automaton_dne (output, input, binder);
 	return;
       }
 
-      if (!m_aids.contains (output.automaton.aid)) {
+      if (!m_aids.contains (output.automaton.aid ())) {
 	ufl.output_automaton_dne (output, input, binder, d);
 	return;
       }
 
-      if (!m_aids.contains (input.automaton.aid)) {
+      if (!m_aids.contains (input.automaton.aid ())) {
 	ufl.input_automaton_dne (output, input, binder, d);
 	return;
       }
@@ -678,7 +650,7 @@ namespace ioa {
       
       std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
 								  m_bindings.end (),
-								  binding_equal (c_output, c_input, binder.aid));
+								  binding_equal (c_output, c_input, binder.aid ()));
       
       if (pos == m_bindings.end ()) {
 	// Not bound.
@@ -771,12 +743,12 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
 	rfl.automaton_dne (automaton, parameter);
   	return;
       }
       
-      automaton_record_interface* record = m_records[automaton.aid];
+      automaton_record_interface* record = m_records[automaton.aid ()];
       
       if (!record->parameter_exists (parameter)) {
 	rfl.parameter_dne (automaton, d);
@@ -788,7 +760,7 @@ namespace ioa {
       for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
 	   pos != m_bindings.end ();
 	   ) {
-	(*pos)->unbind_parameter (automaton.aid, parameter.pid);
+	(*pos)->unbind_parameter (automaton.aid (), parameter.pid ());
 	if ((*pos)->empty ()) {
 	  delete *pos;
 	  pos = m_bindings.erase (pos);
@@ -823,7 +795,7 @@ namespace ioa {
       std::set<aid_t> open_list;
 
       // Put the target in the open list.
-      open_list.insert (automaton.aid);
+      open_list.insert (automaton.aid ());
 
       while (!open_list.empty ()) {
 	// Grab an item from the open list.
@@ -890,7 +862,7 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (target.aid)) {
+      if (!m_aids.contains (target.aid ())) {
 	dfl.target_automaton_dne (target);
 	return;
       }
@@ -907,19 +879,19 @@ namespace ioa {
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
 	dfl.automaton_dne (automaton, target, d);
 	return;
       }
 
-      if (!m_aids.contains (target.aid)) {
+      if (!m_aids.contains (target.aid ())) {
 	dfl.target_automaton_dne (automaton, d);
 	return;
       }
 
       if (std::find (m_parent_child.begin (),
 		     m_parent_child.end (),
-		     std::make_pair (automaton.aid, target.aid)) == m_parent_child.end ()) {
+		     std::make_pair (automaton.aid (), target.aid ())) == m_parent_child.end ()) {
 	dfl.destroyer_not_creator (automaton, d);
 	return;
       }
@@ -943,9 +915,9 @@ namespace ioa {
     execute0 (const concrete_action<I, M>& ac,
 	      scheduler_interface& scheduler)
     {
-      lock_and_set (scheduler, ac.automaton.aid);
+      lock_and_set (scheduler, ac.automaton.aid ());
       ac.execute ();
-      clear_and_unlock (scheduler, ac.automaton.aid);
+      clear_and_unlock (scheduler, ac.automaton.aid ());
     }
 
     // TODO:  Execute failure listeners.
@@ -1000,7 +972,7 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (ac.automaton.aid)) {
+      if (!m_aids.contains (ac.automaton.aid ())) {
 	listener.automaton_dne ();
 	return;
       }
@@ -1042,15 +1014,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->instance_exists (i, d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class T, class L, class D>
@@ -1062,15 +1034,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->automaton_created (child, d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L>
@@ -1080,15 +1052,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->init ();
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1099,15 +1071,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->parameter_exists (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class P, class L, class D>
@@ -1119,15 +1091,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->parameter_declared (parameter, d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1138,15 +1110,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->bind_output_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1157,15 +1129,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->bind_input_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1176,15 +1148,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->bind_output_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1195,15 +1167,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->bind_input_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
     
     template <class I, class L, class D>
@@ -1214,15 +1186,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->binding_exists (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1233,15 +1205,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->input_action_unavailable (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1252,15 +1224,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->output_action_unavailable (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1271,15 +1243,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->bound (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class M, class L>
@@ -1290,7 +1262,7 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (ac.automaton.aid)) {
+      if (!m_aids.contains (ac.automaton.aid ())) {
 	listener.automaton_dne ();
 	return;
       }
@@ -1302,9 +1274,9 @@ namespace ioa {
 
       concrete_action<I, M> rac = reify (ac);
 
-      lock_and_set (scheduler, rac.automaton.aid);
+      lock_and_set (scheduler, rac.automaton.aid ());
       rac.bound ();
-      clear_and_unlock (scheduler, rac.automaton.aid);
+      clear_and_unlock (scheduler, rac.automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1315,15 +1287,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->unbind_output_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1334,15 +1306,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->unbind_input_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1353,15 +1325,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->unbind_output_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1372,15 +1344,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->unbind_input_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
     
     template <class I, class L, class D>
@@ -1391,15 +1363,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->binding_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
     
     template <class I, class L, class D>
@@ -1410,15 +1382,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->unbound (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class M, class L>
@@ -1429,7 +1401,7 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (ac.automaton.aid)) {
+      if (!m_aids.contains (ac.automaton.aid ())) {
 	listener.automaton_dne ();
 	return;
       }
@@ -1441,9 +1413,9 @@ namespace ioa {
 
       concrete_action<I, M> rac = reify (ac);
 
-      lock_and_set (scheduler, rac.automaton.aid);
+      lock_and_set (scheduler, rac.automaton.aid ());
       rac.unbound ();
-      clear_and_unlock (scheduler, rac.automaton.aid);
+      clear_and_unlock (scheduler, rac.automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1454,15 +1426,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1473,15 +1445,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->parameter_rescinded (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1492,15 +1464,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->target_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1511,15 +1483,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->destroyer_not_creator (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
 
     template <class I, class L, class D>
@@ -1530,15 +1502,15 @@ namespace ioa {
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
-      if (!m_aids.contains (automaton.aid)) {
+      if (!m_aids.contains (automaton.aid ())) {
       	listener.automaton_dne ();
       	return;
       }
 
-      lock_and_set (scheduler, automaton.aid);
-      I* instance = static_cast<I*> (m_records[automaton.aid]->get_instance ());
+      lock_and_set (scheduler, automaton.aid ());
+      I* instance = static_cast<I*> (m_records[automaton.aid ()]->get_instance ());
       instance->automaton_destroyed (d);
-      clear_and_unlock (scheduler, automaton.aid);
+      clear_and_unlock (scheduler, automaton.aid ());
     }
     
   };

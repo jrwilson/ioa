@@ -1,10 +1,8 @@
 #ifndef __scheduler_hpp__
 #define __scheduler_hpp__
 
-#include <boost/thread.hpp>
-#include <queue>
-#include "system.hpp"
-#include "runnable.hpp"
+#include "automaton_handle.hpp"
+#include "parameter_handle.hpp"
 
 namespace ioa {
 
