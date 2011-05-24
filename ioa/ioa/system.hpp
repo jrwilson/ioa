@@ -23,40 +23,46 @@ namespace ioa {
     virtual void* get_parameter () const = 0;
   };
 
-  template <class I, class P, class RSL, class D>
+  template <class I, class D>
   class parameter_record :
     public parameter_record_interface
   {
   private:
-    automaton_handle<I> m_automaton;
-    parameter_handle<P> m_parameter;
-    P* m_param;
-    RSL& m_rsl;
+    I* m_instance;
+    aid_t m_aid;
+    pid_t m_pid;
+    void* m_param;
+    scheduler_interface& m_scheduler;
     D& m_d;
 
   public:
-    parameter_record (const automaton_handle<I>& automaton,
-		      const parameter_handle<P>& parameter,
-		      P* param,
-		      RSL& rsl,
+    parameter_record (I* instance,
+		      aid_t aid,
+		      pid_t pid,
+		      void* param,
+		      scheduler_interface& scheduler,
 		      D& d) :
-      m_automaton (automaton),
-      m_parameter (parameter),
+      m_instance (instance),
+      m_aid (aid),
+      m_pid (pid),
       m_param (param),
-      m_rsl (rsl),
+      m_scheduler (scheduler),
       m_d (d)
     { }
 
     ~parameter_record () {
-      m_rsl.parameter_rescinded (m_automaton, m_d);
+
+      m_scheduler.set_current_aid (m_aid, m_instance);
+      m_instance->parameter_rescinded (m_d);
+      m_scheduler.clear_current_aid ();
     }
 
     const aid_t get_aid () const {
-      return m_automaton.aid ();
+      return m_aid;
     }
     
     const pid_t get_pid () const {
-      return m_parameter.pid ();
+      return m_pid;
     }
 
     void* get_parameter () const {
@@ -69,21 +75,37 @@ namespace ioa {
     public boost::mutex
   {
   private:
+    std::auto_ptr<automaton_interface> m_instance;
+    aid_t m_aid;
     sequential_set<pid_t> m_pids;
     std::map<void*, parameter_record_interface*> m_param_to_record;
     std::map<pid_t, parameter_record_interface*> m_pid_to_record;
+    std::set<automaton_record_interface*> m_children;
+    automaton_record_interface* m_parent;
 
   public:
+    automaton_record_interface (automaton_interface* instance,
+				const aid_t aid) :
+      m_instance (instance),
+      m_aid (aid),
+      m_parent (0)
+    { }
+
     virtual ~automaton_record_interface () {
-      for (std::map<void*, parameter_record_interface*>::const_iterator pos = m_param_to_record.begin ();
-	   pos != m_param_to_record.end ();
-	   ++pos) {
-	delete pos->second;
-      }
+      BOOST_ASSERT (m_pids.empty ());
+      BOOST_ASSERT (m_param_to_record.empty ());
+      BOOST_ASSERT (m_pid_to_record.empty ());
+      BOOST_ASSERT (m_children.empty ());
     }
 
-    virtual const aid_t get_handle () const = 0;
-    virtual automaton_interface* get_instance () const = 0;
+
+    const aid_t get_aid () const {
+      return m_aid;
+    }
+
+    automaton_interface* get_instance () const {
+      return m_instance.get ();
+    }
 
     bool parameter_exists (void* parameter) const {
       return m_param_to_record.count (parameter) != 0;
@@ -109,7 +131,7 @@ namespace ioa {
     }
 
     void insert_parameter_record (parameter_record_interface* record) {
-      BOOST_ASSERT (get_handle () == record->get_aid ());
+      BOOST_ASSERT (get_aid () == record->get_aid ());
       pid_t pid = record->get_pid ();
       BOOST_ASSERT (m_pids.contains (pid));
       m_param_to_record.insert (std::make_pair (record->get_parameter (), record));
@@ -124,80 +146,82 @@ namespace ioa {
       m_param_to_record.erase (record->get_parameter ());
       delete record;
     }
+
+    void rescind_all () {
+      m_pids.clear ();
+      for (std::map<pid_t, parameter_record_interface*>::iterator pos = m_pid_to_record.begin ();
+	   pos != m_pid_to_record.end ();
+	   ++pos) {
+	delete pos->second;
+      }
+      m_pid_to_record.clear ();
+      m_param_to_record.clear ();
+    }
+
+    void add_child (automaton_record_interface* child) {
+      m_children.insert (child);
+      child->set_parent (this);
+    }
+
+    void remove_child (automaton_record_interface* child) {
+      m_children.erase (child);
+    }
+
+    automaton_record_interface* get_child () const {
+      if (m_children.empty ()) {
+	return 0;
+      }
+      else {
+	return *(m_children.begin ());
+      }
+    }
+
+    void set_parent (automaton_record_interface* parent) {
+      m_parent = parent;
+    }
+    
+    automaton_record_interface* get_parent () const {
+      return m_parent;
+    }
   };
 
-  template <class I>
-  class automaton_record_impl :
+  class root_automaton_record :
+    public automaton_record_interface
+  {
+  public:
+    root_automaton_record (automaton_interface* instance,
+			   const aid_t aid) :
+      automaton_record_interface (instance, aid)
+    { }
+  };
+
+  template <class P, class D>
+  class automaton_record :
     public automaton_record_interface
   {
   private:
-    std::auto_ptr<I> m_instance;
-
-  protected:
-    automaton_handle<I> m_automaton;
+    P* m_parent_instance;
+    scheduler_interface& m_scheduler;
+    D& m_d;
     
   public:
-    automaton_record_impl (I* instance,
-			   const automaton_handle<I>& automaton) :
-      m_instance (instance),
-      m_automaton (automaton)
-    { }
-
-    virtual ~automaton_record_impl () { }
-
-    automaton_interface* get_instance () const {
-      return m_instance.get ();
-    }
-
-    const aid_t get_handle () const {
-      return m_automaton.aid ();
-    }
-  };
-
-  template <class I, class DSL>
-  class root_automaton_record :
-    public automaton_record_impl<I>
-  {
-  private:
-    DSL& m_dsl;
-
-  public:
-    root_automaton_record (I* instance,
-			   const automaton_handle<I>& automaton,
-			   DSL& dsl) :
-      automaton_record_impl<I> (instance, automaton),
-      m_dsl (dsl)
-    { }
-
-    ~root_automaton_record () {
-      m_dsl.automaton_destroyed (this->m_automaton);
-    }
-
-  };
-
-  template <class P, class I, class DSL, class D>
-  class automaton_record :
-    public automaton_record_impl<I>
-  {
-  private:
-    automaton_handle<P> m_parent;
-    DSL& m_dsl;
-    D& m_d;
-
-  public:
-    automaton_record (const automaton_handle<P>& parent,
-		      I* instance,
-		      const automaton_handle<I>& automaton,
-		      DSL& dsl,
+    automaton_record (automaton_interface* instance,
+		      const aid_t aid,
+		      P* parent_instance,
+		      scheduler_interface& scheduler,
 		      D& d) :
-      automaton_record_impl<I> (instance, automaton),
-      m_parent (parent),
-      m_dsl (dsl),
+      automaton_record_interface (instance, aid),
+      m_parent_instance (parent_instance),
+      m_scheduler (scheduler),
       m_d (d)
     { }
     
     ~automaton_record () {
-      m_dsl.automaton_destroyed (m_parent, m_d);
+      BOOST_ASSERT (this->get_parent () != 0);
+      aid_t parent_aid = this->get_parent ()->get_aid ();
+      m_scheduler.set_current_aid (parent_aid, m_parent_instance);
+      m_parent_instance->automaton_destroyed (m_d);
+      m_scheduler.clear_current_aid ();
     }
 
   };
@@ -263,27 +287,27 @@ namespace ioa {
     sequential_set<aid_t> m_aids;
     std::set<void*> m_instances;
     std::map<aid_t, automaton_record_interface*> m_records;
-    std::list<std::pair<aid_t, aid_t> > m_parent_child;
     std::list<binding_interface*> m_bindings;
     
   public:
     
     void clear (void) {
-      m_aids.clear ();
-      m_instances.clear ();
-      for (std::map<aid_t, automaton_record_interface*>::const_iterator pos = m_records.begin ();
-	   pos != m_records.end ();
-	   ++pos) {
-	delete pos->second;
+      // Delete all root automata.
+      while (!m_records.empty ()) {
+      	for (std::map<aid_t, automaton_record_interface*>::const_iterator pos = m_records.begin ();
+      	     pos != m_records.end ();
+      	     ++pos) {
+      	  if (pos->second->get_parent () == 0) {
+      	    inner_destroy (pos->second);
+      	    break;
+      	  }
+      	}
       }
-      m_records.clear ();
-      m_parent_child.clear ();
-      for (std::list<binding_interface*>::const_iterator pos = m_bindings.begin ();
-	   pos != m_bindings.end ();
-	   ++pos) {
-	delete (*pos);
-      }
-      m_bindings.clear ();
+
+      BOOST_ASSERT (m_aids.empty ());
+      BOOST_ASSERT (m_instances.empty ());
+      BOOST_ASSERT (m_records.empty ());
+      BOOST_ASSERT (m_bindings.empty ());
     }
 
     ~system (void) {
@@ -295,25 +319,10 @@ namespace ioa {
       return automaton_handle<I> (aid);
     }
 
-    /*
-      Generative operations (create, declare, bind) take a listener that is sent a message with
-      the appropriate success/failure status of the generative action.
-      Generative operations also take a listener for successes of the corresponding destructive
-      operations (destroy, rescind, unbind).
-      Destructive operations take a listener for failures.
-
-      Codex
-      CSFL = Create Success/Failure Listener
-      DSL = Destroy Success Listener
-      DFL = Destroy Failure Listener
-    */
-    
-    template <class G, class CSFL, class DSL>
-    void
+    template <class G>
+    automaton_handle<typename G::result_type>
     create (G generator,
-	    scheduler_interface& scheduler,
-	    CSFL& csfl,
-	    DSL& dsl)
+	    scheduler_interface& scheduler)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
@@ -331,35 +340,37 @@ namespace ioa {
       scheduler.clear_current_aid ();
       
       if (m_instances.count (instance) != 0) {
-	// Return the aid.
+	// Root automaton instance exists.  Bad news.
 	m_aids.replace (handle.aid ());
-	csfl.instance_exists (instance);
-	return;
+      	return automaton_handle<typename G::result_type> ();
       }
 
       m_instances.insert (instance);
-      automaton_record_interface* record = new root_automaton_record<typename G::result_type, DSL> (instance, handle, dsl);
+      automaton_record_interface* record = new root_automaton_record (instance, handle.aid ());
       m_records.insert (std::make_pair (handle.aid (), record));
 
-      csfl.automaton_created (handle);
-      return;
+      // Initialize the automaton.
+      scheduler.set_current_aid (handle.aid (), instance);
+      instance->init ();
+      scheduler.clear_current_aid ();
+
+      return handle;
     }
 
-    template <class P, class G, class CSFL, class DSL, class D>
-    void
+    template <class P, class G, class D>
+    automaton_handle<typename G::result_type>
     create (const automaton_handle<P>& automaton,
     	    G generator,
 	    scheduler_interface& scheduler,
-	    CSFL& csfl,
-	    DSL& dsl,
 	    D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_aids.contains (automaton.aid ())) {
-	csfl.automaton_dne (automaton, d);
-	return;
+	return automaton_handle<typename G::result_type> ();
       }
+
+      P* p = aid_to_instance<P> (automaton.aid ());
 
       // Take an aid.
       automaton_handle<typename G::result_type> handle (m_aids.take ());
@@ -377,47 +388,66 @@ namespace ioa {
       if (m_instances.count (instance) != 0) {
 	// Return the aid.
 	m_aids.replace (handle.aid ());
-	csfl.instance_exists (automaton, instance, d);
-	return;
+
+	scheduler.set_current_aid (automaton.aid (), p);
+	p->instance_exists (instance, d);
+	scheduler.clear_current_aid ();
+
+	return automaton_handle<typename G::result_type> ();
       }
 
       m_instances.insert (instance);      
-      automaton_record_interface* record = new automaton_record<P, typename G::result_type, DSL, D> (automaton, instance, handle, dsl, d);
+      automaton_record_interface* record = new automaton_record<P, D> (instance, handle.aid (), p, scheduler, d);
       m_records.insert (std::make_pair (handle.aid (), record));
-      m_parent_child.push_back (std::make_pair (automaton.aid (), handle.aid ()));
-      
-      csfl.automaton_created (automaton, handle, d);
-      return;
+      automaton_record_interface* parent = m_records[automaton.aid ()];
+      parent->add_child (record);
+
+      // Tell the parent the child was created.
+      scheduler.set_current_aid (automaton.aid (), p);
+      p->automaton_created (handle, d);
+      scheduler.clear_current_aid ();
+
+      // Initialize the child.
+      scheduler.set_current_aid (handle.aid (), instance);
+      instance->init ();
+      scheduler.clear_current_aid ();
+
+      return handle;
     }
     
-    template <class I, class P, class DSFL, class RSL, class D>
-    void
+    template <class I, class P, class D>
+    parameter_handle<P>
     declare (const automaton_handle<I>& automaton,
   	     P* parameter,
-	     DSFL& dsfl,
-	     RSL& rsl,
+	     scheduler_interface& scheduler,
 	     D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_aids.contains (automaton.aid ())) {
-	dsfl.automaton_dne (automaton, parameter, d);
-  	return;
+  	return parameter_handle<P> ();
       }
+
+      I* instance = aid_to_instance<I> (automaton.aid ());
       
       automaton_record_interface* record = m_records[automaton.aid ()];
       
       if (record->parameter_exists (parameter)) {
-	dsfl.parameter_exists (automaton, d);
-	return;
+	scheduler.set_current_aid (automaton.aid (), instance);
+	instance->parameter_exists (d);
+	scheduler.clear_current_aid ();
+	return parameter_handle<P> ();
       }
 
       parameter_handle<P> handle = record->declare_parameter (parameter);
-      parameter_record_interface* p_record = new parameter_record<I, P, RSL, D> (automaton, handle, parameter, rsl, d);
+      parameter_record_interface* p_record = new parameter_record<I, D> (instance, automaton.aid (), handle.pid (), parameter, scheduler, d);
       record->insert_parameter_record (p_record);
 
-      dsfl.parameter_declared (automaton, handle, d);
-      return;
+      scheduler.set_current_aid (automaton.aid (), instance);
+      instance->parameter_declared (handle, d);
+      scheduler.clear_current_aid ();
+
+      return handle;
     }
     
   private:
@@ -453,39 +483,47 @@ namespace ioa {
       return reify0 (ac, typename action<I, M>::parameter_status ());
     }
 
-    template <class OI, class OM, class II, class IM, class I, class BSFL, class USL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class I, class D>
+    bool
     _bind (const action<OI, OM>& output,
 	   const action<II, IM>& input,
 	   const automaton_handle<I>& binder,
-	   BSFL& bsfl,
-	   USL& usl,
+	   scheduler_interface& scheduler,
 	   D& d)
     {
       if (!m_aids.contains (binder.aid ())) {
   	// Binder DNE.
-	bsfl.automaton_dne (output, input, binder);
-  	return;
+  	return false;
       }
 
+      I* instance = aid_to_instance<I> (binder.aid ());
+
       if (!m_aids.contains (output.automaton.aid ())) {
-	bsfl.output_automaton_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->bind_output_automaton_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
 
       if (!m_aids.contains (input.automaton.aid ())) {
-	bsfl.input_automaton_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->bind_input_automaton_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       if (!parameter_exists (output, typename action<OI, OM>::parameter_status ())) {
-	bsfl.output_parameter_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->bind_output_parameter_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       if (!parameter_exists (input, typename action<II, IM>::parameter_status ())) {
-	bsfl.input_parameter_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->bind_input_parameter_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       concrete_action<OI, OM> c_output = reify (output);
@@ -497,8 +535,10 @@ namespace ioa {
       
       if (pos != m_bindings.end ()) {
   	// Bound.
-	bsfl.binding_exists (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->binding_exists (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       std::list<binding_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
@@ -507,8 +547,10 @@ namespace ioa {
       
       if (in_pos != m_bindings.end ()) {
   	// Input unavailable.
-	bsfl.input_action_unavailable (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->input_action_unavailable (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
@@ -518,8 +560,10 @@ namespace ioa {
       if (output.automaton.aid () == input.automaton.aid () ||
   	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.automaton.aid ()))) {
   	// Output unavailable.
-	bsfl.output_action_unavailable (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->output_action_unavailable (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       binding<OM>* c;
@@ -534,14 +578,25 @@ namespace ioa {
       }
     
       // Bind.
-      c->bind (c_output, c_input, binder, usl, d);
+      c->bind (c_output, c_input, instance, binder.aid (), scheduler, d);
 
-      bsfl.bound (output, input, binder, d);
-      return;
+      scheduler.set_current_aid (binder.aid (), instance);
+      instance->bound (d);
+      scheduler.clear_current_aid ();
+
+      scheduler.set_current_aid (c_output.automaton.aid (), c_output.get_instance ());
+      c_output.bound ();
+      scheduler.clear_current_aid ();
+
+      scheduler.set_current_aid (c_input.automaton.aid (), c_input.get_instance ());
+      c_input.bound ();
+      scheduler.clear_current_aid ();
+
+      return true;
     }
 
-    template <class OI, class OM, class II, class IM, class I, class BSFL, class USL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class I, class D>
+    bool
     bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
@@ -549,51 +604,47 @@ namespace ioa {
 	  input_category /* */,
 	  unparameterized /* */,
 	  const automaton_handle<I>& binder,
-	  BSFL& bsfl,
-	  USL& usl,
+	  scheduler_interface& scheduler,
 	  D& d)
     {
-      return _bind (output, input, binder, bsfl, usl, d);
+      return _bind (output, input, binder, scheduler, d);
     }    
 
-    template <class OI, class OM, class II, class IM, class BSFL, class USL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class D>
+    bool
     bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  parameterized /* */,
 	  const action<II, IM>& input,
 	  input_category /* */,
 	  unparameterized /* */,
-	  BSFL& bsfl,
-	  USL& usl,
+	  scheduler_interface& scheduler,
 	  D& d)
     {
-      return _bind (output, input, output.automaton, bsfl, usl, d);
+      return _bind (output, input, output.automaton, scheduler, d);
     }    
 
-    template <class OI, class OM, class II, class IM, class BSFL, class USL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class D>
+    bool
     bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
 	  const action<II, IM>& input,
 	  input_category /* */,
 	  parameterized /* */,
-	  BSFL& bsfl,
-	  USL& usl,
+	  scheduler_interface& scheduler,
 	  D& d)
     {
-      return _bind (output, input, input.automaton, bsfl, usl, d);
+      return _bind (output, input, input.automaton, scheduler, d);
     }    
 
   public:
-    template <class OI, class OM, class II, class IM, class I, class BSFL, class USL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class I, class D>
+    bool
     bind (const action<OI, OM>& output,
 	  const action<II, IM>& input,
 	  const automaton_handle<I>& binder,
-	  BSFL& bsfl,
-	  USL& usl,
+	  scheduler_interface& scheduler,
 	  D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
@@ -605,17 +656,15 @@ namespace ioa {
 		   typename action<II, IM>::action_category (),
 		   typename action<II, IM>::parameter_status (),
 		   binder,
-		   bsfl,
-		   usl,
+		   scheduler,
 		   d);
     }
 
-    template <class OI, class OM, class II, class IM, class BSFL, class USL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class D>
+    bool
     bind (const action<OI, OM>& output,
 	  const action<II, IM>& input,
-	  BSFL& bsfl,
-	  USL& usl,
+	  scheduler_interface& scheduler,
 	  D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
@@ -626,43 +675,52 @@ namespace ioa {
 		   input,
 		   typename action<II, IM>::action_category (),
 		   typename action<II, IM>::parameter_status (),
-		   bsfl,
-		   usl,
+		   scheduler,
 		   d);
     }
   
   private:
-    template <class OI, class OM, class II, class IM, class I, class UFL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class I, class D>
+    bool
     _unbind (const action<OI, OM>& output,
 	     const action<II, IM>& input,
 	     const automaton_handle<I>& binder,
-	     UFL& ufl,
+	     scheduler_interface& scheduler,
 	     D& d)
     {
       if (!m_aids.contains (binder.aid ())) {
-	ufl.automaton_dne (output, input, binder);
-	return;
+	return false;
       }
 
+
+      I* instance = aid_to_instance<I> (binder.aid ());
+
       if (!m_aids.contains (output.automaton.aid ())) {
-	ufl.output_automaton_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->unbind_output_automaton_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
 
       if (!m_aids.contains (input.automaton.aid ())) {
-	ufl.input_automaton_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->unbind_input_automaton_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       if (!parameter_exists (output, typename action<OI, OM>::parameter_status ())) {
-	ufl.output_parameter_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->unbind_output_parameter_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       if (!parameter_exists (input, typename action<II, IM>::parameter_status ())) {
-	ufl.input_parameter_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->unbind_input_parameter_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
 
       concrete_action<OI, OM> c_output = reify (output);
@@ -674,106 +732,114 @@ namespace ioa {
       
       if (pos == m_bindings.end ()) {
 	// Not bound.
-	ufl.binding_dne (output, input, binder, d);
-	return;
+	scheduler.set_current_aid (binder.aid (), instance);
+	instance->binding_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       binding<OM>* c = dynamic_cast<binding<OM>*> (*pos);
       BOOST_ASSERT (c != 0);
       
       // Unbind.
-      c->unbind (c_output, c_input, binder);
+      c->unbind (c_output, c_input, instance, binder.aid ());
       
       if (c->empty ()) {
 	delete c;
 	m_bindings.erase (pos);
       }
 
-      return;
+      scheduler.set_current_aid (binder.aid (), instance);
+      instance->unbound (d);
+      scheduler.clear_current_aid ();
+      return true;
     }
 
-    template <class OI, class OM, class II, class IM, class I, class UFL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class I, class D>
+    bool
     unbind (const action<OI, OM>& output,
 	    unparameterized /* */,
 	    const action<II, IM>& input,
 	    unparameterized /* */,
 	    const automaton_handle<I>& binder,
-	    UFL& ufl,
+	    scheduler_interface& scheduler,
 	    D& d)
     {
-      return _unbind (output, input, binder, ufl, d);
+      return _unbind (output, input, binder, scheduler, d);
     }    
     
-    template <class OI, class OM, class II, class IM, class UFL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class D>
+    bool
     unbind (const action<OI, OM>& output,
 	    parameterized /* */,
 	    const action<II, IM>& input,
 	    unparameterized /* */,
-	    UFL& ufl,
+	    scheduler_interface& scheduler,
 	    D& d)
     {
-      return _unbind (output, input, output.automaton, ufl, d);
+      return _unbind (output, input, output.automaton, scheduler, d);
     }    
     
-    template <class OI, class OM, class II, class IM, class UFL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class D>
+    bool
     unbind (const action<OI, OM>& output,
 	    unparameterized /* */,
 	    const action<II, IM>& input,
 	    parameterized /* */,
-	    UFL& ufl,
+	    scheduler_interface& scheduler,
 	    D& d)
     {
-      return _unbind (output, input, input.automaton, ufl, d);
+      return _unbind (output, input, input.automaton, scheduler, d);
     }    
     
   public:
-    template <class OI, class OM, class II, class IM, class I, class UFL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class I, class D>
+    bool
     unbind (const action<OI, OM>& output,
 	    const action<II, IM>& input,
 	    const automaton_handle<I>& binder,
-	    UFL& ufl,
+	    scheduler_interface& scheduler,
 	    D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), binder, ufl, d);
+      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), binder, scheduler, d);
     }
 
-    template <class OI, class OM, class II, class IM, class UFL, class D>
-    void
+    template <class OI, class OM, class II, class IM, class D>
+    bool
     unbind (const action<OI, OM>& output,
 	    const action<II, IM>& input,
-	    UFL& ufl,
+	    scheduler_interface& scheduler,
 	    D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
-      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), ufl, d);
+      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), scheduler, d);
     }
 
-    template <class I, class P, class RFL, class D>
-    void
+    template <class I, class P, class D>
+    bool
     rescind (const automaton_handle<I>& automaton,
   	     const parameter_handle<P>& parameter,
-	     RFL& rfl,
+	     scheduler_interface& scheduler,
 	     D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_aids.contains (automaton.aid ())) {
-	rfl.automaton_dne (automaton, parameter);
-  	return;
+  	return false;
       }
       
       automaton_record_interface* record = m_records[automaton.aid ()];
+
+      I* instance = aid_to_instance<I> (automaton.aid ());
       
       if (!record->parameter_exists (parameter)) {
-	rfl.parameter_dne (automaton, d);
-	return;
+	scheduler.set_current_aid (automaton.aid (), instance);
+	instance->parameter_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
       
       record->rescind_parameter (parameter);
@@ -791,7 +857,7 @@ namespace ioa {
 	}
       }
       
-      return;
+      return true;
     }
 
   private:
@@ -808,116 +874,95 @@ namespace ioa {
       }
     };
 
-    template <class I>
     void
-    inner_destroy (const automaton_handle<I>& automaton)
+    inner_destroy (automaton_record_interface* automaton)
     {
-      std::set<aid_t> closed_list;
-      std::set<aid_t> open_list;
 
-      // Put the target in the open list.
-      open_list.insert (automaton.aid ());
-
-      while (!open_list.empty ()) {
-	// Grab an item from the open list.
-	std::set<aid_t>::iterator pos = open_list.begin ();
-	const aid_t x = *pos;
-	open_list.erase (pos);
-
-	// If its not already in the closed list.
-	if (closed_list.count (x) == 0) {
-	  // Put it in the closed list.
-	  closed_list.insert (x);
-	  for (std::list<std::pair<aid_t, aid_t> >::const_iterator pos = m_parent_child.begin ();
-	       pos != m_parent_child.end ();
-	       ++pos) {
-	    if (x == pos->first) {
-	      // And put all of its children in the open list.
-	      open_list.insert (pos->second);
-	    }
-	  }
-	}
+      for (automaton_record_interface* child = automaton->get_child ();
+      	   child != 0;
+      	   child = automaton->get_child ()) {
+      	inner_destroy (child);
       }
 
-      BOOST_FOREACH (aid_t handle, closed_list) {
-	{
-	  // Update the list of automata.
-	  m_aids.replace (handle);
-	  m_instances.erase (m_records[handle]->get_instance ());
-	  delete m_records[handle];
-	  m_records.erase (handle);
-	}
-
-	{
-	  // Update parent-child relationships.
-	  std::list<std::pair<aid_t, aid_t> >::iterator pos = std::find_if (m_parent_child.begin (), m_parent_child.end (), child_automaton (handle));
-	  if (pos != m_parent_child.end ()) {
-	    m_parent_child.erase (pos);
-	  }
-	}
-	
-	{
-	  // Update bindings.
-	  for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
-	       pos != m_bindings.end ();
-	       ) {
-	    (*pos)->unbind_automaton (handle);
-	    if ((*pos)->empty ()) {
-	      delete *pos;
-	      pos = m_bindings.erase (pos);
-	    }
-	    else {
-	      ++pos;
-	    }
-	  }
-	}
+      // Update bindings.
+      for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
+      	   pos != m_bindings.end ();
+      	   ) {
+      	(*pos)->unbind_automaton (automaton->get_aid ());
+      	if ((*pos)->empty ()) {
+      	  delete *pos;
+      	  pos = m_bindings.erase (pos);
+      	}
+      	else {
+      	  ++pos;
+      	}
       }
+
+      // Rescind parameters.
+      automaton->rescind_all ();
+      
+      // Update parent-child relationships.
+      automaton_record_interface* parent = automaton->get_parent ();
+      if (parent != 0) {
+      	parent->remove_child (automaton);
+      }
+
+      m_aids.replace (automaton->get_aid ());
+      m_instances.erase (automaton->get_instance ());
+      m_records.erase (automaton->get_aid ());
+      delete automaton;
     }
 
   public:
 
-    template <class I, class DFL>
-    void
-    destroy (const automaton_handle<I>& target,
-	     DFL& dfl)
+    template <class I>
+    bool
+    destroy (const automaton_handle<I>& target)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_aids.contains (target.aid ())) {
-	dfl.target_automaton_dne (target);
-	return;
+	return false;
       }
 
-      return inner_destroy (target);
+      inner_destroy (m_records[target.aid ()]);
+      return true;
     }
 
-    template <class P, class I, class DFL, class D>
-    void
+    template <class P, class I, class D>
+    bool
     destroy (const automaton_handle<P>& automaton,
 	     const automaton_handle<I>& target,
-	     DFL& dfl,
+	     scheduler_interface& scheduler,
 	     D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       if (!m_aids.contains (automaton.aid ())) {
-	dfl.automaton_dne (automaton, target, d);
-	return;
+	return false;
       }
+
+      I* instance = aid_to_instance<I> (automaton.aid ());
 
       if (!m_aids.contains (target.aid ())) {
-	dfl.target_automaton_dne (automaton, d);
-	return;
+	scheduler.set_current_aid (automaton.aid (), instance);
+	instance->target_automaton_dne (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
 
-      if (std::find (m_parent_child.begin (),
-		     m_parent_child.end (),
-		     std::make_pair (automaton.aid (), target.aid ())) == m_parent_child.end ()) {
-	dfl.destroyer_not_creator (automaton, d);
-	return;
+      automaton_record_interface* parent = m_records[automaton.aid ()];
+      automaton_record_interface* child = m_records[target.aid ()];
+
+      if (parent != child->get_parent ()) {
+	scheduler.set_current_aid (automaton.aid (), instance);
+	instance->destroyer_not_creator (d);
+	scheduler.clear_current_aid ();
+	return false;
       }
 
-      return inner_destroy (target);
+      inner_destroy (child);
+      return true;
     }
 
   private:
@@ -936,9 +981,11 @@ namespace ioa {
     execute0 (const concrete_action<I, M>& ac,
 	      scheduler_interface& scheduler)
     {
-      lock_and_set (scheduler, ac.automaton.aid (), ac.get_instance ());
+      lock_automaton (ac.automaton.aid ());
+      scheduler.set_current_aid (ac.automaton.aid (), ac.get_instance ());
       ac.execute ();
-      clear_and_unlock (scheduler, ac.automaton.aid ());
+      scheduler.clear_current_aid ();
+      unlock_automaton (ac.automaton.aid ());
     }
 
     template <class I, class M>
@@ -980,44 +1027,27 @@ namespace ioa {
 
   public:
     
-    template <class I, class M, class L>
-    void
+    template <class I, class M>
+    bool
     execute (const action<I, M>& ac,
-	     scheduler_interface& scheduler,
-	     L& listener)
+	     scheduler_interface& scheduler)
     {
       boost::shared_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_aids.contains (ac.automaton.aid ())) {
-	listener.automaton_dne ();
-	return;
+	return false;
       }
 
       if (!parameter_exists (ac, typename action<I, M>::parameter_status ())) {
-	listener.parameter_dne ();
-	return;
+	return false;
       }
 
       concrete_action<I, M> rac = reify (ac);
       execute1 (rac, typename concrete_action<I, M>::action_category (), scheduler);
+      return true;
     }
-
-    // TODO:  Test following functions.
 
   private:
-
-    void lock_and_set (scheduler_interface& scheduler,
-		       const aid_t aid,
-		       const automaton_interface* current_this) {
-      lock_automaton (aid);
-      scheduler.set_current_aid (aid, current_this);
-    }
-
-    void clear_and_unlock (scheduler_interface& scheduler,
-			   const aid_t aid) {
-      scheduler.clear_current_aid ();
-      unlock_automaton (aid);
-    }
 
     template <class I>
     I* aid_to_instance (const aid_t aid) {
@@ -1026,516 +1056,6 @@ namespace ioa {
       return instance;
     }
 
-  public:
-
-    template <class I, class T, class L, class D>
-    void instance_exists (const automaton_handle<I>& automaton,
-			  const T* i,
-			  scheduler_interface& scheduler,
-			  L& listener,
-			  D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->instance_exists (i, d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class T, class L, class D>
-    void automaton_created (const automaton_handle<I>& automaton,
-			    const automaton_handle<T>& child,
-			    scheduler_interface& scheduler,
-			    L& listener,
-			    D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->automaton_created (child, d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L>
-    void init (const automaton_handle<I>& automaton,
-	       scheduler_interface& scheduler,
-	       L& listener)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->init ();
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void parameter_exists (const automaton_handle<I>& automaton,
-			   scheduler_interface& scheduler,
-			   L& listener,
-			   D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->parameter_exists (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class P, class L, class D>
-    void parameter_declared (const automaton_handle<I>& automaton,
-			     const parameter_handle<P>& parameter,
-			     scheduler_interface& scheduler,
-			     L& listener,
-			     D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->parameter_declared (parameter, d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void bind_output_automaton_dne (const automaton_handle<I>& automaton,
-				    scheduler_interface& scheduler,
-				    L& listener,
-				    D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->bind_output_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void bind_input_automaton_dne (const automaton_handle<I>& automaton,
-				   scheduler_interface& scheduler,
-				   L& listener,
-				   D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->bind_input_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void bind_output_parameter_dne (const automaton_handle<I>& automaton,
-				    scheduler_interface& scheduler,
-				    L& listener,
-				    D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->bind_output_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void bind_input_parameter_dne (const automaton_handle<I>& automaton,
-				   scheduler_interface& scheduler,
-				   L& listener,
-				   D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->bind_input_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-    
-    template <class I, class L, class D>
-    void binding_exists (const automaton_handle<I>& automaton,
-			 scheduler_interface& scheduler,
-			 L& listener,
-			 D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->binding_exists (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void input_action_unavailable (const automaton_handle<I>& automaton,
-				   scheduler_interface& scheduler,
-				   L& listener,
-				   D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->input_action_unavailable (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void output_action_unavailable (const automaton_handle<I>& automaton,
-				    scheduler_interface& scheduler,
-				   L& listener,
-				   D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->output_action_unavailable (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void bound (const automaton_handle<I>& automaton,
-		scheduler_interface& scheduler,
-		L& listener,
-		D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->bound (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class M, class L>
-    void
-    action_bound (const action<I, M>& ac,
-		  scheduler_interface& scheduler,
-		  L& listener)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (ac.automaton.aid ())) {
-	listener.automaton_dne ();
-	return;
-      }
-
-      if (!parameter_exists (ac, typename action<I, M>::parameter_status ())) {
-	listener.parameter_dne ();
-	return;
-      }
-
-      concrete_action<I, M> rac = reify (ac);
-
-      lock_and_set (scheduler, rac.automaton.aid (), rac.get_instance ());
-      rac.bound ();
-      clear_and_unlock (scheduler, rac.automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void unbind_output_automaton_dne (const automaton_handle<I>& automaton,
-				      scheduler_interface& scheduler,
-				      L& listener,
-				      D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->unbind_output_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void unbind_input_automaton_dne (const automaton_handle<I>& automaton,
-				     scheduler_interface& scheduler,
-				     L& listener,
-				     D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->unbind_input_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void unbind_output_parameter_dne (const automaton_handle<I>& automaton,
-				      scheduler_interface& scheduler,
-				      L& listener,
-				      D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->unbind_output_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void unbind_input_parameter_dne (const automaton_handle<I>& automaton,
-				     scheduler_interface& scheduler,
-				     L& listener,
-				     D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->unbind_input_parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-    
-    template <class I, class L, class D>
-    void binding_dne (const automaton_handle<I>& automaton,
-		      scheduler_interface& scheduler,
-		      L& listener,
-		      D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->binding_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-    
-    template <class I, class L, class D>
-    void unbound (const automaton_handle<I>& automaton,
-		  scheduler_interface& scheduler,
-		  L& listener,
-		  D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->unbound (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class M, class L>
-    void
-    action_unbound (const action<I, M>& ac,
-		    scheduler_interface& scheduler,
-		    L& listener)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (ac.automaton.aid ())) {
-	listener.automaton_dne ();
-	return;
-      }
-
-      if (!parameter_exists (ac, typename action<I, M>::parameter_status ())) {
-	listener.parameter_dne ();
-	return;
-      }
-
-      concrete_action<I, M> rac = reify (ac);
-
-      lock_and_set (scheduler, rac.automaton.aid (), rac.get_instance ());
-      rac.unbound ();
-      clear_and_unlock (scheduler, rac.automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void parameter_dne (const automaton_handle<I>& automaton,
-			scheduler_interface& scheduler,
-			L& listener,
-			D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->parameter_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void parameter_rescinded (const automaton_handle<I>& automaton,
-			      scheduler_interface& scheduler,
-			      L& listener,
-			      D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->parameter_rescinded (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void target_automaton_dne (const automaton_handle<I>& automaton,
-			       scheduler_interface& scheduler,
-			       L& listener,
-			       D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->target_automaton_dne (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void destroyer_not_creator (const automaton_handle<I>& automaton,
-				scheduler_interface& scheduler,
-				L& listener,
-				D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->destroyer_not_creator (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-
-    template <class I, class L, class D>
-    void automaton_destroyed (const automaton_handle<I>& automaton,
-			      scheduler_interface& scheduler,
-			      L& listener,
-			      D& d)
-    {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
-      
-      if (!m_aids.contains (automaton.aid ())) {
-      	listener.automaton_dne ();
-      	return;
-      }
-
-      I* instance = aid_to_instance<I> (automaton.aid ());
-      lock_and_set (scheduler, automaton.aid (), instance);
-      instance->automaton_destroyed (d);
-      clear_and_unlock (scheduler, automaton.aid ());
-    }
-    
   };
 
 }

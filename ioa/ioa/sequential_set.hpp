@@ -36,6 +36,10 @@ public:
   void clear () {
     m_used.clear ();
   }
+
+  bool empty () const {
+    return m_used.empty ();
+  }
 };
 
 #endif

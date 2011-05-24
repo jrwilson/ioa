@@ -33,6 +33,10 @@ namespace ioa {
       return m_pid;
     }
 
+    bool operator== (const parameter_handle& p) const {
+      return m_pid == p.m_pid;
+    }
+
   };
 
 }

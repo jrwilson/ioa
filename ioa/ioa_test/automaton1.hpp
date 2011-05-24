@@ -260,7 +260,178 @@ struct automaton1 :
   };
   v_event_action v_event;
 
-  void init () { }
+  bool inited;
+  const automaton1* existing_instance;
+  ioa::automaton_handle<automaton1> created_handle;
+  bool m_automaton_destroyed;
+  bool parameter_existed;
+  ioa::parameter_handle<int> declared_handle;
+  bool m_parameter_rescinded;
+  bool m_bind_output_automaton_dne;
+  bool m_bind_input_automaton_dne;
+  bool m_bind_output_parameter_dne;
+  bool m_bind_input_parameter_dne;
+  bool m_binding_exists;
+  bool m_input_action_unavailable;
+  bool m_output_action_unavailable;
+  bool m_bound;
+  bool m_unbound;
+  bool m_unbind_output_automaton_dne;
+  bool m_unbind_input_automaton_dne;
+  bool m_unbind_output_parameter_dne;
+  bool m_unbind_input_parameter_dne;
+  bool m_binding_dne;
+  bool m_parameter_dne;
+  bool m_target_automaton_dne;
+  bool m_destroyer_not_creator;
+
+  automaton1 () :
+    inited (false),
+    existing_instance (0),
+    m_automaton_destroyed (false),
+    parameter_existed (false),
+    m_parameter_rescinded (false),
+    m_bind_output_automaton_dne (false),
+    m_bind_input_automaton_dne (false),
+    m_bind_output_parameter_dne (false),
+    m_bind_input_parameter_dne (false),
+    m_binding_exists (false),
+    m_input_action_unavailable (false),
+    m_output_action_unavailable (false),
+    m_bound (false),
+    m_unbound (false),
+    m_unbind_output_automaton_dne (false),
+    m_unbind_input_automaton_dne (false),
+    m_unbind_output_parameter_dne (false),
+    m_unbind_input_parameter_dne (false),
+    m_binding_dne (false),
+    m_parameter_dne (false),
+    m_target_automaton_dne (false),
+    m_destroyer_not_creator (false)
+  { }
+
+  void init () {
+    inited = true;
+  }
+
+  template <class D>
+  void instance_exists (const automaton1* i,
+			D&) {
+    existing_instance = i;
+  }
+
+  template <class D>
+  void automaton_created (const ioa::automaton_handle<automaton1>& handle,
+			  D&) {
+    created_handle = handle;
+  }
+
+  template <class D>
+  void automaton_destroyed (D&) {
+    m_automaton_destroyed = true;
+  }
+
+  template <class D>
+  void parameter_exists (D&) {
+    parameter_existed = true;
+  }
+
+  template <class D>
+  void parameter_declared (const ioa::parameter_handle<int>& handle,
+			   D&) {
+    declared_handle = handle;
+  }
+
+  template <class D>
+  void parameter_rescinded (D&) {
+    m_parameter_rescinded = true;
+  }
+
+  template <class D>
+  void bind_output_automaton_dne (D&) {
+    m_bind_output_automaton_dne = true;
+  }
+
+  template <class D>
+  void bind_input_automaton_dne (D&) {
+    m_bind_input_automaton_dne = true;
+  }
+
+  template <class D>
+  void bind_output_parameter_dne (D&) {
+    m_bind_output_parameter_dne = true;
+  }
+
+  template <class D>
+  void bind_input_parameter_dne (D&) {
+    m_bind_input_parameter_dne = true;
+  }
+
+  template <class D>
+  void binding_exists (D&) {
+    m_binding_exists = true;
+  }
+
+  template <class D>
+  void input_action_unavailable (D&) {
+    m_input_action_unavailable = true;
+  }
+
+  template <class D>
+  void output_action_unavailable (D&) {
+    m_output_action_unavailable = true;
+  }
+
+  template <class D>
+  void bound (D&) {
+    m_bound = true;
+  }
+
+  template <class D>
+  void unbound (D&) {
+    m_unbound = true;
+  }
+
+  template <class D>
+  void unbind_output_automaton_dne (D&) {
+    m_unbind_output_automaton_dne = true;
+  }
+
+  template <class D>
+  void unbind_input_automaton_dne (D&) {
+    m_unbind_input_automaton_dne = true;
+  }
+
+  template <class D>
+  void unbind_output_parameter_dne (D&) {
+    m_unbind_output_parameter_dne = true;
+  }
+
+  template <class D>
+  void unbind_input_parameter_dne (D&) {
+    m_unbind_input_parameter_dne = true;
+  }
+
+  template <class D>
+  void binding_dne (D&) {
+    m_binding_dne = true;
+  }
+
+  template <class D>
+  void parameter_dne (D&) {
+    m_parameter_dne = true;
+  }
+
+  template <class D>
+  void target_automaton_dne (D&) {
+    m_target_automaton_dne = true;
+  }
+
+  template <class D>
+  void destroyer_not_creator (D&) {
+    m_destroyer_not_creator = true;
+  }
+
 };
 
 struct automaton1_generator :

@@ -15,8 +15,10 @@ private:
   }
 
 public:
-  ioa::void_output_wrapper<automaton2, &automaton2::output_> output;
-  ioa::void_input_wrapper<automaton2, &automaton2::input_> input;
+  typedef ioa::void_output_wrapper<automaton2, &automaton2::output_> output_t;
+  output_t output;
+  typedef ioa::void_input_wrapper<automaton2, &automaton2::input_> input_t;
+  input_t input;
   ioa::void_input_wrapper<automaton2, &automaton2::input_> input2;
 
   automaton2 () :

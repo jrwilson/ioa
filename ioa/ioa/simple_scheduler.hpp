@@ -12,6 +12,7 @@ namespace ioa {
   // TODO:  SYSTEM CALL FAIRNESS!!!
   // TODO:  EVENTS!!!
   // TODO:  automaton_dne consistency.
+  // TODO:  What happens when we send an event to a destroyed automaton?
 
   class simple_scheduler :
     public scheduler_interface

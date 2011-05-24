@@ -18,56 +18,68 @@ namespace ioa {
     virtual aid_t binder () const = 0;
   };
 
-  class default_unbind_success_listener
-  {
-  public:
-    template <class OI, class OM, class II, class IM, class I, class D>
-    void unbound (const action<OI, OM>& output_action,
-		  const action<II, IM>& input_action,
-		  const automaton_handle<I>& binder,
-		  D&) { }
+  struct empty_scheduler :
+    public scheduler_interface {
+    void set_current_aid (aid_t) { }
+    void set_current_aid (aid_t, const automaton_interface*) { }
+    void clear_current_aid () { }
   };
-
   struct empty_d { };
 
-  template <class OA, class IA, class OI, class OM, class II, class IM, class I, class USL = default_unbind_success_listener, class D = empty_d>
+  template <class OA, class IA, class OI, class OM, class II, class IM, class I, class D = empty_d>
   class binding_record :
     public binding_record_interface<OA, IA>
   {
   private:
     concrete_action<OI, OM> m_output_action;
     concrete_action<II, IM> m_input_action;
-    automaton_handle<I> m_binder;
-    default_unbind_success_listener m_default_usl;
-    USL& m_usl;
+    I* m_binder_instance;
+    const aid_t m_binder_aid;
+    empty_scheduler m_default_scheduler;
+    scheduler_interface& m_scheduler;
     empty_d m_default_d;
     D& m_d;
+    
 
   public:
     binding_record (const concrete_action<OI, OM>& output_action,
 		    const concrete_action<II, IM>& input_action,
-		    const automaton_handle<I>& binder) :
+		    I* binder_instance,
+		    const aid_t binder_aid) :
       m_output_action (output_action),
       m_input_action (input_action),
-      m_binder (binder),
-      m_usl (m_default_usl),
+      m_binder_instance (binder_instance),
+      m_binder_aid (binder_aid),
+      m_scheduler (m_default_scheduler),
       m_d (m_default_d)
     { }
 
     binding_record (const concrete_action<OI, OM>& output_action,
 		    const concrete_action<II, IM>& input_action,
-		    const automaton_handle<I>& binder,
-		    USL& usl,
+		    I* binder_instance,
+		    const aid_t binder_aid,
+		    scheduler_interface& scheduler,
 		    D& d) :
       m_output_action (output_action),
       m_input_action (input_action),
-      m_binder (binder),
-      m_usl (usl),
+      m_binder_instance (binder_instance),
+      m_binder_aid (binder_aid),
+      m_scheduler (scheduler),
       m_d (d)
     { }
 
     ~binding_record () {
-      m_usl.unbound (m_output_action, m_input_action, m_binder, m_d);
+      m_scheduler.set_current_aid (m_binder_aid, m_binder_instance);
+      m_binder_instance->unbound (m_d);
+      m_scheduler.clear_current_aid ();
+
+      m_scheduler.set_current_aid (m_output_action.automaton.aid (), m_output_action.get_instance ());
+      m_output_action.unbound ();
+      m_scheduler.clear_current_aid ();
+
+      m_scheduler.set_current_aid (m_input_action.automaton.aid (), m_input_action.get_instance ());
+      m_input_action.unbound ();
+      m_scheduler.clear_current_aid ();
     }
 
     OA& output_action () {
@@ -79,7 +91,7 @@ namespace ioa {
     }
 
     aid_t binder () const {
-      return m_binder.aid ();
+      return m_binder_aid;
     }
   };
 
@@ -222,11 +234,12 @@ namespace ioa {
   			   input_automaton_equal<OA, IA> (automaton)) != m_inputs.end ();
     }
     
-    template <class OI, class OM, class II, class IM, class I, class USL, class D>
+    template <class OI, class OM, class II, class IM, class I, class D>
     void bind (const concrete_action<OI, OM>& output_action,
 	       const concrete_action<II, IM>& input_action,
-	       const automaton_handle<I>& binder,
-	       USL& usl,
+	       I* binder_instance,
+	       const aid_t binder_aid,
+	       scheduler_interface& scheduler,
 	       D& d) {
       // Can't bind to self.
       BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
@@ -237,16 +250,17 @@ namespace ioa {
 	BOOST_ASSERT (output_action == get_output ());
       }
 
-      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, USL, D> (output_action, input_action, binder, usl, d);
+      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, D> (output_action, input_action, binder_instance, binder_aid, scheduler, d);
       m_inputs.insert (record);
     }
 
     template <class OI, class OM, class II, class IM, class I>
     void unbind (const concrete_action<OI, OM>& output_action,
 		 const concrete_action<II, IM>& input_action,
-		 const automaton_handle<I>& binder) {
+		 I* binder_instance,
+		 const aid_t binder_aid) {
       BOOST_ASSERT (!m_inputs.empty ());
-      binding_record<OA, IA, OI, OM, II, IM, I> t (output_action, input_action, binder);
+      binding_record<OA, IA, OI, OM, II, IM, I> t (output_action, input_action, binder_instance, binder_aid);
       typename set_type::iterator pos = m_inputs.find (&t);
       if (pos != m_inputs.end ()) {
 	binding_record_interface<OA, IA>* record = *pos;
