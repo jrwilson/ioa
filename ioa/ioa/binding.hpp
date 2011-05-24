@@ -24,7 +24,9 @@ namespace ioa {
     void set_current_aid (aid_t, const automaton_interface*) { }
     void clear_current_aid () { }
   };
-  struct empty_d { };
+  struct empty_d {
+    void unbound () { }
+  };
 
   template <class OA, class IA, class OI, class OM, class II, class IM, class I, class D = empty_d>
   class binding_record :

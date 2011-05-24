@@ -749,9 +749,6 @@ namespace ioa {
 	m_bindings.erase (pos);
       }
 
-      scheduler.set_current_aid (binder.aid (), instance);
-      instance->unbound (d);
-      scheduler.clear_current_aid ();
       return true;
     }
 
@@ -942,7 +939,7 @@ namespace ioa {
 	return false;
       }
 
-      I* instance = aid_to_instance<I> (automaton.aid ());
+      P* instance = aid_to_instance<P> (automaton.aid ());
 
       if (!m_aids.contains (target.aid ())) {
 	scheduler.set_current_aid (automaton.aid (), instance);
@@ -1051,6 +1048,7 @@ namespace ioa {
 
     template <class I>
     I* aid_to_instance (const aid_t aid) {
+      BOOST_ASSERT (m_aids.contains (aid));
       I* instance = dynamic_cast<I*> (m_records[aid]->get_instance ());
       BOOST_ASSERT (instance != 0);
       return instance;

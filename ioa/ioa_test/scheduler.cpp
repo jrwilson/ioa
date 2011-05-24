@@ -42,7 +42,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -150,7 +150,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
     
   };
@@ -229,7 +229,7 @@ private:
     }
 
     void parameter_rescinded () {
-      BOOST_CHECK (false);
+      // Okay.
     }
     
   };
@@ -337,7 +337,7 @@ private:
     }
 
     void parameter_rescinded () {
-      BOOST_CHECK (false);
+      // Okay.
     }
     
   };
@@ -419,7 +419,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -552,7 +552,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -685,7 +685,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -824,7 +824,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -966,7 +966,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -990,7 +990,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1036,7 +1036,7 @@ private:
     }
 
     void unbound () {
-      BOOST_CHECK (false);
+      // Okay.
     }
     
   };
@@ -1191,7 +1191,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1215,7 +1215,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1239,7 +1239,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1285,7 +1285,7 @@ private:
     }
 
     void unbound () {
-      BOOST_CHECK (false);
+      // Okay.
     }
 
   };
@@ -1444,7 +1444,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1468,7 +1468,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1514,7 +1514,7 @@ private:
     }
 
     void unbound () {
-      BOOST_CHECK (false);
+      // Okay.
     }
 
   };
@@ -1664,7 +1664,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1688,7 +1688,7 @@ private:
     }
     
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1734,7 +1734,7 @@ private:
     }
 
     void unbound () {
-      BOOST_CHECK (false);
+      // Okay.
     }
 
   };
@@ -1829,7 +1829,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -1948,7 +1948,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2067,7 +2067,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2191,7 +2191,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2317,7 +2317,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2341,7 +2341,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2470,7 +2470,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2494,7 +2494,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2742,7 +2742,7 @@ private:
     }
 
     void parameter_rescinded () {
-      BOOST_CHECK (false);
+      // Okay.
     }
     
   };
@@ -2917,7 +2917,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
@@ -2941,7 +2941,7 @@ private:
     }
 
     void automaton_destroyed () {
-      BOOST_CHECK (false);
+      // Okay.
     }
   };
 
