@@ -80,6 +80,7 @@ namespace ioa {
     sequential_set<pid_t> m_pids;
     std::map<void*, parameter_record_interface*> m_param_to_record;
     std::map<pid_t, parameter_record_interface*> m_pid_to_record;
+    sequential_set<bid_t> m_bids;
     std::set<automaton_record_interface*> m_children;
     automaton_record_interface* m_parent;
 
@@ -156,6 +157,14 @@ namespace ioa {
       }
       m_pid_to_record.clear ();
       m_param_to_record.clear ();
+    }
+
+    bid_t take_bid () {
+      return m_bids.take ();
+    }
+
+    void replace_bid (const bid_t bid) {
+      m_bids.replace (bid);
     }
 
     void add_child (automaton_record_interface* child) {
@@ -280,6 +289,24 @@ namespace ioa {
       
       bool operator() (const binding_interface* c) const {
   	return c->involves_input (m_input);
+      }
+    };
+
+    class binding_aid_bid_equal
+    {
+    private:
+      const aid_t m_aid;
+      const bid_t m_bid;
+
+    public:
+      binding_aid_bid_equal (const aid_t aid,
+			     const bid_t bid) :
+	m_aid (aid),
+	m_bid (bid)
+      { }
+
+      bool operator() (const binding_interface* c) const {
+	return c->involves_aid_bid (m_aid, m_bid);
       }
     };
     
@@ -484,7 +511,7 @@ namespace ioa {
     }
 
     template <class OI, class OM, class II, class IM, class I, class D>
-    bool
+    bid_t
     _bind (const action<OI, OM>& output,
 	   const action<II, IM>& input,
 	   const automaton_handle<I>& binder,
@@ -493,37 +520,37 @@ namespace ioa {
     {
       if (!m_aids.contains (binder.aid ())) {
   	// Binder DNE.
-  	return false;
+  	return -1;
       }
 
       I* instance = aid_to_instance<I> (binder.aid ());
 
       if (!m_aids.contains (output.automaton.aid ())) {
 	scheduler.set_current_aid (binder.aid (), instance);
-	instance->bind_output_automaton_dne (d);
+	instance->output_automaton_dne (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
 
       if (!m_aids.contains (input.automaton.aid ())) {
 	scheduler.set_current_aid (binder.aid (), instance);
-	instance->bind_input_automaton_dne (d);
+	instance->input_automaton_dne (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
       
       if (!parameter_exists (output, typename action<OI, OM>::parameter_status ())) {
 	scheduler.set_current_aid (binder.aid (), instance);
-	instance->bind_output_parameter_dne (d);
+	instance->output_parameter_dne (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
       
       if (!parameter_exists (input, typename action<II, IM>::parameter_status ())) {
 	scheduler.set_current_aid (binder.aid (), instance);
-	instance->bind_input_parameter_dne (d);
+	instance->input_parameter_dne (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
       
       concrete_action<OI, OM> c_output = reify (output);
@@ -538,7 +565,7 @@ namespace ioa {
 	scheduler.set_current_aid (binder.aid (), instance);
 	instance->binding_exists (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
       
       std::list<binding_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
@@ -550,7 +577,7 @@ namespace ioa {
 	scheduler.set_current_aid (binder.aid (), instance);
 	instance->input_action_unavailable (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
       
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
@@ -563,7 +590,7 @@ namespace ioa {
 	scheduler.set_current_aid (binder.aid (), instance);
 	instance->output_action_unavailable (d);
 	scheduler.clear_current_aid ();
-	return false;
+	return -1;
       }
       
       binding<OM>* c;
@@ -578,10 +605,12 @@ namespace ioa {
       }
     
       // Bind.
-      c->bind (c_output, c_input, instance, binder.aid (), scheduler, d);
+      bid_t bid = m_records[binder.aid ()]->take_bid ();
+
+      c->bind (bid, c_output, c_input, instance, binder.aid (), scheduler, d);
 
       scheduler.set_current_aid (binder.aid (), instance);
-      instance->bound (d);
+      instance->bound (bid, d);
       scheduler.clear_current_aid ();
 
       scheduler.set_current_aid (c_output.automaton.aid (), c_output.get_instance ());
@@ -592,11 +621,11 @@ namespace ioa {
       c_input.bound ();
       scheduler.clear_current_aid ();
 
-      return true;
+      return bid;
     }
 
     template <class OI, class OM, class II, class IM, class I, class D>
-    bool
+    bid_t
     bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
@@ -611,7 +640,7 @@ namespace ioa {
     }    
 
     template <class OI, class OM, class II, class IM, class D>
-    bool
+    bid_t
     bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  parameterized /* */,
@@ -625,7 +654,7 @@ namespace ioa {
     }    
 
     template <class OI, class OM, class II, class IM, class D>
-    bool
+    bid_t
     bind (const action<OI, OM>& output,
 	  output_category /* */,
 	  unparameterized /* */,
@@ -640,7 +669,7 @@ namespace ioa {
 
   public:
     template <class OI, class OM, class II, class IM, class I, class D>
-    bool
+    bid_t
     bind (const action<OI, OM>& output,
 	  const action<II, IM>& input,
 	  const automaton_handle<I>& binder,
@@ -661,7 +690,7 @@ namespace ioa {
     }
 
     template <class OI, class OM, class II, class IM, class D>
-    bool
+    bid_t
     bind (const action<OI, OM>& output,
 	  const action<II, IM>& input,
 	  scheduler_interface& scheduler,
@@ -679,56 +708,22 @@ namespace ioa {
 		   d);
     }
   
-  private:
-    template <class OI, class OM, class II, class IM, class I, class D>
+    template <class I, class D>
     bool
-    _unbind (const action<OI, OM>& output,
-	     const action<II, IM>& input,
-	     const automaton_handle<I>& binder,
-	     scheduler_interface& scheduler,
-	     D& d)
+    unbind (const bid_t bid,
+	    const automaton_handle<I>& binder,
+	    scheduler_interface& scheduler,
+	    D& d)
     {
       if (!m_aids.contains (binder.aid ())) {
 	return false;
       }
-
-
+      
       I* instance = aid_to_instance<I> (binder.aid ());
-
-      if (!m_aids.contains (output.automaton.aid ())) {
-	scheduler.set_current_aid (binder.aid (), instance);
-	instance->unbind_output_automaton_dne (d);
-	scheduler.clear_current_aid ();
-	return false;
-      }
-
-      if (!m_aids.contains (input.automaton.aid ())) {
-	scheduler.set_current_aid (binder.aid (), instance);
-	instance->unbind_input_automaton_dne (d);
-	scheduler.clear_current_aid ();
-	return false;
-      }
-      
-      if (!parameter_exists (output, typename action<OI, OM>::parameter_status ())) {
-	scheduler.set_current_aid (binder.aid (), instance);
-	instance->unbind_output_parameter_dne (d);
-	scheduler.clear_current_aid ();
-	return false;
-      }
-      
-      if (!parameter_exists (input, typename action<II, IM>::parameter_status ())) {
-	scheduler.set_current_aid (binder.aid (), instance);
-	instance->unbind_input_parameter_dne (d);
-	scheduler.clear_current_aid ();
-	return false;
-      }
-
-      concrete_action<OI, OM> c_output = reify (output);
-      concrete_action<II, IM> c_input = reify (input);
       
       std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
 								  m_bindings.end (),
-								  binding_equal (c_output, c_input, binder.aid ()));
+								  binding_aid_bid_equal (binder.aid (), bid));
       
       if (pos == m_bindings.end ()) {
 	// Not bound.
@@ -738,83 +733,20 @@ namespace ioa {
 	return false;
       }
       
-      binding<OM>* c = dynamic_cast<binding<OM>*> (*pos);
-      BOOST_ASSERT (c != 0);
+      binding_interface* c = *pos;
       
       // Unbind.
-      c->unbind (c_output, c_input, instance, binder.aid ());
+      c->unbind (binder.aid (), bid);
+      m_records[binder.aid ()]->replace_bid (bid);
       
       if (c->empty ()) {
 	delete c;
 	m_bindings.erase (pos);
       }
-
+      
       return true;
     }
-
-    template <class OI, class OM, class II, class IM, class I, class D>
-    bool
-    unbind (const action<OI, OM>& output,
-	    unparameterized /* */,
-	    const action<II, IM>& input,
-	    unparameterized /* */,
-	    const automaton_handle<I>& binder,
-	    scheduler_interface& scheduler,
-	    D& d)
-    {
-      return _unbind (output, input, binder, scheduler, d);
-    }    
     
-    template <class OI, class OM, class II, class IM, class D>
-    bool
-    unbind (const action<OI, OM>& output,
-	    parameterized /* */,
-	    const action<II, IM>& input,
-	    unparameterized /* */,
-	    scheduler_interface& scheduler,
-	    D& d)
-    {
-      return _unbind (output, input, output.automaton, scheduler, d);
-    }    
-    
-    template <class OI, class OM, class II, class IM, class D>
-    bool
-    unbind (const action<OI, OM>& output,
-	    unparameterized /* */,
-	    const action<II, IM>& input,
-	    parameterized /* */,
-	    scheduler_interface& scheduler,
-	    D& d)
-    {
-      return _unbind (output, input, input.automaton, scheduler, d);
-    }    
-    
-  public:
-    template <class OI, class OM, class II, class IM, class I, class D>
-    bool
-    unbind (const action<OI, OM>& output,
-	    const action<II, IM>& input,
-	    const automaton_handle<I>& binder,
-	    scheduler_interface& scheduler,
-	    D& d)
-    {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-
-      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), binder, scheduler, d);
-    }
-
-    template <class OI, class OM, class II, class IM, class D>
-    bool
-    unbind (const action<OI, OM>& output,
-	    const action<II, IM>& input,
-	    scheduler_interface& scheduler,
-	    D& d)
-    {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
-
-      return unbind (output, typename action<OI, OM>::parameter_status (), input, typename action<II, IM>::parameter_status (), scheduler, d);
-    }
-
     template <class I, class P, class D>
     bool
     rescind (const automaton_handle<I>& automaton,

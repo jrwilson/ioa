@@ -5,6 +5,7 @@
 #include "action.hpp"
 #include "system_interface.hpp"
 #include "scheduler_interface.hpp"
+#include "binding_handle.hpp"
 
 namespace ioa {
 
@@ -16,52 +17,32 @@ namespace ioa {
     virtual OA& output_action () = 0;
     virtual IA& input_action () = 0;
     virtual aid_t binder () const = 0;
+    virtual bid_t get_bid () const = 0;
   };
 
-  struct empty_scheduler :
-    public scheduler_interface {
-    void set_current_aid (aid_t) { }
-    void set_current_aid (aid_t, const automaton_interface*) { }
-    void clear_current_aid () { }
-  };
-  struct empty_d {
-    void unbound () { }
-  };
-
-  template <class OA, class IA, class OI, class OM, class II, class IM, class I, class D = empty_d>
+  template <class OA, class IA, class OI, class OM, class II, class IM, class I, class D>
   class binding_record :
     public binding_record_interface<OA, IA>
   {
   private:
+    const bid_t m_bid;
     concrete_action<OI, OM> m_output_action;
     concrete_action<II, IM> m_input_action;
     I* m_binder_instance;
     const aid_t m_binder_aid;
-    empty_scheduler m_default_scheduler;
     scheduler_interface& m_scheduler;
-    empty_d m_default_d;
     D& m_d;
     
 
   public:
-    binding_record (const concrete_action<OI, OM>& output_action,
-		    const concrete_action<II, IM>& input_action,
-		    I* binder_instance,
-		    const aid_t binder_aid) :
-      m_output_action (output_action),
-      m_input_action (input_action),
-      m_binder_instance (binder_instance),
-      m_binder_aid (binder_aid),
-      m_scheduler (m_default_scheduler),
-      m_d (m_default_d)
-    { }
-
-    binding_record (const concrete_action<OI, OM>& output_action,
+    binding_record (const bid_t bid,
+		    const concrete_action<OI, OM>& output_action,
 		    const concrete_action<II, IM>& input_action,
 		    I* binder_instance,
 		    const aid_t binder_aid,
 		    scheduler_interface& scheduler,
 		    D& d) :
+      m_bid (bid),
       m_output_action (output_action),
       m_input_action (input_action),
       m_binder_instance (binder_instance),
@@ -94,6 +75,10 @@ namespace ioa {
 
     aid_t binder () const {
       return m_binder_aid;
+    }
+
+    bid_t get_bid () const {
+      return m_bid;
     }
   };
 
@@ -153,6 +138,25 @@ namespace ioa {
     }
   };
   
+  template <class OA, class IA>
+  class aid_bid_equal
+  {
+  private:
+    const aid_t m_aid;
+    const bid_t m_bid;
+
+  public:
+    aid_bid_equal (const aid_t aid,
+		   const bid_t bid) :
+      m_aid (aid),
+      m_bid (bid)
+    { }
+
+    bool operator() (binding_record_interface<OA, IA>* const& x) const {
+      return m_aid == x->binder () && m_bid == x->get_bid ();
+    }
+  };
+
   class binding_interface
   {
   public:
@@ -162,10 +166,13 @@ namespace ioa {
 				   const input_action_interface& input,
 				   const aid_t binder) const = 0;
     virtual bool involves_input (const input_action_interface& input) const = 0;
-
     virtual bool involves_input_automaton (const aid_t automaton) const = 0;
+    virtual bool involves_aid_bid (const aid_t binder,
+				   const bid_t bid) const = 0;
     virtual bool empty () const = 0;
     virtual void execute (scheduler_interface& scheduler, system_interface& system) = 0;
+    virtual void unbind (const aid_t binder,
+			 const bid_t bid) = 0;
     virtual void unbind_parameter (const aid_t automaton,
 				   const pid_t parameter) = 0;
     virtual void unbind_automaton (const aid_t automaton) = 0;
@@ -176,7 +183,7 @@ namespace ioa {
   struct action_compare
   {
     bool operator() (binding_record_interface<OA, IA>* const& x,
-		     binding_record_interface<OA, IA>* const& y) const {
+  		     binding_record_interface<OA, IA>* const& y) const {
       return x->input_action ().get_aid () < y->input_action ().get_aid ();
     }
   };
@@ -201,7 +208,7 @@ namespace ioa {
   protected:
     OA& get_output () const {
       BOOST_ASSERT (!m_inputs.empty ());
-      return (*(m_inputs.begin ()))->output_action ();
+      return (*m_inputs.begin ())->output_action ();
     }
 
   public:
@@ -236,8 +243,18 @@ namespace ioa {
   			   input_automaton_equal<OA, IA> (automaton)) != m_inputs.end ();
     }
     
+    bool
+    involves_aid_bid (const aid_t binder,
+		      const bid_t bid) const
+    {
+      return std::find_if (m_inputs.begin (),
+			   m_inputs.end (),
+			   aid_bid_equal<OA, IA> (binder, bid)) != m_inputs.end ();
+    }
+
     template <class OI, class OM, class II, class IM, class I, class D>
-    void bind (const concrete_action<OI, OM>& output_action,
+    void bind (const bid_t bid,
+	       const concrete_action<OI, OM>& output_action,
 	       const concrete_action<II, IM>& input_action,
 	       I* binder_instance,
 	       const aid_t binder_aid,
@@ -252,22 +269,20 @@ namespace ioa {
 	BOOST_ASSERT (output_action == get_output ());
       }
 
-      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, D> (output_action, input_action, binder_instance, binder_aid, scheduler, d);
+      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, D> (bid, output_action, input_action, binder_instance, binder_aid, scheduler, d);
       m_inputs.insert (record);
     }
 
-    template <class OI, class OM, class II, class IM, class I>
-    void unbind (const concrete_action<OI, OM>& output_action,
-		 const concrete_action<II, IM>& input_action,
-		 I* binder_instance,
-		 const aid_t binder_aid) {
+    void unbind (const aid_t binder,
+		 const bid_t bid) {
       BOOST_ASSERT (!m_inputs.empty ());
-      binding_record<OA, IA, OI, OM, II, IM, I> t (output_action, input_action, binder_instance, binder_aid);
-      typename set_type::iterator pos = m_inputs.find (&t);
+      typename set_type::iterator pos = std::find_if (m_inputs.begin (),
+						      m_inputs.end (),
+						      aid_bid_equal<OA, IA> (binder, bid));
       if (pos != m_inputs.end ()) {
-	binding_record_interface<OA, IA>* record = *pos;
+	binding_record_interface<OA, IA>* ptr = *pos;
 	m_inputs.erase (pos);
-	delete record;
+	delete ptr;
       }
     }
 

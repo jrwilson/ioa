@@ -55,8 +55,8 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
 
   ioa::binding<automaton1::up_uv_output_action> binding;
   empty_class d;
-  binding.bind (output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
-  binding.bind (output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (1, output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (2, output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
   BOOST_CHECK (input2_instance->p_uv_input.state);
   BOOST_CHECK_EQUAL (input2_instance->p_uv_input.last_parameter, &input_parameter);
 
-  binding.unbind (output, input1, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 1);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
-  binding.unbind (output, input2, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 2);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
 
   ioa::binding<automaton1::p_uv_output_action> binding;
   empty_class d;
-  binding.bind (output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
-  binding.bind (output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (1, output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (2, output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
   BOOST_CHECK (input2_instance->p_uv_input.state);
   BOOST_CHECK_EQUAL (input2_instance->p_uv_input.last_parameter, &input_parameter);
 
-  binding.unbind (output, input1, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 1);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
-  binding.unbind (output, input2, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 2);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
@@ -196,8 +196,8 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
 
   ioa::binding<automaton1::up_v_output_action> binding;
   empty_class d;
-  binding.bind (output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
-  binding.bind (output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (1, output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (2, output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
   BOOST_CHECK_EQUAL (input2_instance->p_v_input.value, 9845);
   BOOST_CHECK_EQUAL (input2_instance->p_v_input.last_parameter, &input_parameter);
 
-  binding.unbind (output, input1, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 1);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
-  binding.unbind (output, input2, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 2);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));
@@ -267,8 +267,8 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
 
   ioa::binding<automaton1::p_v_output_action> binding;
   empty_class d;
-  binding.bind (output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
-  binding.bind (output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (1, output, input1, binder_instance.get (), binder_handle.aid (), sched, d);
+  binding.bind (2, output, input2, binder_instance.get (), binder_handle.aid (), sched, d);
 
   binding.execute (sched, sys);
 
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
   BOOST_CHECK_EQUAL (input2_instance->p_v_input.value, 9845);
   BOOST_CHECK_EQUAL (input2_instance->p_v_input.last_parameter, &input_parameter);
 
-  binding.unbind (output, input1, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 1);
 
   BOOST_CHECK (!binding.empty ());
   BOOST_CHECK (binding.involves_output (output));
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
   BOOST_CHECK (!binding.involves_input_automaton (input1_handle.aid ()));
   BOOST_CHECK (binding.involves_input_automaton (input2_handle.aid ()));
 
-  binding.unbind (output, input2, binder_instance.get (), binder_handle.aid ());
+  binding.unbind (binder_handle.aid (), 2);
 
   BOOST_CHECK (binding.empty ());
   BOOST_CHECK (!binding.involves_output (output));

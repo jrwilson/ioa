@@ -60,23 +60,23 @@ namespace ioa {
     // Bind/Unbind
 
     template <class D>
-    void bind_output_automaton_dne (D& d) {
-      d.bind_output_automaton_dne ();
+    void output_automaton_dne (D& d) {
+      d.output_automaton_dne ();
     }
 
     template <class D>
-    void bind_input_automaton_dne (D& d) {
-      d.bind_input_automaton_dne ();
+    void input_automaton_dne (D& d) {
+      d.input_automaton_dne ();
     }
 
     template <class D>
-    void bind_output_parameter_dne (D& d) {
-      d.bind_output_parameter_dne ();
+    void output_parameter_dne (D& d) {
+      d.output_parameter_dne ();
     }
 
     template <class D>
-    void bind_input_parameter_dne (D& d) {
-      d.bind_input_parameter_dne ();
+    void input_parameter_dne (D& d) {
+      d.input_parameter_dne ();
     }
 
     template <class D>
@@ -95,33 +95,14 @@ namespace ioa {
     }
 
     template <class D>
-    void bound (D& d) {
-      d.bound ();
+    void bound (const bid_t bid,
+		D& d) {
+      d.bound (bid);
     }
 
     template <class D>
     void unbound (D& d) {
       d.unbound ();
-    }
-
-    template <class D>
-    void unbind_output_automaton_dne (D& d) {
-      d.unbind_output_automaton_dne ();
-    }
-
-    template <class D>
-    void unbind_input_automaton_dne (D& d) {
-      d.unbind_input_automaton_dne ();
-    }
-
-    template <class D>
-    void unbind_output_parameter_dne (D& d) {
-      d.unbind_output_parameter_dne ();
-    }
-
-    template <class D>
-    void unbind_input_parameter_dne (D& d) {
-      d.unbind_input_parameter_dne ();
     }
 
     template <class D>

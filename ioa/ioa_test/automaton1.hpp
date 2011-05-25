@@ -2,6 +2,7 @@
 #define __automaton1_hpp__
 
 #include <action.hpp>
+#include <binding_handle.hpp>
 #include "instance_generator.hpp"
 
 template <class T>
@@ -267,19 +268,15 @@ struct automaton1 :
   bool parameter_existed;
   ioa::parameter_handle<int> declared_handle;
   bool m_parameter_rescinded;
-  bool m_bind_output_automaton_dne;
-  bool m_bind_input_automaton_dne;
-  bool m_bind_output_parameter_dne;
-  bool m_bind_input_parameter_dne;
+  bool m_output_automaton_dne;
+  bool m_input_automaton_dne;
+  bool m_output_parameter_dne;
+  bool m_input_parameter_dne;
   bool m_binding_exists;
   bool m_input_action_unavailable;
   bool m_output_action_unavailable;
-  bool m_bound;
+  bool m_bid;
   bool m_unbound;
-  bool m_unbind_output_automaton_dne;
-  bool m_unbind_input_automaton_dne;
-  bool m_unbind_output_parameter_dne;
-  bool m_unbind_input_parameter_dne;
   bool m_binding_dne;
   bool m_parameter_dne;
   bool m_target_automaton_dne;
@@ -291,19 +288,15 @@ struct automaton1 :
     m_automaton_destroyed (false),
     parameter_existed (false),
     m_parameter_rescinded (false),
-    m_bind_output_automaton_dne (false),
-    m_bind_input_automaton_dne (false),
-    m_bind_output_parameter_dne (false),
-    m_bind_input_parameter_dne (false),
+    m_output_automaton_dne (false),
+    m_input_automaton_dne (false),
+    m_output_parameter_dne (false),
+    m_input_parameter_dne (false),
     m_binding_exists (false),
     m_input_action_unavailable (false),
     m_output_action_unavailable (false),
-    m_bound (false),
+    m_bid (-1),
     m_unbound (false),
-    m_unbind_output_automaton_dne (false),
-    m_unbind_input_automaton_dne (false),
-    m_unbind_output_parameter_dne (false),
-    m_unbind_input_parameter_dne (false),
     m_binding_dne (false),
     m_parameter_dne (false),
     m_target_automaton_dne (false),
@@ -348,23 +341,23 @@ struct automaton1 :
   }
 
   template <class D>
-  void bind_output_automaton_dne (D&) {
-    m_bind_output_automaton_dne = true;
+  void output_automaton_dne (D&) {
+    m_output_automaton_dne = true;
   }
 
   template <class D>
-  void bind_input_automaton_dne (D&) {
-    m_bind_input_automaton_dne = true;
+  void input_automaton_dne (D&) {
+    m_input_automaton_dne = true;
   }
 
   template <class D>
-  void bind_output_parameter_dne (D&) {
-    m_bind_output_parameter_dne = true;
+  void output_parameter_dne (D&) {
+    m_output_parameter_dne = true;
   }
 
   template <class D>
-  void bind_input_parameter_dne (D&) {
-    m_bind_input_parameter_dne = true;
+  void input_parameter_dne (D&) {
+    m_input_parameter_dne = true;
   }
 
   template <class D>
@@ -383,33 +376,14 @@ struct automaton1 :
   }
 
   template <class D>
-  void bound (D&) {
-    m_bound = true;
+  void bound (const ioa::bid_t bid,
+	      D&) {
+    m_bid = bid;
   }
 
   template <class D>
   void unbound (D&) {
     m_unbound = true;
-  }
-
-  template <class D>
-  void unbind_output_automaton_dne (D&) {
-    m_unbind_output_automaton_dne = true;
-  }
-
-  template <class D>
-  void unbind_input_automaton_dne (D&) {
-    m_unbind_input_automaton_dne = true;
-  }
-
-  template <class D>
-  void unbind_output_parameter_dne (D&) {
-    m_unbind_output_parameter_dne = true;
-  }
-
-  template <class D>
-  void unbind_input_parameter_dne (D&) {
-    m_unbind_input_parameter_dne = true;
   }
 
   template <class D>

@@ -192,11 +192,11 @@ namespace ioa {
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr,
 	       D& d) {
-      bool (system::*bind_ptr) (const action<OI, OM>&,
-      				const action<II, IM>&,
-      				const automaton_handle<C>&,
-				scheduler_interface&,
-				D&) = &system::bind;
+      bid_t (system::*bind_ptr) (const action<OI, OM>&,
+				 const action<II, IM>&,
+				 const automaton_handle<C>&,
+				 scheduler_interface&,
+				 D&) = &system::bind;
       schedule_sysq (make_runnable (boost::bind (bind_ptr,
 						 boost::ref (m_system),
 						 make_action (output_automaton, output_member_ptr),
@@ -213,10 +213,10 @@ namespace ioa {
 	       const automaton_handle<II>& input_automaton,
 	       IM II::*input_member_ptr,
 	       D& d) {
-      bool (system::*bind_ptr) (const action<OI, OM>&,
-      				const action<II, IM>&,
-				scheduler_interface&,
-				D&) = &system::bind;
+      bid_t (system::*bind_ptr) (const action<OI, OM>&,
+				 const action<II, IM>&,
+				 scheduler_interface&,
+				 D&) = &system::bind;
       schedule_sysq (make_runnable (boost::bind (bind_ptr,
 						 boost::ref (m_system),
 						 make_action (get_current_aid (ptr), output_member_ptr, output_parameter),
@@ -232,10 +232,10 @@ namespace ioa {
 	       IM II::*input_member_ptr,
 	       const parameter_handle<IP>& input_parameter,
 	       D& d) {
-      bool (system::*bind_ptr) (const action<OI, OM>&,
-      				const action<II, IM>&,
-				scheduler_interface&,
-				D&) = &system::bind;
+      bid_t (system::*bind_ptr) (const action<OI, OM>&,
+				 const action<II, IM>&,
+				 scheduler_interface&,
+				 D&) = &system::bind;
       schedule_sysq (make_runnable (boost::bind (bind_ptr,
 						 boost::ref (m_system),
 						 make_action (output_automaton, output_member_ptr),
@@ -244,65 +244,22 @@ namespace ioa {
 						 boost::ref (d))));
     }
 
-    template <class C, class OI, class OM, class II, class IM, class D>
+    template <class C, class D>
     void unbind (const C* ptr,
-		 const automaton_handle<OI>& output_automaton,
-		 OM OI::*output_member_ptr,
-		 const automaton_handle<II>& input_automaton,
-		 IM II::*input_member_ptr,
+		 const bid_t bid,
 		 D& d) {
-      bool (system::*unbind_ptr) (const action<OI, OM>&,
-				  const action<II, IM>&,
+      bool (system::*unbind_ptr) (const bid_t,
 				  const automaton_handle<C>&,
 				  scheduler_interface&,
 				  D&) = &system::unbind;
       schedule_sysq (make_runnable (boost::bind (unbind_ptr,
 						 boost::ref (m_system),
-						 make_action (output_automaton, output_member_ptr),
-						 make_action (input_automaton, input_member_ptr),
+						 bid,
 						 get_current_aid (ptr),
 						 boost::ref (*this),
 						 boost::ref (d))));
     }
 
-    template <class OI, class OM, class OP, class II, class IM, class D>
-    void unbind (const OI* ptr,
-		 OM OI::*output_member_ptr,
-		 const parameter_handle<OP>& output_parameter,
-		 const automaton_handle<II>& input_automaton,
-		 IM II::*input_member_ptr,
-		 D& d) {
-      bool (system::*unbind_ptr) (const action<OI, OM>&,
-				  const action<II, IM>&,
-				  scheduler_interface&,
-				  D&) = &system::unbind;
-      schedule_sysq (make_runnable (boost::bind (unbind_ptr,
-						 boost::ref (m_system),
-						 make_action (get_current_aid (ptr), output_member_ptr, output_parameter),
-						 make_action (input_automaton, input_member_ptr),
-						 boost::ref (*this),
-						 boost::ref (d))));
-    }
-    
-    template <class OI, class OM, class II, class IM, class IP, class D>
-    void unbind (const II* ptr,
-		 const automaton_handle<OI>& output_automaton,
-		 OM OI::*output_member_ptr,
-		 IM II::*input_member_ptr,
-		 const parameter_handle<IP>& input_parameter,
-		 D& d) {
-      bool (system::*unbind_ptr) (const action<OI, OM>&,
-				  const action<II, IM>&,
-				  scheduler_interface&,
-				  D&) = &system::unbind;
-      schedule_sysq (make_runnable (boost::bind (unbind_ptr,
-						 boost::ref (m_system),
-						 make_action (output_automaton, output_member_ptr),
-						 make_action (get_current_aid (ptr), input_member_ptr, input_parameter),
-						 boost::ref (*this),
-						 boost::ref (d))));
-    }
-    
     template <class C, class P, class D>
     void rescind (const C* ptr,
 		  const parameter_handle<P>& parameter,

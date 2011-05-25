@@ -52,22 +52,26 @@ ioa::parameter_handle<T> declare (ioa::system& system,
 }
 
 template <class OI, class OM, class II, class IM, class I>
-void bind (ioa::system& system,
-	   const ioa::action<OI, OM>& output_action,
-	   const ioa::action<II, IM>& input_action,
-	   const ioa::automaton_handle<I>& binder,
-	   ioa::scheduler_interface& s) {
+ioa::bid_t bind (ioa::system& system,
+		 const ioa::action<OI, OM>& output_action,
+		 const ioa::action<II, IM>& input_action,
+		 const ioa::automaton_handle<I>& binder,
+		 ioa::scheduler_interface& s) {
   empty_class d;
-  BOOST_CHECK (system.bind (output_action, input_action, binder, s, d) == true);
+  ioa::bid_t bid = system.bind (output_action, input_action, binder, s, d);
+  BOOST_CHECK (bid != -1);
+  return bid;
 }
 
 template <class OI, class OM, class II, class IM>
-void bind (ioa::system& system,
-	   const ioa::action<OI, OM>& output_action,
-	   const ioa::action<II, IM>& input_action,
-	   ioa::scheduler_interface& s) {
+ioa::bid_t bind (ioa::system& system,
+		 const ioa::action<OI, OM>& output_action,
+		 const ioa::action<II, IM>& input_action,
+	    ioa::scheduler_interface& s) {
   empty_class d;
-  BOOST_CHECK (system.bind (output_action, input_action, s, d) == true);
+  ioa::bid_t bid = system.bind (output_action, input_action, s, d);
+  BOOST_CHECK (bid != -1);
+  return bid;
 }
 
 template <class I, class P>
@@ -198,7 +202,7 @@ BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == false);
+			    s, d) == -1);
 }
 
 BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
@@ -220,8 +224,8 @@ BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == false);
-  BOOST_CHECK (instance->m_bind_output_automaton_dne);
+			    s, d) == -1);
+  BOOST_CHECK (instance->m_output_automaton_dne);
 }
 
 BOOST_AUTO_TEST_CASE (system_bind_input_automaton_dne)
@@ -244,8 +248,8 @@ BOOST_AUTO_TEST_CASE (system_bind_input_automaton_dne)
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == false);
-  BOOST_CHECK (instance->m_bind_input_automaton_dne);
+			    s, d) == -1);
+  BOOST_CHECK (instance->m_input_automaton_dne);
 }
 
 BOOST_AUTO_TEST_CASE (system_bind_output_parameter_dne)
@@ -268,8 +272,8 @@ BOOST_AUTO_TEST_CASE (system_bind_output_parameter_dne)
   empty_class d;
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::p_uv_output, param),
 			    ioa::make_action (input, &automaton1::up_uv_input),
-			    s, d) == false);
-  BOOST_CHECK (instance->m_bind_output_parameter_dne);
+			    s, d) == -1);
+  BOOST_CHECK (instance->m_output_parameter_dne);
 }
 
 BOOST_AUTO_TEST_CASE (system_bind_input_parameter_dne)
@@ -292,8 +296,8 @@ BOOST_AUTO_TEST_CASE (system_bind_input_parameter_dne)
   empty_class d;
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::p_uv_input, param),
-			    s, d) == false);
-  BOOST_CHECK (instance->m_bind_input_parameter_dne);
+			    s, d) == -1);
+  BOOST_CHECK (instance->m_input_parameter_dne);
 }
 
 BOOST_AUTO_TEST_CASE (system_bind_exists)
@@ -311,16 +315,17 @@ BOOST_AUTO_TEST_CASE (system_bind_exists)
   ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
   
   empty_class d;
-  BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
-			    ioa::make_action (input, &automaton1::up_uv_input),
-			    binder,
-			    s, d) == true);
-  BOOST_CHECK (instance->m_bound);
+  ioa::bid_t bid = system.bind (ioa::make_action (output, &automaton1::up_uv_output),
+				ioa::make_action (input, &automaton1::up_uv_input),
+				binder,
+				s, d);
+  BOOST_CHECK (bid != -1);
+  BOOST_CHECK_EQUAL (instance->m_bid, bid);
 
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == false);
+			    s, d) == -1);
   BOOST_CHECK (instance->m_binding_exists);
 }
 
@@ -344,13 +349,12 @@ BOOST_AUTO_TEST_CASE (system_bind_input_action_unavailable)
   BOOST_CHECK (system.bind (ioa::make_action (output1, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == true);
-  BOOST_CHECK (instance->m_bound);
+			    s, d) != -1);
 
   BOOST_CHECK (system.bind (ioa::make_action (output2, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == false);
+			    s, d) == -1);
   BOOST_CHECK (instance->m_input_action_unavailable);
 }
 
@@ -378,12 +382,11 @@ BOOST_AUTO_TEST_CASE (system_bind_output_action_unavailable)
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::up_uv_input),
 			    binder,
-			    s, d) == true);
-  BOOST_CHECK (instance1->m_bound);
+			    s, d) != -1);
 
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
 			    ioa::make_action (input, &automaton1::p_uv_input, param),
-			    s, d) == false);
+			    s, d) == -1);
   BOOST_CHECK (instance2->m_output_action_unavailable);
 }
 
@@ -408,8 +411,7 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
   empty_class d;
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::p_uv_output, param),
 			    ioa::make_action (input, &automaton1::up_uv_input),
-			    s, d) == true);
-  BOOST_CHECK (output_instance->m_bound);
+			    s, d) != -1);
 
   system.execute (ioa::make_action (output, &automaton1::p_uv_output, param), s);
   BOOST_CHECK (input_instance->up_uv_input.state);
@@ -426,128 +428,19 @@ BOOST_AUTO_TEST_CASE (system_unbind_binder_automaton_dne)
 
   ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
   
-  bind (system,
-	ioa::make_action (output, &automaton1::up_uv_output),
-	ioa::make_action (input, &automaton1::up_uv_input),
-	binder,
-	s);
+  ioa::bid_t bid = bind (system,
+			 ioa::make_action (output, &automaton1::up_uv_output),
+			 ioa::make_action (input, &automaton1::up_uv_input),
+			 binder,
+			 s);
 
   destroy (system, binder);
 
   empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::up_uv_output),
-			      ioa::make_action (input, &automaton1::up_uv_input),
+  BOOST_CHECK (system.unbind (bid,
 			      binder,
 			      s,
 			      d) == false);
-}
-
-BOOST_AUTO_TEST_CASE (system_unbind_output_automaton_dne)
-{
-  dummy_scheduler s;
-  ioa::system system;
-
-  automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
-  
-  ioa::automaton_handle<automaton1> binder = create (system, holder, s);
-  
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
-
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
-  
-  bind (system, ioa::make_action (output, &automaton1::up_uv_output),
-	ioa::make_action (input, &automaton1::up_uv_input),
-	binder,
-	s);
-
-  destroy (system, output);
-
-  empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::up_uv_output), 
-			      ioa::make_action (input, &automaton1::up_uv_input),
-			      binder,
-			      s,
-			      d) == false);
-  BOOST_CHECK (instance->m_unbind_output_automaton_dne);
-}
-
-BOOST_AUTO_TEST_CASE (system_unbind_input_automaton_dne)
-{
-  dummy_scheduler s;
-  ioa::system system;
-
-  automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
-  
-  ioa::automaton_handle<automaton1> binder = create (system, holder, s);
-  
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
-
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
-  
-  bind (system, ioa::make_action (output, &automaton1::up_uv_output),
-	ioa::make_action (input, &automaton1::up_uv_input),
-	binder,
-	s);
-
-  destroy (system, input);
-
-  empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::up_uv_output),
-			      ioa::make_action (input, &automaton1::up_uv_input),
-			      binder,
-			      s,
-			      d) == false);
-  BOOST_CHECK (instance->m_unbind_input_automaton_dne);
-}
-
-BOOST_AUTO_TEST_CASE (system_unbind_output_parameter_dne)
-{
-  dummy_scheduler s;
-  ioa::system system;
-  int parameter;
-
-  automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
-
-  ioa::automaton_handle<automaton1> output = create (system, holder, s);
-
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
-
-  ioa::parameter_handle<int> param = declare (system, output, &parameter, s);
-
-  rescind (system, output, param, s);
-
-  empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::p_uv_output, param),
-			      ioa::make_action (input, &automaton1::up_uv_input),
-			      s, d) == false);
-  BOOST_CHECK (instance->m_unbind_output_parameter_dne);
-}
-
-BOOST_AUTO_TEST_CASE (system_unbind_input_parameter_dne)
-{
-  dummy_scheduler s;
-  ioa::system system;
-  int parameter;
-
-  automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
-
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
-
-  ioa::automaton_handle<automaton1> input = create (system, holder, s);
-
-  ioa::parameter_handle<int> param = declare (system, input, &parameter, s);
-
-  rescind (system, input, param, s);
-
-  empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::up_uv_output), 
-			      ioa::make_action (input, &automaton1::p_uv_input, param),
-			      s, d) == false);
-  BOOST_CHECK (instance->m_unbind_input_parameter_dne);
 }
 
 BOOST_AUTO_TEST_CASE (system_unbind_exists)
@@ -563,10 +456,23 @@ BOOST_AUTO_TEST_CASE (system_unbind_exists)
   ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
 
   ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+
+  ioa::bid_t bid = bind (system,
+			 ioa::make_action (output, &automaton1::up_uv_output),
+			 ioa::make_action (input, &automaton1::up_uv_input),
+			 binder,
+			 s);
   
   empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::up_uv_output),
-			      ioa::make_action (input, &automaton1::up_uv_input), binder,
+  BOOST_CHECK (system.unbind (bid,
+			      binder,
+			      s,
+			      d) == true);
+  BOOST_CHECK (instance->m_unbound);
+  
+
+  BOOST_CHECK (system.unbind (bid,
+			      binder,
 			      s,
 			      d) == false);
   BOOST_CHECK (instance->m_binding_dne);
@@ -587,14 +493,14 @@ BOOST_AUTO_TEST_CASE (system_unbind_success)
 
   ioa::parameter_handle<int> param = declare (system, output, &parameter, s);
 
-  bind (system,
-	ioa::make_action (output, &automaton1::p_uv_output, param),
-	ioa::make_action (input, &automaton1::up_uv_input),
-	s);
-
+  ioa::bid_t bid = bind (system,
+			 ioa::make_action (output, &automaton1::p_uv_output, param),
+			 ioa::make_action (input, &automaton1::up_uv_input),
+			 s);
+  
   empty_class d;
-  BOOST_CHECK (system.unbind (ioa::make_action (output, &automaton1::p_uv_output, param),
-			      ioa::make_action (input, &automaton1::up_uv_input),
+  BOOST_CHECK (system.unbind (bid,
+			      output,
 			      s, d) == true);
   BOOST_CHECK (instance->m_unbound);
 }
