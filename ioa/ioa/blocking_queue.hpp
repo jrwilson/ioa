@@ -2,49 +2,36 @@
 #define __blocking_queue_hpp__
 
 #include <boost/thread/condition_variable.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <list>
 
 template <class T>
-class blocking_queue
+class blocking_list
 {
 private:
-  boost::condition_variable m_condition;
-  boost::mutex m_mutex;
-  std::list<T> m_queue;
-  
+  boost::condition_variable_any m_condition;
+
 public:
-  typedef typename std::list<T>::iterator iterator;
-  typedef typename std::list<T>::size_type size_type;
+  std::list<T> list;
+  boost::shared_mutex mutex;
 
   T pop () {
-    boost::unique_lock<boost::mutex> lock (m_mutex);
-    while (m_queue.empty ()) {
+    boost::unique_lock<boost::shared_mutex> lock (mutex);
+    while (list.empty ()) {
       m_condition.wait (lock);
     }
-    T retval = m_queue.front ();
-    m_queue.pop_front ();
+    T retval = list.front ();
+    list.pop_front ();
     return retval;
   }
   
   void push (const T& t) {
-    boost::unique_lock<boost::mutex> lock (m_mutex);
-    m_queue.push_back (t);
-  }
-
-  void clear () {
-    m_queue.clear ();
-  }
-
-  size_type size () const {
-    return m_queue.size ();
-  }
-
-  iterator begin () {
-    return m_queue.begin ();
-  }
-  
-  iterator end () {
-    return m_queue.end ();
+    {
+      boost::unique_lock<boost::shared_mutex> lock (mutex);
+      list.push_back (t);
+    }
+    // Only one thread should be calling pop.
+    m_condition.notify_one ();
   }
 
 };

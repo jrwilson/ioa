@@ -3,6 +3,8 @@
 
 #include <boost/thread/shared_mutex.hpp>
 
+#include "action.hpp"
+
 namespace ioa {
 
   class runnable_interface
@@ -51,6 +53,52 @@ namespace ioa {
   template <class T>
   runnable<T>* make_runnable (const T& t) {
     return new runnable<T> (t);
+  }
+
+  class action_runnable_interface :
+    public runnable_interface
+  {
+  private:
+    const aid_t m_aid;
+    const void* m_ptr;
+
+  public:
+    action_runnable_interface (const aid_t aid,
+			       const void* ptr) :
+      m_aid (aid),
+      m_ptr (ptr)
+    { }
+
+    bool operator== (const action_runnable_interface& x) const {
+      return m_aid == x.m_aid && m_ptr == x.m_ptr;
+    }
+  };
+
+  template <class T>
+  class action_runnable :
+    public action_runnable_interface
+  {
+  private:
+    T m_t;
+    
+  public:
+    action_runnable (const T& t,
+		     const aid_t aid,
+		     const void* ptr) :
+      action_runnable_interface (aid, ptr),
+      m_t (t)
+    { }
+    
+    void operator() () {
+      m_t ();
+    }
+  };
+
+  template <class T, class I, class M>
+  action_runnable<T>* make_action_runnable (const T& t,
+					    const action<I, M>& ac) {
+    I* instance = 0;
+    return new action_runnable<T> (t, ac.automaton.aid (), &((*instance).*(ac.member_ptr)));
   }
 
 }
