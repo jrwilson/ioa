@@ -18,9 +18,9 @@ namespace ioa {
     public scheduler_interface
   {
   private:
-    bool m_running;
     system m_system;
     blocking_queue<runnable_interface*> m_runq;
+    bool m_ignore_schedule;
     aid_t m_current_aid;
     const automaton_interface* m_current_this;
     
@@ -68,7 +68,7 @@ namespace ioa {
     }
 
     void schedule (runnable_interface* r) {
-      if (m_running) {
+      if (!m_ignore_schedule) {
 	m_runq.push (r);
       }
       else {
@@ -81,6 +81,10 @@ namespace ioa {
       m_current_aid (-1),
       m_current_this (0)
     { }
+
+    ~simple_scheduler () {
+      clear ();
+    }
 
     template <class C, class G, class D>
     void create (const C* ptr,
@@ -280,14 +284,12 @@ namespace ioa {
     void run (G generator) {
       BOOST_ASSERT (m_runq.size () == 0);
       BOOST_ASSERT (runnable_interface::count () == 0);
-      m_running = true;
       m_system.create (generator, *this);
       while (keep_going ()) {
 	runnable_interface* r = m_runq.pop ();
 	(*r) ();
 	delete r;
       }
-      m_running = false;
     }
 
     void clear (void) {
@@ -297,7 +299,9 @@ namespace ioa {
 	delete (*pos);
       }
       m_runq.clear ();
+      m_ignore_schedule = true;
       m_system.clear ();
+      m_ignore_schedule = false;
     }
             
   };
