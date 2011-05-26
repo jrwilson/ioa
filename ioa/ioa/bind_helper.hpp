@@ -76,17 +76,23 @@ namespace ioa {
 
     typedef enum {
       START,
+      START_B,
       HAVE_OUTPUT,
+      HAVE_OUTPUT_B,
       HAVE_INPUT,
+      HAVE_INPUT_B,
       HAVE_BOTH,
       BIND_SENT,
       BIND_RECV1,
       BIND_RECV2,
-      UNBIND_SENT
+      UNBIND_SENT,
+      STOP,
+      ERROR
     } state_type;
 
     state_type m_state;
     const T* m_this;
+
     output_observer m_output_observer;
     automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -95,31 +101,31 @@ namespace ioa {
     IM II::*m_input_member_ptr;
     automaton_handle<II> m_input_handle;
 
+    bid_t m_bid;
+
     void set_output_handle (const automaton_handle<OI>& output_handle) {
       switch (m_state) {
       case START:
 	m_output_handle = output_handle;
 	m_state = HAVE_OUTPUT;
 	break;
-      case HAVE_OUTPUT:
-	BOOST_ASSERT (false);
+      case START_B:
+	m_output_handle = output_handle;
+	m_state = HAVE_OUTPUT_B;
 	break;
       case HAVE_INPUT:
 	m_output_handle = output_handle;
-	ioa::scheduler.bind (m_this, m_output_handle, m_output_member_ptr, m_input_handle, m_input_member_ptr, *this);
+	m_state = HAVE_BOTH;
+	break;
+      case HAVE_INPUT_B:
+	m_output_handle = output_handle;
+	ioa::scheduler.bind (m_this,
+			     ioa::make_action (m_output_handle, m_output_member_ptr),
+			     ioa::make_action (m_input_handle, m_input_member_ptr),
+			     *this);
 	m_state = BIND_SENT;
 	break;
-      case BIND_SENT:
-	BOOST_ASSERT (false);
-	break;
-      case BIND_RECV1:
-	BOOST_ASSERT (false);
-	break;
-      case BIND_RECV2:
-	BOOST_ASSERT (false);
-	break;
-      case UNBIND_SENT:
-	BOOST_ASSERT (false);
+      default:
 	break;
       }
     }
@@ -130,25 +136,23 @@ namespace ioa {
 	m_input_handle = input_handle;
 	m_state = HAVE_INPUT;
 	break;
+      case START_B:
+	m_input_handle = input_handle;
+	m_state = HAVE_INPUT_B;
+	break;
       case HAVE_OUTPUT:
 	m_input_handle = input_handle;
-	ioa::scheduler.bind (m_this, m_output_handle, m_output_member_ptr, m_input_handle, m_input_member_ptr, *this);
+	m_state = HAVE_BOTH;
+	break;
+      case HAVE_OUTPUT_B:
+	m_input_handle = input_handle;
+	ioa::scheduler.bind (m_this,
+			     ioa::make_action (m_output_handle, m_output_member_ptr),
+			     ioa::make_action (m_input_handle, m_input_member_ptr),
+			     *this);
 	m_state = BIND_SENT;
 	break;
-      case HAVE_INPUT:
-	BOOST_ASSERT (false);
-	break;
-      case BIND_SENT:
-	BOOST_ASSERT (false);
-	break;
-      case BIND_RECV1:
-	BOOST_ASSERT (false);
-	break;
-      case BIND_RECV2:
-	BOOST_ASSERT (false);
-	break;
-      case UNBIND_SENT:
-	BOOST_ASSERT (false);
+      default:
 	break;
       }
     }
@@ -164,97 +168,97 @@ namespace ioa {
       m_output_observer (*this, output_helper),
       m_output_member_ptr (output_member_ptr),
       m_input_observer (*this, input_helper),
-      m_input_member_ptr (input_member_ptr)
+      m_input_member_ptr (input_member_ptr),
+      m_bid (-1)
     { }
+
+    void bind () {
+      switch (m_state) {
+      case START:
+	m_state = START_B;
+	break;
+      case HAVE_OUTPUT:
+	m_state = HAVE_OUTPUT_B;
+	break;
+      case HAVE_INPUT:
+	m_state = HAVE_INPUT_B;
+	break;
+      case HAVE_BOTH:
+	ioa::scheduler.bind (m_this,
+			     ioa::make_action (m_output_handle, m_output_member_ptr),
+			     ioa::make_action (m_input_handle, m_input_member_ptr),
+			     *this);
+	m_state = BIND_SENT;
+	break;
+      default:
+	break;
+      }
+    }
 
     void unbind () {
       switch (m_state) {
       case START:
-	delete this;
-	break;
+      case START_B:
       case HAVE_OUTPUT:
-	delete this;
-	break;
+      case HAVE_OUTPUT_B:
       case HAVE_INPUT:
-	delete this;
+      case HAVE_INPUT_B:
+	m_state = STOP;
 	break;
       case BIND_SENT:
 	m_state = BIND_RECV2;
 	break;
       case BIND_RECV1:
-	ioa::scheduler.unbind (m_this, m_output_handle, m_output_member_ptr, m_input_handle, m_input_member_ptr, *this);
+	ioa::scheduler.unbind (m_this, m_bid, *this);
 	m_state = UNBIND_SENT;
 	break;
-      case BIND_RECV2:
-	BOOST_ASSERT (false);
-	break;
-      case UNBIND_SENT:
-	BOOST_ASSERT (false);
+      default:
 	break;
       }
     }
 
     void output_automaton_dne () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
     void input_automaton_dne () {
-      BOOST_ASSERT (false);
-    }
-
-    void output_parameter_dne () {
-      BOOST_ASSERT (false);
-    }
-
-    void input_parameter_dne () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
     void binding_exists () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
     
     void input_action_unavailable () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
     void output_action_unavailable () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
     void bound (const ioa::bid_t bid) {
       switch (m_state) {
-      case START:
-	BOOST_ASSERT (false);
-	break;
-      case HAVE_OUTPUT:
-	BOOST_ASSERT (false);
-	break;
-      case HAVE_INPUT:
-	BOOST_ASSERT (false);
-	break;
       case BIND_SENT:
+	m_bid = bid;
 	m_state = BIND_RECV1;
-	break;
-      case BIND_RECV1:
-	BOOST_ASSERT (false);
 	break;
       case BIND_RECV2:
 	ioa::scheduler.unbind (m_this, bid, *this);
 	m_state = UNBIND_SENT;
 	break;
-      case UNBIND_SENT:
-	BOOST_ASSERT (false);
+      default:
 	break;
       }
     }
 
     void unbound () {
-      delete this;
+      m_bid = -1;
+      m_state = STOP;
     }
 
     void binding_dne () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
   };

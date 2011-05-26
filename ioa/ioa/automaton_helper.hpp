@@ -58,6 +58,9 @@ namespace ioa {
 
     void destroy () {
       switch (m_state) {
+      case START:
+	m_state = STOP;
+	break;
       case CREATE_SENT:
 	m_state = CREATE_RECV2;
 	break;
@@ -96,6 +99,7 @@ namespace ioa {
     }
   
     void automaton_destroyed () {
+      m_handle = automaton_handle<instance> ();
       m_state = STOP;
     }
 
