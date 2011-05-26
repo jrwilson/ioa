@@ -15,10 +15,13 @@ namespace ioa {
 
   private:
     typedef enum {
+      START,
       CREATE_SENT,
       CREATE_RECV1,
       CREATE_RECV2,
       DESTROY_SENT,
+      STOP,
+      ERROR
     } state_type;
     state_type m_state;
     const T* m_t;
@@ -30,17 +33,26 @@ namespace ioa {
 
     automaton_helper (const T* t,
 		      G generator) :
-      m_state (CREATE_SENT),
+      m_state (START),
       m_t (t),
       m_generator (generator)
-    {
-      scheduler.create (m_t, m_generator, *this);
-    }
+    { }
 
     ~automaton_helper () {
       // Notify the observers.
       BOOST_FOREACH (observer* o, m_observers) {
 	o->stop_observing ();
+      }
+    }
+
+    void create () {
+      switch (m_state) {
+      case START:
+	scheduler.create (m_t, m_generator, *this);
+	m_state = CREATE_SENT;
+	break;
+      default:
+	break;
       }
     }
 
@@ -55,11 +67,7 @@ namespace ioa {
 	m_handle = automaton_handle<instance> ();
 	m_state = DESTROY_SENT;
 	break;
-      case CREATE_RECV2:
-	BOOST_ASSERT (false);
-	break;
-      case DESTROY_SENT:
-	BOOST_ASSERT (false);
+      default:
 	break;
       }
     }
@@ -74,33 +82,29 @@ namespace ioa {
 	  o->observe ();
 	}
 	break;
-      case CREATE_RECV1:
-	BOOST_ASSERT (false);
-	break;
       case CREATE_RECV2:
 	scheduler.destroy (m_t, automaton, *this);
 	m_state = DESTROY_SENT;
 	break;
-      case DESTROY_SENT:
-	BOOST_ASSERT (false);
+      default:
 	break;
       }
     }
   
     void instance_exists (const instance* /* */) {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
   
     void automaton_destroyed () {
-      delete this;
+      m_state = STOP;
     }
 
     void target_automaton_dne () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
     void destroyer_not_creator () {
-      BOOST_ASSERT (false);
+      m_state = ERROR;
     }
 
     automaton_handle<instance> get_handle () const {

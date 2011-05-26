@@ -12,13 +12,12 @@ struct automaton_helper_automaton_destroyed :
   public ioa::dispatching_automaton
 {
   typedef ioa::automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> helper;
-  helper* m_helper;
+  helper m_helper;
 
   void transition_ () {
-    if (m_helper->get_handle ().aid () != -1) {
+    if (m_helper.get_handle ().aid () != -1) {
       // Destroy once created.
-      m_helper->destroy ();
-      m_helper = 0;
+      m_helper.destroy ();
     }
     else {
       // Poll.
@@ -28,16 +27,17 @@ struct automaton_helper_automaton_destroyed :
   ioa::internal_wrapper<automaton_helper_automaton_destroyed, &automaton_helper_automaton_destroyed::transition_> transition;
 
   automaton_helper_automaton_destroyed () :
+    m_helper (this, automaton2_generator ()),
     transition (*this)
   { }
 
   void init () {
-    m_helper = new helper (this, automaton2_generator ()),
+    m_helper.create ();
     ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
   }
 
   ~automaton_helper_automaton_destroyed () {
-    BOOST_CHECK (m_helper == 0);
+    BOOST_CHECK (m_helper.get_handle ().aid () == -1);
   }
 };
 
@@ -51,86 +51,26 @@ struct automaton_helper_automaton_destroyed_fast :
   public ioa::dispatching_automaton
 {
   typedef ioa::automaton_helper<automaton_helper_automaton_destroyed_fast, automaton2_generator> helper;
-  helper* m_helper;
+  helper m_helper;
+
+
+  automaton_helper_automaton_destroyed_fast () :
+    m_helper (this, automaton2_generator ())
+  { }
 
   void init () {
-    m_helper = new helper (this, automaton2_generator ());
-    m_helper->destroy ();
-    m_helper = 0;
+    m_helper.create ();
+    m_helper.destroy ();
   }
 
   ~automaton_helper_automaton_destroyed_fast () {
-    BOOST_CHECK (m_helper == 0);
+    BOOST_CHECK (m_helper.get_handle ().aid () == -1);
   }
 };
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed_fast)
 {
   ioa::scheduler.run (ioa::instance_generator<automaton_helper_automaton_destroyed_fast> ());
-  ioa::scheduler.clear ();
-}
-
-struct parameter_helper_parameter_rescinded :
-  public ioa::dispatching_automaton
-{
-  int m_parameter;
-  typedef ioa::parameter_helper<parameter_helper_parameter_rescinded, int> helper;
-  helper* m_helper;
-
-  void transition_ () {
-    if (m_helper->get_handle ().pid () != -1) {
-      // Destroy once created.
-      m_helper->rescind ();
-      m_helper = 0;
-    }
-    else {
-      // Poll.
-      ioa::scheduler.schedule (this, &parameter_helper_parameter_rescinded::transition);
-    }
-  }
-  ioa::internal_wrapper<parameter_helper_parameter_rescinded, &parameter_helper_parameter_rescinded::transition_> transition;
-
-  parameter_helper_parameter_rescinded () :
-    transition (*this)
-  { }
-
-  void init () {
-    m_helper = new helper (this, &m_parameter),
-    ioa::scheduler.schedule (this, &parameter_helper_parameter_rescinded::transition);
-  }
-
-  ~parameter_helper_parameter_rescinded () {
-    BOOST_CHECK (m_helper == 0);
-  }
-};
-
-BOOST_AUTO_TEST_CASE (config_parameter_helper_parameter_rescinded)
-{
-  ioa::scheduler.run (ioa::instance_generator<parameter_helper_parameter_rescinded> ());
-  ioa::scheduler.clear ();
-}
-
-struct parameter_helper_parameter_rescinded_fast :
-  public ioa::dispatching_automaton
-{
-  int m_parameter;
-  typedef ioa::parameter_helper<parameter_helper_parameter_rescinded_fast, int> helper;
-  helper* m_helper;
-
-  void init () {
-    m_helper = new helper (this, &m_parameter);
-    m_helper->rescind ();
-    m_helper = 0;
-  }
-
-  ~parameter_helper_parameter_rescinded_fast () {
-    BOOST_CHECK (m_helper == 0);
-  }
-};
-
-BOOST_AUTO_TEST_CASE (config_parameter_helper_parameter_rescinded_fast)
-{
-  ioa::scheduler.run (ioa::instance_generator<parameter_helper_parameter_rescinded_fast> ());
   ioa::scheduler.clear ();
 }
 

@@ -44,32 +44,11 @@ public:
   }
 
   template <class D>
-  void parameter_exists (D&) {
-  }
-
-  template <class P, class D>
-  void parameter_declared (const ioa::parameter_handle<P>& handle,
-			   D&) {
+  void output_automaton_dne (D&) {
   }
 
   template <class D>
-  void parameter_rescinded (D&) {
-  }
-
-  template <class D>
-  void bind_output_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void bind_input_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void bind_output_parameter_dne (D&) {
-  }
-
-  template <class D>
-  void bind_input_parameter_dne (D&) {
+  void input_automaton_dne (D&) {
   }
 
   template <class D>
@@ -93,27 +72,7 @@ public:
   }
 
   template <class D>
-  void unbind_output_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void unbind_input_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void unbind_output_parameter_dne (D&) {
-  }
-
-  template <class D>
-  void unbind_input_parameter_dne (D&) {
-  }
-
-  template <class D>
   void binding_dne (D&) {
-  }
-
-  template <class D>
-  void parameter_dne (D&) {
   }
 
   template <class D>

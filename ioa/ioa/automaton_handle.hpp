@@ -3,6 +3,13 @@
 
 namespace ioa {
 
+  // TODO:  Put this somewhere logical.
+  class automaton_interface {
+  public:
+    virtual void init () = 0;
+    virtual ~automaton_interface () { }
+  };
+
   // Forware declaration.
   class system;
 

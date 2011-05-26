@@ -35,28 +35,6 @@ namespace ioa {
       d.destroyer_not_creator ();
     }
     
-    // Declare/Rescind
-    
-    template <class D>
-    void parameter_exists (D& d) {
-      d.parameter_exists ();
-    }
-    
-    template <class P, class D>
-    void parameter_declared (const parameter_handle<P>& parameter, D& d) {
-      d.parameter_declared (parameter);
-    }
-    
-    template <class D>
-    void parameter_rescinded (D& d) {
-      d.parameter_rescinded ();
-    }
-    
-    template <class D>
-    void parameter_dne (D& d) {
-      d.parameter_dne ();
-    }
-
     // Bind/Unbind
 
     template <class D>
@@ -67,16 +45,6 @@ namespace ioa {
     template <class D>
     void input_automaton_dne (D& d) {
       d.input_automaton_dne ();
-    }
-
-    template <class D>
-    void output_parameter_dne (D& d) {
-      d.output_parameter_dne ();
-    }
-
-    template <class D>
-    void input_parameter_dne (D& d) {
-      d.input_parameter_dne ();
     }
 
     template <class D>

@@ -78,6 +78,7 @@ namespace ioa {
       START,
       HAVE_OUTPUT,
       HAVE_INPUT,
+      HAVE_BOTH,
       BIND_SENT,
       BIND_RECV1,
       BIND_RECV2,
@@ -193,19 +194,19 @@ namespace ioa {
       }
     }
 
-    void bind_output_automaton_dne () {
+    void output_automaton_dne () {
       BOOST_ASSERT (false);
     }
 
-    void bind_input_automaton_dne () {
+    void input_automaton_dne () {
       BOOST_ASSERT (false);
     }
 
-    void bind_output_parameter_dne () {
+    void output_parameter_dne () {
       BOOST_ASSERT (false);
     }
 
-    void bind_input_parameter_dne () {
+    void input_parameter_dne () {
       BOOST_ASSERT (false);
     }
 
@@ -221,7 +222,7 @@ namespace ioa {
       BOOST_ASSERT (false);
     }
 
-    void bound () {
+    void bound (const ioa::bid_t bid) {
       switch (m_state) {
       case START:
 	BOOST_ASSERT (false);
@@ -239,7 +240,7 @@ namespace ioa {
 	BOOST_ASSERT (false);
 	break;
       case BIND_RECV2:
-	ioa::scheduler.unbind (m_this, m_output_handle, m_output_member_ptr, m_input_handle, m_input_member_ptr, *this);
+	ioa::scheduler.unbind (m_this, bid, *this);
 	m_state = UNBIND_SENT;
 	break;
       case UNBIND_SENT:
@@ -250,22 +251,6 @@ namespace ioa {
 
     void unbound () {
       delete this;
-    }
-
-    void unbind_output_automaton_dne () {
-      BOOST_ASSERT (false);
-    }
-
-    void unbind_input_automaton_dne () {
-      BOOST_ASSERT (false);
-    }
-
-    void unbind_output_parameter_dne () {
-      BOOST_ASSERT (false);
-    }
-
-    void unbind_input_parameter_dne () {
-      BOOST_ASSERT (false);
     }
 
     void binding_dne () {

@@ -172,7 +172,6 @@ namespace ioa {
 }
 
 #include "automaton_helper.hpp"
-#include "parameter_helper.hpp"
 #include "bind_helper.hpp"
 
 #endif

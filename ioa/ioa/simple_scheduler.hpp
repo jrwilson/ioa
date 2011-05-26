@@ -9,7 +9,6 @@
 
 namespace ioa {
 
-  // TODO:  DUPLICATE ACTIONS!!!
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
 
@@ -49,12 +48,12 @@ namespace ioa {
     }
 
     void set_current_aid (const aid_t aid,
-			  const automaton_interface* current_this) {
+			  const automaton_interface& current_this) {
       // This is for all cases except generation.
       BOOST_ASSERT (aid != -1);
-      BOOST_ASSERT (current_this != 0);
+      BOOST_ASSERT (&current_this != 0);
       m_current_aid = aid;
-      m_current_this = current_this;
+      m_current_this = &current_this;
     }
 
     void clear_current_aid () {
@@ -123,6 +122,7 @@ namespace ioa {
        */
       bool duplicate;
       {
+	// TODO:  What about parameters?
 	boost::shared_lock<boost::shared_mutex> lock (m_execq.mutex);
 	duplicate = std::find_if (m_execq.list.begin (), m_execq.list.end (), action_runnable_equal (r)) != m_execq.list.end ();
       }
@@ -169,28 +169,10 @@ namespace ioa {
 						 boost::ref (d))));
     }
     
-    template <class C, class P, class D>
-    void declare (const C* ptr,
-		  P* parameter,
-		  D& d) {
-      parameter_handle<P> (system::*declare_ptr) (const automaton_handle<C>&,
-						  P*,
-						  scheduler_interface&,
-						  D&) = &system::declare;
-      schedule_sysq (make_runnable (boost::bind (declare_ptr,
-						 boost::ref (m_system),
-						 get_current_aid (ptr),
-						 parameter,
-						 boost::ref (*this),
-						 boost::ref (d))));
-    }
-
     template <class C, class OI, class OM, class II, class IM, class D>
     void bind (const C* ptr,
-	       const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr,
+	       const action<OI, OM>& output_action,
+	       const action<II, IM>& input_action,
 	       D& d) {
       bid_t (system::*bind_ptr) (const action<OI, OM>&,
 				 const action<II, IM>&,
@@ -199,47 +181,9 @@ namespace ioa {
 				 D&) = &system::bind;
       schedule_sysq (make_runnable (boost::bind (bind_ptr,
 						 boost::ref (m_system),
-						 make_action (output_automaton, output_member_ptr),
-						 make_action (input_automaton, input_member_ptr),
+						 output_action,
+						 input_action,
 						 get_current_aid (ptr),
-						 boost::ref (*this),
-						 boost::ref (d))));
-    }
-
-    template <class OI, class OM, class OP, class II, class IM, class D>
-    void bind (const OI* ptr,
-	       OM OI::*output_member_ptr,
-	       const parameter_handle<OP>& output_parameter,
-	       const automaton_handle<II>& input_automaton,
-	       IM II::*input_member_ptr,
-	       D& d) {
-      bid_t (system::*bind_ptr) (const action<OI, OM>&,
-				 const action<II, IM>&,
-				 scheduler_interface&,
-				 D&) = &system::bind;
-      schedule_sysq (make_runnable (boost::bind (bind_ptr,
-						 boost::ref (m_system),
-						 make_action (get_current_aid (ptr), output_member_ptr, output_parameter),
-						 make_action (input_automaton, input_member_ptr),
-						 boost::ref (*this),
-						 boost::ref (d))));
-    }
-    
-    template <class OI, class OM, class II, class IM, class IP, class D>
-    void bind (const II* ptr,
-	       const automaton_handle<OI>& output_automaton,
-	       OM OI::*output_member_ptr,
-	       IM II::*input_member_ptr,
-	       const parameter_handle<IP>& input_parameter,
-	       D& d) {
-      bid_t (system::*bind_ptr) (const action<OI, OM>&,
-				 const action<II, IM>&,
-				 scheduler_interface&,
-				 D&) = &system::bind;
-      schedule_sysq (make_runnable (boost::bind (bind_ptr,
-						 boost::ref (m_system),
-						 make_action (output_automaton, output_member_ptr),
-						 make_action (get_current_aid (ptr), input_member_ptr, input_parameter),
 						 boost::ref (*this),
 						 boost::ref (d))));
     }
@@ -256,22 +200,6 @@ namespace ioa {
 						 boost::ref (m_system),
 						 bid,
 						 get_current_aid (ptr),
-						 boost::ref (*this),
-						 boost::ref (d))));
-    }
-
-    template <class C, class P, class D>
-    void rescind (const C* ptr,
-		  const parameter_handle<P>& parameter,
-		  D& d) {
-      bool (system::*rescind_ptr) (const automaton_handle<C>&,
-				   const parameter_handle<P>&,
-				   scheduler_interface&,
-				   D&) = &system::rescind;
-      schedule_sysq (make_runnable (boost::bind (rescind_ptr,
-						 boost::ref (m_system),
-						 get_current_aid (ptr),
-						 parameter,
 						 boost::ref (*this),
 						 boost::ref (d))));
     }

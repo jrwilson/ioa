@@ -9,67 +9,105 @@
 
 namespace ioa {
 
-  template <class OA, class IA>
   class binding_record_interface
   {
   public:
     virtual ~binding_record_interface () { }
-    virtual OA& output_action () = 0;
-    virtual IA& input_action () = 0;
+    virtual action_interface& output_action () = 0;
+    virtual action_interface& input_action () = 0;
     virtual aid_t binder () const = 0;
-    virtual bid_t get_bid () const = 0;
+    virtual bid_t bid () const = 0;
   };
 
-  template <class OA, class IA, class OI, class OM, class II, class IM, class I, class D>
-  class binding_record :
-    public binding_record_interface<OA, IA>
+  class unvalued_binding_record_interface :
+    public binding_record_interface
+  {
+  public:
+    virtual ~unvalued_binding_record_interface () { }
+    virtual bool execute_output () const = 0;
+    virtual void execute_input () const = 0;
+  };
+
+  template <class OI, class OM, class II, class IM, class I, class D>
+  class unvalued_binding_record :
+    public unvalued_binding_record_interface
   {
   private:
     const bid_t m_bid;
-    concrete_action<OI, OM> m_output_action;
-    concrete_action<II, IM> m_input_action;
-    I* m_binder_instance;
+    OI& m_output_ref;
+    action<OI, OM> m_output_action;
+    II& m_input_ref;
+    action<II, IM> m_input_action;
+    I& m_binder_ref;
     const aid_t m_binder_aid;
     scheduler_interface& m_scheduler;
     D& m_d;
-    
 
   public:
-    binding_record (const bid_t bid,
-		    const concrete_action<OI, OM>& output_action,
-		    const concrete_action<II, IM>& input_action,
-		    I* binder_instance,
-		    const aid_t binder_aid,
-		    scheduler_interface& scheduler,
-		    D& d) :
+    unvalued_binding_record (const bid_t bid,
+			     OI& output_ref,
+			     const action<OI, OM>& output_action,
+			     II& input_ref,
+			     const action<II, IM>& input_action,
+			     I& binder_ref,
+			     const aid_t binder_aid,
+			     scheduler_interface& scheduler,
+			     D& d) :
       m_bid (bid),
+      m_output_ref (output_ref),
       m_output_action (output_action),
+      m_input_ref (input_ref),
       m_input_action (input_action),
-      m_binder_instance (binder_instance),
+      m_binder_ref (binder_ref),
       m_binder_aid (binder_aid),
       m_scheduler (scheduler),
       m_d (d)
-    { }
-
-    ~binding_record () {
-      m_scheduler.set_current_aid (m_binder_aid, m_binder_instance);
-      m_binder_instance->unbound (m_d);
+    {
+      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      m_binder_ref.bound (m_bid, m_d);
+      m_scheduler.clear_current_aid ();
+      
+      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      m_output_action.bound (m_output_ref);
       m_scheduler.clear_current_aid ();
 
-      m_scheduler.set_current_aid (m_output_action.automaton.aid (), m_output_action.get_instance ());
-      m_output_action.unbound ();
-      m_scheduler.clear_current_aid ();
-
-      m_scheduler.set_current_aid (m_input_action.automaton.aid (), m_input_action.get_instance ());
-      m_input_action.unbound ();
+      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      m_input_action.bound (m_input_ref);
       m_scheduler.clear_current_aid ();
     }
 
-    OA& output_action () {
+    virtual ~unvalued_binding_record () {
+      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      m_binder_ref.unbound (m_d);
+      m_scheduler.clear_current_aid ();
+      
+      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      m_output_action.unbound (m_output_ref);
+      m_scheduler.clear_current_aid ();
+
+      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      m_input_action.unbound (m_input_ref);
+      m_scheduler.clear_current_aid ();
+    }
+
+    bool execute_output () const {
+      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      bool retval = m_output_action (m_output_ref);
+      m_scheduler.clear_current_aid ();
+      return retval;
+    }
+
+    void execute_input () const {
+      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      m_input_action (m_input_ref);
+      m_scheduler.clear_current_aid ();
+    }
+
+    action_interface& output_action () {
       return m_output_action;
     }
 
-    IA& input_action () {
+    action_interface& input_action () {
       return m_input_action;
     }
 
@@ -77,52 +115,153 @@ namespace ioa {
       return m_binder_aid;
     }
 
-    bid_t get_bid () const {
+    bid_t bid () const {
       return m_bid;
     }
   };
 
-  template <class OA, class IA>
+  template <class T>
+  class valued_binding_record_interface :
+    public binding_record_interface
+  {
+  public:
+    virtual ~valued_binding_record_interface () { }
+    virtual const std::pair<bool, T> execute_output () const = 0;
+    virtual void execute_input (const T&) const = 0;
+  };
+
+  template <class OI, class OM, class II, class IM, class I, class D>
+  class valued_binding_record :
+    public valued_binding_record_interface<typename OM::value_type>
+  {
+  private:
+    typedef typename OM::value_type T;
+
+    const bid_t m_bid;
+    OI& m_output_ref;
+    action<OI, OM> m_output_action;
+    II& m_input_ref;
+    action<II, IM> m_input_action;
+    I& m_binder_ref;
+    const aid_t m_binder_aid;
+    scheduler_interface& m_scheduler;
+    D& m_d;
+
+  public:
+    valued_binding_record (const bid_t bid,
+			   OI& output_ref,
+			   const action<OI, OM>& output_action,
+			   II& input_ref,
+			   const action<II, IM>& input_action,
+			   I& binder_ref,
+			   const aid_t binder_aid,
+			   scheduler_interface& scheduler,
+			   D& d) :
+      m_bid (bid),
+      m_output_ref (output_ref),
+      m_output_action (output_action),
+      m_input_ref (input_ref),
+      m_input_action (input_action),
+      m_binder_ref (binder_ref),
+      m_binder_aid (binder_aid),
+      m_scheduler (scheduler),
+      m_d (d)
+    {
+      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      m_binder_ref.bound (m_bid, m_d);
+      m_scheduler.clear_current_aid ();
+      
+      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      m_output_action.bound (m_output_ref);
+      m_scheduler.clear_current_aid ();
+
+      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      m_input_action.bound (m_input_ref);
+      m_scheduler.clear_current_aid ();
+    }
+
+    virtual ~valued_binding_record () {
+      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      m_binder_ref.unbound (m_d);
+      m_scheduler.clear_current_aid ();
+      
+      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      m_output_action.unbound (m_output_ref);
+      m_scheduler.clear_current_aid ();
+
+      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      m_input_action.unbound (m_input_ref);
+      m_scheduler.clear_current_aid ();
+    }
+
+    const std::pair<bool, T> execute_output () const {
+      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      std::pair<bool, T> retval = m_output_action (m_output_ref);
+      m_scheduler.clear_current_aid ();
+      return retval;
+    }
+    
+    void execute_input (const T& t) const {
+      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      m_input_action (m_input_ref, t);
+      m_scheduler.clear_current_aid ();
+    }
+
+    action_interface& output_action () {
+      return m_output_action;
+    }
+
+    action_interface& input_action () {
+      return m_input_action;
+    }
+
+    aid_t binder () const {
+      return m_binder_aid;
+    }
+
+    bid_t bid () const {
+      return m_bid;
+    }
+  };
+
   class binding_equal
   {
   private:
-    const output_action_interface& m_output;
-    const input_action_interface& m_input;
+    const action_interface& m_output;
+    const action_interface& m_input;
     const aid_t m_binder;
     
   public:
-    binding_equal (const output_action_interface& o,
-		   const input_action_interface& i,
-		   const aid_t binder) :
+    binding_equal (const action_interface& o,
+  		   const action_interface& i,
+  		   const aid_t binder) :
       m_output (o),
       m_input (i),
       m_binder (binder)
     { }
     
-    bool operator() (binding_record_interface<OA, IA>* const& x) const {
+    bool operator() (binding_record_interface* const& x) const {
       return m_output == x->output_action () &&
-	m_input == x->input_action ()
-	&& m_binder == x->binder ();
+  	m_input == x->input_action ()
+  	&& m_binder == x->binder ();
     }
   };
   
-  template <class OA, class IA>
   class input_equal
   {
   private:
-    const input_action_interface& m_input;
+    const action_interface& m_input;
     
   public:
-    input_equal (const input_action_interface& i) :
+    input_equal (const action_interface& i) :
       m_input (i)
     { }
     
-    bool operator() (binding_record_interface<OA, IA>* const& x) const {
+    bool operator() (binding_record_interface* const& x) const {
       return m_input == x->input_action ();
     }
   };
   
-  template <class OA, class IA>
   class input_automaton_equal
   {
   private:
@@ -133,12 +272,11 @@ namespace ioa {
       m_automaton (automaton)
     { }
     
-    bool operator() (binding_record_interface<OA, IA>* const& x) const {
+    bool operator() (binding_record_interface* const& x) const {
       return m_automaton == x->input_action ().get_aid ();
     }
   };
   
-  template <class OA, class IA>
   class aid_bid_equal
   {
   private:
@@ -147,13 +285,13 @@ namespace ioa {
 
   public:
     aid_bid_equal (const aid_t aid,
-		   const bid_t bid) :
+  		   const bid_t bid) :
       m_aid (aid),
       m_bid (bid)
     { }
 
-    bool operator() (binding_record_interface<OA, IA>* const& x) const {
-      return m_aid == x->binder () && m_bid == x->get_bid ();
+    bool operator() (binding_record_interface* const& x) const {
+      return m_aid == x->binder () && m_bid == x->bid ();
     }
   };
 
@@ -161,58 +299,56 @@ namespace ioa {
   {
   public:
     virtual ~binding_interface () { }
-    virtual bool involves_output (const output_action_interface& output) const = 0;
-    virtual bool involves_binding (const output_action_interface& output,
-				   const input_action_interface& input,
-				   const aid_t binder) const = 0;
-    virtual bool involves_input (const input_action_interface& input) const = 0;
+    virtual bool involves_output (const action_interface& output) const = 0;
+    virtual bool involves_binding (const action_interface& output,
+  				   const action_interface& input,
+  				   const aid_t binder) const = 0;
+    virtual bool involves_input (const action_interface& input) const = 0;
     virtual bool involves_input_automaton (const aid_t automaton) const = 0;
     virtual bool involves_aid_bid (const aid_t binder,
-				   const bid_t bid) const = 0;
+  				   const bid_t bid) const = 0;
     virtual bool empty () const = 0;
-    virtual void execute (scheduler_interface& scheduler, system_interface& system) = 0;
+    virtual void execute (system_interface& system) = 0;
     virtual void unbind (const aid_t binder,
-			 const bid_t bid) = 0;
-    virtual void unbind_parameter (const aid_t automaton,
-				   const pid_t parameter) = 0;
+  			 const bid_t bid) = 0;
     virtual void unbind_automaton (const aid_t automaton) = 0;
   };
   
 
-  template <class OA, class IA>
-  struct action_compare
+  struct binding_record_compare
   {
-    bool operator() (binding_record_interface<OA, IA>* const& x,
-  		     binding_record_interface<OA, IA>* const& y) const {
+    // We order the automata by aid so the locking is in order.
+    bool operator() (binding_record_interface* const& x,
+  		     binding_record_interface* const& y) const {
       return x->input_action ().get_aid () < y->input_action ().get_aid ();
     }
   };
 
-  template <class OA, class IA>
+  template <class B>
   class generic_binding_impl :
     public binding_interface
   {
   protected:
-    typedef std::set<binding_record_interface<OA, IA>*, action_compare<OA, IA> > set_type;
+    typedef std::set<B*, binding_record_compare> set_type;
     set_type m_inputs;
     
   public:
     ~generic_binding_impl () {
       for (typename set_type::iterator pos = m_inputs.begin ();
-	   pos != m_inputs.end ();
-	   ++pos) {
+  	   pos != m_inputs.end ();
+  	   ++pos) {
   	delete (*pos);
       }
     }
 
   protected:
-    OA& get_output () const {
+    action_interface& get_output () const {
       BOOST_ASSERT (!m_inputs.empty ());
       return (*m_inputs.begin ())->output_action ();
     }
 
   public:
-    bool involves_output (const output_action_interface& output) const {
+    bool involves_output (const action_interface& output) const {
       if (!m_inputs.empty ()) {
     	return get_output () == output;
       }
@@ -221,18 +357,18 @@ namespace ioa {
       }
     }
     
-    bool involves_binding (const output_action_interface& output,
-			   const input_action_interface& input,
-			   const aid_t binder) const {
+    bool involves_binding (const action_interface& output,
+  			   const action_interface& input,
+  			   const aid_t binder) const {
       return std::find_if (m_inputs.begin (),
-			   m_inputs.end (),
-			   binding_equal<OA, IA> (output, input, binder)) != m_inputs.end ();
+  			   m_inputs.end (),
+  			   binding_equal (output, input, binder)) != m_inputs.end ();
     }
     
-    bool involves_input (const input_action_interface& input) const {
+    bool involves_input (const action_interface& input) const {
       return std::find_if (m_inputs.begin (),
-			   m_inputs.end (),
-			   input_equal<OA, IA> (input)) != m_inputs.end ();
+  			   m_inputs.end (),
+  			   input_equal (input)) != m_inputs.end ();
     }
     
     bool
@@ -240,49 +376,28 @@ namespace ioa {
     {
       return std::find_if (m_inputs.begin (),
   			   m_inputs.end (),
-  			   input_automaton_equal<OA, IA> (automaton)) != m_inputs.end ();
+  			   input_automaton_equal (automaton)) != m_inputs.end ();
     }
     
     bool
     involves_aid_bid (const aid_t binder,
-		      const bid_t bid) const
+  		      const bid_t bid) const
     {
       return std::find_if (m_inputs.begin (),
-			   m_inputs.end (),
-			   aid_bid_equal<OA, IA> (binder, bid)) != m_inputs.end ();
-    }
-
-    template <class OI, class OM, class II, class IM, class I, class D>
-    void bind (const bid_t bid,
-	       const concrete_action<OI, OM>& output_action,
-	       const concrete_action<II, IM>& input_action,
-	       I* binder_instance,
-	       const aid_t binder_aid,
-	       scheduler_interface& scheduler,
-	       D& d) {
-      // Can't bind to self.
-      BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
-      // Can't already involve input.
-      BOOST_ASSERT (!involves_input_automaton (input_action.automaton.aid ()));
-      // Sanity check.
-      if (!m_inputs.empty ()) {
-	BOOST_ASSERT (output_action == get_output ());
-      }
-
-      binding_record_interface<OA, IA>* record = new binding_record<OA, IA, OI, OM, II, IM, I, D> (bid, output_action, input_action, binder_instance, binder_aid, scheduler, d);
-      m_inputs.insert (record);
+  			   m_inputs.end (),
+  			   aid_bid_equal (binder, bid)) != m_inputs.end ();
     }
 
     void unbind (const aid_t binder,
-		 const bid_t bid) {
+  		 const bid_t bid) {
       BOOST_ASSERT (!m_inputs.empty ());
       typename set_type::iterator pos = std::find_if (m_inputs.begin (),
 						      m_inputs.end (),
-						      aid_bid_equal<OA, IA> (binder, bid));
+						      aid_bid_equal (binder, bid));
       if (pos != m_inputs.end ()) {
-	binding_record_interface<OA, IA>* ptr = *pos;
-	m_inputs.erase (pos);
-	delete ptr;
+  	binding_record_interface* ptr = *pos;
+  	m_inputs.erase (pos);
+  	delete ptr;
       }
     }
 
@@ -290,139 +405,157 @@ namespace ioa {
       return m_inputs.empty ();
     }
 
-    void execute (scheduler_interface& scheduler,
-		  system_interface& system) {
+    void execute (system_interface& system) {
       bool output_processed;
 
       // Lock in order.
       output_processed = false;
       for (typename set_type::iterator pos = m_inputs.begin ();
-	   pos != m_inputs.end ();
-	   ++pos) {
-	if (!output_processed &&
-	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
-	  system.lock_automaton ((*pos)->output_action ().get_aid ());
-	  output_processed = true;
-	}
-	system.lock_automaton ((*pos)->input_action ().get_aid ());
+  	   pos != m_inputs.end ();
+  	   ++pos) {
+  	if (!output_processed &&
+  	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
+  	  system.lock_automaton ((*pos)->output_action ().get_aid ());
+  	  output_processed = true;
+  	}
+  	system.lock_automaton ((*pos)->input_action ().get_aid ());
       }
 
       // Execute.
-      execute_dispatch (scheduler);
+      execute_dispatch ();
 
       // Unlock.
       output_processed = false;
       for (typename set_type::iterator pos = m_inputs.begin ();
-	   pos != m_inputs.end ();
-	   ++pos) {
-	if (!output_processed &&
-	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
-	  system.unlock_automaton ((*pos)->output_action ().get_aid ());
-	  output_processed = true;
-	}
-	system.unlock_automaton ((*pos)->input_action ().get_aid ());
+  	   pos != m_inputs.end ();
+  	   ++pos) {
+  	if (!output_processed &&
+  	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
+  	  system.unlock_automaton ((*pos)->output_action ().get_aid ());
+  	  output_processed = true;
+  	}
+  	system.unlock_automaton ((*pos)->input_action ().get_aid ());
       }
 
     }
 
-    void unbind_parameter (const aid_t automaton,
-			   const pid_t parameter) {
-      if (get_output ().get_aid () == automaton &&
-	  get_output ().get_pid () == parameter) {
-	// Unbind all.
-	for (typename set_type::iterator pos = m_inputs.begin ();
-	     pos != m_inputs.end ();
-	     ++pos) {
-	  delete (*pos);
-	}
-	m_inputs.clear ();
-      }
-      else {
-	// Try the inputs.
-	for (typename set_type::iterator pos = m_inputs.begin ();
-	     pos != m_inputs.end ();
-	     ++pos) {
-	  if ((*pos)->input_action ().get_aid () == automaton &&
-	      (*pos)->input_action ().get_pid () == parameter) {
-	    delete (*pos);
-	    m_inputs.erase (pos);
-	    break;
-	  }
-	}
-      }
-    }
-    
     void unbind_automaton (const aid_t automaton) {
       if (get_output ().get_aid () == automaton) {
-	// Unbind all.
-	for (typename set_type::iterator pos = m_inputs.begin ();
-	     pos != m_inputs.end ();
-	     ++pos) {
-	  delete (*pos);
-	}
-	m_inputs.clear ();
+  	// Unbind all.
+  	for (typename set_type::iterator pos = m_inputs.begin ();
+  	     pos != m_inputs.end ();
+  	     ++pos) {
+  	  delete (*pos);
+  	}
+  	m_inputs.clear ();
       }
       else {
-	// Try the inputs.
-	for (typename set_type::iterator pos = m_inputs.begin ();
-	     pos != m_inputs.end ();
-	     ++pos) {
-	  if ((*pos)->input_action ().get_aid () == automaton ||
-	      (*pos)->binder () == automaton) {
-	    delete (*pos);
-	    m_inputs.erase (pos);
-	    break;
-	  }
-	}
+  	// Try the inputs.
+  	for (typename set_type::iterator pos = m_inputs.begin ();
+  	     pos != m_inputs.end ();
+  	     ++pos) {
+  	  if ((*pos)->input_action ().get_aid () == automaton ||
+  	      (*pos)->binder () == automaton) {
+  	    delete (*pos);
+  	    m_inputs.erase (pos);
+  	    break;
+  	  }
+  	}
       }
     }
 
   protected:
-    virtual void execute_dispatch (scheduler_interface&) = 0;
+    virtual void execute_dispatch () = 0;
   };
   
   template <class VS, class VT> class binding_impl;
 
   template <>
   class binding_impl<unvalued, null_type> :
-    public generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface>
+    public generic_binding_impl<unvalued_binding_record_interface>
   {
-  protected:
-    typedef generic_binding_impl<unvalued_output_action_interface, unvalued_input_action_interface>::set_type set_type;
+  public:
 
-    void execute_dispatch (scheduler_interface& scheduler) {
-      scheduler.set_current_aid (get_output ().get_aid (), get_output ().get_instance ());
-      if ((get_output ()) ()) {
-	for (set_type::iterator pos = m_inputs.begin ();
-	     pos != m_inputs.end ();
-	     ++pos) {
-	  scheduler.set_current_aid ((*pos)->input_action ().get_aid (), (*pos)->input_action ().get_instance ());
-	  ((*pos)->input_action ()) ();
-	}
+    template <class OI, class OM, class II, class IM, class I, class D>
+    void bind (const bid_t bid,
+	       OI& output_ref,
+  	       const action<OI, OM>& output_action,
+	       II& input_ref,
+  	       const action<II, IM>& input_action,
+  	       I& binder_ref,
+  	       const aid_t binder_aid,
+  	       scheduler_interface& scheduler,
+  	       D& d) {
+      // Can't bind to self.
+      BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
+      // Can't already involve input.
+      BOOST_ASSERT (!involves_input_automaton (input_action.automaton.aid ()));
+      // Sanity check.
+      if (!m_inputs.empty ()) {
+  	BOOST_ASSERT (output_action == get_output ());
       }
-      scheduler.clear_current_aid ();
+      
+      unvalued_binding_record_interface* record = new unvalued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, scheduler, d);
+      m_inputs.insert (record);
+    }
+
+  protected:
+    typedef generic_binding_impl<unvalued_binding_record_interface>::set_type set_type;
+
+    void execute_dispatch () {
+      set_type::iterator out_pos = m_inputs.begin ();
+      if ((*out_pos)->execute_output ()) {
+  	for (set_type::iterator pos = m_inputs.begin ();
+  	     pos != m_inputs.end ();
+  	     ++pos) {
+  	  (*pos)->execute_input ();
+  	}
+      }
     }
   };
 
   template <class T>
   class binding_impl<valued, T> :
-    public generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >
+    public generic_binding_impl<valued_binding_record_interface<T> >
   {
-  protected:
-    typedef typename generic_binding_impl<valued_output_action_interface<T>, valued_input_action_interface<T> >::set_type set_type;
+  public:
 
-    void execute_dispatch (scheduler_interface& scheduler) {
-      scheduler.set_current_aid (this->get_output ().get_aid (), this->get_output ().get_instance ());
-      const std::pair<bool, T> p = (this->get_output ()) ();
-      if (p.first) {
-	for (typename set_type::iterator pos = this->m_inputs.begin ();
-	     pos != this->m_inputs.end ();
-	     ++pos) {
-	  scheduler.set_current_aid ((*pos)->input_action ().get_aid (), (*pos)->input_action ().get_instance ());
-	  ((*pos)->input_action ()) (p.second);
-	}
+    template <class OI, class OM, class II, class IM, class I, class D>
+    void bind (const bid_t bid,
+	       OI& output_ref,
+  	       const action<OI, OM>& output_action,
+	       II& input_ref,
+  	       const action<II, IM>& input_action,
+  	       I& binder_ref,
+  	       const aid_t binder_aid,
+  	       scheduler_interface& scheduler,
+  	       D& d) {
+      // Can't bind to self.
+      BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
+      // Can't already involve input.
+      BOOST_ASSERT (!involves_input_automaton (input_action.automaton.aid ()));
+      // Sanity check.
+      if (!this->m_inputs.empty ()) {
+  	BOOST_ASSERT (output_action == this->get_output ());
       }
-      scheduler.clear_current_aid ();
+      
+      valued_binding_record_interface<T>* record = new valued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, scheduler, d);
+      this->m_inputs.insert (record);
+    }
+
+  protected:
+    typedef typename generic_binding_impl<valued_binding_record_interface<T> >::set_type set_type;
+
+    void execute_dispatch () {
+      typename set_type::iterator out_pos = this->m_inputs.begin ();
+      const std::pair<bool, T> r = (*out_pos)->execute_output ();
+      if (r.first) {
+  	for (typename set_type::iterator pos = this->m_inputs.begin ();
+  	     pos != this->m_inputs.end ();
+  	     ++pos) {
+  	  (*pos)->execute_input (r.second);
+  	}
+      }
     }
 
   };
