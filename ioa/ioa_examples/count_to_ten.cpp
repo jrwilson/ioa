@@ -9,19 +9,18 @@ class count_to_ten :
 private:
   int m_count;
 
-  void increment_ () {
+  UP_INTERNAL (count_to_ten, increment) {
     ++m_count;
     std::cout << m_count << std::endl;
     if (m_count < 10) {
       ioa::scheduler.schedule (this, &count_to_ten::increment);
     }
   }
-  ioa::internal_wrapper<count_to_ten, &count_to_ten::increment_> increment;
 
 public:
   count_to_ten ()
     : m_count (0),
-      increment (*this)
+      ACTION (count_to_ten, increment)
   { }
 
   void init () {

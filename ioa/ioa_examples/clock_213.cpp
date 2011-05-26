@@ -8,18 +8,15 @@ class trigger :
 {
 private:
 
-  bool request_ () {
+  UV_UP_OUTPUT (trigger, request) {
     //std::cout << "trigger request" << std::endl;
     ioa::scheduler.schedule (this, &trigger::request);
     return true;
   }
 
 public:
-  typedef ioa::void_output_wrapper<trigger, &trigger::request_> request_t;
-  request_t request;
-
   trigger () :
-    request (*this)
+    ACTION (trigger, request)
   { }
 
   void init () {
@@ -34,24 +31,19 @@ private:
   int m_counter;
   int m_flag;
 
-  void request_ () {
+  UV_UP_INPUT (ioa_clock, request) {
     //std::cout << "ioa_clock request" << std::endl;
     m_flag = true;
     ioa::scheduler.schedule (this, &ioa_clock::clock);
   }
-public:
-  typedef ioa::void_input_wrapper<ioa_clock, &ioa_clock::request_> request_t;
-  request_t request;
 
-private:
-  void tick_ () {
+  UP_INTERNAL (ioa_clock, tick) {
     //std::cout << "ioa_clock tick" << std::endl;
     m_counter = m_counter + 1;
     ioa::scheduler.schedule (this, &ioa_clock::tick);
   }
-  ioa::internal_wrapper<ioa_clock, &ioa_clock::tick_> tick;
 
-  std::pair<bool, int> clock_ () {
+  V_UP_OUTPUT (ioa_clock, clock, int) {
     //std::cout << "ioa_clock clock" << std::endl;
     if (m_flag) {
       m_flag = false;
@@ -62,15 +54,13 @@ private:
     }
   }
 public:
-  typedef ioa::output_wrapper<ioa_clock, int, &ioa_clock::clock_> clock_t;
-  clock_t clock;
 
   ioa_clock () :
     m_counter (0),
     m_flag (false),
-    request (*this),
-    tick (*this),
-    clock (*this)
+    ACTION (ioa_clock, request),
+    ACTION (ioa_clock, tick),
+    ACTION (ioa_clock, clock)
   { }
 
   void init () {
@@ -83,19 +73,17 @@ class display :
 {
 private:
 
-  void clock_ (int t) {
+  V_UP_INPUT (display, clock, int, t) {
     std::cout << "t = " << t << std::endl;
   }
 public:
-  typedef ioa::input_wrapper<display, int, &display::clock_> clock_t;
-  clock_t clock;
 
   void init () {
     // Do nothing.
   }
 
   display () :
-      clock (*this)
+    ACTION (display, clock)
   { }
 };
 
@@ -109,9 +97,9 @@ private:
   ioa_clock_helper m_ioa_clock;
   typedef ioa::automaton_helper<composer, ioa::instance_generator<display> > display_helper;
   display_helper m_display;
-  typedef ioa::bind_helper<composer, trigger_helper, trigger::request_t, ioa_clock_helper, ioa_clock::request_t> bind1_helper;
+  typedef ioa::bind_helper<composer, trigger_helper, trigger::request_type, ioa_clock_helper, ioa_clock::request_type> bind1_helper;
   bind1_helper m_bind1;
-  typedef ioa::bind_helper<composer, ioa_clock_helper, ioa_clock::clock_t, display_helper, display::clock_t> bind2_helper;
+  typedef ioa::bind_helper<composer, ioa_clock_helper, ioa_clock::clock_type, display_helper, display::clock_type> bind2_helper;
   bind2_helper m_bind2;
 
 public:

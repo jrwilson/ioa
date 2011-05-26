@@ -2,131 +2,235 @@
 #include <iostream>
 
 #include <ioa.hpp>
+#include <queue>
+#include <uuid/uuid.h>
 
-// class trigger :
-//   public ioa::dispatching_automaton
-// {
-// private:
+#include <boost/type_traits.hpp>
 
-//   bool request_ () {
-//     //std::cout << "trigger request" << std::endl;
-//     ioa::scheduler.schedule (this, &trigger::request);
-//     return true;
-//   }
+struct uuid {
+  uuid_t u;
 
-// public:
-//   typedef ioa::void_output_wrapper<trigger, &trigger::request_> request_t;
-//   request_t request;
+  uuid () {
+    uuid_generate (u);
+  }
 
-//   trigger () :
-//     request (*this)
-//   { }
+  uuid (const uuid& x) {
+    uuid_copy (u, x.u);
+  }
 
-//   void init () {
-//     ioa::scheduler.schedule (this, &trigger::request);
-//   }
-// };
+  uuid& operator= (const uuid& x) {
+    if (this != &x) {
+      uuid_copy (u, x.u);
+    }
+    return *this;
+  }
 
-// class ioa_clock :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   int m_counter;
-//   int m_flag;
+  bool operator> (const uuid& x) const {
+    return uuid_compare (u, x.u) > 0;
+  }
 
-//   void request_ () {
-//     //std::cout << "ioa_clock request" << std::endl;
-//     m_flag = true;
-//     ioa::scheduler.schedule (this, &ioa_clock::clock);
-//   }
-// public:
-//   typedef ioa::void_input_wrapper<ioa_clock, &ioa_clock::request_> request_t;
-//   request_t request;
+  bool operator== (const uuid& x) const {
+    return uuid_compare == 0;
+  }
+};
 
-// private:
-//   void tick_ () {
-//     //std::cout << "ioa_clock tick" << std::endl;
-//     m_counter = m_counter + 1;
-//     ioa::scheduler.schedule (this, &ioa_clock::tick);
-//   }
-//   ioa::internal_wrapper<ioa_clock, &ioa_clock::tick_> tick;
+/*
+  Channel I/O Automaton
+  Distributed Algorithms, p. 204.
+*/
 
-//   std::pair<bool, int> clock_ () {
-//     //std::cout << "ioa_clock clock" << std::endl;
-//     if (m_flag) {
-//       m_flag = false;
-//       return std::make_pair (true, m_counter);
-//     }
-//     else {
-//       return std::make_pair (false, 0);
-//     }
-//   }
-// public:
-//   typedef ioa::output_wrapper<ioa_clock, int, &ioa_clock::clock_> clock_t;
-//   clock_t clock;
+template <class T>
+class channel_automaton :
+  public ioa::dispatching_automaton
+{
+private:
+  std::queue<T> m_queue;
 
-//   ioa_clock () :
-//     m_counter (0),
-//     m_flag (false),
-//     request (*this),
-//     tick (*this),
-//     clock (*this)
-//   { }
+  V_UP_INPUT (channel_automaton, send, T, t) {
+    m_queue.push (t);
+    schedule ();
+  }
+  
+  bool receive_precondition () const {
+    return !m_queue.empty ();
+  }
 
-//   void init () {
-//     ioa::scheduler.schedule (this, &ioa_clock::tick);
-//   }
-// };
+  V_UP_OUTPUT (channel_automaton, receive, T) {
+    std::pair<bool, T> retval;
 
-// class display :
-//   public ioa::dispatching_automaton
-// {
-// private:
+    if (receive_precondition ()) {
+      retval = std::make_pair (true, m_queue.front ());
+      m_queue.pop ();
+    }
 
-//   void clock_ (int t) {
-//     std::cout << "t = " << t << std::endl;
-//   }
-// public:
-//   typedef ioa::input_wrapper<display, int, &display::clock_> clock_t;
-//   clock_t clock;
+    schedule ();
+    return retval;
+  }
 
-//   void init () {
-//     // Do nothing.
-//   }
 
-//   display () :
-//       clock (*this)
-//   { }
-// };
+  void schedule () {
+    if (receive_precondition ()) {
+      ioa::scheduler.schedule (this, &channel_automaton::receive);
+    }
+  }
 
-// class composer :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   typedef ioa::automaton_helper<composer, ioa::instance_generator<trigger> > trigger_helper;
-//   trigger_helper* m_trigger;
-//   typedef ioa::automaton_helper<composer, ioa::instance_generator<ioa_clock> > ioa_clock_helper;
-//   ioa_clock_helper* m_ioa_clock;
-//   typedef ioa::automaton_helper<composer, ioa::instance_generator<display> > display_helper;
-//   display_helper* m_display;
-//   typedef ioa::bind_helper<composer, trigger_helper, trigger::request_t, ioa_clock_helper, ioa_clock::request_t> bind1_helper;
-//   bind1_helper* m_bind1;
-//   typedef ioa::bind_helper<composer, ioa_clock_helper, ioa_clock::clock_t, display_helper, display::clock_t> bind2_helper;
-//   bind2_helper* m_bind2;
+public:
 
-// public:
-//   void init () {
-//     m_trigger = new trigger_helper (this, trigger_helper::generator ());
-//     m_ioa_clock = new ioa_clock_helper (this, ioa_clock_helper::generator ());
-//     m_display = new display_helper (this, display_helper::generator ());
-//     m_bind1 = new bind1_helper (this, m_trigger, &trigger::request, m_ioa_clock, &ioa_clock::request);
-//     m_bind2 = new bind2_helper (this, m_ioa_clock, &ioa_clock::clock, m_display, &display::clock);
-//   }
+  channel_automaton () :
+    ACTION (channel_automaton, send),
+    ACTION (channel_automaton, receive)
+  { }
+  
+  void init () { }
+};
 
-// };
+/*
+  AsyncLCR Automaton
+  Distributed Algorithms, p. 204.
+*/
+
+class asynch_lcr_automaton :
+  public ioa::dispatching_automaton
+{
+private:
+  typedef enum {
+    UNKNOWN,
+    CHOSEN,
+    REPORTED
+  } status_t;
+
+  uuid m_u;
+  std::queue<uuid> m_send;
+  status_t m_status;
+
+  V_UP_INPUT (asynch_lcr_automaton, receive, uuid, v) {
+    std::cout << __func__ << std::endl;
+    
+    if (v > m_u) {
+      m_send.push (v);
+    }
+    else if (v == m_u) {
+      m_status = CHOSEN;
+    }
+    else {
+      // Do nothing.
+    }
+    
+    schedule ();
+  }
+
+  bool send_precondition () const {
+    return !m_send.empty ();
+  }
+
+  V_UP_OUTPUT (asynch_lcr_automaton, send, uuid) {
+    std::cout << __func__ << std::endl;
+
+    std::pair<bool, uuid> retval;
+
+    if (send_precondition ()) {
+      retval = std::make_pair (true, m_send.front ());
+      m_send.pop ();
+    }
+
+    schedule ();
+    return retval;
+  }
+
+  bool leader_precondition () const {
+    return m_status == CHOSEN;
+  }
+
+  UV_UP_OUTPUT (asynch_lcr_automaton, leader) {
+    std::cout << __func__ << std::endl;
+
+    bool retval;
+
+    if (leader_precondition ()) {
+      retval = true;
+      m_status = REPORTED;
+    }
+
+    schedule ();
+    return retval;
+  }
+
+  void schedule () {
+    if (send_precondition ()) {
+      ioa::scheduler.schedule (this, &asynch_lcr_automaton::send);
+    }
+
+    if (leader_precondition ()) {
+      ioa::scheduler.schedule (this, &asynch_lcr_automaton::leader);
+    }
+  }
+
+public:
+
+  asynch_lcr_automaton () :
+    m_status (UNKNOWN),
+    ACTION (asynch_lcr_automaton, receive),
+    ACTION (asynch_lcr_automaton, send),
+    ACTION (asynch_lcr_automaton, leader)
+  {
+    m_send.push (m_u);
+  }
+
+  void init () {
+    schedule ();
+  }
+
+};
+
+class composer :
+  public ioa::dispatching_automaton
+{
+private:
+  typedef ioa::automaton_helper<composer, ioa::instance_generator<asynch_lcr_automaton> > asynch_lcr_automaton_helper;
+  typedef ioa::automaton_helper<composer, ioa::instance_generator<channel_automaton<uuid> > > channel_automaton_helper;
+
+  asynch_lcr_automaton_helper p1;
+  asynch_lcr_automaton_helper p2;
+  channel_automaton_helper c1;
+  channel_automaton_helper c2;
+  
+  typedef ioa::bind_helper<composer, asynch_lcr_automaton_helper, asynch_lcr_automaton::send_type, channel_automaton_helper, channel_automaton<uuid>::send_type> send_bind_helper;
+  typedef ioa::bind_helper<composer, channel_automaton_helper, channel_automaton<uuid>::receive_type, asynch_lcr_automaton_helper, asynch_lcr_automaton::receive_type> receive_bind_helper;
+
+  send_bind_helper p1_send;
+  receive_bind_helper p1_receive;
+  send_bind_helper p2_send;
+  receive_bind_helper p2_receive;
+
+public:
+
+  composer () :
+    p1 (this, ioa::instance_generator<asynch_lcr_automaton>()),
+    p2 (this, ioa::instance_generator<asynch_lcr_automaton>()),
+    c1 (this, ioa::instance_generator<channel_automaton<uuid> >()),
+    c2 (this, ioa::instance_generator<channel_automaton<uuid> >()),
+    p1_send (this, &p1, &asynch_lcr_automaton::send, &c1, &channel_automaton<uuid>::send),
+    p1_receive (this, &c2, &channel_automaton<uuid>::receive, &p1, &asynch_lcr_automaton::receive),
+    p2_send (this, &p2, &asynch_lcr_automaton::send, &c2, &channel_automaton<uuid>::send),
+    p2_receive (this, &c1, &channel_automaton<uuid>::receive, &p2, &asynch_lcr_automaton::receive)
+  {  }
+
+  void init () {
+    p1.create ();
+    p2.create ();
+    c1.create ();
+    c2.create ();
+
+    p1_send.bind ();
+    p1_receive.bind ();
+    p2_send.bind ();
+    p2_receive.bind ();
+  }
+
+};
 
 int
 main () {
-  // ioa::scheduler.run (ioa::instance_generator<composer> ());
+  ioa::scheduler.run (ioa::instance_generator<composer> ());
   return 0; 
 }

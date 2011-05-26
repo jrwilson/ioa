@@ -58,47 +58,44 @@ namespace ioa {
   class action_runnable_interface :
     public runnable_interface
   {
-  private:
-    const aid_t m_aid;
-    const void* m_ptr;
-
   public:
-    action_runnable_interface (const aid_t aid,
-			       const void* ptr) :
-      m_aid (aid),
-      m_ptr (ptr)
-    { }
+    virtual ~action_runnable_interface () { }
+
+    virtual const action_interface& get_action () const = 0;
 
     bool operator== (const action_runnable_interface& x) const {
-      return m_aid == x.m_aid && m_ptr == x.m_ptr;
+      return get_action () == x.get_action ();
     }
   };
 
-  template <class T>
+  template <class T, class I, class M>
   class action_runnable :
     public action_runnable_interface
   {
   private:
     T m_t;
+    action<I, M> m_action;
     
   public:
     action_runnable (const T& t,
-		     const aid_t aid,
-		     const void* ptr) :
-      action_runnable_interface (aid, ptr),
-      m_t (t)
+		     const action<I, M>& action) :
+      m_t (t),
+      m_action (action)
     { }
     
     void operator() () {
       m_t ();
     }
+
+    const action_interface& get_action () const {
+      return m_action;
+    }
   };
 
   template <class T, class I, class M>
-  action_runnable<T>* make_action_runnable (const T& t,
-					    const action<I, M>& ac) {
-    I* instance = 0;
-    return new action_runnable<T> (t, ac.automaton.aid (), &((*instance).*(ac.member_ptr)));
+  action_runnable<T, I, M>* make_action_runnable (const T& t,
+						  const action<I, M>& ac) {
+    return new action_runnable<T, I, M> (t, ac);
   }
 
 }

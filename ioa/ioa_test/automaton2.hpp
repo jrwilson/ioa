@@ -7,24 +7,39 @@ class automaton2 :
   public ioa::automaton_interface
 {
 private:
-  bool output_ () {
-    return false;
-  }
+  float m_pole;
+  int m_vole;
 
-  void input_ () {
-  }
+  UV_UP_INPUT (automaton2, uv_up_input) { }
+  UV_P_INPUT (automaton2, uv_p_input, float, pole) { m_pole += pole; }
+  V_UP_INPUT (automaton2, v_up_input, int, vole) { m_vole += vole; }
+  V_P_INPUT (automaton2, v_p_input, int, vole, float, pole) { m_vole += vole; m_pole += pole; }
 
+  UV_UP_OUTPUT (automaton2, uv_up_output) { return false; }
+  UV_P_OUTPUT (automaton2, uv_p_output, float, pole) { m_pole += pole; return false; }
+  V_UP_OUTPUT (automaton2, v_up_output, int) { return std::pair<bool, int> (); }
+  V_P_OUTPUT (automaton2, v_p_output, int, float, pole) { m_pole += pole; return std::pair<bool, int> (); }
+
+  UP_INTERNAL (automaton2, up_internal) { }
+  P_INTERNAL (automaton2, p_internal, float, pole) { m_pole += pole; }
+
+  UV_EVENT (automaton2, uv_event) { }
+  V_EVENT (automaton2, v_event, int, vole) { m_vole += vole; }
+  
 public:
-  typedef ioa::void_output_wrapper<automaton2, &automaton2::output_> output_t;
-  output_t output;
-  typedef ioa::void_input_wrapper<automaton2, &automaton2::input_> input_t;
-  input_t input;
-  ioa::void_input_wrapper<automaton2, &automaton2::input_> input2;
-
   automaton2 () :
-    output (*this),
-    input (*this),
-    input2 (*this)
+    ACTION (automaton2, uv_up_input),
+    ACTION (automaton2, uv_p_input),
+    ACTION (automaton2, v_up_input),
+    ACTION (automaton2, v_p_input),
+    ACTION (automaton2, uv_up_output),
+    ACTION (automaton2, uv_p_output),
+    ACTION (automaton2, v_up_output),
+    ACTION (automaton2, v_p_output),
+    ACTION (automaton2, up_internal),
+    ACTION (automaton2, p_internal),
+    ACTION (automaton2, uv_event),
+    ACTION (automaton2, v_event)
   { }
 
   void init () { }

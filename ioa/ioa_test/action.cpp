@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(parameterized_unvalued_input_action)
 {
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::p_uv_input_action> action (h, &automaton1::p_uv_input, parameter);
+  ioa::action<automaton1, automaton1::p_uv_input_action> action (h, &automaton1::p_uv_input, parameter, ioa::parameterized ());
   BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
   automaton1* i = 0;
   BOOST_CHECK_EQUAL (&((*i).*(&automaton1::p_uv_input)), action.get_member_ptr ());
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(parameterized_valued_input_action)
 {
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::p_v_input_action> action (h, &automaton1::p_v_input, parameter);
+  ioa::action<automaton1, automaton1::p_v_input_action> action (h, &automaton1::p_v_input, parameter, ioa::parameterized ());
   BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
   automaton1* i = 0;
   BOOST_CHECK_EQUAL (&((*i).*(&automaton1::p_v_input)), action.get_member_ptr ());
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(parameterized_unvalued_output_action)
 {
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::p_uv_output_action> action (h, &automaton1::p_uv_output, parameter);
+  ioa::action<automaton1, automaton1::p_uv_output_action> action (h, &automaton1::p_uv_output, parameter, ioa::parameterized ());
   BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
   automaton1* i = 0;
   BOOST_CHECK_EQUAL (&((*i).*(&automaton1::p_uv_output)), action.get_member_ptr ());
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(parameterized_valued_output_action)
 {
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::p_v_output_action> action (h, &automaton1::p_v_output, parameter);
+  ioa::action<automaton1, automaton1::p_v_output_action> action (h, &automaton1::p_v_output, parameter, ioa::parameterized ());
   BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
   automaton1* i = 0;
   BOOST_CHECK_EQUAL (&((*i).*(&automaton1::p_v_output)), action.get_member_ptr ());
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(parameterized_internal_action)
 {
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::p_internal_action> action (h, &automaton1::p_internal, parameter);
+  ioa::action<automaton1, automaton1::p_internal_action> action (h, &automaton1::p_internal, parameter, ioa::parameterized ());
   BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
   automaton1* i = 0;
   BOOST_CHECK_EQUAL (&((*i).*(&automaton1::p_internal)), action.get_member_ptr ());
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(unvalued_event_action)
 BOOST_AUTO_TEST_CASE(valued_event_action)
 {
   ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::v_event_action> action (h, &automaton1::v_event, 9845);
+  ioa::action<automaton1, automaton1::v_event_action> action (h, &automaton1::v_event, 9845, ioa::unparameterized ());
   BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
   automaton1* i = 0;
   BOOST_CHECK_EQUAL (&((*i).*(&automaton1::v_event)), action.get_member_ptr ());

@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_unvalued_output_action)
 
   ioa::action<automaton1, automaton1::up_uv_output_action> output (output_handle, &automaton1::up_uv_output);
   ioa::action<automaton1, automaton1::up_uv_input_action> input1 (input1_handle, &automaton1::up_uv_input);
-  ioa::action<automaton1, automaton1::p_uv_input_action> input2 (input2_handle, &automaton1::p_uv_input, input_parameter);
+  ioa::action<automaton1, automaton1::p_uv_input_action> input2 (input2_handle, &automaton1::p_uv_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::up_uv_output_action> binding;
   empty_class d;
@@ -117,9 +117,9 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_unvalued_output_action)
   int output_parameter = 123;
   int input_parameter = 456;
 
-  ioa::action<automaton1, automaton1::p_uv_output_action> output (output_handle, &automaton1::p_uv_output, output_parameter);
+  ioa::action<automaton1, automaton1::p_uv_output_action> output (output_handle, &automaton1::p_uv_output, output_parameter, ioa::parameterized ());
   ioa::action<automaton1, automaton1::up_uv_input_action> input1 (input1_handle, &automaton1::up_uv_input);
-  ioa::action<automaton1, automaton1::p_uv_input_action> input2 (input2_handle, &automaton1::p_uv_input, input_parameter);
+  ioa::action<automaton1, automaton1::p_uv_input_action> input2 (input2_handle, &automaton1::p_uv_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::p_uv_output_action> binding;
   empty_class d;
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(unbind_unparameterized_valued_output_action)
 
   ioa::action<automaton1, automaton1::up_v_output_action> output (output_handle, &automaton1::up_v_output);
   ioa::action<automaton1, automaton1::up_v_input_action> input1 (input1_handle, &automaton1::up_v_input);
-  ioa::action<automaton1, automaton1::p_v_input_action> input2 (input2_handle, &automaton1::p_v_input, input_parameter);
+  ioa::action<automaton1, automaton1::p_v_input_action> input2 (input2_handle, &automaton1::p_v_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::up_v_output_action> binding;
   empty_class d;
@@ -255,9 +255,9 @@ BOOST_AUTO_TEST_CASE(unbind_parameterized_valued_output_action)
   int output_parameter = 123;
   int input_parameter = 345;
 
-  ioa::action<automaton1, automaton1::p_v_output_action> output (output_handle, &automaton1::p_v_output, output_parameter);
+  ioa::action<automaton1, automaton1::p_v_output_action> output (output_handle, &automaton1::p_v_output, output_parameter, ioa::parameterized ());
   ioa::action<automaton1, automaton1::up_v_input_action> input1 (input1_handle, &automaton1::up_v_input);
-  ioa::action<automaton1, automaton1::p_v_input_action> input2 (input2_handle, &automaton1::p_v_input, input_parameter);
+  ioa::action<automaton1, automaton1::p_v_input_action> input2 (input2_handle, &automaton1::p_v_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::p_v_output_action> binding;
   empty_class d;

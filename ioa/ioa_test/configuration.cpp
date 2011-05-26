@@ -24,11 +24,11 @@ struct automaton_helper_automaton_destroyed :
       ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
     }
   }
-  ioa::internal_wrapper<automaton_helper_automaton_destroyed, &automaton_helper_automaton_destroyed::transition_> transition;
+  ioa::up_internal_wrapper<automaton_helper_automaton_destroyed> transition;
 
   automaton_helper_automaton_destroyed () :
     m_helper (this, automaton2_generator ()),
-    transition (*this)
+    transition (*this, &automaton_helper_automaton_destroyed::transition_)
   { }
 
   void init () {

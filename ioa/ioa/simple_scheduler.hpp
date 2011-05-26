@@ -122,7 +122,6 @@ namespace ioa {
        */
       bool duplicate;
       {
-	// TODO:  What about parameters?
 	boost::shared_lock<boost::shared_mutex> lock (m_execq.mutex);
 	duplicate = std::find_if (m_execq.list.begin (), m_execq.list.end (), action_runnable_equal (r)) != m_execq.list.end ();
       }

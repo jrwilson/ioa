@@ -464,7 +464,8 @@ namespace ioa {
 
     action (const automaton_handle<I>& a,
     	    Member I::*ptr,
-    	    parameter_type& p) :
+    	    const parameter_type& p,
+	    parameterized /* */) :
       action_impl <action_category,
 		   I,
 		   Member,
@@ -476,7 +477,8 @@ namespace ioa {
     
     action (const automaton_handle<I>& a,
     	    Member I::*ptr,
-    	    const value_type& v) :
+    	    const value_type& v,
+	    unparameterized /* */) :
       action_impl <action_category,
 		   I,
 		   Member,
@@ -494,21 +496,13 @@ namespace ioa {
   	       M I::*member_ptr) {
     return action<I, M> (handle, member_ptr);
   }
-  
-  template <class I, class M>
+
+  template <class I, class M, class A>
   action<I, M>
   make_action (const automaton_handle<I>& handle,
-  	       M I::*member_ptr,
-  	       typename M::parameter_type& parameter) {
-    return action<I, M> (handle, member_ptr, parameter);
-  }
-  
-  template <class I, class M>
-  action<I, M>
-  make_action (const automaton_handle<I>& handle,
-  	       M I::*member_ptr,
-  	       const typename M::value_type& v) {
-    return action<I, M> (handle, member_ptr, v);
+	       M I::*member_ptr,
+	       const A& a) {
+    return action<I, M> (handle, member_ptr, a, typename M::parameter_status ());
   }
 
 }
