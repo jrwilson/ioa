@@ -1,6 +1,9 @@
 #ifndef __dispatching_automaton_hpp__
 #define __dispatching_automaton_hpp__
 
+#include "automaton_handle.hpp"
+#include "binding_handle.hpp"
+
 namespace ioa {
 
   class dispatching_automaton :

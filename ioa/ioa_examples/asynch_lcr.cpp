@@ -30,9 +30,21 @@ struct uuid {
   }
 
   bool operator== (const uuid& x) const {
-    return uuid_compare == 0;
+    return uuid_compare (u, x.u) == 0;
+  }
+
+  void print_on (std::ostream& os) const {
+    char s[37];
+    uuid_unparse (u, s);
+    os << s;
   }
 };
+
+std::ostream& operator<< (std::ostream& strm,
+			  const uuid& u) {
+  u.print_on (strm);
+  return strm;
+}
 
 /*
   Channel I/O Automaton
@@ -52,7 +64,7 @@ private:
   }
   
   bool receive_precondition () const {
-    return !m_queue.empty ();
+    return !m_queue.empty () && receive.is_bound ();
   }
 
   V_UP_OUTPUT (channel_automaton, receive, T) {
@@ -104,8 +116,7 @@ private:
   status_t m_status;
 
   V_UP_INPUT (asynch_lcr_automaton, receive, uuid, v) {
-    std::cout << __func__ << std::endl;
-    
+
     if (v > m_u) {
       m_send.push (v);
     }
@@ -120,11 +131,10 @@ private:
   }
 
   bool send_precondition () const {
-    return !m_send.empty ();
+    return !m_send.empty () && send.is_bound ();
   }
 
   V_UP_OUTPUT (asynch_lcr_automaton, send, uuid) {
-    std::cout << __func__ << std::endl;
 
     std::pair<bool, uuid> retval;
 
@@ -138,13 +148,11 @@ private:
   }
 
   bool leader_precondition () const {
-    return m_status == CHOSEN;
+    return m_status == CHOSEN && leader.is_bound ();
   }
 
   UV_UP_OUTPUT (asynch_lcr_automaton, leader) {
-    std::cout << __func__ << std::endl;
-
-    bool retval;
+    bool retval = false;
 
     if (leader_precondition ()) {
       retval = true;
@@ -182,55 +190,81 @@ public:
 
 };
 
+template <size_t N>
 class composer :
   public ioa::dispatching_automaton
 {
 private:
-  typedef ioa::automaton_helper<composer, ioa::instance_generator<asynch_lcr_automaton> > asynch_lcr_automaton_helper;
-  typedef ioa::automaton_helper<composer, ioa::instance_generator<channel_automaton<uuid> > > channel_automaton_helper;
 
-  asynch_lcr_automaton_helper p1;
-  asynch_lcr_automaton_helper p2;
-  channel_automaton_helper c1;
-  channel_automaton_helper c2;
+  UV_P_INPUT (composer, leader, size_t, i) {
+    std::cout << i << " is the leader." << std::endl;
+  }
+
+  typedef ioa::instance_generator<asynch_lcr_automaton> asynch_lcr_automaton_generator_type;
+  typedef ioa::instance_generator<channel_automaton<uuid> > channel_automaton_generator_type;
+
+  typedef ioa::automaton_helper<composer, asynch_lcr_automaton_generator_type> asynch_lcr_automaton_helper_type;
+  typedef ioa::automaton_helper<composer, channel_automaton_generator_type> channel_automaton_helper_type;
+  typedef ioa::self_helper<composer> composer_helper_type;
+
+  typedef ioa::bind_helper<composer, asynch_lcr_automaton_helper_type, asynch_lcr_automaton::send_type, channel_automaton_helper_type, channel_automaton<uuid>::send_type> send_bind_helper_type;
+  typedef ioa::bind_helper<composer, channel_automaton_helper_type, channel_automaton<uuid>::receive_type, asynch_lcr_automaton_helper_type, asynch_lcr_automaton::receive_type> receive_bind_helper_type;
+  typedef ioa::bind_helper<composer, asynch_lcr_automaton_helper_type, asynch_lcr_automaton::leader_type, composer_helper_type, typename composer::leader_type> leader_bind_helper_type;
+
+  std::vector<asynch_lcr_automaton_helper_type*> asynch_lcr_automaton_helpers;
+  std::vector<channel_automaton_helper_type*> channel_automaton_helpers;
+  composer_helper_type composer_helper;
+  std::vector<send_bind_helper_type*> send_bind_helpers;
+  std::vector<receive_bind_helper_type*> receive_bind_helpers;
+  std::vector<leader_bind_helper_type*> leader_bind_helpers;
   
-  typedef ioa::bind_helper<composer, asynch_lcr_automaton_helper, asynch_lcr_automaton::send_type, channel_automaton_helper, channel_automaton<uuid>::send_type> send_bind_helper;
-  typedef ioa::bind_helper<composer, channel_automaton_helper, channel_automaton<uuid>::receive_type, asynch_lcr_automaton_helper, asynch_lcr_automaton::receive_type> receive_bind_helper;
-
-  send_bind_helper p1_send;
-  receive_bind_helper p1_receive;
-  send_bind_helper p2_send;
-  receive_bind_helper p2_receive;
-
 public:
 
   composer () :
-    p1 (this, ioa::instance_generator<asynch_lcr_automaton>()),
-    p2 (this, ioa::instance_generator<asynch_lcr_automaton>()),
-    c1 (this, ioa::instance_generator<channel_automaton<uuid> >()),
-    c2 (this, ioa::instance_generator<channel_automaton<uuid> >()),
-    p1_send (this, &p1, &asynch_lcr_automaton::send, &c1, &channel_automaton<uuid>::send),
-    p1_receive (this, &c2, &channel_automaton<uuid>::receive, &p1, &asynch_lcr_automaton::receive),
-    p2_send (this, &p2, &asynch_lcr_automaton::send, &c2, &channel_automaton<uuid>::send),
-    p2_receive (this, &c1, &channel_automaton<uuid>::receive, &p2, &asynch_lcr_automaton::receive)
-  {  }
+    ACTION (composer, leader),
+    composer_helper (this)
+  {
+    for (size_t i = 0; i < N; ++i) {
+      asynch_lcr_automaton_helpers.push_back (new asynch_lcr_automaton_helper_type (this, asynch_lcr_automaton_generator_type ()));
+      channel_automaton_helpers.push_back (new channel_automaton_helper_type (this, channel_automaton_generator_type ()));
+    }
+
+    for (size_t i = 0; i < N; ++i) {
+      send_bind_helpers.push_back (new send_bind_helper_type (this,
+							      asynch_lcr_automaton_helpers[i],
+							      &asynch_lcr_automaton::send,
+							      channel_automaton_helpers[i],
+							      &channel_automaton<uuid>::send));
+      receive_bind_helpers.push_back (new receive_bind_helper_type (this,
+								    channel_automaton_helpers[i],
+								    &channel_automaton<uuid>::receive,
+								    asynch_lcr_automaton_helpers[(i + 1) % N],
+								    &asynch_lcr_automaton::receive));
+      leader_bind_helpers.push_back (new leader_bind_helper_type (this,
+								  asynch_lcr_automaton_helpers[i],
+								  &asynch_lcr_automaton::leader,
+								  &composer_helper,
+								  &composer::leader,
+								  i));
+    }
+
+  }
 
   void init () {
-    p1.create ();
-    p2.create ();
-    c1.create ();
-    c2.create ();
-
-    p1_send.bind ();
-    p1_receive.bind ();
-    p2_send.bind ();
-    p2_receive.bind ();
+    for (size_t i = 0; i < N; ++i) {
+      asynch_lcr_automaton_helpers[i]->create ();
+      channel_automaton_helpers[i]->create ();
+      send_bind_helpers[i]->bind ();
+      receive_bind_helpers[i]->bind ();
+      leader_bind_helpers[i]->bind ();
+    }
+    composer_helper.create ();
   }
 
 };
 
 int
 main () {
-  ioa::scheduler.run (ioa::instance_generator<composer> ());
+  ioa::scheduler.run (ioa::instance_generator<composer<100> > ());
   return 0; 
 }

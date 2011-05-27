@@ -21,7 +21,8 @@ namespace ioa {
     blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
     aid_t m_current_aid;
     const automaton_interface* m_current_this;
-    
+
+  public:    
     template <class I>
     automaton_handle<I> get_current_aid (const I* ptr) const {
       // The system uses set_current_aid to alert the scheduler that the code that is executing belongs to the given automaton.
@@ -40,6 +41,7 @@ namespace ioa {
       return m_system.cast_aid (ptr, m_current_aid);
     }
 
+  private:
     void set_current_aid (const aid_t aid) {
       // This is to be used during generation so that any allocated memory can be associated with the automaton.
       BOOST_ASSERT (aid != -1);

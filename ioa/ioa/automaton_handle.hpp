@@ -46,6 +46,13 @@ namespace ioa {
     }
 #endif
 
+    automaton_handle& operator= (const automaton_handle& handle) {
+      if (this != &handle) {
+	m_aid = handle.m_aid;
+      }
+      return *this;
+    }
+
     bool operator== (const automaton_handle& handle) const {
       return m_aid == handle.m_aid;
     }

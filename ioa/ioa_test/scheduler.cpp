@@ -74,7 +74,7 @@ private:
   create2_d m_create2_d;
   instance_holder<automaton2> m_g;
 
-  void transition_ () {
+  UP_INTERNAL (create_exists, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, m_g, m_create1_d);
@@ -92,7 +92,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<create_exists> transition;
 
 public:
   create_exists () :
@@ -100,7 +99,7 @@ public:
     m_create1_d (*this),
     m_create2_d (*this),
     m_g (new automaton2 ()),
-    transition (*this, &create_exists::transition_)
+    ACTION (create_exists, transition)
   { }
 
   void init () {
@@ -157,7 +156,7 @@ private:
 
   create1_d m_create1_d;
 
-  void transition_ () {
+  UP_INTERNAL (create_automaton_created, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -171,14 +170,13 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<create_automaton_created> transition;
 
 public:
 
   create_automaton_created () :
     m_state (START),
     m_create1_d (*this),
-    transition (*this, &create_automaton_created::transition_)
+    ACTION (create_automaton_created, transition)
   { }
 
   void init () {
@@ -286,7 +284,7 @@ private:
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
-  void transition_ () {
+  UP_INTERNAL (bind_output_automaton_dne_, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -307,14 +305,13 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<bind_output_automaton_dne_> transition;
 
 public:
   bind_output_automaton_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_bind1_d (*this),
-    transition (*this, &bind_output_automaton_dne_::transition_)
+    ACTION (bind_output_automaton_dne_, transition)
   { }
 
   void init () {
@@ -422,7 +419,7 @@ private:
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
-  void transition_ () {
+  UP_INTERNAL (bind_input_automaton_dne_, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -443,14 +440,13 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<bind_input_automaton_dne_> transition;
 
 public:
   bind_input_automaton_dne_ () :
     m_state (START),
     m_create1_d (*this),
     m_bind1_d (*this),
-    transition (*this, &bind_input_automaton_dne_::transition_)
+    ACTION (bind_input_automaton_dne_, transition)
   { }
 
   void init () {
@@ -636,7 +632,7 @@ private:
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
-  void transition_ () {
+  UP_INTERNAL (bind_exists, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -668,7 +664,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<bind_exists> transition;
 
 public:
   bind_exists () :
@@ -677,7 +672,7 @@ public:
     m_create2_d (*this),
     m_bind1_d (*this),
     m_bind2_d (*this),
-    transition (*this, &bind_exists::transition_)
+    ACTION (bind_exists, transition)
   { }
 
   void init () {
@@ -892,7 +887,7 @@ private:
   ioa::automaton_handle<automaton2> m_output2;
   ioa::automaton_handle<automaton2> m_input1;
 
-  void transition_ () {
+  UP_INTERNAL (bind_input_action_unavailable, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -928,7 +923,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<bind_input_action_unavailable> transition;
 
 public:
   bind_input_action_unavailable () :
@@ -938,7 +932,7 @@ public:
     m_create3_d (*this),
     m_bind1_d (*this),
     m_bind2_d (*this),
-    transition (*this, &bind_input_action_unavailable::transition_)
+    ACTION (bind_input_action_unavailable, transition)
   { }
 
   void init () {
@@ -1125,7 +1119,7 @@ private:
   ioa::automaton_handle<automaton2> m_output1;
   ioa::automaton_handle<automaton2> m_input1;
 
-  void transition_ () {
+  UP_INTERNAL (bind_output_action_unavailable, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -1157,7 +1151,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<bind_output_action_unavailable> transition;
 
 public:
   bind_output_action_unavailable () :
@@ -1166,7 +1159,7 @@ public:
     m_create2_d (*this),
     m_bind1_d (*this),
     m_bind2_d (*this),
-    transition (*this, &bind_output_action_unavailable::transition_)
+    ACTION (bind_output_action_unavailable, transition)
   { }
 
   void init () {
@@ -1303,7 +1296,7 @@ private:
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<automaton2> m_child2;
 
-  void transition_ () {
+  UP_INTERNAL (bind_bound, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -1328,7 +1321,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<bind_bound> transition;
 
 public:
   bind_bound () :
@@ -1336,7 +1328,7 @@ public:
     m_create1_d (*this),
     m_create2_d (*this),
     m_bind1_d (*this),
-    transition (*this, &bind_bound::transition_)
+    ACTION (bind_bound, transition)
   { }
 
   void init () {
@@ -1458,7 +1450,7 @@ private:
   ioa::automaton_handle<automaton2> m_child2;
   ioa::bid_t m_bid;
 
-  void transition_ () {
+  UP_INTERNAL (unbind_binding_dne, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -1480,7 +1472,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<unbind_binding_dne> transition;
 
 public:
   unbind_binding_dne () :
@@ -1488,7 +1479,7 @@ public:
     m_create1_d (*this),
     m_create2_d (*this),
     m_unbind1_d (*this),
-    transition (*this, &unbind_binding_dne::transition_)
+    ACTION (unbind_binding_dne, transition)
   { }
 
   void init () {
@@ -1646,7 +1637,7 @@ private:
   ioa::automaton_handle<automaton2> m_child2;
   ioa::bid_t m_bid;
 
-  void transition_ () {
+  UP_INTERNAL (unbind_unbound, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -1675,7 +1666,6 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<unbind_unbound> transition;
 
 public:
   unbind_unbound () :
@@ -1684,7 +1674,7 @@ public:
     m_create2_d (*this),
     m_bind1_d (*this),
     m_unbind1_d (*this),
-    transition (*this, &unbind_unbound::transition_)
+    ACTION (unbind_unbound, transition)
   { }
 
   void init () {
@@ -1739,7 +1729,7 @@ private:
   destroy1_d m_destroy1_d;
   ioa::automaton_handle<automaton2> m_automaton;
 
-  void transition_ () {
+  UP_INTERNAL (destroy_helper, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.destroy (this, m_automaton, m_destroy1_d);
@@ -1753,14 +1743,13 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<destroy_helper> transition;
 
 public:
   destroy_helper (const ioa::automaton_handle<automaton2>& automaton) :
     m_state (START),
     m_destroy1_d (*this),
     m_automaton (automaton),
-    transition (*this, &destroy_helper::transition_)
+    ACTION (destroy_helper, transition)
   { }
 
   void init () {
@@ -1841,7 +1830,7 @@ private:
   ioa::automaton_handle<automaton2> m_child1;
   ioa::automaton_handle<destroy_helper> m_child2;
   
-  void transition_ () {
+  UP_INTERNAL (destroy_destroyer_not_creator, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -1859,14 +1848,13 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<destroy_destroyer_not_creator> transition;
 
 public:
   destroy_destroyer_not_creator () :
     m_state (START),
     m_create1_d (*this),
     m_create2_d (*this),
-    transition (*this, &destroy_destroyer_not_creator::transition_)
+    ACTION (destroy_destroyer_not_creator, transition)
   { }
 
   void init () {
@@ -1921,7 +1909,7 @@ private:
   destroy1_d m_destroy1_d;
   ioa::automaton_handle<automaton2> m_child;
   
-  void transition_ () {
+  UP_INTERNAL (destroy_target_automaton_dne, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.destroy (this, m_child, m_destroy1_d);
@@ -1935,13 +1923,12 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<destroy_target_automaton_dne> transition;
 
 public:
   destroy_target_automaton_dne () :
     m_state (START),
     m_destroy1_d (*this),
-    transition (*this, &destroy_target_automaton_dne::transition_)
+    ACTION (destroy_target_automaton_dne, transition)
   { }
 
   void init () {
@@ -2023,7 +2010,7 @@ private:
   destroy1_d m_destroy1_d;
   ioa::automaton_handle<automaton2> m_child;
 
-  void transition_ () {
+  UP_INTERNAL (destroy_automaton_destroyed, transition) {
     switch (m_state) {
     case START:
       ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
@@ -2041,14 +2028,13 @@ private:
       break;
     }
   }
-  ioa::up_internal_wrapper<destroy_automaton_destroyed> transition;
 
 public:
   destroy_automaton_destroyed () :
     m_state (START),
     m_create1_d (*this),
     m_destroy1_d (*this),
-    transition (*this, &destroy_automaton_destroyed::transition_)
+    ACTION (destroy_automaton_destroyed, transition)
   { }
 
   void init () {
@@ -2078,7 +2064,7 @@ private:
 
 private:
 
-  bool output_ () {
+  UV_UP_OUTPUT (schedule_output, output) {
     switch (m_state) {
     case START:
       m_state = STOP;
@@ -2089,12 +2075,11 @@ private:
     }
     return false;
   }
-  ioa::uv_up_output_wrapper<schedule_output> output;
 
 public:
   schedule_output () :
     m_state (START),
-    output (*this, &schedule_output::output_)
+    ACTION (schedule_output, output)
   { }
 
   void init () {

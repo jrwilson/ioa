@@ -1,67 +1,12 @@
 #ifndef __scheduler_hpp__
 #define __scheduler_hpp__
 
-#include "automaton_handle.hpp"
-#include "binding_handle.hpp"
-#include "action.hpp"
+#include "scheduler_wrapper.hpp"
+#include "simple_scheduler.hpp"
 
 namespace ioa {
-
-  template <class S>
-  class scheduler_wrapper
-  {
-  private:
-    S& m_scheduler;
-  public:
-    scheduler_wrapper (S& scheduler) :
-      m_scheduler (scheduler)
-    { }
-
-    template <class C, class G, class D>
-    void create (const C* ptr,
-		 G generator,
-		 D& d) {
-      m_scheduler.create (ptr, generator, d);
-    }
-
-    template <class I, class OI, class OM, class II, class IM, class D>
-    void bind (const I* ptr,
-	       const action<OI, OM>& output_action,
-	       const action<II, IM>& input_action,
-	       D& d) {
-      m_scheduler.bind (ptr, output_action, input_action, d);
-    }
-    
-    template <class C, class D>
-    void unbind (const C* ptr,
-		 const bid_t bid,
-		 D& d) {
-      m_scheduler.unbind (ptr, bid, d);
-    }
-    
-    template <class C, class I, class D>
-    void destroy (const C* ptr,
-		  const automaton_handle<I>& automaton,
-		  D& d) {
-      m_scheduler.destroy (ptr, automaton, d);
-    }
-
-    template <class I, class M>
-    void schedule (const I* ptr,
-		   M I::*member_ptr) {
-      m_scheduler.schedule (ptr, member_ptr);
-    }
-
-    template <class G>
-    void run (G generator) {
-      m_scheduler.run (generator);
-    }
-
-    void clear (void) {
-      m_scheduler.clear ();
-    }
-  };
-
+  simple_scheduler ss;
+  scheduler_wrapper<simple_scheduler> scheduler (ss);
 }
 
 #endif

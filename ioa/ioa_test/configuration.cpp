@@ -14,7 +14,7 @@ struct automaton_helper_automaton_destroyed :
   typedef ioa::automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> helper;
   helper m_helper;
 
-  void transition_ () {
+  UP_INTERNAL (automaton_helper_automaton_destroyed, transition) {
     if (m_helper.get_handle ().aid () != -1) {
       // Destroy once created.
       m_helper.destroy ();
@@ -24,11 +24,10 @@ struct automaton_helper_automaton_destroyed :
       ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
     }
   }
-  ioa::up_internal_wrapper<automaton_helper_automaton_destroyed> transition;
 
   automaton_helper_automaton_destroyed () :
     m_helper (this, automaton2_generator ()),
-    transition (*this, &automaton_helper_automaton_destroyed::transition_)
+    ACTION (automaton_helper_automaton_destroyed, transition)
   { }
 
   void init () {

@@ -2,6 +2,10 @@
 #define __automaton_helper_hpp__
 
 #include "observer.hpp"
+#include "automaton_handle.hpp"
+#include <set>
+#include <boost/foreach.hpp>
+#include "scheduler.hpp"
 
 namespace ioa {
 
@@ -120,6 +124,49 @@ namespace ioa {
       m_observers.insert (o);
 
       if (m_state == CREATE_RECV1) {
+	o->observe ();
+      }
+    }
+
+    void remove_observer (observer* o) {
+      m_observers.erase (o);
+    }
+
+  };
+
+  template <class T>
+  class self_helper :
+    public observable
+  {
+  private:
+    const T* m_t;
+    automaton_handle<T> m_handle;
+    std::set<observer*> m_observers;
+
+  public:
+    typedef T instance;
+
+    self_helper (const T* t) :
+      m_t (t)
+    { }
+
+    void create () {
+      m_handle = scheduler.get_current_aid (m_t);
+      // Notify the observers.
+      BOOST_FOREACH (observer* o, m_observers) {
+	o->observe ();
+      }
+    }
+
+    automaton_handle<instance> get_handle () const {
+      return m_handle;
+    }
+
+    void add_observer (observer* o) {
+      BOOST_ASSERT (o != 0);
+      m_observers.insert (o);
+
+      if (m_handle.aid () != -1) {
 	o->observe ();
       }
     }
