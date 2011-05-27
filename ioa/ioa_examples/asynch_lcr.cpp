@@ -1,11 +1,7 @@
-#include <cstdlib>
-#include <iostream>
-
 #include <ioa.hpp>
 #include <queue>
+#include <iostream>
 #include <uuid/uuid.h>
-
-#include <boost/type_traits.hpp>
 
 struct uuid {
   uuid_t u;
