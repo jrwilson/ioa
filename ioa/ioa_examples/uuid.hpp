@@ -24,11 +24,23 @@ struct uuid {
     uuid_copy (u, x.u);
   }
 
+  void clear () {
+    uuid_clear (u);
+  }
+
+  bool is_null () const {
+    return uuid_is_null (u);
+  }
+
   uuid& operator= (const uuid& x) {
     if (this != &x) {
       uuid_copy (u, x.u);
     }
     return *this;
+  }
+
+  bool operator< (const uuid& x) const {
+    return uuid_compare (u, x.u) < 0;
   }
 
   bool operator> (const uuid& x) const {
@@ -37,6 +49,10 @@ struct uuid {
 
   bool operator== (const uuid& x) const {
     return uuid_compare (u, x.u) == 0;
+  }
+
+  bool operator<= (const uuid& x) const {
+    return uuid_compare (u, x.u) <= 0;
   }
 
   void print_on (std::ostream& os) const {
