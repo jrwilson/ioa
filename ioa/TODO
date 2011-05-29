@@ -1,0 +1,74 @@
+* Boost and Bjam
+  I'm currently using Boost.Foreach, Boost.Thread, Bjam, and Boost.Bind.
+  Foreach makes iterating a little easier but isn't vital.
+  All uses of Thread could be replaced by pthread equivalents.
+  I am not impressed with Bjam.
+  I'm certain I'm using it wrong but it fails to build viable release executables.
+  Boost.Bind is vital and is used extensively in the scheduler.
+
+* Round-robin scheduler
+  I would like to make a round-robin scheduler.
+  Other scheduler's are also possible.
+
+* Memory allocation
+  The scheduler knows what automaton is running at any given time.
+  Thus, we can associated allocated memory with an automaton and free it when the automaton is destroyed.
+
+* Helpers
+  The automaton_helper and bind_helper need some work.
+
+  System calls cannot be made while in the constructor of an automaton because the "this" pointer is not known to the scheduler and can't be used for certian sanity checks.
+  So, the helpers have methods, create and bind respectively, that that get the helpers started.
+  A starting point is to move all of the parameters required at construction to the appropriate start-up method.
+
+  We desire (and have) the ability to create helpers dynamically, either directly (calling "new helper") or indirectly (calling "new object" where object contains one or more helpers).
+  This gives us the power to create dynamic constellations of automata.
+  However, they must be stopped before they are destroyed.
+  To illustrate, consider the following sequence
+
+  new automaton_helper
+    create ->
+    created <-              automaton
+       |                        |
+  delete automaton_helper       |
+                                |
+                           delete automaton
+    <-destroyed  [The system will call a non-existent callback.]
+  
+  Instead of calling delete, the sequence should contain a destroy/unbind call.
+  The handler in the helper can then call delete to clean up.
+  The new sequence looks like.
+
+  new automaton_helper
+    create ->
+    created <-              automaton
+       |                        |
+  automaton_helper->destroy ()  |
+       |                        |
+       |                 delete automaton
+    <-destroyed  [The helper will call "delete this" to clean the helper.]
+
+  If the helper always calls delete, then we cannot have statically allocated helpers.
+  This seems acceptable to me at this time.
+
+  Suppose that an automaton has allocated some helpers is in its destructor.
+  Also, suppose that the memory accounting framework does not exists (because it doesn't).
+  The automaton designer, wishing to not introduce memory leaks, wishes to delete the helpers.
+  However, the helper might have already been destroyed due to a callback resulting in a double-free.
+  If we could guarantee that the helpers receive the appropriate destroyed/unbound signals before the destructor for the automaton, then the destructor doesn't need to delete the helpers.
+  The system can (and does) enforce this.
+  Otherwise, helpers become too complex and their utility is greatly diminished.
+  
+  We can group helpers into other objects to make the creation and maintenance of constellations easier.
+  However, we have the same problem as before where an automaton has no way of knowing when a grouping object is safe to delete.
+  I think this can be solved with smart pointers where the helpers have a smart pointer to the grouping object.
+  Once the helpers are deleted, the grouping object will be deleted.
+  This pattern can be replicated ad infinitum.
+
+* Action Wrappers
+
+  Sensing when an action changes binding status is useful.
+  Consider a pair of automata, A and B, that are bound.
+  If either one of them dies, the other should die.
+  The automata can detect the death of the other by detecting when their respective actions are unbound.
+  I think a straight-forward solution is for the action wrappers to take an object to call when the bind status changes.
