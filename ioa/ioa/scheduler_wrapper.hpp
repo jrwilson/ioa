@@ -4,6 +4,7 @@
 #include "automaton_handle.hpp"
 #include "binding_handle.hpp"
 #include "action.hpp"
+#include "time_offset.hpp"
 
 namespace ioa {
 
@@ -48,8 +49,9 @@ namespace ioa {
 
     template <class I, class M>
     void schedule (const I* ptr,
-		   M I::*member_ptr) {
-      m_scheduler.schedule (ptr, member_ptr);
+		   M I::*member_ptr,
+		   time offset = time ()) {
+      m_scheduler.schedule (ptr, member_ptr, offset);
     }
 
     template <class G>

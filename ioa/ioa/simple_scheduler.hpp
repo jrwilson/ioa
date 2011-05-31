@@ -6,11 +6,21 @@
 #include "system.hpp"
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
+#include <queue>
+#include <functional>
+#include <fcntl.h>
 
 namespace ioa {
 
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
+
+  typedef std::pair<action_runnable_interface*, time> action_time;
+
+  bool operator< (const action_time& x,
+		  const action_time& y) {
+    return x.second < y.second;
+  }
 
   class simple_scheduler :
     public scheduler_interface
@@ -19,6 +29,8 @@ namespace ioa {
     system m_system;
     blocking_list<std::pair<bool, runnable_interface*> > m_sysq;
     blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
+    int m_wakeup_fd[2];
+    blocking_list<action_time> m_timerq;
     aid_t m_current_aid;
     const automaton_interface* m_current_this;
 
@@ -84,6 +96,7 @@ namespace ioa {
 	*/
 	m_sysq.push (std::pair<bool, runnable_interface*> (false, 0));
 	m_execq.push (std::pair<bool, action_runnable_interface*> (false, 0));
+	wakeup_timer_thread ();
       }
       return retval;
     }
@@ -142,6 +155,24 @@ namespace ioa {
       else {
 	delete r;
       }
+    }
+
+    void wakeup_timer_thread () {
+      char c;
+      ssize_t bytes_written = write (m_wakeup_fd[1], &c, 1);
+      BOOST_ASSERT (bytes_written == 1);
+    }
+
+    void schedule_timerq (action_runnable_interface* r, const time& offset) {
+      struct timeval now;
+      int s = gettimeofday (&now, 0);
+      BOOST_ASSERT (s == 0);
+      time release_time (now);
+      release_time += offset;
+
+      // TODO:  Only wake thread if the queue goes from empty to non-empty.
+      m_timerq.push (std::make_pair (r, release_time));
+      wakeup_timer_thread ();
     }
 
   public:
@@ -223,15 +254,24 @@ namespace ioa {
 
     template <class I, class M>
     void schedule (const I* ptr,
-		   M I::*member_ptr) {
+		   M I::*member_ptr,
+		   const time& offset) {
       action<I, M> ac = make_action (get_current_aid (ptr), member_ptr);
-      bool (system::*execute_ptr) (const action<I,M>&,
-      				   scheduler_interface&) = &system::execute;
-      schedule_execq (make_action_runnable (boost::bind (execute_ptr,
-							 boost::ref (m_system),
-							 ac,
-							 boost::ref (*this)),
-					    ac));
+	bool (system::*execute_ptr) (const action<I,M>&,
+				     scheduler_interface&) = &system::execute;
+	action_runnable_interface* r = make_action_runnable (boost::bind (execute_ptr,
+									  boost::ref (m_system),
+									  ac,
+									  boost::ref (*this)),
+							     ac);
+
+
+      if (offset == time ()) {
+	schedule_execq (r);
+      }
+      else {
+	schedule_timerq (r, offset);
+      }
     }
 
   private:
@@ -256,18 +296,92 @@ namespace ioa {
       }
     }
 
+    void process_timerq () {
+      int r;
+
+      std::priority_queue<action_time,
+			  std::vector<action_time>,
+			  std::greater<action_time> > timer_queue;
+
+      fd_set read_set;
+      FD_ZERO (&read_set);
+      FD_SET (m_wakeup_fd[0], &read_set);
+
+      while (thread_keep_going ()) {
+	// Process registrations.
+	{
+	  boost::unique_lock<boost::shared_mutex> lock (m_timerq.mutex);
+	  while (!m_timerq.list.empty ()) {
+	    timer_queue.push (m_timerq.list.front ());
+	    m_timerq.list.pop_front ();
+	  }
+	}
+
+	struct timeval n;
+	r = gettimeofday (&n, 0);
+	BOOST_ASSERT (r == 0);
+	time now (n);
+
+	while (!timer_queue.empty () && timer_queue.top ().second < now) {
+	  schedule_execq (timer_queue.top ().first);
+	  timer_queue.pop ();
+	}
+
+	struct timeval timeout;
+	struct timeval* test_timeout = 0;
+
+	if (!timer_queue.empty ()) {
+	  timeout = timer_queue.top ().second - now;
+	  test_timeout = &timeout;
+	}
+
+	// TODO: Do better than FD_SETSIZE.
+	fd_set test_read_set;
+	FD_COPY (&read_set, &test_read_set);
+	int r = select (FD_SETSIZE, &test_read_set, 0, 0, test_timeout);
+	if (r > 0) {
+	  if (FD_ISSET (m_wakeup_fd[0], &test_read_set)) {
+	    // Drain the wakeup pipe.
+	    char c;
+	    // TODO:  Do better than reading one character at a time.
+	    while (read (m_wakeup_fd[0], &c, 1) == 1) { }
+	  }
+	}
+	else if (r < 0) {
+	  BOOST_ASSERT (false);
+	}
+      }
+    }
+
   public:
     template <class G>
     void run (G generator) {
+      int r;
+
       BOOST_ASSERT (m_sysq.list.size () == 0);
       BOOST_ASSERT (m_execq.list.size () == 0);
       BOOST_ASSERT (!keep_going ());
       m_system.create (generator, *this);
 
+      // Create a pipe to communicate with the timer thread.
+      r = pipe (m_wakeup_fd);
+      BOOST_ASSERT (r == 0);
+      r = fcntl (m_wakeup_fd[0], F_SETFL, O_NONBLOCK);
+      BOOST_ASSERT (r == 0);
+      r = fcntl (m_wakeup_fd[1], F_SETFL, O_NONBLOCK);
+      BOOST_ASSERT (r == 0);
+
       boost::thread sysq_thread (&simple_scheduler::process_sysq, boost::ref (*this));
       boost::thread execq_thread (&simple_scheduler::process_execq, boost::ref (*this));
+      boost::thread timerq_thread (&simple_scheduler::process_timerq, boost::ref (*this));
+
       sysq_thread.join ();
       execq_thread.join ();
+      timerq_thread.join ();
+
+      // TODO:  Do I need to close both ends?
+      close (m_wakeup_fd[0]);
+      close (m_wakeup_fd[1]);
     }
 
     void clear (void) {
