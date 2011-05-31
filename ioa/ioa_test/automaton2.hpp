@@ -22,9 +22,6 @@ private:
 
   UP_INTERNAL (automaton2, up_internal) { }
   P_INTERNAL (automaton2, p_internal, float, pole) { m_pole += pole; }
-
-  UV_EVENT (automaton2, uv_event) { }
-  V_EVENT (automaton2, v_event, int, vole) { m_vole += vole; }
   
 public:
   automaton2 () :
@@ -37,9 +34,7 @@ public:
     ACTION (automaton2, v_up_output),
     ACTION (automaton2, v_p_output),
     ACTION (automaton2, up_internal),
-    ACTION (automaton2, p_internal),
-    ACTION (automaton2, uv_event),
-    ACTION (automaton2, v_event)
+    ACTION (automaton2, p_internal)
   { }
 
   void init () { }

@@ -212,35 +212,4 @@ BOOST_AUTO_TEST_CASE(parameterized_internal_action)
   BOOST_CHECK_EQUAL (parameter, z.p_internal.last_parameter);
 }
 
-BOOST_AUTO_TEST_CASE(unvalued_event_action)
-{
-  ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::uv_event_action> action (h, &automaton1::uv_event);
-  BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
-  automaton1* i = 0;
-  BOOST_CHECK_EQUAL (&((*i).*(&automaton1::uv_event)), action.get_member_ptr ());
-  BOOST_CHECK_EQUAL (0U, action.get_pid ());
-  BOOST_CHECK (action != action);
-
-  automaton1 z;
-  action.execute (z);
-  BOOST_CHECK (z.uv_event.state);
-}
-
-BOOST_AUTO_TEST_CASE(valued_event_action)
-{
-  ioa::automaton_handle<automaton1> h;
-  ioa::action<automaton1, automaton1::v_event_action> action (h, &automaton1::v_event, 9845, ioa::unparameterized ());
-  BOOST_CHECK_EQUAL (h.aid (), action.get_aid ());
-  automaton1* i = 0;
-  BOOST_CHECK_EQUAL (&((*i).*(&automaton1::v_event)), action.get_member_ptr ());
-  BOOST_CHECK_EQUAL (0U, action.get_pid ());
-  BOOST_CHECK (action != action);
-
-  automaton1 z;
-  action.execute (z);
-  BOOST_CHECK (z.v_event.state);
-  BOOST_CHECK_EQUAL (z.v_event.last_value, 9845);
-}
-
 BOOST_AUTO_TEST_SUITE_END()

@@ -13,13 +13,10 @@ namespace ioa {
     Action categories.
 
     Input, outputs, and internal actions come directly from the I/O automata formalism.
-    Events are asynchronous messages from other automata.
-    Events allow arbitrary automata to coordinate.
    */
   struct input_category { };
   struct output_category { };
   struct internal_category { };
-  struct event_category { };
 
   /* Indicates if an input, outputs, or events has an associated value. */
   struct unvalued { };
@@ -69,20 +66,16 @@ namespace ioa {
     typedef internal_category action_category;
   };
 
-  struct event : public no_parameter {
-    typedef event_category action_category;
-  };
-
   /*
     Actions (or Action Descriptors)
 
-    An action descriptor contains the ID of the associated automaton, a pointer to a member, a parameter ID (optional), and an event value (optional).
+    An action descriptor contains the ID of the associated automaton, a pointer to a member, and a parameter ID (optional).
     Actions are flyweights that allow us to talk about actions that need to be scheduled or bound without having a pointer or reference to the actual automaton.
     To do something with an action, e.g., execute it, a reference to a member is required.
 
     A useful property exhibited in many systems that allow dynamic configuration is sensing the status of an input or output.
     For example, a monitor might complain that it is not plugged into a video source.
-    Useful behavior can be associated with events that indicate a change in status.
+    Useful behavior can be associated with event indicating a change in status.
     In our system, we will deliver messages to input and output actions when they are bound and unbound.
   */
 
@@ -383,53 +376,6 @@ namespace ioa {
 
     void execute (I& i) const {
       (i.*this->member_ptr) (this->parameter);
-    }
-
-  };
-
-  template <class I, class M>
-  class action_impl<event_category, I, M, unvalued, null_type, unparameterized, null_type> :
-    public action_core<I, M>
-  {
-  public:
-    
-    action_impl (const automaton_handle<I>& a,
-		 M I::*ptr) :
-      action_core<I, M> (a, ptr)
-    { }
-    
-    void execute (I& i) const {
-      (i.*this->member_ptr) ();
-    }
-
-    virtual bool operator== (const action_interface& x) const {
-      return false;
-    }
-
-  };
-
-  template <class I, class M, class VT>
-  class action_impl<event_category, I, M, valued, VT, unparameterized, null_type> :
-    public action_core<I, M>
-  {
-  private:
-    const VT m_value;
-
-  public:
-    
-    action_impl (const automaton_handle<I>& a,
-		 M I::*ptr,
-		 const VT& value) :
-      action_core<I, M> (a, ptr),
-      m_value (value)
-    { }
-    
-    void execute (I& i) const {
-      (i.*this->member_ptr) (m_value);
-    }
-
-    virtual bool operator== (const action_interface& x) const {
-      return false;
     }
 
   };

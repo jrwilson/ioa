@@ -4,7 +4,7 @@
 #include "automaton_handle.hpp"
 #include "binding_handle.hpp"
 #include "action.hpp"
-#include "time_offset.hpp"
+#include "time.hpp"
 
 namespace ioa {
 

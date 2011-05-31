@@ -487,36 +487,4 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
   BOOST_CHECK (output_instance->up_uv_output.state);
 }
 
-BOOST_AUTO_TEST_CASE (system_deliver_event_automaton_dne)
-{
-  dummy_scheduler s;
-  ioa::system system;
-
-  ioa::automaton_handle<automaton1> handle = create (system, automaton1_generator (), s);
-
-  destroy (system, handle);
-
-  BOOST_CHECK (system.execute (ioa::make_action (handle, &automaton1::uv_event), s) == false);
-
-  BOOST_CHECK (system.execute (ioa::make_action (handle, &automaton1::v_event, 9845), s) == false);
-}
-
-BOOST_AUTO_TEST_CASE (system_deliver_event_success)
-{
-  dummy_scheduler s;
-  ioa::system system;
-
-  automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
-
-  ioa::automaton_handle<automaton1> handle = create (system, holder, s);
-
-  BOOST_CHECK (system.execute (ioa::make_action (handle, &automaton1::uv_event), s) == true);
-  BOOST_CHECK (instance->uv_event.state);
-
-  BOOST_CHECK (system.execute (ioa::make_action (handle, &automaton1::v_event, 9845), s) == true);
-  BOOST_CHECK (instance->v_event.state);
-  BOOST_CHECK_EQUAL (instance->v_event.last_value, 9845);
-}
-
 BOOST_AUTO_TEST_SUITE_END()

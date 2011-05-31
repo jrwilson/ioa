@@ -631,15 +631,6 @@ namespace ioa {
       execute0 (ac, scheduler);
     }
 
-    template <class I, class M>
-    void
-    execute1 (const action<I, M>& ac,
-	      event_category /* */,
-	      scheduler_interface& scheduler)
-    {
-      execute0 (ac, scheduler);
-    }
-
   public:
     
     template <class I, class M>
