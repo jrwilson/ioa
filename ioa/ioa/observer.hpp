@@ -1,6 +1,9 @@
 #ifndef __observer_hpp__
 #define __observer_hpp__
 
+#include <set>
+#include <boost/foreach.hpp>
+
 namespace ioa {
 
   class observer
@@ -13,10 +16,35 @@ namespace ioa {
 
   class observable
   {
+  private:
+    std::set<observer*> m_observers;
+
+  protected:
+    void notify_observers () {
+      // Notify the observers.
+      BOOST_FOREACH (observer* o, m_observers) {
+	o->observe ();
+      }
+    }
+
   public:
-    virtual ~observable () { }
-    virtual void add_observer (observer*) = 0;
-    virtual void remove_observer (observer*) = 0;
+
+    ~observable () {
+      // Notify the observers.
+      BOOST_FOREACH (observer* o, m_observers) {
+	o->stop_observing ();
+      }
+    }
+
+    void add_observer (observer* o) {
+      BOOST_ASSERT (o != 0);
+      m_observers.insert (o);
+    }
+    
+    void remove_observer (observer* o) {
+      m_observers.erase (o);
+    }
+
   };
 
 }

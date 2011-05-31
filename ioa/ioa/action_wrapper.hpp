@@ -2,43 +2,29 @@
 #define __action_wrapper_hpp__
 
 #include "scheduler.hpp"
+#include "observer.hpp"
 
 namespace ioa {
 
-  struct unparameterized_bind_callback
-  {
-    void bound () { }
-    void unbound () { }
-  };
-
-  template <class P>
-  struct parameterized_bind_callback
-  {
-    void bound (P p) { }
-    void unbound (P p) { }
-  };
-
-  template <class C, class B = unparameterized_bind_callback>
+  template <class C>
   class uv_up_input_wrapper :
     public input,
     public no_value,
-    public no_parameter
+    public no_parameter,
+    public observable
   {
   private:
     C& m_c;
     void (C::*m_member_function_ptr)();
     bool m_bind_status;
-    B m_b;
     
   public:
     uv_up_input_wrapper (C& c,
 			 void (C::*member_function_ptr) (),
-			 uv_up_input_wrapper C::*member_object_ptr,
-			 B b = B ()) :
+			 uv_up_input_wrapper C::*member_object_ptr) :
       m_c (c),
       m_member_function_ptr (member_function_ptr),
-      m_bind_status (false),
-      m_b (b)
+      m_bind_status (false)
     { }
     
     void operator() () {
@@ -47,39 +33,38 @@ namespace ioa {
 
     void bound () {
       m_bind_status = true;
-      m_b.bound ();
+      notify_observers ();
     }
 
     void unbound () {
       m_bind_status = false;
-      m_b.unbound ();
+      notify_observers ();
     }
 
     bool is_bound () const {
       return m_bind_status;
     }
+
   };
 
-  template <class C, class P, class B = parameterized_bind_callback<P> >
+  template <class C, class P>
   class uv_p_input_wrapper :
     public input,
     public no_value,
-    public parameter<P>
+    public parameter<P>,
+    public observable
   {
   private:
     C& m_c;
     void (C::*m_member_function_ptr) (P);
     std::set<P> m_parameters;
-    B m_b;
     
   public:
     uv_p_input_wrapper (C& c,
 			void (C::*member_function_ptr)(P),
-			uv_p_input_wrapper C::*member_object_ptr,
-			B b = B ()) :
+			uv_p_input_wrapper C::*member_object_ptr) :
       m_c (c),
-      m_member_function_ptr (member_function_ptr),
-      m_b (b)
+      m_member_function_ptr (member_function_ptr)
     { }
     
     void operator() (P p) {
@@ -88,12 +73,12 @@ namespace ioa {
     
     void bound (P p) {
       m_parameters.insert (p);
-      m_b.bound (p);
+      notify_observers ();
     }
 
     void unbound (P p) {
       m_parameters.erase (p);
-      m_b.unbound (p);
+      notify_observers ();
     }
 
     void is_bound (P p) const {
@@ -101,27 +86,25 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class B = unparameterized_bind_callback>
+  template <class C, class T>
   class v_up_input_wrapper :
     public input,
     public value<T>,
-    public no_parameter
+    public no_parameter,
+    public observable
   {
   private:
     C& m_c;
     void (C::*m_member_function_ptr)(const T&);
     bool m_bind_status;
-    B m_b;
     
   public:
     v_up_input_wrapper (C& c,
 			void (C::*member_function_ptr)(const T&),
-			v_up_input_wrapper C::*member_object_ptr,
-			B b = B ())
+			v_up_input_wrapper C::*member_object_ptr)
       : m_c (c),
  	m_member_function_ptr (member_function_ptr),
-	m_bind_status (false),
-	m_b (b)
+	m_bind_status (false)
     { }
     
     void operator() (const T& t) {
@@ -130,12 +113,12 @@ namespace ioa {
     
     void bound () {
       m_bind_status = true;
-      m_b.bound ();
+      notify_observers ();
     }
 
     void unbound () {
       m_bind_status = false;
-      m_b.unbound ();
+      notify_observers ();
     }
 
     bool is_bound () const {
@@ -143,26 +126,24 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class P, class B = parameterized_bind_callback<P> >
+  template <class C, class T, class P >
   class v_p_input_wrapper :
     public input,
     public value<T>,
-    public parameter<P>
+    public parameter<P>,
+    public observable
   {
   private:
     C& m_c;
     void (C::*m_member_function_ptr)(const T&, P);
     std::set<P> m_parameters;
-    B m_b;
     
   public:
     v_p_input_wrapper (C& c,
 		       void (C::*member_function_ptr)(const T&, P),
-		       v_p_input_wrapper C::*member_object_ptr,
-		       B b = B ())
+		       v_p_input_wrapper C::*member_object_ptr)
       : m_c (c),
- 	m_member_function_ptr (member_function_ptr),
-	m_b (b)
+ 	m_member_function_ptr (member_function_ptr)
     { }
     
     void operator() (const T& t, P p) {
@@ -171,12 +152,12 @@ namespace ioa {
     
     void bound (P p) {
       m_parameters.insert (p);
-      m_b.bound (p);
+      notify_observers ();
     }
 
     void unbound (P p) {
       m_parameters.erase (p);
-      m_b.unbound (p);
+      notify_observers ();
     }
 
     void is_bound (P p) const {
@@ -184,29 +165,27 @@ namespace ioa {
     }
   };
 
-  template <class C, class B = unparameterized_bind_callback>
+  template <class C>
   class uv_up_output_wrapper :
     public output,
     public no_value,
-    public no_parameter
+    public no_parameter,
+    public observable
   {
   private:
     C& m_c;
     bool (C::*m_member_function_ptr)(void);
     uv_up_output_wrapper C::*m_member_object_ptr;
     bool m_bind_status;
-    B m_b;
     
   public:
     uv_up_output_wrapper (C& c,
 			  bool (C::*member_function_ptr) (void),
-			  uv_up_output_wrapper C::*member_object_ptr,
-			  B b = B ()) :
+			  uv_up_output_wrapper C::*member_object_ptr) :
       m_c (c),
       m_member_function_ptr (member_function_ptr),
       m_member_object_ptr (member_object_ptr),
-      m_bind_status (false),
-      m_b (b)
+      m_bind_status (false)
     { }
     
     bool operator() () {
@@ -217,12 +196,12 @@ namespace ioa {
       m_bind_status = true;
       // We schedule the action because the precondition might test is_bound ().
       scheduler.schedule (&m_c, m_member_object_ptr);
-      m_b.bound ();
+      notify_observers ();
     }
 
     void unbound () {
       m_bind_status = false;
-      m_b.unbound ();
+      notify_observers ();
     }
 
     bool is_bound () const {
@@ -230,28 +209,26 @@ namespace ioa {
     }
   };
 
-  template <class C, class P, class B = parameterized_bind_callback<P> >
+  template <class C, class P>
   class uv_p_output_wrapper :
     public output,
     public no_value,
-    public parameter<P>
+    public parameter<P>,
+    public observable
   {
   private:
     C& m_c;
     bool (C::*m_member_function_ptr)(P);
     uv_p_output_wrapper C::*m_member_object_ptr;
     std::set<P> m_parameters;
-    B m_b;
     
   public:
     uv_p_output_wrapper (C& c,
 			 bool (C::*member_function_ptr) (P),
-			 uv_p_output_wrapper C::*member_object_ptr,
-			 B b = B()) :
+			 uv_p_output_wrapper C::*member_object_ptr) :
       m_c (c),
       m_member_function_ptr (member_function_ptr),
-      m_member_object_ptr (member_object_ptr),
-      m_b (b)
+      m_member_object_ptr (member_object_ptr)
     { }
     
     bool operator() (P p) {
@@ -262,12 +239,12 @@ namespace ioa {
       m_parameters.insert (p);
       // We schedule the action because the precondition might test is_bound ().
       scheduler.schedule (&m_c, m_member_object_ptr, p);
-      m_b.bound (p);
+      notify_observers ();
     }
 
     void unbound (P p) {
       m_parameters.erase (p);
-      m_b.unbound (p);
+      notify_observers ();
     }
 
     void is_bound (P p) const {
@@ -275,29 +252,27 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class B = unparameterized_bind_callback>
+  template <class C, class T>
   class v_up_output_wrapper :
     public output,
     public value<T>,
-    public no_parameter
+    public no_parameter,
+    public observable
   {
   private:
     C& m_c;
     std::pair<bool, T> (C::*m_member_function_ptr)(void);
     v_up_output_wrapper C::*m_member_object_ptr;
     bool m_bind_status;
-    B m_b;
     
   public:
     v_up_output_wrapper (C& c,
 			 std::pair<bool, T> (C::*member_function_ptr)(void),
-			 v_up_output_wrapper C::*member_object_ptr,
-			 B b = B ()) :
+			 v_up_output_wrapper C::*member_object_ptr) :
       m_c (c),
       m_member_function_ptr (member_function_ptr),
       m_member_object_ptr (member_object_ptr),
-      m_bind_status (false),
-      m_b (b)
+      m_bind_status (false)
     { }
     
     std::pair<bool, T> operator() () {
@@ -308,12 +283,12 @@ namespace ioa {
       m_bind_status = true;
       // We schedule the action because the precondition might test is_bound ().
       scheduler.schedule (&m_c, m_member_object_ptr);
-      m_b.bound ();
+      notify_observers ();
     }
     
     void unbound () {
       m_bind_status = false;
-      m_b.unbound ();
+      notify_observers ();
     }
 
     bool is_bound () const {
@@ -321,28 +296,26 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class P, class B = parameterized_bind_callback<P> >
+  template <class C, class T, class P>
   class v_p_output_wrapper :
     public output,
     public value<T>,
-    public parameter<P>
+    public parameter<P>,
+    public observable
   {
   private:
     C& m_c;
     std::pair<bool, T> (C::*m_member_function_ptr)(P);
     v_p_output_wrapper C::*m_member_object_ptr;
     std::set<P> m_parameters;
-    B m_b;
     
   public:
     v_p_output_wrapper (C& c,
 			std::pair<bool, T> (C::*member_function_ptr)(P),
-			v_p_output_wrapper C::*member_object_ptr,
-			B b = B()) :
+			v_p_output_wrapper C::*member_object_ptr) :
       m_c (c),
       m_member_function_ptr (member_function_ptr),
-      m_member_object_ptr (member_object_ptr),
-      m_b (b)
+      m_member_object_ptr (member_object_ptr)
     { }
     
     std::pair<bool, T> operator() (P p) {
@@ -353,12 +326,12 @@ namespace ioa {
       m_parameters.insert (p);
       // We schedule the action because the precondition might test is_bound ().
       scheduler.schedule (&m_c, m_member_object_ptr, p);
-      m_b.bound (p);
+      notify_observers ();
     }
     
     void unbound (P p) {
       m_parameters.erase (p);
-      m_b.unbound (p);
+      notify_observers ();
     }
 
     void is_bound (P p) const {

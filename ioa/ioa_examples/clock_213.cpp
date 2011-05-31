@@ -92,32 +92,27 @@ class composer :
 {
 private:
   typedef ioa::automaton_helper<composer, ioa::instance_generator<trigger> > trigger_helper;
-  trigger_helper m_trigger;
+  trigger_helper* m_trigger;
   typedef ioa::automaton_helper<composer, ioa::instance_generator<ioa_clock> > ioa_clock_helper;
-  ioa_clock_helper m_ioa_clock;
+  ioa_clock_helper* m_ioa_clock;
   typedef ioa::automaton_helper<composer, ioa::instance_generator<display> > display_helper;
-  display_helper m_display;
+  display_helper* m_display;
   typedef ioa::bind_helper<composer, trigger_helper, trigger::request_type, ioa_clock_helper, ioa_clock::request_type> bind1_helper;
-  bind1_helper m_bind1;
+  bind1_helper* m_bind1;
   typedef ioa::bind_helper<composer, ioa_clock_helper, ioa_clock::clock_type, display_helper, display::clock_type> bind2_helper;
-  bind2_helper m_bind2;
+  bind2_helper* m_bind2;
 
 public:
   
-  composer () :
-    m_trigger (this, trigger_helper::generator ()),
-    m_ioa_clock (this, ioa_clock_helper::generator ()),
-    m_display (this, display_helper::generator ()),
-    m_bind1 (this, &m_trigger, &trigger::request, &m_ioa_clock, &ioa_clock::request),
-    m_bind2 (this, &m_ioa_clock, &ioa_clock::clock, &m_display, &display::clock)
+  composer ()
   { }
 
-  void init () { 
-    m_trigger.create ();
-    m_ioa_clock.create ();
-    m_display.create ();
-    m_bind1.bind ();
-    m_bind2.bind ();
+  void init () {
+    m_trigger = new trigger_helper (this, trigger_helper::generator ());
+    m_ioa_clock = new ioa_clock_helper (this, ioa_clock_helper::generator ());
+    m_display = new display_helper (this, display_helper::generator ());
+    m_bind1 = new bind1_helper (this, m_trigger, &trigger::request, m_ioa_clock, &ioa_clock::request);
+    m_bind2 = new bind2_helper (this, m_ioa_clock, &ioa_clock::clock, m_display, &display::clock);
   }
 
 };

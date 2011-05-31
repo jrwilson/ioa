@@ -8,68 +8,103 @@
 
 BOOST_AUTO_TEST_SUITE(configuration_suite)
 
-struct automaton_helper_automaton_destroyed :
-  public ioa::dispatching_automaton
+struct self_helper_destroy_before :
+  public ioa::dispatching_automaton,
+  public ioa::observer
 {
-  typedef ioa::automaton_helper<automaton_helper_automaton_destroyed, automaton2_generator> helper;
-  helper m_helper;
-
-  UP_INTERNAL (automaton_helper_automaton_destroyed, transition) {
-    if (m_helper.get_handle ().aid () != -1) {
-      // Destroy once created.
-      m_helper.destroy ();
-    }
-    else {
-      // Poll.
-      ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
-    }
-  }
-
-  automaton_helper_automaton_destroyed () :
-    m_helper (this, automaton2_generator ()),
-    ACTION (automaton_helper_automaton_destroyed, transition)
-  { }
+  typedef ioa::self_helper<self_helper_destroy_before> helper_type;
+  helper_type* m_helper;
 
   void init () {
-    m_helper.create ();
-    ioa::scheduler.schedule (this, &automaton_helper_automaton_destroyed::transition);
+    m_helper = new helper_type (this);
+    BOOST_CHECK (ioa::scheduler.get_current_aid (this) == m_helper->get_handle ());
+    m_helper->add_observer (this);
+    m_helper->destroy ();
   }
 
-  ~automaton_helper_automaton_destroyed () {
-    BOOST_CHECK (m_helper.get_handle ().aid () == -1);
+  ~self_helper_destroy_before () {
+    BOOST_CHECK (m_helper == 0);
   }
+
+  void observe () {
+    BOOST_CHECK (false);
+  }
+
+  void stop_observing () {
+    m_helper = 0;
+  }
+
 };
 
-BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed)
+BOOST_AUTO_TEST_CASE (config_self_helper_destroy_before)
 {
-  ioa::scheduler.run (ioa::instance_generator<automaton_helper_automaton_destroyed> ());
+  ioa::scheduler.run (ioa::instance_generator<self_helper_destroy_before> ());
   ioa::scheduler.clear ();
 }
 
-struct automaton_helper_automaton_destroyed_fast :
-  public ioa::dispatching_automaton
+struct automaton_helper_destroy_after :
+  public ioa::dispatching_automaton,
+  public ioa::observer
 {
-  typedef ioa::automaton_helper<automaton_helper_automaton_destroyed_fast, automaton2_generator> helper;
-  helper m_helper;
-
-
-  automaton_helper_automaton_destroyed_fast () :
-    m_helper (this, automaton2_generator ())
-  { }
+  typedef ioa::automaton_helper<automaton_helper_destroy_after, automaton2_generator> helper_type;
+  helper_type* m_helper;
 
   void init () {
-    m_helper.create ();
-    m_helper.destroy ();
+    m_helper = new helper_type (this, automaton2_generator ());
+    m_helper->add_observer (this);
   }
 
-  ~automaton_helper_automaton_destroyed_fast () {
-    BOOST_CHECK (m_helper.get_handle ().aid () == -1);
+  ~automaton_helper_destroy_after () {
+    BOOST_CHECK (m_helper == 0);
   }
+
+  void observe () {
+    BOOST_CHECK (m_helper->get_handle ().aid () != -1);
+    m_helper->destroy ();
+  }
+
+  void stop_observing () {
+    m_helper = 0;
+  }
+
 };
 
-BOOST_AUTO_TEST_CASE (config_automaton_helper_automaton_destroyed_fast)
+BOOST_AUTO_TEST_CASE (config_automaton_helper_destroy_after)
 {
-  ioa::scheduler.run (ioa::instance_generator<automaton_helper_automaton_destroyed_fast> ());
+  ioa::scheduler.run (ioa::instance_generator<automaton_helper_destroy_after> ());
+  ioa::scheduler.clear ();
+}
+
+struct automaton_helper_destroy_before :
+  public ioa::dispatching_automaton,
+  public ioa::observer
+{
+  typedef ioa::automaton_helper<automaton_helper_destroy_before, automaton2_generator> helper_type;
+  helper_type* m_helper;
+
+  void init () {
+    m_helper = new helper_type (this, automaton2_generator ());
+    m_helper->add_observer (this);
+    m_helper->destroy ();
+  }
+
+  ~automaton_helper_destroy_before () {
+    BOOST_CHECK (m_helper == 0);
+  }
+
+  void observe () {
+    BOOST_CHECK (false);
+  }
+
+  void stop_observing () {
+    m_helper = 0;
+  }
+
+};
+
+BOOST_AUTO_TEST_CASE (config_automaton_helper_destroy_before)
+{
+  ioa::scheduler.run (ioa::instance_generator<automaton_helper_destroy_before> ());
   ioa::scheduler.clear ();
 }
 

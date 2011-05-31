@@ -51,6 +51,9 @@
   If the helper always calls delete, then we cannot have statically allocated helpers.
   This seems acceptable to me at this time.
 
+  If we only allow dynamically allocated helpers, we can move all of the create/bind parameters back to the constructor and stipulate that the helpers are dynamically allocated at or after the init methods of the automaton.
+  The helpers then have a very simple interface: a constructor and a destroy/unbind method.
+
   Suppose that an automaton has allocated some helpers is in its destructor.
   Also, suppose that the memory accounting framework does not exists (because it doesn't).
   The automaton designer, wishing to not introduce memory leaks, wishes to delete the helpers.
@@ -60,10 +63,12 @@
   Otherwise, helpers become too complex and their utility is greatly diminished.
   
   We can group helpers into other objects to make the creation and maintenance of constellations easier.
-  However, we have the same problem as before where an automaton has no way of knowing when a grouping object is safe to delete.
-  I think this can be solved with smart pointers where the helpers have a smart pointer to the grouping object.
-  Once the helpers are deleted, the grouping object will be deleted.
-  This pattern can be replicated ad infinitum.
+  Initially, this looks difficult as it appears that we have the same problem as before, i.e., an automaton has no way of knowing when a grouping object is safe to delete.
+  The Observer Pattern to the rescue.
+  The helpers are observable, thus, the grouping object can observe them and know when they are all destroyed.
+  If the group object itself is observable, then the automaton can know when the grouping object is defunct.
+  The pattern can be repeated ad infinitum and resembles a tree structure with the automaton at the root, group objects at the branches, and helpers at the roots.
+  In the tree, parents observe their children.
 
 * Action Wrappers
 
@@ -71,4 +76,5 @@
   Consider a pair of automata, A and B, that are bound.
   If either one of them dies, the other should die.
   The automata can detect the death of the other by detecting when their respective actions are unbound.
-  I think a straight-forward solution is for the action wrappers to take an object to call when the bind status changes.
+  The Observer Pattern to the rescue again.
+  We can make all input and output wrappers be observable so the automaton can know when something changes status.
