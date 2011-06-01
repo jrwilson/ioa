@@ -1,6 +1,9 @@
 #ifndef __shared_mutex_hpp__
 #define __shared_mutex_hpp__
 
+#include <pthread.h>
+#include <cassert>
+
 class shared_mutex
 {
 private:

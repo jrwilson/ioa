@@ -2,6 +2,7 @@
 #define __time_hpp__
 
 #include <sys/time.h>
+#include <cassert>
 
 namespace ioa {
 

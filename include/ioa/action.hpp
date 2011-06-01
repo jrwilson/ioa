@@ -1,7 +1,9 @@
 #ifndef __action_hpp__
 #define __action_hpp__
 
-#include <set>
+#include <cstddef>
+#include <utility>
+
 #include "automaton_handle.hpp"
 
 namespace ioa {
@@ -46,7 +48,7 @@ namespace ioa {
     typedef null_type value_type;
   };
 
-  template <class T>
+  template <typename T>
   struct value {
     typedef valued value_status;
     typedef T value_type;
@@ -57,7 +59,7 @@ namespace ioa {
     typedef null_type parameter_type;
   };
 
-  template <class T>
+  template <typename T>
   struct parameter {
     typedef parameterized parameter_status;
     typedef T parameter_type;
@@ -142,7 +144,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class PT>
+  template <class I, class M, typename PT>
   struct parameter_core :
     public action_core<I, M>
   {
@@ -159,7 +161,6 @@ namespace ioa {
       return size_t (parameter);
     }
   };
-
 
   template <class I, class M>
   struct unparameterized_bound :
@@ -179,7 +180,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class PT>
+  template <class I, class M, typename PT>
   struct parameterized_bound :
     public parameter_core<I, M, PT>
   {
@@ -206,7 +207,7 @@ namespace ioa {
     PS - parameter status
     PT - parameter type
   */
-  template <class K, class I, class M, class VS, class VT, class PS, class PT> class action_impl;
+  template <class K, class I, class M, class VS, typename VT, class PS, typename PT> class action_impl;
 
   template <class I, class M>
   class action_impl<input_category, I, M, unvalued, null_type, unparameterized, null_type> :
@@ -225,7 +226,7 @@ namespace ioa {
 
   };
 
-  template <class I, class M, class PT>
+  template <class I, class M, typename PT>
   class action_impl<input_category, I, M, unvalued, null_type, parameterized, PT> :
     public parameterized_bound<I, M, PT>
   {
@@ -242,7 +243,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class VT>
+  template <class I, class M, typename VT>
   class action_impl<input_category, I, M, valued, VT, unparameterized, null_type> :
     public unparameterized_bound<I, M>
   {
@@ -258,7 +259,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class VT, class PT>
+  template <class I, class M, typename VT, typename PT>
   class action_impl<input_category, I, M, valued, VT, parameterized, PT> :
     public parameterized_bound<I, M, PT>
   {
@@ -295,7 +296,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class PT>
+  template <class I, class M, typename PT>
   class action_impl<output_category, I, M, unvalued, null_type, parameterized, PT> :
     public parameterized_bound<I, M, PT>
   {
@@ -316,7 +317,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class VT>
+  template <class I, class M, typename VT>
   class action_impl<output_category, I, M, valued, VT, unparameterized, null_type> :
     public unparameterized_bound<I, M>
   {
@@ -336,7 +337,7 @@ namespace ioa {
     }
   };
 
-  template <class I, class M, class VT, class PT>
+  template <class I, class M, typename VT, typename PT>
   class action_impl<output_category, I, M, valued, VT, parameterized, PT> :
     public parameterized_bound<I, M, PT>
   {
@@ -374,7 +375,7 @@ namespace ioa {
 
   };
 
-  template <class I, class M, class PT>
+  template <class I, class M, typename PT>
   class action_impl<internal_category, I, M, unvalued, null_type, parameterized, PT> :
     public parameter_core<I, M, PT>
   {
@@ -414,7 +415,7 @@ namespace ioa {
 
   };
 
-  template <class I, class M, class VT>
+  template <class I, class M, typename VT>
   class action_impl<event_category, I, M, valued, VT, unparameterized, null_type> :
     public action_core<I, M>
   {
@@ -442,28 +443,28 @@ namespace ioa {
   };
 
 
-  template <class I, class Member>
+  template <class I, class M>
   class action :
-    public action_impl<typename Member::action_category,
+    public action_impl<typename M::action_category,
 		       I,
-		       Member,
-		       typename Member::value_status,
-		       typename Member::value_type,
-		       typename Member::parameter_status,
-		       typename Member::parameter_type>
+		       M,
+		       typename M::value_status,
+		       typename M::value_type,
+		       typename M::parameter_status,
+		       typename M::parameter_type>
   {
   public:
-    typedef typename Member::action_category action_category;
-    typedef typename Member::value_status value_status;
-    typedef typename Member::value_type value_type;
-    typedef typename Member::parameter_status parameter_status;
-    typedef typename Member::parameter_type parameter_type;
+    typedef typename M::action_category action_category;
+    typedef typename M::value_status value_status;
+    typedef typename M::value_type value_type;
+    typedef typename M::parameter_status parameter_status;
+    typedef typename M::parameter_type parameter_type;
 
     action (const automaton_handle<I>& a,
-  	    Member I::*ptr) :
+  	    M I::*ptr) :
       action_impl <action_category,
 		   I,
-		   Member,
+		   M,
 		   value_status,
 		   value_type,
 		   parameter_status,
@@ -471,12 +472,12 @@ namespace ioa {
     { }
 
     action (const automaton_handle<I>& a,
-    	    Member I::*ptr,
+    	    M I::*ptr,
     	    const parameter_type& p,
 	    parameterized /* */) :
       action_impl <action_category,
 		   I,
-		   Member,
+		   M,
 		   value_status,
 		   value_type,
 		   parameter_status,
@@ -484,12 +485,12 @@ namespace ioa {
     { }
     
     action (const automaton_handle<I>& a,
-    	    Member I::*ptr,
+    	    M I::*ptr,
     	    const value_type& v,
 	    unparameterized /* */) :
       action_impl <action_category,
 		   I,
-		   Member,
+		   M,
 		   value_status,
 		   value_type,
 		   parameter_status,
@@ -505,7 +506,7 @@ namespace ioa {
     return action<I, M> (handle, member_ptr);
   }
 
-  template <class I, class M, class A>
+  template <class I, class M, typename A>
   action<I, M>
   make_action (const automaton_handle<I>& handle,
 	       M I::*member_ptr,
