@@ -1,2 +1,0 @@
-use-project /libs/ioa : ioa ;
-use-project /libs/number : number ;
