@@ -29,7 +29,7 @@ namespace ioa {
 	m_bind_helper (bind_helper),
 	m_output (output)
       {
-	BOOST_ASSERT (m_output != 0);
+	assert (m_output != 0);
 	m_output->add_observer (this);
 
 	automaton_handle<OI> h = m_output->get_handle ();
@@ -66,7 +66,7 @@ namespace ioa {
 	m_bind_helper (bind_helper),
 	m_input (input)
       {
-	BOOST_ASSERT (m_input != 0);
+	assert (m_input != 0);
 	m_input->add_observer (this);
 
 	automaton_handle<II> h = m_input->get_handle ();

@@ -1,11 +1,11 @@
 #ifndef __binding_hpp__
 #define __binding_hpp__
 
-#include <boost/foreach.hpp>
 #include "action.hpp"
 #include "system_interface.hpp"
 #include "scheduler_interface.hpp"
 #include "binding_handle.hpp"
+#include <algorithm>
 
 namespace ioa {
 
@@ -343,7 +343,7 @@ namespace ioa {
 
   protected:
     action_interface& get_output () const {
-      BOOST_ASSERT (!m_inputs.empty ());
+      assert (!m_inputs.empty ());
       return (*m_inputs.begin ())->output_action ();
     }
 
@@ -390,7 +390,7 @@ namespace ioa {
 
     void unbind (const aid_t binder,
   		 const bid_t bid) {
-      BOOST_ASSERT (!m_inputs.empty ());
+      assert (!m_inputs.empty ());
       typename set_type::iterator pos = std::find_if (m_inputs.begin (),
 						      m_inputs.end (),
 						      aid_bid_equal (binder, bid));
@@ -487,12 +487,12 @@ namespace ioa {
   	       scheduler_interface& scheduler,
   	       D& d) {
       // Can't bind to self.
-      BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
+      assert (output_action.automaton.aid () != input_action.automaton.aid ());
       // Can't already involve input.
-      BOOST_ASSERT (!involves_input_automaton (input_action.automaton.aid ()));
+      assert (!involves_input_automaton (input_action.automaton.aid ()));
       // Sanity check.
       if (!m_inputs.empty ()) {
-  	BOOST_ASSERT (output_action == get_output ());
+  	assert (output_action == get_output ());
       }
       
       unvalued_binding_record_interface* record = new unvalued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, scheduler, d);
@@ -531,12 +531,12 @@ namespace ioa {
   	       scheduler_interface& scheduler,
   	       D& d) {
       // Can't bind to self.
-      BOOST_ASSERT (output_action.automaton.aid () != input_action.automaton.aid ());
+      assert (output_action.automaton.aid () != input_action.automaton.aid ());
       // Can't already involve input.
-      BOOST_ASSERT (!involves_input_automaton (input_action.automaton.aid ()));
+      assert (!involves_input_automaton (input_action.automaton.aid ()));
       // Sanity check.
       if (!this->m_inputs.empty ()) {
-  	BOOST_ASSERT (output_action == this->get_output ());
+  	assert (output_action == this->get_output ());
       }
       
       valued_binding_record_interface<T>* record = new valued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, scheduler, d);

@@ -1,22 +1,23 @@
 #ifndef __blocking_queue_hpp__
 #define __blocking_queue_hpp__
 
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/shared_mutex.hpp>
+#include "condition_variable.hpp"
+#include "mutex.hpp"
+#include "lock.hpp"
 #include <list>
 
 template <class T>
 class blocking_list
 {
 private:
-  boost::condition_variable_any m_condition;
+  condition_variable m_condition;
+  mutex m_mutex;
 
 public:
   std::list<T> list;
-  boost::shared_mutex mutex;
 
   T pop () {
-    boost::unique_lock<boost::shared_mutex> lock (mutex);
+    lock lock (m_mutex);
     while (list.empty ()) {
       m_condition.wait (lock);
     }
@@ -27,11 +28,15 @@ public:
   
   void push (const T& t) {
     {
-      boost::unique_lock<boost::shared_mutex> lock (mutex);
+      lock lock (m_mutex);
       list.push_back (t);
     }
     // Only one thread should be calling pop.
     m_condition.notify_one ();
+  }
+
+  mutex& get_mutex () {
+    return m_mutex;
   }
 
 };

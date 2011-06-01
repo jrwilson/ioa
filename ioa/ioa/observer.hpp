@@ -2,7 +2,6 @@
 #define __observer_hpp__
 
 #include <set>
-#include <boost/foreach.hpp>
 
 namespace ioa {
 
@@ -22,8 +21,10 @@ namespace ioa {
   protected:
     void notify_observers () {
       // Notify the observers.
-      BOOST_FOREACH (observer* o, m_observers) {
-	o->observe ();
+      for (std::set<observer*>::const_iterator pos = m_observers.begin ();
+	   pos != m_observers.end ();
+	   ++pos) {
+	(*pos)->observe ();
       }
     }
 
@@ -31,13 +32,15 @@ namespace ioa {
 
     ~observable () {
       // Notify the observers.
-      BOOST_FOREACH (observer* o, m_observers) {
-	o->stop_observing ();
+      for (std::set<observer*>::const_iterator pos = m_observers.begin ();
+	   pos != m_observers.end ();
+	   ++pos) {
+	(*pos)->stop_observing ();
       }
     }
 
     void add_observer (observer* o) {
-      BOOST_ASSERT (o != 0);
+      assert (o != 0);
       m_observers.insert (o);
     }
     

@@ -4,8 +4,7 @@
 #include "blocking_queue.hpp"
 #include "runnable.hpp"
 #include "system.hpp"
-#include <boost/bind.hpp>
-#include <boost/thread.hpp>
+#include "thread.hpp"
 #include <queue>
 #include <functional>
 #include <fcntl.h>
@@ -15,18 +14,18 @@ namespace ioa {
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
 
-  template <class S, class C, class I, class D>
+  template <class C, class I, class D>
   class create_runnable :
     public runnable_interface
   {
   private:
-    S& m_system;
+    system& m_system;
     const automaton_handle<C> m_automaton;
     std::auto_ptr<generator_interface<I> > m_generator;
     scheduler_interface& m_scheduler;
     D& m_d;
   public:
-    create_runnable (S& system,
+    create_runnable (system& system,
 		     const automaton_handle<C>& automaton,
 		     std::auto_ptr<generator_interface<I> > generator,
 		     scheduler_interface& scheduler,
@@ -43,13 +42,165 @@ namespace ioa {
     }
   };
   
-  template <class S, class C, class I, class D>
-  create_runnable<S, C, I, D>* make_create_runnable (S& system,
-						     const automaton_handle<C>& automaton,
-						     std::auto_ptr<generator_interface<I> > generator,
-						     scheduler_interface& scheduler,
-						     D& d) {
-    return new create_runnable<S, C, I, D> (system, automaton, generator, scheduler, d);
+  template <class C, class I, class D>
+  create_runnable<C, I, D>* make_create_runnable (system& system,
+						  const automaton_handle<C>& automaton,
+						  std::auto_ptr<generator_interface<I> > generator,
+						  scheduler_interface& scheduler,
+						  D& d) {
+    return new create_runnable<C, I, D> (system, automaton, generator, scheduler, d);
+  }
+
+  template <class OI, class OM, class II, class IM, class C, class D>
+  class bind_runnable :
+    public runnable_interface
+  {
+  private:
+    system& m_system;
+    const action<OI, OM> m_output_action;
+    const action<II, IM> m_input_action;
+    const automaton_handle<C> m_automaton;
+    scheduler_interface& m_scheduler;
+    D& m_d;
+
+  public:
+    bind_runnable (system& system,
+		   const action<OI, OM> output_action,
+		   const action<II, IM> input_action,
+		   const automaton_handle<C>& automaton,
+		   scheduler_interface& scheduler,
+		   D& d) :
+      m_system (system),
+      m_output_action (output_action),
+      m_input_action (input_action),
+      m_automaton (automaton),
+      m_scheduler (scheduler),
+      m_d (d)
+    { }
+
+    void operator() () {
+      m_system.bind (m_output_action, m_input_action, m_automaton, m_scheduler, m_d);
+    }
+  };
+
+  template <class OI, class OM, class II, class IM, class C, class D>
+  bind_runnable<OI, OM, II, IM, C, D>* make_bind_runnable (system& system,
+							   const action<OI, OM> output_action,
+							   const action<II, IM> input_action,
+							   const automaton_handle<C>& automaton,
+							   scheduler_interface& scheduler,
+							   D& d) {
+    return new bind_runnable<OI, OM, II, IM, C, D> (system, output_action, input_action, automaton, scheduler, d);
+  }
+
+  template <class C, class D>
+  class unbind_runnable :
+    public runnable_interface
+  {
+  private:
+    system& m_system;
+    const bid_t m_bid;
+    const automaton_handle<C> m_automaton;
+    scheduler_interface& m_scheduler;
+    D& m_d;
+    
+  public:
+    unbind_runnable (system& system,
+		     const bid_t bid,
+		     const automaton_handle<C>& automaton,
+		     scheduler_interface& scheduler,
+		     D& d) :
+      m_system (system),
+      m_bid (bid),
+      m_automaton (automaton),
+      m_scheduler (scheduler),
+      m_d (d)
+    { }
+
+    void operator() () {
+      m_system.unbind (m_bid, m_automaton, m_scheduler, m_d);
+    }
+  };
+  
+  template <class C, class D>
+  unbind_runnable<C, D>* make_unbind_runnable (system& system,
+					       const bid_t bid,
+					       const automaton_handle<C>& automaton,
+					       scheduler_interface& scheduler,
+					       D& d) {
+    return new unbind_runnable<C, D> (system, bid, automaton, scheduler, d);
+  }
+
+  template <class C, class I, class D>
+  class destroy_runnable :
+    public runnable_interface
+  {
+  private:
+    system& m_system;
+    const automaton_handle<C> m_automaton;
+    const automaton_handle<I> m_target;
+    scheduler_interface& m_scheduler;
+    D& m_d;
+
+  public:
+    destroy_runnable (system& system,
+		      const automaton_handle<C>& automaton,
+		      const automaton_handle<I>& target,
+		      scheduler_interface& scheduler,
+		      D& d) :
+      m_system (system),
+      m_automaton (automaton),
+      m_target (target),
+      m_scheduler (scheduler),
+      m_d (d)
+    { }
+
+    void operator() () {
+      m_system.destroy (m_automaton, m_target, m_scheduler, m_d);
+    }
+  };
+
+  template <class C, class I, class D>
+  destroy_runnable<C, I, D>* make_destroy_runnable (system& system,
+						    const automaton_handle<C>& automaton,
+						    const automaton_handle<I>& target,
+						    scheduler_interface& scheduler,
+						    D& d) {
+    return new destroy_runnable<C, I, D> (system, automaton, target, scheduler, d);
+  }
+
+  template <class I, class M>
+  class action_runnable :
+    public action_runnable_interface
+  {
+  private:
+    system& m_system;
+    const action<I, M> m_action;
+    scheduler_interface& m_scheduler;
+
+  public:
+    action_runnable (system& system,
+		     const action<I, M> action,
+		     scheduler_interface& scheduler) :
+      m_system (system),
+      m_action (action),
+      m_scheduler (scheduler)
+    { }
+    
+    void operator() () {
+      m_system.execute (m_action, m_scheduler);
+    }
+
+    const action_interface& get_action () const {
+      return m_action;
+    }
+  };
+
+  template <class I, class M>
+  action_runnable<I, M>* make_action_runnable (system& system,
+					       const action<I, M> action,
+					       scheduler_interface& scheduler) {
+    return new action_runnable<I, M> (system, action, scheduler);
   }
 
   typedef std::pair<action_runnable_interface*, time> action_time;
@@ -80,12 +231,12 @@ namespace ioa {
       // This function (get_current_aid) is responsible for producing the handle.
 
       // First, we check that set_current_aid was called.
-      BOOST_ASSERT (m_current_aid != -1);
-      BOOST_ASSERT (m_current_this != 0);
+      assert (m_current_aid != -1);
+      assert (m_current_this != 0);
 
       // Second, we need to make sure that the user didn't inappropriately cast "this."
       const I* tmp = dynamic_cast<const I*> (m_current_this);
-      BOOST_ASSERT (tmp == ptr);
+      assert (tmp == ptr);
 
       return m_system.cast_aid (ptr, m_current_aid);
     }
@@ -93,7 +244,7 @@ namespace ioa {
   private:
     void set_current_aid (const aid_t aid) {
       // This is to be used during generation so that any allocated memory can be associated with the automaton.
-      BOOST_ASSERT (aid != -1);
+      assert (aid != -1);
       m_current_aid = aid;
       m_current_this = 0;
     }
@@ -101,8 +252,8 @@ namespace ioa {
     void set_current_aid (const aid_t aid,
 			  const automaton_interface& current_this) {
       // This is for all cases except generation.
-      BOOST_ASSERT (aid != -1);
-      BOOST_ASSERT (&current_this != 0);
+      assert (aid != -1);
+      assert (&current_this != 0);
       m_current_aid = aid;
       m_current_this = &current_this;
     }
@@ -174,7 +325,7 @@ namespace ioa {
        */
       bool duplicate;
       {
-	boost::shared_lock<boost::shared_mutex> lock (m_execq.mutex);
+	lock lock (m_execq.get_mutex ());
 	duplicate = std::find_if (m_execq.list.begin (), m_execq.list.end (), action_runnable_equal (r)) != m_execq.list.end ();
       }
 
@@ -197,13 +348,13 @@ namespace ioa {
     void wakeup_timer_thread () {
       char c;
       ssize_t bytes_written = write (m_wakeup_fd[1], &c, 1);
-      BOOST_ASSERT (bytes_written == 1);
+      assert (bytes_written == 1);
     }
 
     void schedule_timerq (action_runnable_interface* r, const time& offset) {
       struct timeval now;
       int s = gettimeofday (&now, 0);
-      BOOST_ASSERT (s == 0);
+      assert (s == 0);
       time release_time (now);
       release_time += offset;
 
@@ -226,17 +377,7 @@ namespace ioa {
     void create (const C* ptr,
 		 std::auto_ptr<generator_interface<I> > generator,
 		 D& d) {
-      // automaton_handle<I> (system::*create_ptr) (const automaton_handle<C>&,
-      // 						 std::auto_ptr<generator_interface<I> >,
-      // 						 scheduler_interface&,
-      // 						 D&) = &system::create;
       schedule_sysq (make_create_runnable (m_system, get_current_aid (ptr), generator, *this, d));
-      // schedule_sysq (make_runnable (boost::bind (create_ptr,
-      // 						 boost::ref (m_system),
-      // 						 get_current_aid (ptr),
-      // 						 generator,  // We want a copy, not a reference.
-      // 						 boost::ref (*this),
-      // 						 boost::ref (d))));
     }
     
     template <class C, class OI, class OM, class II, class IM, class D>
@@ -244,66 +385,28 @@ namespace ioa {
 	       const action<OI, OM>& output_action,
 	       const action<II, IM>& input_action,
 	       D& d) {
-      bid_t (system::*bind_ptr) (const action<OI, OM>&,
-				 const action<II, IM>&,
-				 const automaton_handle<C>&,
-				 scheduler_interface&,
-				 D&) = &system::bind;
-      schedule_sysq (make_runnable (boost::bind (bind_ptr,
-						 boost::ref (m_system),
-						 output_action,
-						 input_action,
-						 get_current_aid (ptr),
-						 boost::ref (*this),
-						 boost::ref (d))));
+      schedule_sysq (make_bind_runnable (m_system, output_action, input_action, get_current_aid (ptr), *this, d));
     }
 
     template <class C, class D>
     void unbind (const C* ptr,
 		 const bid_t bid,
 		 D& d) {
-      bool (system::*unbind_ptr) (const bid_t,
-				  const automaton_handle<C>&,
-				  scheduler_interface&,
-				  D&) = &system::unbind;
-      schedule_sysq (make_runnable (boost::bind (unbind_ptr,
-						 boost::ref (m_system),
-						 bid,
-						 get_current_aid (ptr),
-						 boost::ref (*this),
-						 boost::ref (d))));
+      schedule_sysq (make_unbind_runnable (m_system, bid, get_current_aid (ptr), *this, d));
     }
 
     template <class C, class I, class D>
     void destroy (const C* ptr,
 		  const automaton_handle<I>& automaton,
 		  D& d) {
-      bool (system::*destroy_ptr) (const automaton_handle<C>&,
-				   const automaton_handle<I>&,
-				   scheduler_interface&,
-				   D&) = &system::destroy;
-      schedule_sysq (make_runnable (boost::bind (destroy_ptr,
-						 boost::ref (m_system),
-						 get_current_aid (ptr),
-						 automaton,
-						 boost::ref (*this),
-						 boost::ref (d))));
+      schedule_sysq (make_destroy_runnable (m_system, get_current_aid (ptr), automaton, *this, d));
     }
 
     template <class I, class M>
     void schedule (const I* ptr,
 		   M I::*member_ptr,
 		   const time& offset) {
-      action<I, M> ac = make_action (get_current_aid (ptr), member_ptr);
-	bool (system::*execute_ptr) (const action<I,M>&,
-				     scheduler_interface&) = &system::execute;
-	action_runnable_interface* r = make_action_runnable (boost::bind (execute_ptr,
-									  boost::ref (m_system),
-									  ac,
-									  boost::ref (*this)),
-							     ac);
-
-
+      action_runnable_interface* r = make_action_runnable (m_system, make_action (get_current_aid (ptr), member_ptr), *this);
       if (offset == time ()) {
 	schedule_execq (r);
       }
@@ -348,7 +451,7 @@ namespace ioa {
       while (thread_keep_going ()) {
 	// Process registrations.
 	{
-	  boost::unique_lock<boost::shared_mutex> lock (m_timerq.mutex);
+	  lock lock (m_timerq.get_mutex ());
 	  while (!m_timerq.list.empty ()) {
 	    timer_queue.push (m_timerq.list.front ());
 	    m_timerq.list.pop_front ();
@@ -357,7 +460,7 @@ namespace ioa {
 
 	struct timeval n;
 	r = gettimeofday (&n, 0);
-	BOOST_ASSERT (r == 0);
+	assert (r == 0);
 	time now (n);
 
 	while (!timer_queue.empty () && timer_queue.top ().second < now) {
@@ -386,7 +489,7 @@ namespace ioa {
 	  }
 	}
 	else if (r < 0) {
-	  BOOST_ASSERT (false);
+	  assert (false);
 	}
       }
     }
@@ -396,22 +499,22 @@ namespace ioa {
     void run (std::auto_ptr<generator_interface<I> > generator) {
       int r;
 
-      BOOST_ASSERT (m_sysq.list.size () == 0);
-      BOOST_ASSERT (m_execq.list.size () == 0);
-      BOOST_ASSERT (!keep_going ());
+      assert (m_sysq.list.size () == 0);
+      assert (m_execq.list.size () == 0);
+      assert (!keep_going ());
       m_system.create (generator, *this);
 
       // Create a pipe to communicate with the timer thread.
       r = pipe (m_wakeup_fd);
-      BOOST_ASSERT (r == 0);
+      assert (r == 0);
       r = fcntl (m_wakeup_fd[0], F_SETFL, O_NONBLOCK);
-      BOOST_ASSERT (r == 0);
+      assert (r == 0);
       r = fcntl (m_wakeup_fd[1], F_SETFL, O_NONBLOCK);
-      BOOST_ASSERT (r == 0);
+      assert (r == 0);
 
-      boost::thread sysq_thread (&simple_scheduler::process_sysq, boost::ref (*this));
-      boost::thread execq_thread (&simple_scheduler::process_execq, boost::ref (*this));
-      boost::thread timerq_thread (&simple_scheduler::process_timerq, boost::ref (*this));
+      thread sysq_thread (&simple_scheduler::process_sysq, *this);
+      thread execq_thread (&simple_scheduler::process_execq, *this);
+      thread timerq_thread (&simple_scheduler::process_timerq, *this);
 
       sysq_thread.join ();
       execq_thread.join ();
@@ -442,9 +545,9 @@ namespace ioa {
       m_execq.list.clear ();
 
       // Notice that the post-conditions of clear () match those of run ().
-      BOOST_ASSERT (m_sysq.list.size () == 0);
-      BOOST_ASSERT (m_execq.list.size () == 0);
-      BOOST_ASSERT (!keep_going ());
+      assert (m_sysq.list.size () == 0);
+      assert (m_execq.list.size () == 0);
+      assert (!keep_going ());
     }
             
   };

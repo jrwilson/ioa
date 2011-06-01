@@ -2,7 +2,6 @@
 #define __time_hpp__
 
 #include <sys/time.h>
-#include <boost/assert.hpp>
 
 namespace ioa {
 
@@ -13,8 +12,8 @@ namespace ioa {
     long usec;
 
     void check () {
-      BOOST_ASSERT ((sec <= 0 && usec <= 0 && usec > -1000000) ||
-		    (sec >= 0 && usec >= 0 && usec < 1000000));
+      assert ((sec <= 0 && usec <= 0 && usec > -1000000) ||
+	      (sec >= 0 && usec >= 0 && usec < 1000000));
     }
 
     void normalize () {

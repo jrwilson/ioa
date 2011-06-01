@@ -2,20 +2,22 @@
 #define __system_hpp__
 
 #include "sequential_set.hpp"
-#include <boost/foreach.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/utility.hpp>
 #include <list>
 #include "automaton_handle.hpp"
 #include "binding.hpp"
 #include "instance_generator.hpp"
+#include "mutex.hpp"
+#include "shared_mutex.hpp"
+#include "unique_lock.hpp"
+#include "shared_lock.hpp"
+#include <map>
 
 namespace ioa {
 
   // TODO:  Memory allocation.
 
   class automaton_record_interface :
-    public boost::mutex
+    public mutex
   {
   private:
     std::auto_ptr<automaton_interface> m_instance;
@@ -33,7 +35,7 @@ namespace ioa {
     { }
 
     virtual ~automaton_record_interface () {
-      BOOST_ASSERT (m_children.empty ());
+      assert (m_children.empty ());
     }
 
 
@@ -112,7 +114,7 @@ namespace ioa {
     { }
     
     ~automaton_record () {
-      BOOST_ASSERT (this->get_parent () != 0);
+      assert (this->get_parent () != 0);
       aid_t parent_aid = this->get_parent ()->get_aid ();
       m_scheduler.set_current_aid (parent_aid, *m_parent_instance);
       m_parent_instance->automaton_destroyed (m_d);
@@ -122,8 +124,7 @@ namespace ioa {
   };
 
   class system :
-    public system_interface,
-    public boost::noncopyable
+    public system_interface
   {
   private:    
     
@@ -196,7 +197,7 @@ namespace ioa {
       }
     };
     
-    boost::shared_mutex m_mutex;
+    shared_mutex m_mutex;
     sequential_set<aid_t> m_aids;
     std::set<void*> m_instances;
     std::map<aid_t, automaton_record_interface*> m_records;
@@ -217,10 +218,10 @@ namespace ioa {
       	}
       }
 
-      BOOST_ASSERT (m_aids.empty ());
-      BOOST_ASSERT (m_instances.empty ());
-      BOOST_ASSERT (m_records.empty ());
-      BOOST_ASSERT (m_bindings.empty ());
+      assert (m_aids.empty ());
+      assert (m_instances.empty ());
+      assert (m_records.empty ());
+      assert (m_bindings.empty ());
     }
 
     ~system (void) {
@@ -237,7 +238,7 @@ namespace ioa {
     create (std::auto_ptr<generator_interface<I> > generator,
 	    scheduler_interface& scheduler)
     {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      unique_lock lock (m_mutex);
 
       // Take an aid.
       automaton_handle<I> handle (m_aids.take ());
@@ -247,7 +248,7 @@ namespace ioa {
 
       // Run the generator.
       I* instance = (*generator) ();
-      BOOST_ASSERT (instance != 0);
+      assert (instance != 0);
 
       // Clear the current aid.
       scheduler.clear_current_aid ();
@@ -277,7 +278,7 @@ namespace ioa {
 	    scheduler_interface& scheduler,
 	    D& d)
     {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      unique_lock lock (m_mutex);
       
       if (!m_aids.contains (automaton.aid ())) {
 	return automaton_handle<I> ();
@@ -293,7 +294,7 @@ namespace ioa {
 
       // Run the generator.
       I* instance = (*generator) ();
-      BOOST_ASSERT (instance != 0);
+      assert (instance != 0);
 
       // Clear the current aid.
       scheduler.clear_current_aid ();
@@ -401,7 +402,7 @@ namespace ioa {
       
       if (out_pos != m_bindings.end ()) {
 	c = dynamic_cast<binding<OM>*> (*out_pos);
-	BOOST_ASSERT (c != 0);
+	assert (c != 0);
       }
       else {
 	c = new binding<OM> ();
@@ -428,7 +429,7 @@ namespace ioa {
 	  scheduler_interface& scheduler,
 	  D& d)
     {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      unique_lock lock (m_mutex);
       
       return bind (output,
 		   typename action<OI, OM>::action_category (),
@@ -534,7 +535,7 @@ namespace ioa {
     bool
     destroy (const automaton_handle<I>& target)
     {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      unique_lock lock (m_mutex);
       
       if (!m_aids.contains (target.aid ())) {
 	return false;
@@ -551,7 +552,7 @@ namespace ioa {
 	     scheduler_interface& scheduler,
 	     D& d)
     {
-      boost::unique_lock<boost::shared_mutex> lock (m_mutex);
+      unique_lock lock (m_mutex);
 
       if (!m_aids.contains (automaton.aid ())) {
 	return false;
@@ -584,9 +585,9 @@ namespace ioa {
 
     template <class I>
     I* aid_to_instance (const aid_t aid) {
-      BOOST_ASSERT (m_aids.contains (aid));
+      assert (m_aids.contains (aid));
       I* instance = dynamic_cast<I*> (m_records[aid]->get_instance ());
-      BOOST_ASSERT (instance != 0);
+      assert (instance != 0);
       return instance;
     }
 
@@ -657,7 +658,7 @@ namespace ioa {
     execute (const action<I, M>& ac,
 	     scheduler_interface& scheduler)
     {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+      shared_lock lock (m_mutex);
       
       if (!m_aids.contains (ac.get_aid ())) {
 	return false;
@@ -676,7 +677,7 @@ namespace ioa {
 	     scheduler_interface& scheduler,
 	     D& d)
     {
-      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+      shared_lock lock (m_mutex);
 
       if (!m_aids.contains (from.aid ())) {
 	// Deliverer does not exists.

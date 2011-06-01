@@ -1,6 +1,8 @@
 #ifndef __instance_generator_hpp__
 #define __instance_generator_hpp__
 
+#include <memory>
+
 namespace ioa {
 
   template <class T>
