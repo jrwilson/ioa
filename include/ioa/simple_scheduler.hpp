@@ -5,6 +5,8 @@
 #include "runnable.hpp"
 #include "system.hpp"
 #include "thread.hpp"
+#include <sys/select.h>
+#include <unistd.h>
 #include <queue>
 #include <functional>
 #include <fcntl.h>
@@ -445,8 +447,6 @@ namespace ioa {
 			  std::greater<action_time> > timer_queue;
 
       fd_set read_set;
-      FD_ZERO (&read_set);
-      FD_SET (m_wakeup_fd[0], &read_set);
 
       while (thread_keep_going ()) {
 	// Process registrations.
@@ -477,11 +477,12 @@ namespace ioa {
 	}
 
 	// TODO: Do better than FD_SETSIZE.
-	fd_set test_read_set;
-	FD_COPY (&read_set, &test_read_set);
-	int r = select (FD_SETSIZE, &test_read_set, 0, 0, test_timeout);
+	// TODO: Don't ZERO every time.
+        FD_ZERO (&read_set);
+        FD_SET (m_wakeup_fd[0], &read_set);
+	int r = select (FD_SETSIZE, &read_set, 0, 0, test_timeout);
 	if (r > 0) {
-	  if (FD_ISSET (m_wakeup_fd[0], &test_read_set)) {
+	  if (FD_ISSET (m_wakeup_fd[0], &read_set)) {
 	    // Drain the wakeup pipe.
 	    char c;
 	    // TODO:  Do better than reading one character at a time.
