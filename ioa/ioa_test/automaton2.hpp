@@ -95,10 +95,4 @@ public:
 
 };
 
-struct automaton2_generator :
-  public ioa::instance_generator<automaton2>
-{
-
-};
-
 #endif

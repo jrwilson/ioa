@@ -36,13 +36,12 @@ namespace ioa {
 
   };
 
-  template <class T, class G>
+  template <class T, class I>
   class automaton_helper :
     public observable
   {
   public:
-    typedef G generator;
-    typedef typename G::result_type instance;
+    typedef I instance;
 
   private:
     typedef enum {
@@ -53,12 +52,12 @@ namespace ioa {
     } state_type;
     state_type m_state;
     const T* m_t;
-    G m_generator;
-    automaton_handle<instance> m_handle;
+    std::auto_ptr<generator_interface<I> > m_generator;
+    automaton_handle<I> m_handle;
 
   public:
     automaton_helper (const T* t,
-		      G generator) :
+		      std::auto_ptr<generator_interface<I> > generator) :
       m_t (t),
       m_generator (generator)
     {
@@ -78,7 +77,7 @@ namespace ioa {
       case CREATE_RECV1:
 	scheduler.destroy (m_t, m_handle, *this);
 	// Reset the handle.
-	m_handle = automaton_handle<instance> ();
+	m_handle = automaton_handle<I> ();
 	m_state = DESTROY_SENT;
 	break;
       default:
@@ -86,7 +85,7 @@ namespace ioa {
       }
     }
   
-    void automaton_created (const automaton_handle<instance>& automaton) {
+    void automaton_created (const automaton_handle<I>& automaton) {
       switch (m_state) {
       case CREATE_SENT:
 	m_handle = automaton;
@@ -103,12 +102,12 @@ namespace ioa {
       }
     }
   
-    void instance_exists (const instance* /* */) {
+    void instance_exists (const I* /* */) {
       delete this;
     }
   
     void automaton_destroyed () {
-      m_handle = automaton_handle<instance> ();
+      m_handle = automaton_handle<I> ();
       delete this;
     }
 
@@ -120,7 +119,7 @@ namespace ioa {
       delete this;
     }
 
-    automaton_handle<instance> get_handle () const {
+    automaton_handle<I> get_handle () const {
       return m_handle;
     }
 

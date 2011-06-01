@@ -72,16 +72,16 @@ private:
 
   create1_d m_create1_d;
   create2_d m_create2_d;
-  instance_holder<automaton2> m_g;
+  automaton2* m_instance;
 
   UP_INTERNAL (create_exists, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, m_g, m_create1_d);
+      ioa::scheduler.create (this, std::auto_ptr<ioa::generator_interface<automaton2> > (new instance_holder<automaton2> (m_instance)), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
-      ioa::scheduler.create (this, m_g, m_create2_d);
+      ioa::scheduler.create (this, std::auto_ptr<ioa::generator_interface<automaton2> > (new instance_holder<automaton2> (m_instance)), m_create2_d);
       m_state = CREATE2_SENT;
       break;
     case CREATE2_RECV:
@@ -98,7 +98,7 @@ public:
     m_state (START),
     m_create1_d (*this),
     m_create2_d (*this),
-    m_g (new automaton2 ()),
+    m_instance (new automaton2 ()),
     ACTION (create_exists, transition)
   { }
 
@@ -113,7 +113,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_create_exists)
 {
-  ioa::scheduler.run (ioa::instance_generator<create_exists> ());
+  ioa::scheduler.run (ioa::make_instance_generator<create_exists> ());
   ioa::scheduler.clear ();
 }
 
@@ -159,7 +159,7 @@ private:
   UP_INTERNAL (create_automaton_created, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
@@ -190,7 +190,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_create_automaton_created)
 {
-  ioa::scheduler.run (ioa::instance_generator<create_automaton_created> ());
+  ioa::scheduler.run (ioa::make_instance_generator<create_automaton_created> ());
   ioa::scheduler.clear ();
 }
 
@@ -287,7 +287,7 @@ private:
   UP_INTERNAL (bind_output_automaton_dne_, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
@@ -325,7 +325,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_output_automaton_dne)
 {
-  ioa::scheduler.run (ioa::instance_generator<bind_output_automaton_dne_> ());
+  ioa::scheduler.run (ioa::make_instance_generator<bind_output_automaton_dne_> ());
   ioa::scheduler.clear ();
 }
 
@@ -422,7 +422,7 @@ private:
   UP_INTERNAL (bind_input_automaton_dne_, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
@@ -460,7 +460,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_input_automaton_dne)
 {
-  ioa::scheduler.run (ioa::instance_generator<bind_input_automaton_dne_> ());
+  ioa::scheduler.run (ioa::make_instance_generator<bind_input_automaton_dne_> ());
   ioa::scheduler.clear ();
 }
 
@@ -635,11 +635,11 @@ private:
   UP_INTERNAL (bind_exists, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
@@ -686,7 +686,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_exists)
 {
-  ioa::scheduler.run (ioa::instance_generator<bind_exists> ());
+  ioa::scheduler.run (ioa::make_instance_generator<bind_exists> ());
   ioa::scheduler.clear ();
 }
 
@@ -890,15 +890,15 @@ private:
   UP_INTERNAL (bind_input_action_unavailable, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_OUTPUT1_SENT;
       break;
     case CREATE_OUTPUT1_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create2_d);
       m_state = CREATE_OUTPUT2_SENT;
       break;
     case CREATE_OUTPUT2_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create3_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create3_d);
       m_state = CREATE_INPUT1_SENT;
       break;
     case CREATE_INPUT1_RECV:
@@ -946,7 +946,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_input_action_unavailable)
 {
-  ioa::scheduler.run (ioa::instance_generator<bind_input_action_unavailable> ());
+  ioa::scheduler.run (ioa::make_instance_generator<bind_input_action_unavailable> ());
   ioa::scheduler.clear ();
 }
 
@@ -1122,11 +1122,11 @@ private:
   UP_INTERNAL (bind_output_action_unavailable, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_OUTPUT1_SENT;
       break;
     case CREATE_OUTPUT1_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create2_d);
       m_state = CREATE_INPUT1_SENT;
       break;
     case CREATE_INPUT1_RECV:
@@ -1173,7 +1173,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_output_action_unavailable)
 {
-  ioa::scheduler.run (ioa::instance_generator<bind_output_action_unavailable> ());
+  ioa::scheduler.run (ioa::make_instance_generator<bind_output_action_unavailable> ());
   ioa::scheduler.clear ();
 }
 
@@ -1299,11 +1299,11 @@ private:
   UP_INTERNAL (bind_bound, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
@@ -1342,7 +1342,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_bind_bound)
 {
-  ioa::scheduler.run (ioa::instance_generator<bind_bound> ());
+  ioa::scheduler.run (ioa::make_instance_generator<bind_bound> ());
   ioa::scheduler.clear ();
 }
 
@@ -1453,11 +1453,11 @@ private:
   UP_INTERNAL (unbind_binding_dne, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
@@ -1493,7 +1493,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_binding_dne)
 {
-  ioa::scheduler.run (ioa::instance_generator<unbind_binding_dne> ());
+  ioa::scheduler.run (ioa::make_instance_generator<unbind_binding_dne> ());
   ioa::scheduler.clear ();
 }
 
@@ -1640,11 +1640,11 @@ private:
   UP_INTERNAL (unbind_unbound, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE_CHILD1_SENT;
       break;
     case CREATE_CHILD1_RECV:
-      ioa::scheduler.create (this, automaton2_generator (), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create2_d);
       m_state = CREATE_CHILD2_SENT;
       break;
     case CREATE_CHILD2_RECV:
@@ -1688,7 +1688,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_unbind_unbound)
 {
-  ioa::scheduler.run (ioa::instance_generator <unbind_unbound> ());
+  ioa::scheduler.run (ioa::make_instance_generator <unbind_unbound> ());
   ioa::scheduler.clear ();
 }
 
@@ -1833,11 +1833,11 @@ private:
   UP_INTERNAL (destroy_destroyer_not_creator, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
-      ioa::scheduler.create (this, ioa::instance_generator1<destroy_helper, ioa::automaton_handle<automaton2> > (m_child1), m_create2_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<destroy_helper, ioa::automaton_handle<automaton2> > (m_child1), m_create2_d);
       m_state = CREATE2_SENT;
       break;
     case CREATE2_RECV:
@@ -1868,7 +1868,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_destroy_destroyer_not_creator)
 {
-  ioa::scheduler.run (ioa::instance_generator <destroy_destroyer_not_creator> ());
+  ioa::scheduler.run (ioa::make_instance_generator <destroy_destroyer_not_creator> ());
   ioa::scheduler.clear ();
 }
 
@@ -1942,7 +1942,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_destroy_target_automaton_dne)
 {
-  ioa::scheduler.run (ioa::instance_generator<destroy_target_automaton_dne> ());
+  ioa::scheduler.run (ioa::make_instance_generator<destroy_target_automaton_dne> ());
   ioa::scheduler.clear ();
 }
 
@@ -2013,7 +2013,7 @@ private:
   UP_INTERNAL (destroy_automaton_destroyed, transition) {
     switch (m_state) {
     case START:
-      ioa::scheduler.create (this, automaton2_generator (), m_create1_d);
+      ioa::scheduler.create (this, ioa::make_instance_generator<automaton2> (), m_create1_d);
       m_state = CREATE1_SENT;
       break;
     case CREATE1_RECV:
@@ -2048,7 +2048,7 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_destroy_automaton_destroyed)
 {
-  ioa::scheduler.run (ioa::instance_generator<destroy_automaton_destroyed> ());
+  ioa::scheduler.run (ioa::make_instance_generator<destroy_automaton_destroyed> ());
   ioa::scheduler.clear ();
 }
 
@@ -2093,8 +2093,10 @@ public:
 
 BOOST_AUTO_TEST_CASE (scheduler_schedule_output)
 {
-  ioa::scheduler.run (ioa::instance_generator<schedule_output> ());
+  ioa::scheduler.run (ioa::make_instance_generator<schedule_output> ());
   ioa::scheduler.clear ();
 }
+
+// No to test internal because we've already used it.
 
 BOOST_AUTO_TEST_SUITE_END()

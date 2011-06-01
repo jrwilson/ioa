@@ -5,3 +5,4 @@ exe clock_213 : clock_213.cpp /libs/ioa//ioa boost_thread-mt ;
 exe asynch_lcr : asynch_lcr.cpp /libs/ioa//ioa boost_thread-mt ;
 exe peterson_leader : peterson_leader.cpp /libs/ioa//ioa boost_thread-mt ;
 exe slow_count : slow_count.cpp /libs/ioa//ioa boost_thread-mt ;
+exe file_reader : file_reader.cpp /libs/ioa//ioa boost_thread-mt ;

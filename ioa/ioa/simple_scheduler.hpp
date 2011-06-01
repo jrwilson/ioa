@@ -15,6 +15,43 @@ namespace ioa {
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
 
+  template <class S, class C, class I, class D>
+  class create_runnable :
+    public runnable_interface
+  {
+  private:
+    S& m_system;
+    const automaton_handle<C> m_automaton;
+    std::auto_ptr<generator_interface<I> > m_generator;
+    scheduler_interface& m_scheduler;
+    D& m_d;
+  public:
+    create_runnable (S& system,
+		     const automaton_handle<C>& automaton,
+		     std::auto_ptr<generator_interface<I> > generator,
+		     scheduler_interface& scheduler,
+		     D& d) :
+      m_system (system),
+      m_automaton (automaton),
+      m_generator (generator),
+      m_scheduler (scheduler),
+      m_d (d)
+    { }
+
+    void operator() () {
+      m_system.create (m_automaton, m_generator, m_scheduler, m_d);
+    }
+  };
+  
+  template <class S, class C, class I, class D>
+  create_runnable<S, C, I, D>* make_create_runnable (S& system,
+						     const automaton_handle<C>& automaton,
+						     std::auto_ptr<generator_interface<I> > generator,
+						     scheduler_interface& scheduler,
+						     D& d) {
+    return new create_runnable<S, C, I, D> (system, automaton, generator, scheduler, d);
+  }
+
   typedef std::pair<action_runnable_interface*, time> action_time;
 
   bool operator< (const action_time& x,
@@ -185,20 +222,21 @@ namespace ioa {
       clear ();
     }
 
-    template <class C, class G, class D>
+    template <class C, class I, class D>
     void create (const C* ptr,
-		 G generator,
+		 std::auto_ptr<generator_interface<I> > generator,
 		 D& d) {
-      automaton_handle<typename G::result_type> (system::*create_ptr) (const automaton_handle<C>&,
-								       G,
-								       scheduler_interface&,
-								       D&) = &system::create;
-      schedule_sysq (make_runnable (boost::bind (create_ptr,
-						 boost::ref (m_system),
-						 get_current_aid (ptr),
-						 generator,  // We want a copy, not a reference.
-						 boost::ref (*this),
-						 boost::ref (d))));
+      // automaton_handle<I> (system::*create_ptr) (const automaton_handle<C>&,
+      // 						 std::auto_ptr<generator_interface<I> >,
+      // 						 scheduler_interface&,
+      // 						 D&) = &system::create;
+      schedule_sysq (make_create_runnable (m_system, get_current_aid (ptr), generator, *this, d));
+      // schedule_sysq (make_runnable (boost::bind (create_ptr,
+      // 						 boost::ref (m_system),
+      // 						 get_current_aid (ptr),
+      // 						 generator,  // We want a copy, not a reference.
+      // 						 boost::ref (*this),
+      // 						 boost::ref (d))));
     }
     
     template <class C, class OI, class OM, class II, class IM, class D>
@@ -354,8 +392,8 @@ namespace ioa {
     }
 
   public:
-    template <class G>
-    void run (G generator) {
+    template <class I>
+    void run (std::auto_ptr<generator_interface<I> > generator) {
       int r;
 
       BOOST_ASSERT (m_sysq.list.size () == 0);

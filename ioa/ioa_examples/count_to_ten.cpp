@@ -30,6 +30,6 @@ public:
 
 int
 main () {
-  ioa::scheduler.run (ioa::instance_generator<count_to_ten> ());
+  ioa::scheduler.run (ioa::make_instance_generator<count_to_ten> ());
   return 0; 
 }

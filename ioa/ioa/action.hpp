@@ -13,10 +13,19 @@ namespace ioa {
     Action categories.
 
     Input, outputs, and internal actions come directly from the I/O automata formalism.
+    Functions are actions designed to facilitate the request-response semantics inherent in systems with dynamic resource allocation.
+    To illustrate, consider a VFS automaton that creates File automata for manipulation by other automata.
+    The problem is how to allow an arbitrary automaton to request a new File automaton from the VFS automaton similar to executing the open function in traditional UNIX.
+      - Poll-binding - The automaton could try to bind to the required actions of the VFS automaton until it succeeds.  Once bound, the two automata execute a protocol to create a new File automataon.  This approach has a number of problems including binding order, releasing the VFS through unbinding for other automata, and efficiency.
+      - Bind with external parameter - The automaton could specify a parameter (such as its aid) when binding to the VFS.  This approach is also not safe because it relies on convention.
+      - Synchronous call - The automaton executed a synchronous method on the VFS to open the file.  The method returns the handle to the new automaton.  The synchronous call 1) breaks the locking scheme as the automata involved in an action must be know a priori and 2) fails because the creation of new automata is asynchronous.
+      - Scheduled synchronous call - Solves the first issue with the synchronous call approach but still fails since the creation of new automata is asynchronous.
+      - Events - The VFS automaton receives an open event.  After processing, the VFS sends an event containing the aid of the new File automaton.  This approach is attractive in its generality and ease of implementation.  However it is complicated for the user.
    */
   struct input_category { };
   struct output_category { };
   struct internal_category { };
+  struct event_category { };
 
   /* Indicates if an input, outputs, or events has an associated value. */
   struct unvalued { };
@@ -66,6 +75,10 @@ namespace ioa {
     typedef internal_category action_category;
   };
 
+  struct event : public no_parameter {
+    typedef event_category action_category;
+  };
+
   /*
     Actions (or Action Descriptors)
 
@@ -78,7 +91,6 @@ namespace ioa {
     Useful behavior can be associated with event indicating a change in status.
     In our system, we will deliver messages to input and output actions when they are bound and unbound.
   */
-
 
   class action_interface
   {
@@ -379,6 +391,56 @@ namespace ioa {
     }
 
   };
+
+  template <class I, class M>
+  class action_impl<event_category, I, M, unvalued, null_type, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+		 M I::*ptr) :
+      action_core<I, M> (a, ptr)
+    { }
+
+    void execute (I& i) const {
+      (i.*this->member_ptr) ();
+    }
+
+    // Events are unique.
+    virtual bool operator== (const action_interface& x) const {
+      return false;
+    }
+
+  };
+
+  template <class I, class M, class VT>
+  class action_impl<event_category, I, M, valued, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  private:
+    VT m_value;
+
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+  		 M I::*ptr,
+  		 const VT& value) :
+      action_core<I, M> (a, ptr),
+      m_value (value)
+    { }
+
+    void execute (I& i) const {
+      (i.*this->member_ptr) (m_value);
+    }
+
+    // Events are unique.
+    virtual bool operator== (const action_interface& x) const {
+      return false;
+    }
+
+  };
+
 
   template <class I, class Member>
   class action :

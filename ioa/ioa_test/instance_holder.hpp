@@ -2,7 +2,8 @@
 #define __instance_holder_hpp__
 
 template <class T>
-class instance_holder
+class instance_holder :
+  public ioa::generator_interface<T>
 {
 private:
   T* m_instance;

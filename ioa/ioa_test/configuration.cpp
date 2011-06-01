@@ -38,7 +38,7 @@ struct self_helper_destroy_before :
 
 BOOST_AUTO_TEST_CASE (config_self_helper_destroy_before)
 {
-  ioa::scheduler.run (ioa::instance_generator<self_helper_destroy_before> ());
+  ioa::scheduler.run (ioa::make_instance_generator<self_helper_destroy_before> ());
   ioa::scheduler.clear ();
 }
 
@@ -46,11 +46,11 @@ struct automaton_helper_destroy_after :
   public ioa::dispatching_automaton,
   public ioa::observer
 {
-  typedef ioa::automaton_helper<automaton_helper_destroy_after, automaton2_generator> helper_type;
+  typedef ioa::automaton_helper<automaton_helper_destroy_after, automaton2> helper_type;
   helper_type* m_helper;
 
   void init () {
-    m_helper = new helper_type (this, automaton2_generator ());
+    m_helper = new helper_type (this, ioa::make_instance_generator<automaton2> ());
     m_helper->add_observer (this);
   }
 
@@ -71,7 +71,7 @@ struct automaton_helper_destroy_after :
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_destroy_after)
 {
-  ioa::scheduler.run (ioa::instance_generator<automaton_helper_destroy_after> ());
+  ioa::scheduler.run (ioa::make_instance_generator<automaton_helper_destroy_after> ());
   ioa::scheduler.clear ();
 }
 
@@ -79,11 +79,11 @@ struct automaton_helper_destroy_before :
   public ioa::dispatching_automaton,
   public ioa::observer
 {
-  typedef ioa::automaton_helper<automaton_helper_destroy_before, automaton2_generator> helper_type;
+  typedef ioa::automaton_helper<automaton_helper_destroy_before, automaton2> helper_type;
   helper_type* m_helper;
 
   void init () {
-    m_helper = new helper_type (this, automaton2_generator ());
+    m_helper = new helper_type (this, ioa::make_instance_generator<automaton2> ());
     m_helper->add_observer (this);
     m_helper->destroy ();
   }
@@ -104,7 +104,7 @@ struct automaton_helper_destroy_before :
 
 BOOST_AUTO_TEST_CASE (config_automaton_helper_destroy_before)
 {
-  ioa::scheduler.run (ioa::instance_generator<automaton_helper_destroy_before> ());
+  ioa::scheduler.run (ioa::make_instance_generator<automaton_helper_destroy_before> ());
   ioa::scheduler.clear ();
 }
 

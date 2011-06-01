@@ -229,6 +229,36 @@ struct automaton1 :
   };
   p_internal_action p_internal;
 
+  struct uv_event_action :
+    public ioa::event,
+    public ioa::no_value
+  {
+    bool state;
+    uv_event_action()
+      : state(false) { }
+    void operator()() {
+      state = true;
+    }
+  };
+  uv_event_action uv_event;
+
+  struct v_event_action :
+    public ioa::event,
+    public ioa::value<int>
+  {
+    bool state;
+    int last_value;
+    v_event_action() :
+      state (false),
+      last_value (0)
+    { }
+    void operator() (int value) {
+      state = true;
+      last_value = value;
+    }
+  };
+  v_event_action v_event;
+
   bool inited;
   const automaton1* existing_instance;
   ioa::automaton_handle<automaton1> created_handle;
@@ -243,6 +273,7 @@ struct automaton1 :
   bool m_binding_dne;
   bool m_target_automaton_dne;
   bool m_destroyer_not_creator;
+  bool m_recipient_dne;
 
   automaton1 () :
     inited (false),
@@ -257,7 +288,8 @@ struct automaton1 :
     m_unbound (false),
     m_binding_dne (false),
     m_target_automaton_dne (false),
-    m_destroyer_not_creator (false)
+    m_destroyer_not_creator (false),
+    m_recipient_dne (false)
   { }
 
   void init () {
@@ -332,12 +364,10 @@ struct automaton1 :
     m_destroyer_not_creator = true;
   }
 
-};
-
-struct automaton1_generator :
-  public ioa::instance_generator <automaton1>
-{
-
+  template <class D>
+  void recipient_dne (D&) {
+    m_recipient_dne = true;
+  }
 };
 
 #endif

@@ -8,6 +8,7 @@
 #include <list>
 #include "automaton_handle.hpp"
 #include "binding.hpp"
+#include "instance_generator.hpp"
 
 namespace ioa {
 
@@ -231,21 +232,21 @@ namespace ioa {
       return automaton_handle<I> (aid);
     }
 
-    template <class G>
-    automaton_handle<typename G::result_type>
-    create (G generator,
+    template <class I>
+    automaton_handle<I>
+    create (std::auto_ptr<generator_interface<I> > generator,
 	    scheduler_interface& scheduler)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
 
       // Take an aid.
-      automaton_handle<typename G::result_type> handle (m_aids.take ());
+      automaton_handle<I> handle (m_aids.take ());
 
       // Set the current aid.
       scheduler.set_current_aid (handle.aid ());
 
       // Run the generator.
-      typename G::result_type* instance = generator ();
+      I* instance = (*generator) ();
       BOOST_ASSERT (instance != 0);
 
       // Clear the current aid.
@@ -254,7 +255,7 @@ namespace ioa {
       if (m_instances.count (instance) != 0) {
 	// Root automaton instance exists.  Bad news.
 	m_aids.replace (handle.aid ());
-      	return automaton_handle<typename G::result_type> ();
+      	return automaton_handle<I> ();
       }
 
       m_instances.insert (instance);
@@ -269,29 +270,29 @@ namespace ioa {
       return handle;
     }
 
-    template <class P, class G, class D>
-    automaton_handle<typename G::result_type>
+    template <class P, class I, class D>
+    automaton_handle<I>
     create (const automaton_handle<P>& automaton,
-    	    G generator,
+    	    std::auto_ptr<generator_interface<I> > generator,
 	    scheduler_interface& scheduler,
 	    D& d)
     {
       boost::unique_lock<boost::shared_mutex> lock (m_mutex);
       
       if (!m_aids.contains (automaton.aid ())) {
-	return automaton_handle<typename G::result_type> ();
+	return automaton_handle<I> ();
       }
 
       P* p = aid_to_instance<P> (automaton.aid ());
 
       // Take an aid.
-      automaton_handle<typename G::result_type> handle (m_aids.take ());
+      automaton_handle<I> handle (m_aids.take ());
 
       // Set the current aid.
       scheduler.set_current_aid (handle.aid ());
 
       // Run the generator.
-      typename G::result_type* instance = generator ();
+      I* instance = (*generator) ();
       BOOST_ASSERT (instance != 0);
 
       // Clear the current aid.
@@ -305,7 +306,7 @@ namespace ioa {
 	p->instance_exists (instance, d);
 	scheduler.clear_current_aid ();
 
-	return automaton_handle<typename G::result_type> ();
+	return automaton_handle<I> ();
       }
 
       m_instances.insert (instance);      
@@ -580,6 +581,15 @@ namespace ioa {
     }
 
   private:
+
+    template <class I>
+    I* aid_to_instance (const aid_t aid) {
+      BOOST_ASSERT (m_aids.contains (aid));
+      I* instance = dynamic_cast<I*> (m_records[aid]->get_instance ());
+      BOOST_ASSERT (instance != 0);
+      return instance;
+    }
+
     void lock_automaton (const aid_t handle)
     {
       m_records[handle]->lock ();
@@ -631,6 +641,15 @@ namespace ioa {
       execute0 (ac, scheduler);
     }
 
+    template <class I, class M>
+    void
+    execute1 (const action<I, M>& ac,
+	      event_category /* */,
+	      scheduler_interface& scheduler)
+    {
+      execute0 (ac, scheduler);
+    }
+
   public:
     
     template <class I, class M>
@@ -648,16 +667,37 @@ namespace ioa {
       return true;
     }
 
-  private:
+  public:
 
-    template <class I>
-    I* aid_to_instance (const aid_t aid) {
-      BOOST_ASSERT (m_aids.contains (aid));
-      I* instance = dynamic_cast<I*> (m_records[aid]->get_instance ());
-      BOOST_ASSERT (instance != 0);
-      return instance;
+    template <class F, class I, class M, class D>
+    bool
+    execute (const automaton_handle<F>& from,
+	     const action<I, M>& ac,
+	     scheduler_interface& scheduler,
+	     D& d)
+    {
+      boost::shared_lock<boost::shared_mutex> lock (m_mutex);
+
+      if (!m_aids.contains (from.aid ())) {
+	// Deliverer does not exists.
+	return false;
+      }
+
+      if (!m_aids.contains (ac.get_aid ())) {
+	// Recipient does not exist.
+	F* instance = aid_to_instance<F> (from.aid ());
+	lock_automaton (from.aid ());
+	scheduler.set_current_aid (from.aid (), *instance);
+	instance->recipient_dne (d);
+	scheduler.clear_current_aid ();
+	unlock_automaton (from.aid ());
+	return false;
+      }
+
+      execute1 (ac, typename action<I, M>::action_category (), scheduler);
+      return true;
     }
-
+    
   };
 
 }

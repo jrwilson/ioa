@@ -20,22 +20,22 @@ public:
   void clear_current_aid (void) { }
 };
 
-template <class G>
-ioa::automaton_handle<typename G::result_type> create (ioa::system& system,
-						       G generator,
-						       ioa::scheduler_interface& s) {
-  ioa::automaton_handle<typename G::result_type> handle = system.create (generator, s);
+template <class I>
+ioa::automaton_handle<I> create (ioa::system& system,
+				 std::auto_ptr<ioa::generator_interface<I> > generator,
+				 ioa::scheduler_interface& s) {
+  ioa::automaton_handle<I> handle = system.create (generator, s);
   BOOST_CHECK (handle.aid () != -1);
   return handle;
 }
 
-template <class P, class G>
-ioa::automaton_handle<typename G::result_type> create (ioa::system& system,
-						       const ioa::automaton_handle<P>& creator,
-						       G generator,
-						       ioa::scheduler_interface& s) {
+template <class P, class I>
+ioa::automaton_handle<I> create (ioa::system& system,
+				 const ioa::automaton_handle<P>& creator,
+				 std::auto_ptr<ioa::generator_interface<I> > generator,
+				 ioa::scheduler_interface& s) {
   empty_class d;
-  ioa::automaton_handle<typename G::result_type> handle = system.create (creator, generator, s, d);
+  ioa::automaton_handle<I> handle = system.create (creator, generator, s, d);
   BOOST_CHECK (handle.aid () != -1);
   return handle;
 }
@@ -65,11 +65,11 @@ BOOST_AUTO_TEST_CASE (system_create_creator_dne)
 {
   ioa::system system;
   dummy_scheduler s;
-  ioa::automaton_handle<automaton1> creator_handle = system.create (automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> creator_handle = system.create (ioa::make_instance_generator<automaton1> (), s);
   BOOST_CHECK (creator_handle.aid () != -1);
   destroy (system, creator_handle);
   empty_class d;
-  ioa::automaton_handle<automaton1> handle = system.create (creator_handle, automaton1_generator (), s, d);
+  ioa::automaton_handle<automaton1> handle = system.create (creator_handle, ioa::make_instance_generator<automaton1> (), s, d);
   BOOST_CHECK (handle.aid () == -1);
 }
 
@@ -80,9 +80,10 @@ BOOST_AUTO_TEST_CASE (system_create_exists)
   ioa::system system;
 
   automaton1* instance1 = new automaton1 ();
-  instance_holder<automaton1> holder1 (instance1);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder1 (new instance_holder<automaton1> (instance1));
   automaton1* instance2 = new automaton1 ();
-  instance_holder<automaton1> holder2 (instance2);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder2 (new instance_holder<automaton1> (instance2));
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder3 (new instance_holder<automaton1> (instance2));
 
   ioa::automaton_handle<automaton1> creator = system.create (holder1, s);
   BOOST_CHECK (creator.aid () != -1);
@@ -92,7 +93,7 @@ BOOST_AUTO_TEST_CASE (system_create_exists)
   BOOST_CHECK (h1.aid () != -1);
   BOOST_CHECK (instance1->created_handle == h1);
 
-  ioa::automaton_handle<automaton1> h2 = system.create (creator, holder2, s, d);
+  ioa::automaton_handle<automaton1> h2 = system.create (creator, holder3, s, d);
   BOOST_CHECK (h2.aid () == -1);
   BOOST_CHECK (instance1->existing_instance == instance2);
 }
@@ -101,7 +102,8 @@ BOOST_AUTO_TEST_CASE (system_create_success)
 {
   ioa::system system;
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
+
   dummy_scheduler s;
   ioa::automaton_handle<automaton1> handle = system.create (holder, s);
   BOOST_CHECK (handle.aid () != -1);
@@ -113,12 +115,12 @@ BOOST_AUTO_TEST_CASE (system_bind_binder_automaton_dne)
   ioa::system system;
   dummy_scheduler s;
 
-  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> binder = create (system, ioa::make_instance_generator<automaton1> (), s);
   destroy (system, binder);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
   
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   empty_class d;
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
@@ -133,14 +135,14 @@ BOOST_AUTO_TEST_CASE (system_bind_output_automaton_dne)
   dummy_scheduler s;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
   
   ioa::automaton_handle<automaton1> binder = create (system, holder, s);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
   destroy (system, output);
   
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
   
   empty_class d;
   BOOST_CHECK (system.bind (ioa::make_action (output, &automaton1::up_uv_output),
@@ -156,13 +158,13 @@ BOOST_AUTO_TEST_CASE (system_bind_input_automaton_dne)
   dummy_scheduler s;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> binder = create (system, holder, s);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
   
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   destroy (system, input);
   
@@ -180,13 +182,13 @@ BOOST_AUTO_TEST_CASE (system_bind_exists)
   ioa::system system;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> binder = create (system, holder, s);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
   
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
   
   empty_class d;
   ioa::bid_t bid = system.bind (ioa::make_action (output, &automaton1::up_uv_output),
@@ -209,15 +211,15 @@ BOOST_AUTO_TEST_CASE (system_bind_input_action_unavailable)
   ioa::system system;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> binder = create (system, holder, s);
   
-  ioa::automaton_handle<automaton1> output1 = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output1 = create (system, ioa::make_instance_generator<automaton1> (), s);
 
-  ioa::automaton_handle<automaton1> output2 = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output2 = create (system, ioa::make_instance_generator<automaton1> (), s);
   
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   empty_class d;
   BOOST_CHECK (system.bind (ioa::make_action (output1, &automaton1::up_uv_output),
@@ -239,14 +241,14 @@ BOOST_AUTO_TEST_CASE (system_bind_output_action_unavailable)
   int parameter;
 
   automaton1* instance1 = new automaton1 ();
-  instance_holder<automaton1> holder1 (instance1);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder1 (new instance_holder<automaton1> (instance1));
 
   automaton1* instance2 = new automaton1 ();
-  instance_holder<automaton1> holder2 (instance2);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder2 (new instance_holder<automaton1> (instance2));
 
   ioa::automaton_handle<automaton1> binder = create (system, holder1, s);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   ioa::automaton_handle<automaton1> input = create (system, holder2, s);
 
@@ -270,10 +272,10 @@ BOOST_AUTO_TEST_CASE (system_bind_success)
   int parameter;
 
   automaton1* output_instance = new automaton1 ();
-  instance_holder<automaton1> output_holder (output_instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > output_holder (new instance_holder<automaton1> (output_instance));
 
   automaton1* input_instance = new automaton1 ();
-  instance_holder<automaton1> input_holder (input_instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > input_holder (new instance_holder<automaton1> (input_instance));
 
   ioa::automaton_handle<automaton1> output = create (system, output_holder, s);
 
@@ -294,11 +296,11 @@ BOOST_AUTO_TEST_CASE (system_unbind_binder_automaton_dne)
   ioa::system system;
   dummy_scheduler s;
   
-  ioa::automaton_handle<automaton1> binder = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> binder = create (system, ioa::make_instance_generator<automaton1> (), s);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
 
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
   
   ioa::bid_t bid = bind (system,
 			 ioa::make_action (output, &automaton1::up_uv_output),
@@ -321,13 +323,13 @@ BOOST_AUTO_TEST_CASE (system_unbind_exists)
   ioa::system system;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> binder = create (system, holder, s);
   
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
 
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   ioa::bid_t bid = bind (system,
 			 ioa::make_action (output, &automaton1::up_uv_output),
@@ -357,11 +359,11 @@ BOOST_AUTO_TEST_CASE (system_unbind_success)
   int parameter;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> output = create (system, holder, s);
 
-  ioa::automaton_handle<automaton1> input = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> input = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   ioa::bid_t bid = bind (system,
 			 ioa::make_action (output, &automaton1::p_uv_output, parameter),
@@ -380,8 +382,8 @@ BOOST_AUTO_TEST_CASE (system_destroy_destroyer_dne)
 {
   dummy_scheduler s;
   ioa::system system;
-  ioa::automaton_handle<automaton1> parent_handle = create (system, automaton1_generator (), s);
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> parent_handle = create (system, ioa::make_instance_generator<automaton1> (), s);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, ioa::make_instance_generator<automaton1> (), s);
 
   destroy (system, parent_handle);
   
@@ -395,11 +397,11 @@ BOOST_AUTO_TEST_CASE (system_destroy_destroyer_not_creator)
   ioa::system system;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
   
-  ioa::automaton_handle<automaton1> parent_handle = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> parent_handle = create (system, ioa::make_instance_generator<automaton1> (), s);
   
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, ioa::make_instance_generator<automaton1> (), s);
 
   ioa::automaton_handle<automaton1> third_party_handle = create (system, holder, s);
 
@@ -414,11 +416,11 @@ BOOST_AUTO_TEST_CASE (system_destroy_exists)
   ioa::system system;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> parent_handle = create (system, holder, s);
   
-  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> child_handle = create (system, parent_handle, ioa::make_instance_generator<automaton1> (), s);
 
   empty_class d;
   BOOST_CHECK (system.destroy (parent_handle, child_handle, s, d) == true);
@@ -433,13 +435,13 @@ BOOST_AUTO_TEST_CASE (system_destroy_success)
   int parameter;
 
   automaton1* instance = new automaton1 ();
-  instance_holder<automaton1> holder (instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> alpha = create (system, holder, s);
 
-  ioa::automaton_handle<automaton1> beta = create (system, alpha, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> beta = create (system, alpha, ioa::make_instance_generator<automaton1> (), s);
 
-  ioa::automaton_handle<automaton1> gamma = create (system, beta, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> gamma = create (system, beta, ioa::make_instance_generator<automaton1> (), s);
 
   bind (system,
 	ioa::make_action (alpha, &automaton1::up_uv_output),
@@ -467,7 +469,7 @@ BOOST_AUTO_TEST_CASE (system_execute_output_automaton_dne)
   dummy_scheduler s;
   ioa::system system;
 
-  ioa::automaton_handle<automaton1> output = create (system, automaton1_generator (), s);
+  ioa::automaton_handle<automaton1> output = create (system, ioa::make_instance_generator<automaton1> (), s);
 
   destroy (system, output);
 
@@ -479,12 +481,59 @@ BOOST_AUTO_TEST_CASE (system_execute_output_success)
   dummy_scheduler s;
   ioa::system system;
   automaton1* output_instance = new automaton1 ();
-  instance_holder<automaton1> holder (output_instance);
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (system, holder, s);
 
   BOOST_CHECK (system.execute (ioa::make_action (output, &automaton1::up_uv_output), s) == true);
   BOOST_CHECK (output_instance->up_uv_output.state);
+}
+
+BOOST_AUTO_TEST_CASE (system_execute_event_automaton_dne)
+{
+  dummy_scheduler s;
+  ioa::system system;
+
+  ioa::automaton_handle<automaton1> from = create (system, ioa::make_instance_generator<automaton1> (), s);
+  ioa::automaton_handle<automaton1> to = create (system, ioa::make_instance_generator<automaton1> (), s);
+
+  destroy (system, from);
+
+  empty_class d;
+  BOOST_CHECK (system.execute (from, ioa::make_action (to, &automaton1::uv_event), s, d) == false);
+}
+
+BOOST_AUTO_TEST_CASE (system_execute_event_recipient_dne)
+{
+  dummy_scheduler s;
+  ioa::system system;
+
+  automaton1* instance = new automaton1 ();
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (instance));
+
+  ioa::automaton_handle<automaton1> from = create (system, holder, s);
+  ioa::automaton_handle<automaton1> to = create (system, ioa::make_instance_generator<automaton1> (), s);
+
+  destroy (system, to);
+
+  empty_class d;
+  BOOST_CHECK (system.execute (from, ioa::make_action (to, &automaton1::uv_event), s, d) == false);
+  BOOST_CHECK (instance->m_recipient_dne);
+}
+
+BOOST_AUTO_TEST_CASE (system_execute_event_success)
+{
+  dummy_scheduler s;
+  ioa::system system;
+  automaton1* event_instance = new automaton1 ();
+  std::auto_ptr<ioa::generator_interface<automaton1> > holder (new instance_holder<automaton1> (event_instance));
+
+  ioa::automaton_handle<automaton1> from = create (system, ioa::make_instance_generator<automaton1> (), s);
+  ioa::automaton_handle<automaton1> to = create (system, holder, s);
+
+  empty_class d;
+  BOOST_CHECK (system.execute (from, ioa::make_action (to, &automaton1::uv_event), s, d) == true);
+  BOOST_CHECK (event_instance->uv_event.state);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

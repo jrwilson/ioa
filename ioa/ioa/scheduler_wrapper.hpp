@@ -5,6 +5,7 @@
 #include "binding_handle.hpp"
 #include "action.hpp"
 #include "time.hpp"
+#include "instance_generator.hpp"
 
 namespace ioa {
 
@@ -18,9 +19,9 @@ namespace ioa {
       m_scheduler (scheduler)
     { }
 
-    template <class C, class G, class D>
+    template <class C, class I, class D>
     void create (const C* ptr,
-		 G generator,
+		 std::auto_ptr<generator_interface<I> > generator,
 		 D& d) {
       m_scheduler.create (ptr, generator, d);
     }
@@ -54,8 +55,8 @@ namespace ioa {
       m_scheduler.schedule (ptr, member_ptr, offset);
     }
 
-    template <class G>
-    void run (G generator) {
+    template <class I>
+    void run (std::auto_ptr<generator_interface<I> > generator) {
       m_scheduler.run (generator);
     }
 
