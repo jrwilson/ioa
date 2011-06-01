@@ -1,9 +1,0 @@
-using testing ;
-lib boost_unit_test_framework ;
-lib boost_thread-mt ;
-
-run action.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
-run binding.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
-run system.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
-run scheduler.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
-run configuration.cpp /libs/ioa//ioa boost_unit_test_framework boost_thread-mt ;
