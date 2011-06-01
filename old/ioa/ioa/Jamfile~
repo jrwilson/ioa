@@ -1,2 +1,0 @@
-project : usage-requirements <include>. ;
-lib ioa : scheduler.cpp ;
