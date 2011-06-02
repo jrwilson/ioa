@@ -3,31 +3,20 @@
 
 #include <ioa/scheduler.hpp>
 
+#include <ioa/create_runnable.hpp>
+#include <ioa/bind_runnable.hpp>
+#include <ioa/unbind_runnable.hpp>
+#include <ioa/destroy_runnable.hpp>
+#include <ioa/action_runnable.hpp>
+
 #include <ioa/blocking_list.hpp>
-#include <ioa/runnable_interface.hpp>
-#include <ioa/system.hpp>
 #include <ioa/thread.hpp>
-// #include <sys/select.h>
-// #include <unistd.h>
 #include <queue>
-// #include <functional>
 #include <fcntl.h>
-// #include "time.hpp"
+#include <sys/select.h>
+#include <unistd.h>
 
 namespace ioa {
-
-  class action_runnable_interface :
-    public runnable_interface
-  {
-  public:
-    virtual ~action_runnable_interface () { }
-    
-    virtual const action_interface& get_action () const = 0;
-    
-    bool operator== (const action_runnable_interface& x) const {
-      return get_action () == x.get_action ();
-    }
-  };
 
   typedef std::pair<action_runnable_interface*, time> action_time;
 
@@ -258,83 +247,12 @@ namespace ioa {
       return system::cast_aid (ptr, m_current_aid);
     }
 
-  private:
-
-    template <class C, class I, class D>
-    class create_runnable :
-      public runnable_interface
-    {
-    private:
-      const automaton_handle<C> m_automaton;
-      std::auto_ptr<generator_interface<I> > m_generator;
-      D& m_d;
-    public:
-      create_runnable (const automaton_handle<C>& automaton,
-		       std::auto_ptr<generator_interface<I> > generator,
-		       D& d) :
-	m_automaton (automaton),
-	m_generator (generator),
-	m_d (d)
-      { }
-      
-      void operator() () {
-	system::create (m_automaton, m_generator, m_d);
-      }
-    };
-    
-    template <class C, class I, class D>
-    static create_runnable<C, I, D>* make_create_runnable (const automaton_handle<C>& automaton,
-							   std::auto_ptr<generator_interface<I> > generator,
-							   D& d) {
-      return new create_runnable<C, I, D> (automaton, generator, d);
-    }
-    
-  public:
-
     template <class C, class I, class D>
     static void create (const C* ptr,
 			std::auto_ptr<generator_interface<I> > generator,
 			D& d) {
       schedule_sysq (make_create_runnable (get_current_aid (ptr), generator, d));
     }
-
-  private:
-
-    template <class OI, class OM, class II, class IM, class C, class D>
-    class bind_runnable :
-      public runnable_interface
-    {
-    private:
-      const action<OI, OM> m_output_action;
-      const action<II, IM> m_input_action;
-      const automaton_handle<C> m_automaton;
-      D& m_d;
-      
-    public:
-      bind_runnable (const action<OI, OM> output_action,
-		     const action<II, IM> input_action,
-		     const automaton_handle<C>& automaton,
-		     D& d) :
-	m_output_action (output_action),
-	m_input_action (input_action),
-	m_automaton (automaton),
-	m_d (d)
-      { }
-      
-      void operator() () {
-	system::bind (m_output_action, m_input_action, m_automaton, m_d);
-      }
-    };
-    
-    template <class OI, class OM, class II, class IM, class C, class D>
-    static bind_runnable<OI, OM, II, IM, C, D>* make_bind_runnable (const action<OI, OM> output_action,
-								    const action<II, IM> input_action,
-								    const automaton_handle<C>& automaton,
-								    D& d) {
-      return new bind_runnable<OI, OM, II, IM, C, D> (output_action, input_action, automaton, d);
-    }
-    
-  public:
     
     template <class C, class OI, class OM, class II, class IM, class D>
     static void bind (const C* ptr,
@@ -343,40 +261,6 @@ namespace ioa {
 		      D& d) {
       schedule_sysq (make_bind_runnable (output_action, input_action, get_current_aid (ptr), d));
     }
-
-  private:
-
-    template <class C, class D>
-    class unbind_runnable :
-      public runnable_interface
-    {
-    private:
-      const bid_t m_bid;
-      const automaton_handle<C> m_automaton;
-      D& m_d;
-      
-    public:
-      unbind_runnable (const bid_t bid,
-		       const automaton_handle<C>& automaton,
-		       D& d) :
-	m_bid (bid),
-	m_automaton (automaton),
-	m_d (d)
-      { }
-      
-      void operator() () {
-	system::unbind (m_bid, m_automaton, m_d);
-      }
-    };
-    
-    template <class C, class D>
-    static unbind_runnable<C, D>* make_unbind_runnable (const bid_t bid,
-						 const automaton_handle<C>& automaton,
-						 D& d) {
-      return new unbind_runnable<C, D> (bid, automaton, d);
-    }
-    
-  public:
     
     template <class C, class D>
     static void unbind (const C* ptr,
@@ -384,40 +268,6 @@ namespace ioa {
 			D& d) {
       schedule_sysq (make_unbind_runnable (bid, get_current_aid (ptr), d));
     }
-
-  private:
-
-    template <class C, class I, class D>
-    class destroy_runnable :
-      public runnable_interface
-    {
-    private:
-      const automaton_handle<C> m_automaton;
-      const automaton_handle<I> m_target;
-      D& m_d;
-      
-    public:
-      destroy_runnable (const automaton_handle<C>& automaton,
-			const automaton_handle<I>& target,
-			D& d) :
-	m_automaton (automaton),
-	m_target (target),
-	m_d (d)
-      { }
-      
-      void operator() () {
-	system::destroy (m_automaton, m_target, m_d);
-      }
-    };
-    
-    template <class C, class I, class D>
-    static destroy_runnable<C, I, D>* make_destroy_runnable (const automaton_handle<C>& automaton,
-							     const automaton_handle<I>& target,
-							     D& d) {
-      return new destroy_runnable<C, I, D> (automaton, target, d);
-    }
-    
-  public:
     
     template <class C, class I, class D>
     static void destroy (const C* ptr,
@@ -425,37 +275,7 @@ namespace ioa {
 			 D& d) {
       schedule_sysq (make_destroy_runnable (get_current_aid (ptr), automaton, d));
     }
-
-  private:
-
-    template <class I, class M>
-    class action_runnable :
-      public action_runnable_interface
-    {
-    private:
-      const action<I, M> m_action;
-    
-    public:
-      action_runnable (const action<I, M> action) :
-        m_action (action)
-      { }
-    
-      void operator() () {
-	system::execute (m_action);
-      }
-      
-      const action_interface& get_action () const {
-        return m_action;
-      }
-    };
-    
-    template <class I, class M>
-    static action_runnable<I, M>* make_action_runnable (const action<I, M> action) {
-      return new action_runnable<I, M> (action);
-    }
-    
-  public:
-    
+  
     template <class I, class M>
     static void schedule (const I* ptr,
   			  M I::*member_ptr) {
@@ -570,19 +390,11 @@ namespace ioa {
     simple_scheduler::run (generator);
   }
 
-
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
 
-  // bool operator< (const action_time& x,
-  // 		  const action_time& y) {
-  //   return x.second < y.second;
-  // }
-
-  // class simple_scheduler :
-  //   public scheduler_interface
+  // class simple_scheduler
   // {
-
   //   void clear (void) {
   //     // We clear the system first because it might add something to a run queue.
   //     system::clear ();

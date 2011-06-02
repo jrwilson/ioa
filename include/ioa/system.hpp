@@ -1,124 +1,19 @@
 #ifndef __system_hpp__
 #define __system_hpp__
 
-#include "sequential_set.hpp"
-#include <list>
-#include "automaton_handle.hpp"
-#include "binding.hpp"
+#include <ioa/automaton_record.hpp>
+#include <ioa/binding.hpp>
+
 #include <ioa/generator_interface.hpp>
-#include "mutex.hpp"
-#include "shared_mutex.hpp"
-#include "unique_lock.hpp"
-#include "shared_lock.hpp"
+#include <ioa/unique_lock.hpp>
+#include <ioa/shared_lock.hpp>
+
 #include <map>
+#include <list>
 
 namespace ioa {
 
   // TODO:  Memory allocation.
-
-  class automaton_record_interface :
-    public mutex
-  {
-  private:
-    std::auto_ptr<automaton_interface> m_instance;
-    aid_t m_aid;
-    sequential_set<bid_t> m_bids;
-    std::set<automaton_record_interface*> m_children;
-    automaton_record_interface* m_parent;
-
-  public:
-    automaton_record_interface (automaton_interface* instance,
-				const aid_t aid) :
-      m_instance (instance),
-      m_aid (aid),
-      m_parent (0)
-    { }
-
-    virtual ~automaton_record_interface () {
-      assert (m_children.empty ());
-    }
-
-
-    const aid_t get_aid () const {
-      return m_aid;
-    }
-
-    automaton_interface* get_instance () const {
-      return m_instance.get ();
-    }
-
-    bid_t take_bid () {
-      return m_bids.take ();
-    }
-
-    void replace_bid (const bid_t bid) {
-      m_bids.replace (bid);
-    }
-
-    void add_child (automaton_record_interface* child) {
-      m_children.insert (child);
-      child->set_parent (this);
-    }
-
-    void remove_child (automaton_record_interface* child) {
-      m_children.erase (child);
-    }
-
-    automaton_record_interface* get_child () const {
-      if (m_children.empty ()) {
-	return 0;
-      }
-      else {
-	return *(m_children.begin ());
-      }
-    }
-
-    void set_parent (automaton_record_interface* parent) {
-      m_parent = parent;
-    }
-    
-    automaton_record_interface* get_parent () const {
-      return m_parent;
-    }
-  };
-
-  class root_automaton_record :
-    public automaton_record_interface
-  {
-  public:
-    root_automaton_record (automaton_interface* instance,
-			   const aid_t aid) :
-      automaton_record_interface (instance, aid)
-    { }
-  };
-
-  template <class P, class D>
-  class automaton_record :
-    public automaton_record_interface
-  {
-  private:
-    P* m_parent_instance;
-    D& m_d;
-    
-  public:
-    automaton_record (automaton_interface* instance,
-		      const aid_t aid,
-		      P* parent_instance,
-		      D& d) :
-      automaton_record_interface (instance, aid),
-      m_parent_instance (parent_instance),
-      m_d (d)
-    { }
-    
-    ~automaton_record () {
-      assert (this->get_parent () != 0);
-      aid_t parent_aid = this->get_parent ()->get_aid ();
-      system_scheduler::set_current_aid (parent_aid, *m_parent_instance);
-      m_parent_instance->automaton_destroyed (m_d);
-      system_scheduler::clear_current_aid ();
-    }
-
-  };
 
   class system
   {
@@ -220,10 +115,6 @@ namespace ioa {
       assert (m_bindings.empty ());
     }
 
-    ~system (void) {
-      clear ();
-    }
-    
     template <class I>
     static automaton_handle<I> cast_aid (const I* /* */, const aid_t aid) {
       return automaton_handle<I> (aid);
@@ -470,18 +361,6 @@ namespace ioa {
     }
 
   private:
-    class child_automaton
-    {
-    private:
-      aid_t m_handle;
-    public:
-      child_automaton (aid_t handle) :
-	m_handle (handle) { }
-
-      bool operator() (const std::pair<aid_t, aid_t>& p) const {
-	return p.second == m_handle;
-      }
-    };
 
     static void
     inner_destroy (automaton_record_interface* automaton)

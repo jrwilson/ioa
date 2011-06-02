@@ -1,6 +1,7 @@
 #ifndef __system_scheduler_hpp__
 #define __system_scheduler_hpp__
 
+#include <ioa/aid.hpp>
 #include <ioa/automaton_interface.hpp>
 
 namespace ioa {

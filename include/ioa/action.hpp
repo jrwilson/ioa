@@ -3,8 +3,7 @@
 
 #include <cstddef>
 #include <utility>
-
-#include "automaton_handle.hpp"
+#include <ioa/automaton_handle.hpp>
 
 namespace ioa {
 

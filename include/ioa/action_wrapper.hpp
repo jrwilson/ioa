@@ -1,7 +1,6 @@
 #ifndef __action_wrapper_hpp__
 #define __action_wrapper_hpp__
 
-#include <ioa/action.hpp>
 #include <ioa/scheduler.hpp>
 #include <ioa/observer.hpp>
 

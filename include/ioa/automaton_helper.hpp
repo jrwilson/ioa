@@ -1,9 +1,8 @@
 #ifndef __automaton_helper_hpp__
 #define __automaton_helper_hpp__
 
-#include "observer.hpp"
-#include "automaton_handle.hpp"
-#include "scheduler.hpp"
+#include <ioa/scheduler.hpp>
+#include <ioa/observer.hpp>
 
 namespace ioa {
 
