@@ -144,31 +144,31 @@ private:
 
   void schedule () {
     if (send_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::send);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::send);
     }
 
     if (leader_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::leader);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::leader);
     }
 
     if (get_second_uid_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::get_second_uid);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::get_second_uid);
     }
 
     if (get_third_uid_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::get_third_uid);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::get_third_uid);
     }
 
     if (advance_phase_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::advance_phase);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::advance_phase);
     }
 
     if (become_relay_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::become_relay);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::become_relay);
     }
 
     if (relay_precondition ()) {
-      ioa::scheduler.schedule (this, &peterson_leader_automaton::relay);
+      ioa::scheduler::schedule (this, &peterson_leader_automaton::relay);
     }
   }
 

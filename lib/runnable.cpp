@@ -1,4 +1,6 @@
 #include <ioa/runnable.hpp>
 
-shared_mutex ioa::runnable_interface::m_mutex;
-size_t ioa::runnable_interface::m_count = 0;
+namespace ioa {
+  shared_mutex runnable_interface::m_mutex;
+  size_t runnable_interface::m_count = 0;
+}

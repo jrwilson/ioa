@@ -2,6 +2,7 @@
 #define __ioa_hpp__
 
 #include <ioa/scheduler.hpp>
+
 #include <ioa/dispatching_automaton.hpp>
 #include <ioa/action_wrapper.hpp>
 #include <ioa/instance_generator.hpp>

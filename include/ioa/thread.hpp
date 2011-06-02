@@ -8,23 +8,19 @@ public:
   virtual void operator() () = 0;
 };
 
-template <class I>
 class thread_arg :
   public thread_arg_interface
 {
 private:
-  void (I::*m_member_function_ptr) ();
-  I& m_i;
+  void (*m_func) ();
 
 public:
-  thread_arg (void (I::*member_function_ptr) (),
-	      I& i) :
-    m_member_function_ptr (member_function_ptr),
-    m_i (i)
+  thread_arg (void (*func) ()) :
+    m_func (func)
   { }
 
   void operator() () {
-    (m_i.*m_member_function_ptr) ();
+    (*m_func) ();
   }
 };
 
@@ -42,10 +38,8 @@ private:
   std::auto_ptr<thread_arg_interface> m_thread_arg;
 
 public:
-  template <class I>
-  thread (void (I::*member_function_ptr) (),
-	  I& i) :
-    m_thread_arg (new thread_arg<I> (member_function_ptr, i))
+  thread (void (*func) ()) :
+    m_thread_arg (new thread_arg (func))
   {
     int r = pthread_create (&m_thread, 0, thread_func, m_thread_arg.get ());
     assert (r == 0);

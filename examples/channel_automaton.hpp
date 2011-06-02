@@ -40,7 +40,7 @@ private:
 
   void schedule () {
     if (receive_precondition ()) {
-      ioa::scheduler.schedule (this, &channel_automaton::receive);
+      ioa::scheduler::schedule (this, &channel_automaton::receive);
     }
   }
 

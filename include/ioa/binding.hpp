@@ -1,10 +1,10 @@
 #ifndef __binding_hpp__
 #define __binding_hpp__
 
-#include "action.hpp"
-#include "system_interface.hpp"
-#include "scheduler_interface.hpp"
-#include "bid.hpp"
+#include <ioa/action.hpp>
+#include <ioa/bid.hpp>
+#include <ioa/system_scheduler.hpp>
+#include <ioa/automaton_locker.hpp>
 #include <algorithm>
 
 namespace ioa {
@@ -40,7 +40,6 @@ namespace ioa {
     action<II, IM> m_input_action;
     I& m_binder_ref;
     const aid_t m_binder_aid;
-    scheduler_interface& m_scheduler;
     D& m_d;
 
   public:
@@ -51,7 +50,6 @@ namespace ioa {
 			     const action<II, IM>& input_action,
 			     I& binder_ref,
 			     const aid_t binder_aid,
-			     scheduler_interface& scheduler,
 			     D& d) :
       m_bid (bid),
       m_output_ref (output_ref),
@@ -60,47 +58,46 @@ namespace ioa {
       m_input_action (input_action),
       m_binder_ref (binder_ref),
       m_binder_aid (binder_aid),
-      m_scheduler (scheduler),
       m_d (d)
     {
-      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
       m_binder_ref.bound (m_bid, m_d);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
       
-      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.bound (m_output_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
 
-      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
       m_input_action.bound (m_input_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
     }
 
     virtual ~unvalued_binding_record () {
-      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
       m_binder_ref.unbound (m_d);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
       
-      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.unbound (m_output_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
 
-      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
       m_input_action.unbound (m_input_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
     }
 
     bool execute_output () const {
-      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       bool retval = m_output_action (m_output_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
       return retval;
     }
 
     void execute_input () const {
-      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
       m_input_action (m_input_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
     }
 
     action_interface& output_action () {
@@ -144,7 +141,6 @@ namespace ioa {
     action<II, IM> m_input_action;
     I& m_binder_ref;
     const aid_t m_binder_aid;
-    scheduler_interface& m_scheduler;
     D& m_d;
 
   public:
@@ -155,7 +151,6 @@ namespace ioa {
 			   const action<II, IM>& input_action,
 			   I& binder_ref,
 			   const aid_t binder_aid,
-			   scheduler_interface& scheduler,
 			   D& d) :
       m_bid (bid),
       m_output_ref (output_ref),
@@ -164,47 +159,46 @@ namespace ioa {
       m_input_action (input_action),
       m_binder_ref (binder_ref),
       m_binder_aid (binder_aid),
-      m_scheduler (scheduler),
       m_d (d)
     {
-      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
       m_binder_ref.bound (m_bid, m_d);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
       
-      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.bound (m_output_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
 
-      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
       m_input_action.bound (m_input_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
     }
 
     virtual ~valued_binding_record () {
-      m_scheduler.set_current_aid (m_binder_aid, m_binder_ref);
+      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
       m_binder_ref.unbound (m_d);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
       
-      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.unbound (m_output_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
 
-      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
       m_input_action.unbound (m_input_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
     }
 
     const std::pair<bool, T> execute_output () const {
-      m_scheduler.set_current_aid (m_output_action.get_aid (), m_output_ref);
+      system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       std::pair<bool, T> retval = m_output_action (m_output_ref);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
       return retval;
     }
     
     void execute_input (const T& t) const {
-      m_scheduler.set_current_aid (m_input_action.get_aid (), m_input_ref);
+      system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
       m_input_action (m_input_ref, t);
-      m_scheduler.clear_current_aid ();
+      system_scheduler::clear_current_aid ();
     }
 
     action_interface& output_action () {
@@ -308,7 +302,7 @@ namespace ioa {
     virtual bool involves_aid_bid (const aid_t binder,
   				   const bid_t bid) const = 0;
     virtual bool empty () const = 0;
-    virtual void execute (system_interface& system) = 0;
+    virtual void execute () = 0;
     virtual void unbind (const aid_t binder,
   			 const bid_t bid) = 0;
     virtual void unbind_automaton (const aid_t automaton) = 0;
@@ -405,7 +399,7 @@ namespace ioa {
       return m_inputs.empty ();
     }
 
-    void execute (system_interface& system) {
+    void execute () {
       bool output_processed;
 
       // Lock in order.
@@ -415,10 +409,10 @@ namespace ioa {
   	   ++pos) {
   	if (!output_processed &&
   	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
-  	  system.lock_automaton ((*pos)->output_action ().get_aid ());
+	  automaton_locker::lock_automaton ((*pos)->output_action ().get_aid ());
   	  output_processed = true;
   	}
-  	system.lock_automaton ((*pos)->input_action ().get_aid ());
+	automaton_locker::lock_automaton ((*pos)->input_action ().get_aid ());
       }
 
       // Execute.
@@ -431,10 +425,10 @@ namespace ioa {
   	   ++pos) {
   	if (!output_processed &&
   	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
-  	  system.unlock_automaton ((*pos)->output_action ().get_aid ());
+	  automaton_locker::unlock_automaton ((*pos)->output_action ().get_aid ());
   	  output_processed = true;
   	}
-  	system.unlock_automaton ((*pos)->input_action ().get_aid ());
+	automaton_locker::unlock_automaton ((*pos)->input_action ().get_aid ());
       }
 
     }
@@ -484,7 +478,6 @@ namespace ioa {
   	       const action<II, IM>& input_action,
   	       I& binder_ref,
   	       const aid_t binder_aid,
-  	       scheduler_interface& scheduler,
   	       D& d) {
       // Can't bind to self.
       assert (output_action.automaton.aid () != input_action.automaton.aid ());
@@ -495,7 +488,7 @@ namespace ioa {
   	assert (output_action == get_output ());
       }
       
-      unvalued_binding_record_interface* record = new unvalued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, scheduler, d);
+      unvalued_binding_record_interface* record = new unvalued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, d);
       m_inputs.insert (record);
     }
 
@@ -528,7 +521,6 @@ namespace ioa {
   	       const action<II, IM>& input_action,
   	       I& binder_ref,
   	       const aid_t binder_aid,
-  	       scheduler_interface& scheduler,
   	       D& d) {
       // Can't bind to self.
       assert (output_action.automaton.aid () != input_action.automaton.aid ());
@@ -539,7 +531,7 @@ namespace ioa {
   	assert (output_action == this->get_output ());
       }
       
-      valued_binding_record_interface<T>* record = new valued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, scheduler, d);
+      valued_binding_record_interface<T>* record = new valued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, d);
       this->m_inputs.insert (record);
     }
 

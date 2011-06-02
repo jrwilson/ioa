@@ -1,8 +1,9 @@
 #ifndef __action_wrapper_hpp__
 #define __action_wrapper_hpp__
 
-#include "scheduler.hpp"
-#include "observer.hpp"
+#include <ioa/action.hpp>
+#include <ioa/scheduler.hpp>
+#include <ioa/observer.hpp>
 
 namespace ioa {
 

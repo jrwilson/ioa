@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <ioa/simple_scheduler.hpp>
 #include <ioa.hpp>
 
 // class file_automaton :
@@ -63,6 +64,6 @@ public:
 
 int
 main () {
-  ioa::scheduler.run (ioa::make_instance_generator<file_reader> ());
+  ioa::scheduler::run (ioa::make_instance_generator<file_reader> ());
   return 0; 
 }

@@ -71,7 +71,7 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_LIBADD =
-am_libueioa_la_OBJECTS = runnable.lo
+am_libueioa_la_OBJECTS = runnable.lo simple_scheduler.lo system.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/ioa
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -212,7 +212,9 @@ top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libueioa.la
 libueioa_la_SOURCES = \
-runnable.cpp
+runnable.cpp \
+simple_scheduler.cpp \
+system.cpp
 
 all: all-am
 
@@ -289,6 +291,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runnable.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_scheduler.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/system.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

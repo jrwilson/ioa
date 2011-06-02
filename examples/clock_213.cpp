@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <ioa/simple_scheduler.hpp>
 #include <ioa.hpp>
 
 class trigger :
@@ -10,7 +11,7 @@ private:
 
   UV_UP_OUTPUT (trigger, request) {
     //std::cout << "trigger request" << std::endl;
-    ioa::scheduler.schedule (this, &trigger::request);
+    ioa::scheduler::schedule (this, &trigger::request);
     return true;
   }
 
@@ -20,7 +21,7 @@ public:
   { }
 
   void init () {
-    ioa::scheduler.schedule (this, &trigger::request);
+    ioa::scheduler::schedule (this, &trigger::request);
   }
 };
 
@@ -34,13 +35,13 @@ private:
   UV_UP_INPUT (ioa_clock, request) {
     //std::cout << "ioa_clock request" << std::endl;
     m_flag = true;
-    ioa::scheduler.schedule (this, &ioa_clock::clock);
+    ioa::scheduler::schedule (this, &ioa_clock::clock);
   }
 
   UP_INTERNAL (ioa_clock, tick) {
     //std::cout << "ioa_clock tick" << std::endl;
     m_counter = m_counter + 1;
-    ioa::scheduler.schedule (this, &ioa_clock::tick);
+    ioa::scheduler::schedule (this, &ioa_clock::tick);
   }
 
   V_UP_OUTPUT (ioa_clock, clock, int) {
@@ -64,7 +65,7 @@ public:
   { }
 
   void init () {
-    ioa::scheduler.schedule (this, &ioa_clock::tick);
+    ioa::scheduler::schedule (this, &ioa_clock::tick);
   }
 };
 
@@ -120,6 +121,6 @@ public:
 
 int
 main () {
-  ioa::scheduler.run (ioa::make_instance_generator<composer> ());
+  ioa::scheduler::run (ioa::make_instance_generator<composer> ());
   return 0; 
 }
