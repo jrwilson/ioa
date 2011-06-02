@@ -1,8 +1,9 @@
 #ifndef __dispatching_automaton_hpp__
 #define __dispatching_automaton_hpp__
 
-#include "automaton_handle.hpp"
-#include "bid.hpp"
+#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton_handle.hpp>
+#include <ioa/bid.hpp>
 
 namespace ioa {
 

@@ -1,8 +1,8 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <ioa/simple_scheduler.hpp>
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
 
 class trigger :
   public ioa::dispatching_automaton
@@ -109,9 +109,9 @@ public:
   { }
 
   void init () {
-    m_trigger = new trigger_helper (this, ioa::make_instance_generator<trigger> ());
-    m_ioa_clock = new ioa_clock_helper (this, ioa::make_instance_generator<ioa_clock> ());
-    m_display = new display_helper (this, ioa::make_instance_generator<display> ());
+    m_trigger = new trigger_helper (this, ioa::make_generator<trigger> ());
+    m_ioa_clock = new ioa_clock_helper (this, ioa::make_generator<ioa_clock> ());
+    m_display = new display_helper (this, ioa::make_generator<display> ());
     m_bind1 = new bind1_helper (this, m_trigger, &trigger::request, m_ioa_clock, &ioa_clock::request);
     m_bind2 = new bind2_helper (this, m_ioa_clock, &ioa_clock::clock, m_display, &display::clock);
   }
@@ -121,6 +121,6 @@ public:
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_instance_generator<composer> ());
+  ioa::scheduler::run (ioa::make_generator<composer> ());
   return 0; 
 }

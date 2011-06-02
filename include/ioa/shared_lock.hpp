@@ -1,21 +1,20 @@
 #ifndef __shared_lock_hpp__
 #define __shared_lock_hpp__
 
-class shared_lock
-{
-private:
-  shared_mutex& m_mutex;
+#include <ioa/shared_mutex.hpp>
 
-public:
-  shared_lock (shared_mutex& mutex) :
-    m_mutex (mutex)
+namespace ioa {
+  
+  class shared_lock
   {
-    m_mutex.shared_lock ();
-  }
-
-  ~shared_lock () {
-    m_mutex.unlock ();
-  }
-};
+  private:
+    shared_mutex& m_mutex;
+    
+  public:
+    shared_lock (shared_mutex& mutex);
+    ~shared_lock ();
+  };
+  
+}
 
 #endif

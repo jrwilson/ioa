@@ -1,22 +1,20 @@
 #ifndef __unique_lock_hpp__
 #define __unique_lock_hpp__
 
-class unique_lock
-{
-private:
-  shared_mutex& m_mutex;
+#include <ioa/shared_mutex.hpp>
 
-public:
-  unique_lock (shared_mutex& mutex) :
-    m_mutex (mutex)
+namespace ioa {
+  
+  class unique_lock
   {
-    m_mutex.unique_lock ();
-  }
-
-  ~unique_lock () {
-    m_mutex.unlock ();
-  }
-
-};
+  private:
+    shared_mutex& m_mutex;
+    
+  public:
+    unique_lock (shared_mutex& mutex);
+    ~unique_lock ();
+  };
+  
+}
 
 #endif

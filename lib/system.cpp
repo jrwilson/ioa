@@ -1,4 +1,5 @@
 #include <ioa/system.hpp>
+#include <ioa/automaton_locker.hpp>
 
 namespace ioa {
 

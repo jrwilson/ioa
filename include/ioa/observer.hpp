@@ -3,6 +3,8 @@
 
 #include <set>
 
+// An approach to the Observer Pattern.
+
 namespace ioa {
 
   class observer
@@ -19,35 +21,12 @@ namespace ioa {
     std::set<observer*> m_observers;
 
   protected:
-    void notify_observers () {
-      // Notify the observers.
-      for (std::set<observer*>::const_iterator pos = m_observers.begin ();
-	   pos != m_observers.end ();
-	   ++pos) {
-	(*pos)->observe ();
-      }
-    }
+    void notify_observers ();
 
   public:
-
-    ~observable () {
-      // Notify the observers.
-      for (std::set<observer*>::const_iterator pos = m_observers.begin ();
-	   pos != m_observers.end ();
-	   ++pos) {
-	(*pos)->stop_observing ();
-      }
-    }
-
-    void add_observer (observer* o) {
-      assert (o != 0);
-      m_observers.insert (o);
-    }
-    
-    void remove_observer (observer* o) {
-      m_observers.erase (o);
-    }
-
+    ~observable ();
+    void add_observer (observer* o);
+    void remove_observer (observer* o);
   };
 
 }

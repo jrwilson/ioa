@@ -6,6 +6,7 @@
 #include <ioa/system_scheduler.hpp>
 #include <ioa/automaton_locker.hpp>
 #include <algorithm>
+#include <set>
 
 namespace ioa {
 
@@ -301,8 +302,8 @@ namespace ioa {
     virtual bool involves_input_automaton (const aid_t automaton) const = 0;
     virtual bool involves_aid_bid (const aid_t binder,
   				   const bid_t bid) const = 0;
-    virtual bool empty () const = 0;
     virtual void execute () = 0;
+    virtual bool empty () const = 0;
     virtual void unbind (const aid_t binder,
   			 const bid_t bid) = 0;
     virtual void unbind_automaton (const aid_t automaton) = 0;
@@ -382,6 +383,39 @@ namespace ioa {
   			   aid_bid_equal (binder, bid)) != m_inputs.end ();
     }
 
+    void execute () {
+      bool output_processed;
+      
+      // Lock in order.
+      output_processed = false;
+      for (typename set_type::iterator pos = m_inputs.begin ();
+      	 pos != m_inputs.end ();
+      	 ++pos) {
+        if (!output_processed &&
+      	  (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
+      	automaton_locker::lock_automaton ((*pos)->output_action ().get_aid ());
+      	output_processed = true;
+        }
+        automaton_locker::lock_automaton ((*pos)->input_action ().get_aid ());
+      }
+      
+      // Execute.
+      execute_dispatch ();
+      
+      // Unlock.
+      output_processed = false;
+      for (typename set_type::iterator pos = m_inputs.begin ();
+      	   pos != m_inputs.end ();
+      	   ++pos) {
+      	if (!output_processed &&
+      	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
+      	  automaton_locker::unlock_automaton ((*pos)->output_action ().get_aid ());
+      	  output_processed = true;
+      	}
+      	automaton_locker::unlock_automaton ((*pos)->input_action ().get_aid ());
+      }
+    }
+
     void unbind (const aid_t binder,
   		 const bid_t bid) {
       assert (!m_inputs.empty ());
@@ -397,40 +431,6 @@ namespace ioa {
 
     bool empty () const {
       return m_inputs.empty ();
-    }
-
-    void execute () {
-      bool output_processed;
-
-      // Lock in order.
-      output_processed = false;
-      for (typename set_type::iterator pos = m_inputs.begin ();
-  	   pos != m_inputs.end ();
-  	   ++pos) {
-  	if (!output_processed &&
-  	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
-	  automaton_locker::lock_automaton ((*pos)->output_action ().get_aid ());
-  	  output_processed = true;
-  	}
-	automaton_locker::lock_automaton ((*pos)->input_action ().get_aid ());
-      }
-
-      // Execute.
-      execute_dispatch ();
-
-      // Unlock.
-      output_processed = false;
-      for (typename set_type::iterator pos = m_inputs.begin ();
-  	   pos != m_inputs.end ();
-  	   ++pos) {
-  	if (!output_processed &&
-  	    (*pos)->output_action ().get_aid () < (*pos)->input_action ().get_aid ()) {
-	  automaton_locker::unlock_automaton ((*pos)->output_action ().get_aid ());
-  	  output_processed = true;
-  	}
-	automaton_locker::unlock_automaton ((*pos)->input_action ().get_aid ());
-      }
-
     }
 
     void unbind_automaton (const aid_t automaton) {

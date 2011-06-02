@@ -5,7 +5,7 @@
 #include <list>
 #include "automaton_handle.hpp"
 #include "binding.hpp"
-#include "instance_generator.hpp"
+#include <ioa/generator_interface.hpp>
 #include "mutex.hpp"
 #include "shared_mutex.hpp"
 #include "unique_lock.hpp"

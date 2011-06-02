@@ -43,8 +43,8 @@ public:
     unidirectional_ring_leader_election_helper = new unidirectional_ring_leader_election_helper_type (this);
 
     for (size_t i = 0; i < N; ++i) {
-      T_helpers.push_back (new T_helper_type (this, ioa::make_instance_generator<T> ()));
-      channel_automaton_helpers.push_back (new channel_automaton_helper_type (this, ioa::make_instance_generator<channel_automaton<uuid> > ()));
+      T_helpers.push_back (new T_helper_type (this, ioa::make_generator<T> ()));
+      channel_automaton_helpers.push_back (new channel_automaton_helper_type (this, ioa::make_generator<channel_automaton<uuid> > ()));
     }
 
     for (size_t i = 0; i < N; ++i) {

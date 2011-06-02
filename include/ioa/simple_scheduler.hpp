@@ -3,8 +3,8 @@
 
 #include <ioa/scheduler.hpp>
 
-#include <ioa/blocking_queue.hpp>
-#include <ioa/runnable.hpp>
+#include <ioa/blocking_list.hpp>
+#include <ioa/runnable_interface.hpp>
 #include <ioa/system.hpp>
 #include <ioa/thread.hpp>
 // #include <sys/select.h>
@@ -15,6 +15,19 @@
 // #include "time.hpp"
 
 namespace ioa {
+
+  class action_runnable_interface :
+    public runnable_interface
+  {
+  public:
+    virtual ~action_runnable_interface () { }
+    
+    virtual const action_interface& get_action () const = 0;
+    
+    bool operator== (const action_runnable_interface& x) const {
+      return get_action () == x.get_action ();
+    }
+  };
 
   typedef std::pair<action_runnable_interface*, time> action_time;
 
@@ -101,7 +114,7 @@ namespace ioa {
        */
       bool duplicate;
       {
-  	lock lock (m_execq.get_mutex ());
+  	lock lock (m_execq.list_mutex);
   	duplicate = std::find_if (m_execq.list.begin (), m_execq.list.end (), action_runnable_equal (r)) != m_execq.list.end ();
       }
 
@@ -160,7 +173,7 @@ namespace ioa {
     while (thread_keep_going ()) {
       // Process registrations.
       {
-	lock lock (m_timerq.get_mutex ());
+	lock lock (m_timerq.list_mutex);
 	while (!m_timerq.list.empty ()) {
 	  timer_queue.push (m_timerq.list.front ());
 	  m_timerq.list.pop_front ();
@@ -489,7 +502,7 @@ namespace ioa {
   };
 
   // Implement the system scheduler.
-
+  // These don't belong in a *.cpp file because each scheduler defines them differently.
   void system_scheduler::set_current_aid (const aid_t aid) {
     simple_scheduler::set_current_aid (aid);
   }

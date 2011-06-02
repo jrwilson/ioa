@@ -2,10 +2,15 @@
 #define __scheduler_hpp__
 
 #include <memory>
-#include <ioa/instance_generator.hpp>
+#include <ioa/generator_interface.hpp>
 #include <ioa/action.hpp>
 #include <ioa/bid.hpp>
 #include <ioa/time.hpp>
+
+/*
+  The scheduler from the user's perspective.
+  These functions must be implemented by a scheduler implmentation.
+ */
 
 namespace ioa {
 
@@ -19,15 +24,18 @@ namespace ioa {
     static void create (const C* ptr,
 			std::auto_ptr<generator_interface<I> > generator,
 			D& d);
+
     template <class C, class OI, class OM, class II, class IM, class D>
     static void bind (const C* ptr,
 		      const action<OI, OM>& output_action,
 		      const action<II, IM>& input_action,
 		      D& d);
+
     template <class C, class D>
     static void unbind (const C* ptr,
 			const bid_t bid,
 			D& d);
+
     template <class C, class I, class D>
     static void destroy (const C* ptr,
 			 const automaton_handle<I>& automaton,
@@ -36,6 +44,7 @@ namespace ioa {
     template <class I, class M>
     static void schedule (const I* ptr,
 			  M I::*member_ptr);
+
     template <class I, class M>
     static void schedule (const I* ptr,
 			  M I::*member_ptr,

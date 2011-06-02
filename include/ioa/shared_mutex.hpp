@@ -2,39 +2,22 @@
 #define __shared_mutex_hpp__
 
 #include <pthread.h>
-#include <cassert>
 
-class shared_mutex
-{
-private:
-  pthread_rwlock_t m_lock;
+namespace ioa {
+  
+  class shared_mutex
+  {
+  private:
+    pthread_rwlock_t m_lock;
+    
+  public:
+    shared_mutex ();
+    ~shared_mutex ();
+    void unique_lock ();
+    void shared_lock ();
+    void unlock ();
+  };
 
-public:
-  shared_mutex () {
-    int r = pthread_rwlock_init (&m_lock, 0);
-    assert (r == 0);
-  }
-
-  ~shared_mutex () {
-    int r = pthread_rwlock_destroy (&m_lock);
-    assert (r == 0);
-  }
-
-  void unique_lock () {
-    int r = pthread_rwlock_wrlock (&m_lock);
-    assert (r == 0);
-  }
-
-  void shared_lock () {
-    int r = pthread_rwlock_rdlock (&m_lock);
-    assert (r == 0);
-  }
-
-  void unlock () {
-    int r = pthread_rwlock_unlock (&m_lock);
-    assert (r == 0);
-  }
-
-};
+}
 
 #endif

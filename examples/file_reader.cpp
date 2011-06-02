@@ -1,8 +1,8 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <ioa/simple_scheduler.hpp>
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
 
 // class file_automaton :
 //   public ioa::dispatching_automaton
@@ -58,12 +58,12 @@ public:
   { }
 
   void init () {
-    vfs_helper = new vfs_helper_type (this, ioa::make_instance_generator<vfs_automaton> ());
+    vfs_helper = new vfs_helper_type (this, ioa::make_generator<vfs_automaton> ());
   }
 };
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_instance_generator<file_reader> ());
+  ioa::scheduler::run (ioa::make_generator<file_reader> ());
   return 0; 
 }

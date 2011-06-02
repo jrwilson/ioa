@@ -1,8 +1,8 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <ioa/simple_scheduler.hpp>
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
 
 class count_to_ten :
   public ioa::dispatching_automaton
@@ -31,6 +31,6 @@ public:
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_instance_generator<count_to_ten> ());
+  ioa::scheduler::run (ioa::make_generator<count_to_ten> ());
   return 0; 
 }

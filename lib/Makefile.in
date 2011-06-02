@@ -71,7 +71,10 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_LIBADD =
-am_libueioa_la_OBJECTS = runnable.lo simple_scheduler.lo system.lo
+am_libueioa_la_OBJECTS = condition_variable.lo lock.lo mutex.lo \
+	observer.lo runnable_interface.lo simple_scheduler.lo \
+	shared_lock.lo shared_mutex.lo system.lo thread.lo \
+	unique_lock.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/ioa
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -212,9 +215,17 @@ top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libueioa.la
 libueioa_la_SOURCES = \
-runnable.cpp \
+condition_variable.cpp \
+lock.cpp \
+mutex.cpp \
+observer.cpp \
+runnable_interface.cpp \
 simple_scheduler.cpp \
-system.cpp
+shared_lock.cpp \
+shared_mutex.cpp \
+system.cpp \
+thread.cpp \
+unique_lock.cpp
 
 all: all-am
 
@@ -290,9 +301,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runnable.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/condition_variable.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/observer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runnable_interface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shared_lock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shared_mutex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_scheduler.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/system.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unique_lock.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
