@@ -1,6 +1,8 @@
 #ifndef __mutex_hpp__
 #define __mutex_hpp__
 
+#include <cassert>
+
 class condition_variable;
 
 class mutex

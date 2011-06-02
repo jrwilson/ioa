@@ -74,11 +74,11 @@ private:
 
   void schedule () {
     if (send_precondition ()) {
-      ioa::scheduler.schedule (this, &asynch_lcr_automaton::send);
+      ioa::scheduler::schedule (this, &asynch_lcr_automaton::send);
     }
 
     if (leader_precondition ()) {
-      ioa::scheduler.schedule (this, &asynch_lcr_automaton::leader);
+      ioa::scheduler::schedule (this, &asynch_lcr_automaton::leader);
     }
   }
 

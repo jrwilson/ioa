@@ -4,7 +4,7 @@
 #include "action.hpp"
 #include "system_interface.hpp"
 #include "scheduler_interface.hpp"
-#include "binding_handle.hpp"
+#include "bid.hpp"
 #include <algorithm>
 
 namespace ioa {

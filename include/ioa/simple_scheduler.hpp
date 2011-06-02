@@ -10,6 +10,7 @@
 #include <queue>
 #include <functional>
 #include <fcntl.h>
+#include "time.hpp"
 
 namespace ioa {
 
@@ -405,9 +406,9 @@ namespace ioa {
     }
 
     template <class I, class M>
-    void schedule (const I* ptr,
-		   M I::*member_ptr,
-		   const time& offset) {
+    static void schedule (const I* ptr,
+			  M I::*member_ptr,
+			  time offset = time ()) {
       action_runnable_interface* r = make_action_runnable (m_system, make_action (get_current_aid (ptr), member_ptr), *this);
       if (offset == time ()) {
 	schedule_execq (r);

@@ -2,7 +2,7 @@
 #define __scheduler_wrapper_hpp__
 
 #include "automaton_handle.hpp"
-#include "binding_handle.hpp"
+#include "bid.hpp"
 #include "action.hpp"
 #include "time.hpp"
 #include "instance_generator.hpp"

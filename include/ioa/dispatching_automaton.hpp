@@ -2,7 +2,7 @@
 #define __dispatching_automaton_hpp__
 
 #include "automaton_handle.hpp"
-#include "binding_handle.hpp"
+#include "bid.hpp"
 
 namespace ioa {
 

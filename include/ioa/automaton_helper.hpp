@@ -19,7 +19,7 @@ namespace ioa {
 
     self_helper (const T* t)
     {
-      m_handle = scheduler.get_current_aid (t);
+      m_handle = scheduler::get_current_aid (t);
     }
 
   private:
@@ -61,7 +61,7 @@ namespace ioa {
       m_t (t),
       m_generator (generator)
     {
-      scheduler.create (m_t, m_generator, *this);
+      scheduler::create (m_t, m_generator, *this);
       m_state = CREATE_SENT;
     }
 
@@ -75,7 +75,7 @@ namespace ioa {
 	m_state = CREATE_RECV2;
 	break;
       case CREATE_RECV1:
-	scheduler.destroy (m_t, m_handle, *this);
+	scheduler::destroy (m_t, m_handle, *this);
 	// Reset the handle.
 	m_handle = automaton_handle<I> ();
 	m_state = DESTROY_SENT;
@@ -94,7 +94,7 @@ namespace ioa {
 	notify_observers ();
 	break;
       case CREATE_RECV2:
-	scheduler.destroy (m_t, automaton, *this);
+	scheduler::destroy (m_t, automaton, *this);
 	m_state = DESTROY_SENT;
 	break;
       default:

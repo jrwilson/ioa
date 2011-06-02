@@ -3,7 +3,7 @@
 
 #include "observer.hpp"
 #include "automaton_handle.hpp"
-#include "binding_handle.hpp"
+#include "bid.hpp"
 #include "scheduler.hpp"
 
 namespace ioa {
@@ -189,7 +189,7 @@ namespace ioa {
 	m_state = BIND_RECV2;
 	break;
       case BIND_RECV1:
-	ioa::scheduler.unbind (m_this, m_bid, *this);
+	scheduler::unbind (m_this, m_bid, *this);
 	m_state = UNBIND_SENT;
 	break;
       default:
@@ -226,7 +226,7 @@ namespace ioa {
 	notify_observers ();
 	break;
       case BIND_RECV2:
-	ioa::scheduler.unbind (m_this, bid, *this);
+	scheduler::unbind (m_this, bid, *this);
 	m_state = UNBIND_SENT;
 	break;
       default:
@@ -259,10 +259,10 @@ namespace ioa {
     
 
     void bind_dispatch () {
-      scheduler.bind (this->m_this,
-		      ioa::make_action (this->m_output_handle, this->m_output_member_ptr),
-		      ioa::make_action (this->m_input_handle, this->m_input_member_ptr),
-		      *this);
+      scheduler::bind (this->m_this,
+		       make_action (this->m_output_handle, this->m_output_member_ptr),
+		       make_action (this->m_input_handle, this->m_input_member_ptr),
+		       *this);
     }
 
   public:
@@ -289,10 +289,10 @@ namespace ioa {
     OP m_output_parameter;
 
     void bind_dispatch () {
-      scheduler.bind (this->m_this,
-		      ioa::make_action (this->m_output_handle, this->m_output_member_ptr, m_output_parameter),
-		      ioa::make_action (this->m_input_handle, this->m_input_member_ptr),
-		      *this);
+      scheduler::bind (this->m_this,
+		       make_action (this->m_output_handle, this->m_output_member_ptr, m_output_parameter),
+		       make_action (this->m_input_handle, this->m_input_member_ptr),
+		       *this);
     }
 
   public:
@@ -321,10 +321,10 @@ namespace ioa {
     IP m_input_parameter;
 
     void bind_dispatch () {
-      scheduler.bind (this->m_this,
-		      ioa::make_action (this->m_output_handle, this->m_output_member_ptr),
-		      ioa::make_action (this->m_input_handle, this->m_input_member_ptr, m_input_parameter),
-		      *this);
+      scheduler::bind (this->m_this,
+		       make_action (this->m_output_handle, this->m_output_member_ptr),
+		       make_action (this->m_input_handle, this->m_input_member_ptr, m_input_parameter),
+		       *this);
     }
 
   public:
@@ -355,10 +355,10 @@ namespace ioa {
     IP m_input_parameter;
 
     void bind_dispatch () {
-      scheduler.bind (this->m_this,
-		      ioa::make_action (this->m_output_handle, this->m_output_member_ptr, m_output_parameter),
-		      ioa::make_action (this->m_input_handle, this->m_input_member_ptr, m_input_parameter),
-		      *this);
+      scheduler::bind (this->m_this,
+		       make_action (this->m_output_handle, this->m_output_member_ptr, m_output_parameter),
+		       make_action (this->m_input_handle, this->m_input_member_ptr, m_input_parameter),
+		       *this);
     }
 
   public:

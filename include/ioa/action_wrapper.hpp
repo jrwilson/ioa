@@ -195,7 +195,7 @@ namespace ioa {
     void bound () {
       m_bind_status = true;
       // We schedule the action because the precondition might test is_bound ().
-      scheduler.schedule (&m_c, m_member_object_ptr);
+      scheduler::schedule (&m_c, m_member_object_ptr);
       notify_observers ();
     }
 
@@ -238,7 +238,7 @@ namespace ioa {
     void bound (P p) {
       m_parameters.insert (p);
       // We schedule the action because the precondition might test is_bound ().
-      scheduler.schedule (&m_c, m_member_object_ptr, p);
+      scheduler::schedule (&m_c, m_member_object_ptr, p);
       notify_observers ();
     }
 
@@ -282,7 +282,7 @@ namespace ioa {
     void bound () {
       m_bind_status = true;
       // We schedule the action because the precondition might test is_bound ().
-      scheduler.schedule (&m_c, m_member_object_ptr);
+      scheduler::schedule (&m_c, m_member_object_ptr);
       notify_observers ();
     }
     
@@ -325,7 +325,7 @@ namespace ioa {
     void bound (P p) {
       m_parameters.insert (p);
       // We schedule the action because the precondition might test is_bound ().
-      scheduler.schedule (&m_c, m_member_object_ptr, p);
+      scheduler::schedule (&m_c, m_member_object_ptr, p);
       notify_observers ();
     }
     
