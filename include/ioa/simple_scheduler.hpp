@@ -11,6 +11,7 @@
 
 #include <ioa/blocking_list.hpp>
 #include <ioa/thread.hpp>
+#include <ioa/thread_key.hpp>
 #include <queue>
 #include <fcntl.h>
 #include <sys/select.h>
@@ -28,8 +29,8 @@ namespace ioa {
     static blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
     static int m_wakeup_fd[2];
     static blocking_list<action_time> m_timerq;
-    static aid_t m_current_aid;
-    static const automaton_interface* m_current_this;
+    static thread_key<aid_t> m_current_aid;
+    static thread_key<const automaton_interface*> m_current_this;
 
     static bool keep_going () {
       // The criteria for continuing is simple: a runnable exists.
@@ -62,6 +63,7 @@ namespace ioa {
     }
     
     static void process_sysq () {
+      clear_current_aid ();
       while (thread_keep_going ()) {
 	std::pair<bool, runnable_interface*> r = m_sysq.pop ();
 	if (r.first) {
@@ -124,6 +126,7 @@ namespace ioa {
     }
     
     static void process_execq () {
+      clear_current_aid ();
       while (thread_keep_going ()) {
 	std::pair<bool, runnable_interface*> r = m_execq.pop ();
 	if (r.first) {
@@ -152,67 +155,69 @@ namespace ioa {
     }
     
     static void process_timerq () {
+      clear_current_aid ();
+      
       int r;
       
       std::priority_queue<action_time,
 			  std::vector<action_time>,
 			  std::greater<action_time> > timer_queue;
-    fd_set read_set;
-    
-    while (thread_keep_going ()) {
-      // Process registrations.
-      {
-	lock lock (m_timerq.list_mutex);
-	while (!m_timerq.list.empty ()) {
-	  timer_queue.push (m_timerq.list.front ());
-	  m_timerq.list.pop_front ();
+      fd_set read_set;
+      
+      while (thread_keep_going ()) {
+	// Process registrations.
+	{
+	  lock lock (m_timerq.list_mutex);
+	  while (!m_timerq.list.empty ()) {
+	    timer_queue.push (m_timerq.list.front ());
+	    m_timerq.list.pop_front ();
+	  }
 	}
-      }
-      
-      struct timeval n;
-      r = gettimeofday (&n, 0);
-      assert (r == 0);
-      time now (n);
-      
-      while (!timer_queue.empty () && timer_queue.top ().second < now) {
-	schedule_execq (timer_queue.top ().first);
-	timer_queue.pop ();
-      }
-      
-      struct timeval timeout;
-      struct timeval* test_timeout = 0;
-      
-      if (!timer_queue.empty ()) {
-	timeout = timer_queue.top ().second - now;
-	test_timeout = &timeout;
-      }
-      
-      // TODO: Do better than FD_SETSIZE.
-      // TODO: Don't ZERO every time.
-      FD_ZERO (&read_set);
-      FD_SET (m_wakeup_fd[0], &read_set);
-      int r = select (FD_SETSIZE, &read_set, 0, 0, test_timeout);
-      if (r > 0) {
-	if (FD_ISSET (m_wakeup_fd[0], &read_set)) {
-	  // Drain the wakeup pipe.
-	  char c;
-	  // TODO:  Do better than reading one character at a time.
-	  while (read (m_wakeup_fd[0], &c, 1) == 1) { }
+	
+	struct timeval n;
+	r = gettimeofday (&n, 0);
+	assert (r == 0);
+	time now (n);
+	
+	while (!timer_queue.empty () && timer_queue.top ().second < now) {
+	  schedule_execq (timer_queue.top ().first);
+	  timer_queue.pop ();
 	}
-      }
-      else if (r < 0) {
-	assert (false);
+	
+	struct timeval timeout;
+	struct timeval* test_timeout = 0;
+	
+	if (!timer_queue.empty ()) {
+	  timeout = timer_queue.top ().second - now;
+	  test_timeout = &timeout;
+	}
+	
+	// TODO: Do better than FD_SETSIZE.
+	// TODO: Don't ZERO every time.
+	FD_ZERO (&read_set);
+	FD_SET (m_wakeup_fd[0], &read_set);
+	int r = select (FD_SETSIZE, &read_set, 0, 0, test_timeout);
+	if (r > 0) {
+	  if (FD_ISSET (m_wakeup_fd[0], &read_set)) {
+	    // Drain the wakeup pipe.
+	    char c;
+	    // TODO:  Do better than reading one character at a time.
+	    while (read (m_wakeup_fd[0], &c, 1) == 1) { }
+	  }
+	}
+	else if (r < 0) {
+	  assert (false);
+	}
       }
     }
-  }
-
+    
   public:
-
+    
     static void set_current_aid (const aid_t aid) {
       // This is to be used during generation so that any allocated memory can be associated with the automaton.
       assert (aid != -1);
-      m_current_aid = aid;
-      m_current_this = 0;
+      m_current_aid.set (aid);
+      m_current_this.set (0);
     }
     
     static void set_current_aid (const aid_t aid,
@@ -220,13 +225,13 @@ namespace ioa {
       // This is for all cases except generation.
       assert (aid != -1);
       assert (&current_this != 0);
-      m_current_aid = aid;
-      m_current_this = &current_this;
+      m_current_aid.set (aid);
+      m_current_this.set (&current_this);
     }
     
     static void clear_current_aid () {
-      m_current_aid = -1;
-      m_current_this = 0;
+      m_current_aid.set (-1);
+      m_current_this.set (0);
     }
     
     template <class I>
@@ -237,14 +242,14 @@ namespace ioa {
       // This function (get_current_aid) is responsible for producing the handle.
       
       // First, we check that set_current_aid was called.
-      assert (m_current_aid != -1);
-      assert (m_current_this != 0);
+      assert (m_current_aid.get () != -1);
+      assert (m_current_this.get () != 0);
       
       // Second, we need to make sure that the user didn't inappropriately cast "this."
-      const I* tmp = dynamic_cast<const I*> (m_current_this);
+      const I* tmp = dynamic_cast<const I*> (m_current_this.get ());
       assert (tmp == ptr);
       
-      return system::cast_aid (ptr, m_current_aid);
+      return system::cast_aid (ptr, m_current_aid.get ());
     }
 
     template <class C, class I, class D>
