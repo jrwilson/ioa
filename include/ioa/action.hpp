@@ -289,10 +289,6 @@ namespace ioa {
     bool operator() (I& i) const {
       return (i.*this->member_ptr) ();
     }
-
-    void execute (I& i) const {
-      (*this) (i);
-    }
   };
 
   template <class I, class M, typename PT>
@@ -310,10 +306,6 @@ namespace ioa {
     bool operator() (I& i) const {
       return (i.*this->member_ptr) (this->parameter);
     }
-
-    void execute (I& i) const {
-      (*this) (i);
-    }
   };
 
   template <class I, class M, typename VT>
@@ -329,10 +321,6 @@ namespace ioa {
 
     std::pair<bool, VT> operator() (I& i) const {
       return (i.*this->member_ptr) ();
-    }
-
-    void execute (I& i) const {
-      (*this) (i);
     }
   };
 
@@ -351,10 +339,6 @@ namespace ioa {
     std::pair<bool, VT> operator() (I& i) const {
       return (i.*this->member_ptr) (this->parameter);
     }
-
-    void execute (I& i) const {
-      (*this) (i);
-    }
   };
 
   template <class I, class M>
@@ -368,7 +352,7 @@ namespace ioa {
       action_core<I, M> (a, ptr)
     { }
 
-    void execute (I& i) const {
+    void operator() (I& i) const {
       (i.*this->member_ptr) ();
     }
 
@@ -386,7 +370,7 @@ namespace ioa {
       parameter_core<I, M, PT> (a, ptr, param)
     { }
 
-    void execute (I& i) const {
+    void operator() (I& i) const {
       (i.*this->member_ptr) (this->parameter);
     }
 
@@ -403,7 +387,7 @@ namespace ioa {
       action_core<I, M> (a, ptr)
     { }
 
-    void execute (I& i) const {
+    void operator() (I& i) const {
       (i.*this->member_ptr) ();
     }
 
@@ -430,7 +414,7 @@ namespace ioa {
       m_value (value)
     { }
 
-    void execute (I& i) const {
+    void operator() (I& i) const {
       (i.*this->member_ptr) (m_value);
     }
 
@@ -440,7 +424,6 @@ namespace ioa {
     }
 
   };
-
 
   template <class I, class M>
   class action :

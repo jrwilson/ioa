@@ -466,7 +466,7 @@ namespace ioa {
       I* instance = aid_to_instance<I> (ac.get_aid ());
       lock_automaton (ac.get_aid ());
       system_scheduler::set_current_aid (ac.get_aid (), *instance);
-      ac.execute (*instance);
+      ac (*instance);
       system_scheduler::clear_current_aid ();
       unlock_automaton (ac.get_aid ());
     }
