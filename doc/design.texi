@@ -1,0 +1,47 @@
+\input texinfo  @c -*-texinfo-*-
+@c %** Start of header
+@setfilename design.info
+@settitle The Universal Environment for I/O Automata
+@setchapternewpage odd
+@c %** End of header
+
+@copying
+This manual is for ueioa, version 0.1.
+
+Copyright @copyright{} 2011 Justin R. Wilson.
+
+@quotation
+Permission is granted to ...
+@end quotation
+@end copying
+
+@titlepage
+@titlefont{The Universal Environment}
+@sp 1
+@title for I/O Automata
+@subtitle Design Guide
+@author Justin R. Wilson
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+Published by ...
+@end titlepage
+
+@c So the TOC is printed in the right place.
+@contents
+
+@ifnottex
+@node Top
+@top The Universal Environment for I/O Automata
+
+@insertcopying
+@end ifnottex
+
+@chapter Introduction
+
+@chapter FAQ
+
+@bye

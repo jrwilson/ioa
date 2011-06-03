@@ -1,0 +1,229 @@
+\input texinfo  @c -*-texinfo-*-
+@c %** Start of header
+@setfilename user.info
+@settitle The Universal Environment for I/O Automata
+@setchapternewpage odd
+@c %** End of header
+
+@copying
+This manual is for ueioa, version 0.1.
+
+Copyright @copyright{} 2011 Justin R. Wilson.
+
+@quotation
+Permission is granted to ...
+@end quotation
+@end copying
+
+@titlepage
+@titlefont{The Universal Environment}
+@sp 1
+@title for I/O Automata
+@subtitle User Manual
+@author Justin R. Wilson
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+Published by ...
+@end titlepage
+
+@c So the TOC is printed in the right place.
+@contents
+
+@ifnottex
+@node Top
+@top The Universal Environment for I/O Automata
+
+@insertcopying
+@end ifnottex
+
+@chapter Introduction
+
+The Universal Environment for I/O Automata (@acronym{UEIOA}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
+This chapter describes the motivation behind @acronym{UEIOA} and provides and introduction to the I/O automata model.
+
+@section The Problem with Threads
+
+The thread model dominates modern computing.
+A @dfn{thread} consists of a sequence of instructions, state, and an instruction pointer indicating the location of the current instruction.
+Conventional processors are a direct implementation of the thread model, mainstream compilers are designed to produce code for these processors, and modern operating systems are designed to execute programs on these processors.
+Naturally, the programs developed for these systems are also based on the thread model.
+
+The dominance of the thread model makes it a practical choice for concurrency.
+A physical processor can be multiplexed to execute multiple threads by periodically switching from one thread to another.
+Multiple processors allow concurrent threads to execute simultaneously.
+Concurrent threads communicate by sharing state and using synchronization primitives to control access to the state.
+A section of code that updates shared state is called a @dfn{critical section}.
+
+There are two main issues with using threads as a basis for concurrency.
+The first is that reasoning about the correctness of a threaded program is notoriously difficult because one must consider all possible interleavings of critical sections.
+System developers know that developing and debugging shared-state, lock-based programs is difficult.
+Threads are also not composable.
+One cannot combine the code for two threads into a single thread and reason about the behavior of the composition as the interactions of the two original threads.
+To make reasoning about concurrent programs easier, the formal method community has proposed different models of concurrency, e.g., UNITY, I/O automata.
+
+The second issue is a diversity of threading techniques, resulting in systems that cannot easily be integrated.
+Consider an application based on a reactive event loop that wishes to use a library that performs blocking I/O.
+If the goal is to be responsive, the programmer must wrap all calls to the library as events and pass them to another thread to perform the blocking I/O.
+The overhead of integration is often not negligible and tends to be a source of concurrency bugs.
+
+@c In addition to the problems just mentioned, the clock frequencies of processors have reached a ceiling and processor manufacturers are looking to multi-core to deliver increased performance.
+@c Gains in performance will only be realized through better data structures and algorithms, optimization, hardware acceleration, or concurrent computation.
+
+@section The Road to the Future
+
+One approach to dealing with ``the thread problem'' is to develop higher-level abstractions that make thread-based programming easier.
+This approach includes design patterns, e.g., active objects, and language extensions, 
+
+
+Many researchers and practitioners take the 
+
+Consensus is that threads will limit out ability to build the complex systems we desire.
+higher level abstractions
+
+language support
+
+@section Scope
+
+@section I/O Automata
+
+An I/O automaton consists of state and a set of atomic input, output, and internal actions.
+Users structure computation as a set of I/O automata and a set of bindings that link output actions to input actions.
+
+@chapter Tutorial
+
+@chapter @acronym{UEIOA}
+
+@chapter Examples
+
+@chapter FAQ
+
+* Action Wrappers
+
+  Sensing when an action changes binding status is useful.
+  Consider a pair of automata, A and B, that are bound.
+  If either one of them dies, the other should die.
+  The automata can detect the death of the other by detecting when their respective actions are unbound.
+  The Observer Pattern to the rescue again.
+  We can make all input and output wrappers be observable so the automaton can know when something changes status.
+
+The thread model is at the heart of modern computing as indicated by modern processors, programming languages, and operating systems.
+A thread consists of 1) a sequence of instructions, 2) an instruction pointer indicating the current instruction, and 3) state that is manipulated by the instructions.
+The current instruction and thread state including the instruction pointer determines the subsequent instruction pointer with the default being to advance to the next instruction.
+All major processors are a direct realization of the thread model.
+All major programming languages are based on the structured sequential programming paradigm which is defined using the thread abstraction.
+All major operating systems are written using sequential languages and multiplex processors among different threads by periodically interrupting the current thread,  saving its instruction pointer and other processor state, and then loading and starting another thread.
+Most modern applications are thread-based due to the strong agreement between the processor, programming language, and operating system.
+
+# File System
+
+The file system is a critical part of traditional operating systems.
+If we use communication sequential processes, then we can model the virtual file system (or kernel) as a process that rendezvous with user processes at open, read, write, etc.
+
+In an I/O Automata-based operating system, the file system is just another coordination mechanism.
+From the bottom up, we can model physical disks as (physical) automata.
+On top of the disks are file system drivers, e.g., ext, FAT, xfs, that are also automata.
+On top of the disk drivers is the virtual file system automaton.
+The virtual file system automaton creates file and directory automata with which users can interact.
+Using I/O Automata to build a virtual file system has the potential to simplify certain features such as change notification and database triggers.  
+
+
+
+Inputs
+
+read
+write
+
+Ouputs
+
+read_complete
+write_complete
+(We are asynchronous.  Consequently, we could take advantage of ASIO if it is available.  The complete calls allow us to have good back pressure (or flow control).)
+
+Closing can be accomplished with an input or upon the first action unbind.
+
+
+
+* Memory allocation
+  The scheduler knows what automaton is running at any given time.
+  Thus, we can associated allocated memory with an automaton and free it when the automaton is destroyed.
+
+
+
+
+* Helpers
+
+  System calls cannot be made while in the constructor of an automaton because the "this" pointer is not known to the scheduler and can't be used for certian sanity checks.
+  So, the helpers have methods, create and bind respectively, that that get the helpers started.
+  A starting point is to move all of the parameters required at construction to the appropriate start-up method.
+
+  We desire (and have) the ability to create helpers dynamically, either directly (calling "new helper") or indirectly (calling "new object" where object contains one or more helpers).
+  This gives us the power to create dynamic constellations of automata.
+  However, they must be stopped before they are destroyed.
+  To illustrate, consider the following sequence
+
+  new automaton_helper
+    create ->
+    created <-              automaton
+       |                        |
+  delete automaton_helper       |
+                                |
+                           delete automaton
+    <-destroyed  [The system will call a non-existent callback.]
+  
+  Instead of calling delete, the sequence should contain a destroy/unbind call.
+  The handler in the helper can then call delete to clean up.
+  The new sequence looks like.
+
+  new automaton_helper
+    create ->
+    created <-              automaton
+       |                        |
+  automaton_helper->destroy ()  |
+       |                        |
+       |                 delete automaton
+    <-destroyed  [The helper will call "delete this" to clean the helper.]
+
+  If the helper always calls delete, then we cannot have statically allocated helpers.
+  This seems acceptable to me at this time.
+
+  If we only allow dynamically allocated helpers, we can move all of the create/bind parameters back to the constructor and stipulate that the helpers are dynamically allocated at or after the init methods of the automaton.
+  The helpers then have a very simple interface: a constructor and a destroy/unbind method.
+
+  Suppose that an automaton has allocated some helpers is in its destructor.
+  Also, suppose that the memory accounting framework does not exists (because it doesn't).
+  The automaton designer, wishing to not introduce memory leaks, wishes to delete the helpers.
+  However, the helper might have already been destroyed due to a callback resulting in a double-free.
+  If we could guarantee that the helpers receive the appropriate destroyed/unbound signals before the destructor for the automaton, then the destructor doesn't need to delete the helpers.
+  The system can (and does) enforce this.
+  Otherwise, helpers become too complex and their utility is greatly diminished.
+  
+  We can group helpers into other objects to make the creation and maintenance of constellations easier.
+  Initially, this looks difficult as it appears that we have the same problem as before, i.e., an automaton has no way of knowing when a grouping object is safe to delete.
+  The Observer Pattern to the rescue.
+  The helpers are observable, thus, the grouping object can observe them and know when they are all destroyed.
+  If the group object itself is observable, then the automaton can know when the grouping object is defunct.
+  The pattern can be repeated ad infinitum and resembles a tree structure with the automaton at the root, group objects at the branches, and helpers at the roots.
+  In the tree, parents observe their children.
+
+
+* Round-robin scheduler
+  I would like to make a round-robin scheduler.
+  Other scheduler's are also possible.
+
+
+To write:
+- Explain dispatching_automaton.
+- UP_INTERNAL macros and underlying wrappers
+- Why can't you do stuff in constructors?
+- init ()
+- helpers instead of the Big 4
+- scheduling actions
+- creation caveats = type safety
+- Why is "this" everywhere?
+
+
+@bye

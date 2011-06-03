@@ -4,7 +4,7 @@
 AC_PREREQ([2.65])
 AC_INIT([ueioa], [0.01], [jrwilson@go.wustl.edu])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([lib/runnable.cpp])
+AC_CONFIG_SRCDIR([lib/system.cpp])
 AC_CONFIG_HEADERS([include/ioa/config.hpp])
 AM_INIT_AUTOMAKE
 
@@ -48,6 +48,7 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([getpagesize gettimeofday memset select socket strerror])
 
 AC_CONFIG_FILES([Makefile
+		 doc/Makefile
 		 lib/Makefile
 		 examples/Makefile])
 AC_OUTPUT
