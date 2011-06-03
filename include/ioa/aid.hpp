@@ -1,11 +1,20 @@
 #ifndef __aid_hpp__
 #define __aid_hpp__
 
-namespace ioa {
+#include <ioa/environment.hpp>
 
+#include <stdint.h>
+
+namespace ioa {
+  
   // Automaton ID.
-  typedef int aid_t;
+  #ifdef ENVIRONMENT64
+    typedef int64_t aid_t;
+  #elif ENVIRONMENT32
+    typedef int32_t aid_t;
+  #endif
 
 }
 
 #endif
+

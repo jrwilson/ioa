@@ -1,8 +1,12 @@
-#include <cstdlib>
-#include <iostream>
+/*
+  An automaton that counts to ten and stops.
+*/
 
 #include <ioa.hpp>
 #include <ioa/simple_scheduler.hpp>
+
+#include <cstdlib>
+#include <iostream>
 
 class count_to_ten :
   public ioa::dispatching_automaton
@@ -34,3 +38,4 @@ main () {
   ioa::scheduler::run (ioa::make_generator<count_to_ten> ());
   return 0; 
 }
+

@@ -4,6 +4,8 @@
 #include <ioa/scheduler.hpp>
 #include <ioa/observer.hpp>
 
+#include <cassert>
+
 namespace ioa {
 
   template <class T, class OH, class OM, class OPS, class IH, class IM, class IPS> class bind_helper_impl;

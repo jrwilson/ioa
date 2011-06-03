@@ -8,6 +8,7 @@
 #include <ioa/bid.hpp>
 
 #include <memory>
+#include <cassert>
 
 namespace ioa {
 

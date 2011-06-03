@@ -1,5 +1,7 @@
 #include <ioa/observer.hpp>
 
+#include <cassert>
+
 namespace ioa {
 
   void observable::notify_observers () {

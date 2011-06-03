@@ -1,5 +1,7 @@
 #include <ioa/thread.hpp>
 
+#include <cassert>
+
 namespace ioa {
 
   thread_arg::thread_arg (void (*func) ()) :
