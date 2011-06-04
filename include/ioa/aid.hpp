@@ -8,12 +8,13 @@
 namespace ioa {
   
   // Automaton ID.
-  #ifdef ENVIRONMENT64
-    typedef int64_t aid_t;
-  #elif ENVIRONMENT32
-    typedef int32_t aid_t;
-  #endif
-
+#ifdef ENVIRONMENT64
+  typedef int64_t aid_t;
+#endif
+#ifdef ENVIRONMENT32
+  typedef int32_t aid_t;
+#endif
+  
 }
 
 #endif
