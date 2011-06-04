@@ -93,6 +93,14 @@ namespace ioa {
     static std::set<automaton_interface*> m_instances;
     static std::map<aid_t, automaton_record_interface*> m_records;
     static std::list<binding_interface*> m_bindings;
+
+    template <class I>
+    static I* automaton_handle_to_instance (const automaton_handle<I>& handle) {
+      if (!m_aids.contains (handle.aid ())) {
+	return 0;
+      }
+      return dynamic_cast<I*> (m_records[handle.aid ()]->get_instance ());
+    }
     
   public:
     
@@ -164,12 +172,13 @@ namespace ioa {
 	    D& d)
     {
       unique_lock lock (m_mutex);
+
+      P* p = automaton_handle_to_instance (automaton);
       
-      if (!m_aids.contains (automaton.aid ())) {
+      if (0 == p) {
+	// Creator does not exists.
 	return automaton_handle<I> ();
       }
-
-      P* p = aid_to_instance<P> (automaton.aid ());
 
       // Take an aid.
       automaton_handle<I> handle (m_aids.take ());
@@ -224,21 +233,25 @@ namespace ioa {
 	  const automaton_handle<I>& binder,
 	  D& d)
     {
-      if (!m_aids.contains (binder.aid ())) {
+      I* instance = automaton_handle_to_instance (binder);
+      
+      if (0 == instance) {
   	// Binder DNE.
   	return -1;
       }
 
-      I* instance = aid_to_instance<I> (binder.aid ());
+      OI* output_instance = automaton_handle_to_instance (output.automaton);
 
-      if (!m_aids.contains (output.get_aid ())) {
+      if (0 == output_instance) {
 	system_scheduler::set_current_aid (binder.aid (), *instance);
 	instance->output_automaton_dne (d);
 	system_scheduler::clear_current_aid ();
 	return -1;
       }
 
-      if (!m_aids.contains (input.get_aid ())) {
+      II* input_instance = automaton_handle_to_instance (input.automaton);
+
+      if (0 == input_instance) {
 	system_scheduler::set_current_aid (binder.aid (), *instance);
 	instance->input_automaton_dne (d);
 	system_scheduler::clear_current_aid ();
@@ -296,9 +309,6 @@ namespace ioa {
       // Bind.
       bid_t bid = m_records[binder.aid ()]->take_bid ();
 
-      OI* output_instance = aid_to_instance<OI> (output.get_aid ());
-      II* input_instance = aid_to_instance<II> (input.get_aid ());
-
       c->bind (bid, *output_instance, output, *input_instance, input, *instance, binder.aid (), d);
 
       return bid;
@@ -328,11 +338,11 @@ namespace ioa {
 	    const automaton_handle<I>& binder,
 	    D& d)
     {
-      if (!m_aids.contains (binder.aid ())) {
+      I* instance = automaton_handle_to_instance (binder);
+
+      if (0 == instance) {
 	return false;
       }
-      
-      I* instance = aid_to_instance<I> (binder.aid ());
       
       std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
 								  m_bindings.end (),
@@ -405,8 +415,8 @@ namespace ioa {
     destroy (const automaton_handle<I>& target)
     {
       unique_lock lock (m_mutex);
-      
-      if (!m_aids.contains (target.aid ())) {
+
+      if (0 == automaton_handle_to_instance (target)) {
 	return false;
       }
 
@@ -422,13 +432,14 @@ namespace ioa {
     {
       unique_lock lock (m_mutex);
 
-      if (!m_aids.contains (automaton.aid ())) {
+      P* instance = automaton_handle_to_instance (automaton);
+      if (0 == instance) {
+	// Destroyer does not exist.
 	return false;
       }
 
-      P* instance = aid_to_instance<P> (automaton.aid ());
-
-      if (!m_aids.contains (target.aid ())) {
+      
+      if (0 == automaton_handle_to_instance (target)) {
 	system_scheduler::set_current_aid (automaton.aid (), *instance);
 	instance->target_automaton_dne (d);
 	system_scheduler::clear_current_aid ();
@@ -451,19 +462,10 @@ namespace ioa {
 
   private:
 
-    template <class I>
-    static I* aid_to_instance (const aid_t aid) {
-      assert (m_aids.contains (aid));
-      I* instance = dynamic_cast<I*> (m_records[aid]->get_instance ());
-      assert (instance != 0);
-      return instance;
-    }
-
     template <class I, class M>
     static void
-    execute0 (const action<I, M>& ac)
+    execute0 (I* instance, const action<I, M>& ac)
     {
-      I* instance = aid_to_instance<I> (ac.get_aid ());
       lock_automaton (ac.get_aid ());
       system_scheduler::set_current_aid (ac.get_aid (), *instance);
       ac (*instance);
@@ -473,7 +475,8 @@ namespace ioa {
 
     template <class I, class M>
     static void
-    execute1 (const action<I, M>& ac,
+    execute1 (I* instance,
+	      const action<I, M>& ac,
 	      output_category /* */)
     {      
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
@@ -482,7 +485,7 @@ namespace ioa {
       
       if (out_pos == m_bindings.end ()) {
 	// Not bound.
-	execute0 (ac);
+	execute0 (instance, ac);
       }
       else {	
 	(*out_pos)->execute ();
@@ -491,18 +494,20 @@ namespace ioa {
 
     template <class I, class M>
     static void
-    execute1 (const action<I, M>& ac,
+    execute1 (I* instance,
+	      const action<I, M>& ac,
 	      internal_category /* */)
     {
-      execute0 (ac);
+      execute0 (instance, ac);
     }
 
     template <class I, class M>
     static void
-    execute1 (const action<I, M>& ac,
+    execute1 (I* instance,
+	      const action<I, M>& ac,
 	      event_category /* */)
     {
-      execute0 (ac);
+      execute0 (instance, ac);
     }
 
   public:
@@ -512,12 +517,13 @@ namespace ioa {
     execute (const action<I, M>& ac)
     {
       shared_lock lock (m_mutex);
-      
-      if (!m_aids.contains (ac.get_aid ())) {
+
+      I* instance = automaton_handle_to_instance (ac.automaton);
+      if (0 == instance) {
 	return false;
       }
 
-      execute1 (ac, typename action<I, M>::action_category ());
+      execute1 (instance, ac, typename action<I, M>::action_category ());
       return true;
     }
 
@@ -529,23 +535,26 @@ namespace ioa {
     {
       shared_lock lock (m_mutex);
 
-      if (!m_aids.contains (from.aid ())) {
+      F* from_instance = automaton_handle_to_instance (from.automaton);
+
+      if (0 == from_instance) {
 	// Deliverer does not exists.
 	return false;
       }
 
-      if (!m_aids.contains (ac.get_aid ())) {
+      I* instance = automaton_handle_to_instance (ac.automaton);
+
+      if (0 == instance) {
 	// Recipient does not exist.
-	F* instance = aid_to_instance<F> (from.aid ());
 	lock_automaton (from.aid ());
-	system_scheduler::set_current_aid (from.aid (), *instance);
-	instance->recipient_dne (d);
+	system_scheduler::set_current_aid (from.aid (), *from_instance);
+	from_instance->recipient_dne (d);
 	system_scheduler::clear_current_aid ();
 	unlock_automaton (from.aid ());
 	return false;
       }
 
-      execute1 (ac, typename action<I, M>::action_category ());
+      execute1 (instance, ac, typename action<I, M>::action_category ());
       return true;
     }
 
