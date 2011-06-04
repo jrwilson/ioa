@@ -4,6 +4,7 @@
 #include <ioa/automaton_interface.hpp>
 #include <ioa/automaton_handle.hpp>
 #include <ioa/bid.hpp>
+#include <ioa/action_wrapper.hpp>
 
 namespace ioa {
 
@@ -13,7 +14,7 @@ namespace ioa {
   public:
     
     // Create/Destroy
-    
+
     template <class I, class D>
     void instance_exists (const I* i, D& d) {
       d.instance_exists (i);

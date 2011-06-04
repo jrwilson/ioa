@@ -7,6 +7,7 @@
 #include <ioa/automaton_locker.hpp>
 #include <algorithm>
 #include <set>
+#include <cassert>
 
 namespace ioa {
 

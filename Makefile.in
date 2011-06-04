@@ -225,7 +225,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
-lib
+lib \
+. \
+test
 
 all: all-recursive
 

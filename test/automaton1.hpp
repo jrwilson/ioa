@@ -1,9 +1,9 @@
 #ifndef __automaton1_hpp__
 #define __automaton1_hpp__
 
-#include <action.hpp>
-#include <binding_handle.hpp>
-#include "instance_generator.hpp"
+#include <ioa/action.hpp>
+#include <ioa/bid.hpp>
+#include <ioa/automaton_interface.hpp>
 
 template <class T>
 struct bindable
