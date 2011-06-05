@@ -1,7 +1,7 @@
 #ifndef __automaton2_hpp__
 #define __automaton2_hpp__
 
-#include "instance_generator.hpp"
+#include <ioa/action_wrapper.hpp>
 
 class automaton2 :
   public ioa::automaton_interface

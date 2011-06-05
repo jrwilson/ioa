@@ -3,16 +3,6 @@
 #include <ioa/binding.hpp>
 #include "automaton1.hpp"
 
-#include "test_system_scheduler.hpp"
-
-namespace ioa {
-  void system_scheduler::set_current_aid (aid_t, const automaton_interface&) { }
-  void system_scheduler::clear_current_aid () { }
-
-  void automaton_locker::lock_automaton (aid_t) { }
-  void automaton_locker::unlock_automaton (aid_t) { }
-}
-
 static const char*
 unbind_unvalued_unparameterized_output_action ()
 {

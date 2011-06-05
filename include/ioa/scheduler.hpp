@@ -20,10 +20,10 @@ namespace ioa {
     template <class I>
     static automaton_handle<I> get_current_aid (const I* ptr);
 
-    template <class C, class I, class D>
+    template <class C>
     static void create (const C* ptr,
 			std::auto_ptr<generator_interface> generator,
-			D& d);
+			void* aux);
 
     template <class C, class OI, class OM, class II, class IM, class D>
     static void bind (const C* ptr,
@@ -51,6 +51,8 @@ namespace ioa {
 			  time offset);
     
     static void run (std::auto_ptr<generator_interface> generator);
+
+    static void clear ();
   };
 
 }

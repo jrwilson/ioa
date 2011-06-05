@@ -56,7 +56,7 @@ namespace ioa {
     m_records.insert (std::make_pair (aid, record));
     
     // Initialize the automaton.
-    system_scheduler::schedule (aid, &automaton_interface::init);
+    system_scheduler::init (aid);
     
     return aid;
   }
@@ -88,7 +88,7 @@ namespace ioa {
     if (m_instances.count (instance) != 0) {
       // Return the aid and inform the automaton that the instance already exists.
       m_aids.replace (aid);
-      system_scheduler::schedule (automaton, &automaton_interface::instance_exists, aux);
+      system_scheduler::instance_exists (automaton, aux);
       return -1;
     }
     
@@ -99,10 +99,10 @@ namespace ioa {
     parent->add_child (record);
     
     // Tell the parent the child was created.
-    system_scheduler::schedule (automaton, &automaton_interface::automaton_created, std::make_pair (aux, aid));
+    system_scheduler::automaton_created (automaton, aux, aid);
     
     // Initialize the child.
-    system_scheduler::schedule (aid, &automaton_interface::init);
+    system_scheduler::init (aid);
     
     return aid;
   }
@@ -122,7 +122,7 @@ namespace ioa {
     
     if (pos == m_bindings.end ()) {
       // Not bound.
-      system_scheduler::schedule (binder, &automaton_interface::binding_dne, aux);
+      system_scheduler::binding_dne (binder, aux);
       return false;
     }
     
@@ -164,7 +164,7 @@ namespace ioa {
     }
     
     if (!m_aids.contains (target)) {
-      system_scheduler::schedule (automaton, &automaton_interface::target_automaton_dne, aux);
+      system_scheduler::target_automaton_dne (automaton, aux);
       return false;
     }
     
@@ -172,7 +172,7 @@ namespace ioa {
     automaton_record* child = m_records[target];
     
     if (parent != child->get_parent ()) {
-      system_scheduler::schedule (automaton, &automaton_interface::destroyer_not_creator, aux);
+      system_scheduler::destroyer_not_creator (automaton, aux);
       return false;
     }
     

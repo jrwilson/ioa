@@ -16,7 +16,7 @@ namespace ioa {
     if (this->get_parent () != 0) {
       // Inform the parent that this child is destroyed.
       aid_t parent_aid = this->get_parent ()->get_aid ();
-      system_scheduler::schedule (parent_aid, &automaton_interface::automaton_destroyed, m_aid);
+      system_scheduler::automaton_destroyed (parent_aid, m_aid);
     }     
   }
 

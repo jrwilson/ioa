@@ -133,14 +133,14 @@ namespace ioa {
       OI* output_instance = automaton_handle_to_instance (output.automaton);
 
       if (0 == output_instance) {
-	system_scheduler::schedule (binder, &automaton_interface::output_automaton_dne, aux);
+	system_scheduler::output_automaton_dne (binder, aux);
 	return -1;
       }
 
       II* input_instance = automaton_handle_to_instance (input.automaton);
 
       if (0 == input_instance) {
-	system_scheduler::schedule (binder, &automaton_interface::input_automaton_dne, aux);
+	system_scheduler::input_automaton_dne (binder, aux);
 	return -1;
       }
       
@@ -150,7 +150,7 @@ namespace ioa {
       
       if (pos != m_bindings.end ()) {
   	// Bound.
-	system_scheduler::schedule (binder, &automaton_interface::binding_exists, aux);
+	system_scheduler::binding_exists (binder, aux);
 	return -1;
       }
       
@@ -160,7 +160,7 @@ namespace ioa {
       
       if (in_pos != m_bindings.end ()) {
   	// Input unavailable.
-	system_scheduler::schedule (binder, &automaton_interface::input_action_unavailable, aux);
+	system_scheduler::input_action_unavailable (binder, aux);
 	return -1;
       }
       
@@ -171,7 +171,7 @@ namespace ioa {
       if (output.get_aid () == input.get_aid () ||
   	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_aid ()))) {
   	// Output unavailable.
-	system_scheduler::schedule (binder, &automaton_interface::output_action_unavailable, aux);
+	system_scheduler::output_action_unavailable (binder, aux);
 	return -1;
       }
       
@@ -306,7 +306,7 @@ namespace ioa {
 
       if (0 == instance) {
 	// Recipient does not exist.
-	system_scheduler::schedule (from, &automaton_interface::recipient_dne, aux);
+	system_scheduler::recipient_dne (from, aux);
 	return false;
       }
 

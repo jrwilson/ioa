@@ -252,11 +252,11 @@ namespace ioa {
       return automaton_handle<I> (m_current_aid.get ());
     }
 
-    template <class C, class I, class D>
+    template <class C>
     static void create (const C* ptr,
 			std::auto_ptr<generator_interface> generator,
-			D& d) {
-      schedule_sysq (make_create_runnable (get_current_aid (ptr), generator, d));
+			void* aux) {
+      schedule_sysq (make_create_runnable (get_current_aid (ptr), generator, aux));
     }
     
     template <class C, class OI, class OM, class II, class IM, class D>
@@ -294,6 +294,13 @@ namespace ioa {
       schedule_timerq (make_action_runnable (make_action (get_current_aid (ptr), member_ptr)), offset);
     }
 
+    template <class M>
+    static void schedule (const aid_t aid,
+			  M automaton_interface::*member_ptr) {
+      schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (aid), member_ptr)));
+      assert (false);
+    }
+
     static void run (std::auto_ptr<generator_interface> generator) {
       int r;
       
@@ -322,6 +329,31 @@ namespace ioa {
       close (m_wakeup_fd[0]);
       close (m_wakeup_fd[1]);
     }
+
+    static void clear (void) {
+      // We clear the system first because it might add something to a run queue.
+      system::clear ();
+      
+      // Then, we clear the run queues.
+      for (std::list<std::pair<bool, runnable_interface*> >::iterator pos = m_sysq.list.begin ();
+  	   pos != m_sysq.list.end ();
+  	   ++pos) {
+  	delete pos->second;
+      }
+      m_sysq.list.clear ();
+      
+      for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_execq.list.begin ();
+  	   pos != m_execq.list.end ();
+  	   ++pos) {
+  	delete pos->second;
+      }
+      m_execq.list.clear ();
+      
+      // Notice that the post-conditions of clear () match those of run ().
+      assert (m_sysq.list.size () == 0);
+      assert (m_execq.list.size () == 0);
+      assert (!keep_going ());
+    }
     
   };
 
@@ -347,11 +379,11 @@ namespace ioa {
     return simple_scheduler::get_current_aid (ptr);
   }
   
-  template <class C, class I, class D>
+  template <class C>
   void scheduler::create (const C* ptr,
 			  std::auto_ptr<generator_interface> generator,
-			  D& d) {
-    simple_scheduler::create (ptr, generator, d);
+			  void* aux) {
+    simple_scheduler::create (ptr, generator, aux);
   }
   
   template <class C, class OI, class OM, class II, class IM, class D>
@@ -393,38 +425,12 @@ namespace ioa {
     simple_scheduler::run (generator);
   }
 
+  void scheduler::clear () {
+    simple_scheduler::clear ();
+  }
+
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
-
-  // class simple_scheduler
-  // {
-  //   void clear (void) {
-  //     // We clear the system first because it might add something to a run queue.
-  //     system::clear ();
-
-  //     // Then, we clear the run queues.
-  //     for (std::list<std::pair<bool, runnable_interface*> >::iterator pos = m_sysq.list.begin ();
-  // 	   pos != m_sysq.list.end ();
-  // 	   ++pos) {
-  // 	delete pos->second;
-  //     }
-  //     m_sysq.list.clear ();
-
-  //     for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_execq.list.begin ();
-  // 	   pos != m_execq.list.end ();
-  // 	   ++pos) {
-  // 	delete pos->second;
-  //     }
-  //     m_execq.list.clear ();
-
-  //     // Notice that the post-conditions of clear () match those of run ().
-  //     assert (m_sysq.list.size () == 0);
-  //     assert (m_execq.list.size () == 0);
-  //     assert (!keep_going ());
-  //   }
-            
-  // };
-
 }
 
 #endif

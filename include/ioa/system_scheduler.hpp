@@ -20,14 +20,51 @@ namespace ioa {
 				 const automaton_interface& current_this);
     static void clear_current_aid ();
 
-    template <class M>
-    static void schedule (const aid_t aid,
-			  M automaton_interface::*member_ptr);
+    static void init (const aid_t automaton);
 
-    template <class M, class T>
-    static void schedule (const aid_t aid,
-			  M automaton_interface::*member_ptr,
-			  const T& t);
+    static void instance_exists (const aid_t automaton,
+				 void* aux);
+
+    static void automaton_created (const aid_t automaton,
+				   void* aux,
+				   const aid_t child);
+
+    static void output_automaton_dne (const aid_t binder,
+				      void* aux);
+
+    static void input_automaton_dne (const aid_t binder,
+				      void* aux);
+
+    static void binding_exists (const aid_t binder,
+				void* aux);
+
+    static void input_action_unavailable (const aid_t binder,
+					  void* aux);
+
+    static void output_action_unavailable (const aid_t binder,
+					   void* aux);
+    
+    static void bound (const aid_t binder,
+		       void* aux,
+		       const bid_t bid);
+
+    static void binding_dne (const aid_t binder,
+			     void* aux);
+
+    static void unbound (const aid_t binder,
+			 const bid_t bid);
+
+    static void target_automaton_dne (const aid_t automaton,
+				      void* aux);
+
+    static void destroyer_not_creator (const aid_t automaton,
+				       void* aux);
+
+    static void automaton_destroyed (const aid_t parent,
+				     const aid_t child);
+
+    static void recipient_dne (const aid_t from,
+			       void* aux);
   };
   
 }

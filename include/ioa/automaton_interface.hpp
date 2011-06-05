@@ -1,29 +1,49 @@
 #ifndef __automaton_interface_hpp__
 #define __automaton_interface_hpp__
 
+#include <ioa/action_wrapper.hpp>
+
 // All of the automata should be classes.
 
 namespace ioa {
 
   class automaton_interface {
   public:
+    automaton_interface () :
+      ACTION (automaton_interface, init),
+      ACTION (automaton_interface, instance_exists),
+      ACTION (automaton_interface, automaton_created),
+      ACTION (automaton_interface, automaton_destroyed),
+      ACTION (automaton_interface, output_automaton_dne),
+      ACTION (automaton_interface, input_automaton_dne),
+      ACTION (automaton_interface, binding_exists),
+      ACTION (automaton_interface, output_action_unavailable),
+      ACTION (automaton_interface, input_action_unavailable),
+      ACTION (automaton_interface, bound),
+      ACTION (automaton_interface, unbound),
+      ACTION (automaton_interface, binding_dne),
+      ACTION (automaton_interface, target_automaton_dne),
+      ACTION (automaton_interface, destroyer_not_creator),
+      ACTION (automaton_interface, recipient_dne)
+    { }
+
     virtual ~automaton_interface () { }
 
-    int init;
-    int instance_exists;
-    int automaton_created;
-    int automaton_destroyed;
-    int output_automaton_dne;
-    int input_automaton_dne;
-    int binding_exists;
-    int output_action_unavailable;
-    int input_action_unavailable;
-    int bound;
-    int unbound;
-    int binding_dne;
-    int target_automaton_dne;
-    int destroyer_not_creator;
-    int recipient_dne;
+    UP_INTERNAL (automaton_interface, init) { }
+    SYSTEM_INPUT (automaton_interface, instance_exists) { }
+    SYSTEM_INPUT (automaton_interface, automaton_created) { }
+    SYSTEM_INPUT (automaton_interface, automaton_destroyed) { }
+    SYSTEM_INPUT (automaton_interface, output_automaton_dne) { }
+    SYSTEM_INPUT (automaton_interface, input_automaton_dne) { }
+    SYSTEM_INPUT (automaton_interface, binding_exists) { }
+    SYSTEM_INPUT (automaton_interface, output_action_unavailable) { }
+    SYSTEM_INPUT (automaton_interface, input_action_unavailable) { }
+    SYSTEM_INPUT (automaton_interface, bound) { }
+    SYSTEM_INPUT (automaton_interface, unbound) { }
+    SYSTEM_INPUT (automaton_interface, binding_dne) { }
+    SYSTEM_INPUT (automaton_interface, target_automaton_dne) { }
+    SYSTEM_INPUT (automaton_interface, destroyer_not_creator) { }
+    SYSTEM_INPUT (automaton_interface, recipient_dne) { }
   };
 
 }

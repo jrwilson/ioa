@@ -27,6 +27,8 @@ namespace ioa {
   struct output_category { };
   struct internal_category { };
   struct event_category { };
+  struct system_input_category { };
+  struct system_output_category { };
 
   /* Indicates if an input, outputs, or events has an associated value. */
   struct unvalued { };
@@ -78,6 +80,10 @@ namespace ioa {
 
   struct event : public no_parameter {
     typedef event_category action_category;
+  };
+
+  struct system_input : public no_value, public no_parameter {
+    typedef system_input_category action_category;
   };
 
   /*

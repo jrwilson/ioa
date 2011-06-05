@@ -57,7 +57,7 @@ namespace ioa {
       m_input_action (input_action),
       m_binder_aid (binder_aid)
     {
-      system_scheduler::schedule (m_binder_aid, &automaton_interface::bound, std::make_pair (aux, m_bid));
+      system_scheduler::bound (m_binder_aid, aux, m_bid);
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.bound (m_output_ref);
@@ -69,7 +69,7 @@ namespace ioa {
     }
 
     virtual ~unvalued_binding_record () {
-      system_scheduler::schedule (m_binder_aid, &automaton_interface::unbound, m_bid);
+      system_scheduler::unbound (m_binder_aid, m_bid);
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.unbound (m_output_ref);
@@ -149,7 +149,7 @@ namespace ioa {
       m_input_action (input_action),
       m_binder_aid (binder_aid)
     {
-      system_scheduler::schedule (m_binder_aid, &automaton_interface::bound, std::make_pair (aux, m_bid));
+      system_scheduler::bound (m_binder_aid, aux, m_bid);
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.bound (m_output_ref);
@@ -161,7 +161,7 @@ namespace ioa {
     }
 
     virtual ~valued_binding_record () {
-      system_scheduler::schedule (m_binder_aid, &automaton_interface::unbound, m_bid);
+      system_scheduler::unbound (m_binder_aid, m_bid);
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.unbound (m_output_ref);
