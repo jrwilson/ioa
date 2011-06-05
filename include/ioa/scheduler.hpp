@@ -22,7 +22,7 @@ namespace ioa {
 
     template <class C, class I, class D>
     static void create (const C* ptr,
-			std::auto_ptr<generator_interface<I> > generator,
+			std::auto_ptr<generator_interface> generator,
 			D& d);
 
     template <class C, class OI, class OM, class II, class IM, class D>
@@ -50,8 +50,7 @@ namespace ioa {
 			  M I::*member_ptr,
 			  time offset);
     
-    template <class I>
-    static void run (std::auto_ptr<generator_interface<I> > generator);
+    static void run (std::auto_ptr<generator_interface> generator);
   };
 
 }

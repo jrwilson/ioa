@@ -12,11 +12,11 @@ namespace ioa {
   {
   private:
     const automaton_handle<C> m_automaton;
-    std::auto_ptr<generator_interface<I> > m_generator;
+    std::auto_ptr<generator_interface> m_generator;
     D& m_d;
   public:
     create_runnable (const automaton_handle<C>& automaton,
-		     std::auto_ptr<generator_interface<I> > generator,
+		     std::auto_ptr<generator_interface> generator,
 		     D& d) :
       m_automaton (automaton),
       m_generator (generator),
@@ -30,7 +30,7 @@ namespace ioa {
   
   template <class C, class I, class D>
   create_runnable<C, I, D>* make_create_runnable (const automaton_handle<C>& automaton,
-						  std::auto_ptr<generator_interface<I> > generator,
+						  std::auto_ptr<generator_interface> generator,
 						  D& d) {
     return new create_runnable<C, I, D> (automaton, generator, d);
   }

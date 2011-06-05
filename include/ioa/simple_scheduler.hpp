@@ -249,12 +249,12 @@ namespace ioa {
       const I* tmp = dynamic_cast<const I*> (m_current_this.get ());
       assert (tmp == ptr);
       
-      return system::cast_aid (ptr, m_current_aid.get ());
+      return automaton_handle<I> (m_current_aid.get ());
     }
 
     template <class C, class I, class D>
     static void create (const C* ptr,
-			std::auto_ptr<generator_interface<I> > generator,
+			std::auto_ptr<generator_interface> generator,
 			D& d) {
       schedule_sysq (make_create_runnable (get_current_aid (ptr), generator, d));
     }
@@ -294,8 +294,7 @@ namespace ioa {
       schedule_timerq (make_action_runnable (make_action (get_current_aid (ptr), member_ptr)), offset);
     }
 
-    template <class I>
-    static void run (std::auto_ptr<generator_interface<I> > generator) {
+    static void run (std::auto_ptr<generator_interface> generator) {
       int r;
       
       assert (m_sysq.list.size () == 0);
@@ -350,7 +349,7 @@ namespace ioa {
   
   template <class C, class I, class D>
   void scheduler::create (const C* ptr,
-			  std::auto_ptr<generator_interface<I> > generator,
+			  std::auto_ptr<generator_interface> generator,
 			  D& d) {
     simple_scheduler::create (ptr, generator, d);
   }
@@ -390,8 +389,7 @@ namespace ioa {
     simple_scheduler::schedule (ptr, member_ptr, offset);
   }
   
-  template <class I>
-  void scheduler::run (std::auto_ptr<generator_interface<I> > generator) {
+  void scheduler::run (std::auto_ptr<generator_interface> generator) {
     simple_scheduler::run (generator);
   }
 

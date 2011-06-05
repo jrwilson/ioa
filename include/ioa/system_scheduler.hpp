@@ -19,6 +19,15 @@ namespace ioa {
     static void set_current_aid (const aid_t aid,
 				 const automaton_interface& current_this);
     static void clear_current_aid ();
+
+    template <class M>
+    static void schedule (const aid_t aid,
+			  M automaton_interface::*member_ptr);
+
+    template <class M, class T>
+    static void schedule (const aid_t aid,
+			  M automaton_interface::*member_ptr,
+			  const T& t);
   };
   
 }

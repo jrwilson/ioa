@@ -134,7 +134,7 @@ namespace ioa {
     { }
 
     const aid_t get_aid () const {
-      return automaton.aid ();
+      return automaton;
     }
 
     const void* get_member_ptr () const {

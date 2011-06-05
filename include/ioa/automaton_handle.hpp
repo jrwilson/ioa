@@ -22,7 +22,7 @@ namespace ioa {
       m_aid (a)
     { }
 
-    aid_t aid () const {
+    operator aid_t () const {
       return m_aid;
     }
 

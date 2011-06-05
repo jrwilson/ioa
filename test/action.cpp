@@ -2,12 +2,14 @@
 
 #include "automaton1.hpp"
 
+#include "test_system_scheduler.hpp"
+
 static const char*
 unvalued_unparameterized_input_action ()
 {
   ioa::automaton_handle<automaton1> h;
   ioa::action<automaton1, automaton1::up_uv_input_action> action (h, &automaton1::up_uv_input);
-  mu_assert (h.aid () == action.get_aid ());
+  mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::up_uv_input)) == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
@@ -30,7 +32,7 @@ unvalued_parameterized_input_action ()
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
   ioa::action<automaton1, automaton1::p_uv_input_action> action (h, &automaton1::p_uv_input, parameter, ioa::parameterized ());
-  mu_assert (h.aid () == action.get_aid ());
+  mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::p_uv_input)) == action.get_member_ptr ());
   mu_assert (size_t (parameter) == action.get_pid ());
@@ -55,7 +57,7 @@ valued_unparameterized_input_action ()
 {
   ioa::automaton_handle<automaton1> h;
   ioa::action<automaton1, automaton1::up_v_input_action> action (h, &automaton1::up_v_input);
-  mu_assert (h.aid () == action.get_aid ());
+  mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::up_v_input)) == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
@@ -78,7 +80,7 @@ valued_parameterized_input_action ()
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
   ioa::action<automaton1, automaton1::p_v_input_action> action (h, &automaton1::p_v_input, parameter, ioa::parameterized ());
-  mu_assert (h.aid () == action.get_aid ());
+  mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::p_v_input)) == action.get_member_ptr ());
   mu_assert (size_t (parameter) == action.get_pid ());

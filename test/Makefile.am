@@ -1,14 +1,22 @@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 
+LDADD = $(top_builddir)/lib/libueioa.la
+
 TESTS = \
 action \
-binding
+binding \
+system
+
+# scheduler
+# configuration
 
 check_PROGRAMS = $(TESTS)
 
 action_SOURCES = action.cpp test_main.cpp
 
 binding_SOURCES = binding.cpp test_main.cpp
+
+system_SOURCES = system.cpp test_main.cpp
 
 # AM_LDFLAGS = -lpthread -ljson
 # component_request_port_SOURCES = component_request_port.c

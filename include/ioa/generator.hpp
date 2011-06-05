@@ -13,7 +13,7 @@ namespace ioa {
   
   template <class T>
   struct generator :
-    public generator_interface<T>
+    public generator_interface
   {
     typedef T result_type;
     
@@ -23,13 +23,13 @@ namespace ioa {
   };
 
   template <class I>
-  std::auto_ptr<ioa::generator_interface<I> > make_generator () {
-    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator<I> ());
+  std::auto_ptr<generator_interface> make_generator () {
+    return std::auto_ptr<generator_interface> (new generator<I> ());
   }
   
   template <class T, class A0>
   struct generator1 :
-    public generator_interface<T>
+    public generator_interface
   {
     typedef T result_type;
     A0 m_a0;
@@ -44,8 +44,8 @@ namespace ioa {
   };
 
   template <class I, class A0>
-  std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0) {
-    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator1<I, A0> (a0));
+  std::auto_ptr<generator_interface> make_generator (A0 a0) {
+    return std::auto_ptr<generator_interface> (new generator1<I, A0> (a0));
   }
 
 }

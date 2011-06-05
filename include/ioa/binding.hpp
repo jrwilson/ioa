@@ -30,7 +30,7 @@ namespace ioa {
     virtual void execute_input () const = 0;
   };
 
-  template <class OI, class OM, class II, class IM, class I, class D>
+  template <class OI, class OM, class II, class IM>
   class unvalued_binding_record :
     public unvalued_binding_record_interface
   {
@@ -40,9 +40,7 @@ namespace ioa {
     action<OI, OM> m_output_action;
     II& m_input_ref;
     action<II, IM> m_input_action;
-    I& m_binder_ref;
     const aid_t m_binder_aid;
-    D& m_d;
 
   public:
     unvalued_binding_record (const bid_t bid,
@@ -50,21 +48,16 @@ namespace ioa {
 			     const action<OI, OM>& output_action,
 			     II& input_ref,
 			     const action<II, IM>& input_action,
-			     I& binder_ref,
 			     const aid_t binder_aid,
-			     D& d) :
+			     void* aux) :
       m_bid (bid),
       m_output_ref (output_ref),
       m_output_action (output_action),
       m_input_ref (input_ref),
       m_input_action (input_action),
-      m_binder_ref (binder_ref),
-      m_binder_aid (binder_aid),
-      m_d (d)
+      m_binder_aid (binder_aid)
     {
-      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
-      m_binder_ref.bound (m_bid, m_d);
-      system_scheduler::clear_current_aid ();
+      system_scheduler::schedule (m_binder_aid, &automaton_interface::bound, std::make_pair (aux, m_bid));
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.bound (m_output_ref);
@@ -76,9 +69,7 @@ namespace ioa {
     }
 
     virtual ~unvalued_binding_record () {
-      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
-      m_binder_ref.unbound (m_d);
-      system_scheduler::clear_current_aid ();
+      system_scheduler::schedule (m_binder_aid, &automaton_interface::unbound, m_bid);
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.unbound (m_output_ref);
@@ -129,7 +120,7 @@ namespace ioa {
     virtual void execute_input (const T&) const = 0;
   };
 
-  template <class OI, class OM, class II, class IM, class I, class D>
+  template <class OI, class OM, class II, class IM>
   class valued_binding_record :
     public valued_binding_record_interface<typename OM::value_type>
   {
@@ -141,9 +132,7 @@ namespace ioa {
     action<OI, OM> m_output_action;
     II& m_input_ref;
     action<II, IM> m_input_action;
-    I& m_binder_ref;
     const aid_t m_binder_aid;
-    D& m_d;
 
   public:
     valued_binding_record (const bid_t bid,
@@ -151,21 +140,16 @@ namespace ioa {
 			   const action<OI, OM>& output_action,
 			   II& input_ref,
 			   const action<II, IM>& input_action,
-			   I& binder_ref,
 			   const aid_t binder_aid,
-			   D& d) :
+			   void* aux) :
       m_bid (bid),
       m_output_ref (output_ref),
       m_output_action (output_action),
       m_input_ref (input_ref),
       m_input_action (input_action),
-      m_binder_ref (binder_ref),
-      m_binder_aid (binder_aid),
-      m_d (d)
+      m_binder_aid (binder_aid)
     {
-      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
-      m_binder_ref.bound (m_bid, m_d);
-      system_scheduler::clear_current_aid ();
+      system_scheduler::schedule (m_binder_aid, &automaton_interface::bound, std::make_pair (aux, m_bid));
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.bound (m_output_ref);
@@ -177,9 +161,7 @@ namespace ioa {
     }
 
     virtual ~valued_binding_record () {
-      system_scheduler::set_current_aid (m_binder_aid, m_binder_ref);
-      m_binder_ref.unbound (m_d);
-      system_scheduler::clear_current_aid ();
+      system_scheduler::schedule (m_binder_aid, &automaton_interface::unbound, m_bid);
       
       system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
       m_output_action.unbound (m_output_ref);
@@ -471,25 +453,24 @@ namespace ioa {
   {
   public:
 
-    template <class OI, class OM, class II, class IM, class I, class D>
+    template <class OI, class OM, class II, class IM>
     void bind (const bid_t bid,
 	       OI& output_ref,
   	       const action<OI, OM>& output_action,
 	       II& input_ref,
   	       const action<II, IM>& input_action,
-  	       I& binder_ref,
   	       const aid_t binder_aid,
-  	       D& d) {
+	       void* aux) {
       // Can't bind to self.
-      assert (output_action.automaton.aid () != input_action.automaton.aid ());
+      assert (aid_t (output_action.automaton) != aid_t (input_action.automaton));
       // Can't already involve input.
-      assert (!involves_input_automaton (input_action.automaton.aid ()));
+      assert (!involves_input_automaton (input_action.automaton));
       // Sanity check.
       if (!m_inputs.empty ()) {
   	assert (output_action == get_output ());
       }
       
-      unvalued_binding_record_interface* record = new unvalued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, d);
+      unvalued_binding_record_interface* record = new unvalued_binding_record<OI, OM, II, IM> (bid, output_ref, output_action, input_ref, input_action, binder_aid, aux);
       m_inputs.insert (record);
     }
 
@@ -514,25 +495,24 @@ namespace ioa {
   {
   public:
 
-    template <class OI, class OM, class II, class IM, class I, class D>
+    template <class OI, class OM, class II, class IM>
     void bind (const bid_t bid,
 	       OI& output_ref,
   	       const action<OI, OM>& output_action,
 	       II& input_ref,
   	       const action<II, IM>& input_action,
-  	       I& binder_ref,
   	       const aid_t binder_aid,
-  	       D& d) {
+  	       void* aux) {
       // Can't bind to self.
-      assert (output_action.automaton.aid () != input_action.automaton.aid ());
+      assert (aid_t (output_action.automaton) != aid_t (input_action.automaton));
       // Can't already involve input.
-      assert (!involves_input_automaton (input_action.automaton.aid ()));
+      assert (!involves_input_automaton (input_action.automaton));
       // Sanity check.
       if (!this->m_inputs.empty ()) {
   	assert (output_action == this->get_output ());
       }
       
-      valued_binding_record_interface<T>* record = new valued_binding_record<OI, OM, II, IM, I, D> (bid, output_ref, output_action, input_ref, input_action, binder_ref, binder_aid, d);
+      valued_binding_record_interface<T>* record = new valued_binding_record<OI, OM, II, IM> (bid, output_ref, output_action, input_ref, input_action, binder_aid, aux);
       this->m_inputs.insert (record);
     }
 
