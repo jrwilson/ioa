@@ -73,21 +73,21 @@ namespace ioa {
       }
     };
 
-    class binding_aid_bid_equal
+    class binding_aid_aux_equal
     {
     private:
-      const aid_t m_aid;
-      const bid_t m_bid;
+      aid_t const m_aid;
+      void* const m_aux;
 
     public:
-      binding_aid_bid_equal (const aid_t aid,
-			     const bid_t bid) :
+      binding_aid_aux_equal (aid_t const aid,
+			     void* const aux) :
 	m_aid (aid),
-	m_bid (bid)
+	m_aux (aux)
       { }
 
       bool operator() (const binding_interface* c) const {
-	return c->involves_aid_bid (m_aid, m_bid);
+	return c->involves_aid_aux (m_aid, m_aux);
       }
     };
     
@@ -113,7 +113,7 @@ namespace ioa {
     static aid_t create (std::auto_ptr<generator_interface> generator);
     static aid_t create (const aid_t automaton,
 			 std::auto_ptr<generator_interface> generator,
-			 void* aux);
+			 void* const key);
 
   private:
     template <class OI, class OM, class II, class IM>

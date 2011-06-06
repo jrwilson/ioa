@@ -54,21 +54,24 @@ namespace ioa {
     m_instances.insert (instance);
     automaton_record* record = new automaton_record (instance, aid);
     m_records.insert (std::make_pair (aid, record));
-    
-    // Initialize the automaton.
-    system_scheduler::init (aid);
-    
+        
     return aid;
   }
   
   aid_t system::create (const aid_t automaton,
 			std::auto_ptr<generator_interface> generator,
-			void* aux)
+			void* const key)
   {
     unique_lock lock (m_mutex);
     
     if (!m_aids.contains (automaton)) {
       // Creator does not exists.
+      return -1;
+    }
+
+    if (m_records[automaton]->create_key_exists (key)) {
+      // Create key already in use.
+      system_scheduler::create_key_exists (automaton, key);
       return -1;
     }
     
@@ -88,7 +91,7 @@ namespace ioa {
     if (m_instances.count (instance) != 0) {
       // Return the aid and inform the automaton that the instance already exists.
       m_aids.replace (aid);
-      system_scheduler::instance_exists (automaton, aux);
+      system_scheduler::instance_exists (automaton, key);
       return -1;
     }
     
@@ -96,13 +99,8 @@ namespace ioa {
     automaton_record* record = new automaton_record (instance, aid);
     m_records.insert (std::make_pair (aid, record));
     automaton_record* parent = m_records[automaton];
-    parent->add_child (record);
-    
-    // Tell the parent the child was created.
-    system_scheduler::automaton_created (automaton, aux, aid);
-    
-    // Initialize the child.
-    system_scheduler::init (aid);
+    record->set_parent (key, parent);
+    parent->add_child (key, record);
     
     return aid;
   }
@@ -118,18 +116,18 @@ namespace ioa {
     
     std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
 								m_bindings.end (),
-								binding_aid_bid_equal (binder, bid));
+								binding_aid_aux_equal (binder, aux));
     
     if (pos == m_bindings.end ()) {
       // Not bound.
-      system_scheduler::binding_dne (binder, aux);
+      system_scheduler::bind_key_dne (binder, aux);
       return false;
     }
     
     binding_interface* c = *pos;
     
     // Unbind.
-    c->unbind (binder, bid);
+    c->unbind (binder, aux);
     m_records[binder]->replace_bid (bid);
     
     if (c->empty ()) {
@@ -164,7 +162,7 @@ namespace ioa {
     }
     
     if (!m_aids.contains (target)) {
-      system_scheduler::target_automaton_dne (automaton, aux);
+      //system_scheduler::target_automaton_dne (automaton, aux);
       return false;
     }
     
@@ -172,7 +170,7 @@ namespace ioa {
     automaton_record* child = m_records[target];
     
     if (parent != child->get_parent ()) {
-      system_scheduler::destroyer_not_creator (automaton, aux);
+      //system_scheduler::destroyer_not_creator (automaton, aux);
       return false;
     }
     
@@ -183,10 +181,10 @@ namespace ioa {
   void system::inner_destroy (automaton_record* automaton)
   {
     
-    for (automaton_record* child = automaton->get_child ();
-	 child != 0;
-	 child = automaton->get_child ()) {
-      inner_destroy (child);
+    for (std::pair<void*, automaton_record*> p = automaton->get_first_child ();
+	 p.second != 0;
+	 p = automaton->get_first_child ()) {
+      inner_destroy (p.second);
     }
     
     // Update bindings.
@@ -202,11 +200,11 @@ namespace ioa {
 	++pos;
       }
     }
-    
+
     // Update parent-child relationships.
     automaton_record* parent = automaton->get_parent ();
     if (parent != 0) {
-      parent->remove_child (automaton);
+      parent->remove_child (automaton->get_key ());
     }
     
     m_aids.replace (automaton->get_aid ());

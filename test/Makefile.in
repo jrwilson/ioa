@@ -33,8 +33,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = action$(EXEEXT) binding$(EXEEXT) system$(EXEEXT) \
-	simple_scheduler$(EXEEXT)
+TESTS = action$(EXEEXT) binding$(EXEEXT) system$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -49,8 +48,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/ioa/config.hpp
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = action$(EXEEXT) binding$(EXEEXT) system$(EXEEXT) \
-	simple_scheduler$(EXEEXT)
+am__EXEEXT_1 = action$(EXEEXT) binding$(EXEEXT) system$(EXEEXT)
 am_action_OBJECTS = action.$(OBJEXT) test_main.$(OBJEXT) \
 	test_system_scheduler.$(OBJEXT)
 action_OBJECTS = $(am_action_OBJECTS)
@@ -61,11 +59,6 @@ am_binding_OBJECTS = binding.$(OBJEXT) test_main.$(OBJEXT) \
 binding_OBJECTS = $(am_binding_OBJECTS)
 binding_LDADD = $(LDADD)
 binding_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_simple_scheduler_OBJECTS = simple_scheduler.$(OBJEXT) \
-	test_main.$(OBJEXT)
-simple_scheduler_OBJECTS = $(am_simple_scheduler_OBJECTS)
-simple_scheduler_LDADD = $(LDADD)
-simple_scheduler_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_system_OBJECTS = system.$(OBJEXT) test_main.$(OBJEXT) \
 	test_system_scheduler.$(OBJEXT)
 system_OBJECTS = $(am_system_OBJECTS)
@@ -84,10 +77,8 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(action_SOURCES) $(binding_SOURCES) \
-	$(simple_scheduler_SOURCES) $(system_SOURCES)
-DIST_SOURCES = $(action_SOURCES) $(binding_SOURCES) \
-	$(simple_scheduler_SOURCES) $(system_SOURCES)
+SOURCES = $(action_SOURCES) $(binding_SOURCES) $(system_SOURCES)
+DIST_SOURCES = $(action_SOURCES) $(binding_SOURCES) $(system_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -216,7 +207,6 @@ LDADD = $(top_builddir)/lib/libueioa.la
 action_SOURCES = action.cpp test_main.cpp test_system_scheduler.cpp
 binding_SOURCES = binding.cpp test_main.cpp test_system_scheduler.cpp
 system_SOURCES = system.cpp test_main.cpp test_system_scheduler.cpp
-simple_scheduler_SOURCES = simple_scheduler.cpp test_main.cpp
 all: all-am
 
 .SUFFIXES:
@@ -266,9 +256,6 @@ action$(EXEEXT): $(action_OBJECTS) $(action_DEPENDENCIES)
 binding$(EXEEXT): $(binding_OBJECTS) $(binding_DEPENDENCIES) 
 	@rm -f binding$(EXEEXT)
 	$(CXXLINK) $(binding_OBJECTS) $(binding_LDADD) $(LIBS)
-simple_scheduler$(EXEEXT): $(simple_scheduler_OBJECTS) $(simple_scheduler_DEPENDENCIES) 
-	@rm -f simple_scheduler$(EXEEXT)
-	$(CXXLINK) $(simple_scheduler_OBJECTS) $(simple_scheduler_LDADD) $(LIBS)
 system$(EXEEXT): $(system_OBJECTS) $(system_DEPENDENCIES) 
 	@rm -f system$(EXEEXT)
 	$(CXXLINK) $(system_OBJECTS) $(system_LDADD) $(LIBS)
@@ -281,7 +268,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/action.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/binding.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_scheduler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/system.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_system_scheduler.Po@am__quote@
@@ -605,6 +591,8 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am
 
+
+# simple_scheduler_SOURCES = simple_scheduler.cpp test_main.cpp
 
 # AM_LDFLAGS = -lpthread -ljson
 # component_request_port_SOURCES = component_request_port.c

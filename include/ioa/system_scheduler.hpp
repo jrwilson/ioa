@@ -22,49 +22,54 @@ namespace ioa {
 
     static void init (const aid_t automaton);
 
+    static void create_key_exists (const aid_t automaton,
+				   void* const key);
+
     static void instance_exists (const aid_t automaton,
-				 void* aux);
+				 void* const key);
 
     static void automaton_created (const aid_t automaton,
-				   void* aux,
+				   void* const key,
 				   const aid_t child);
 
-    static void output_automaton_dne (const aid_t binder,
-				      void* aux);
+    static void bind_key_exists (const aid_t automaton,
+				 void* const key);
 
-    static void input_automaton_dne (const aid_t binder,
-				      void* aux);
+    static void output_automaton_dne (const aid_t automaton,
+				      void* const key);
 
-    static void binding_exists (const aid_t binder,
-				void* aux);
+    static void input_automaton_dne (const aid_t automaton,
+				      void* const key);
 
-    static void input_action_unavailable (const aid_t binder,
-					  void* aux);
+    static void binding_exists (const aid_t automaton,
+				void* const key);
 
-    static void output_action_unavailable (const aid_t binder,
-					   void* aux);
+    static void input_action_unavailable (const aid_t automaton,
+					  void* const key);
+
+    static void output_action_unavailable (const aid_t automaton,
+					   void* const key);
     
-    static void bound (const aid_t binder,
-		       void* aux,
-		       const bid_t bid);
+    static void bound (const aid_t automaton,
+		       void* const key);
 
-    static void binding_dne (const aid_t binder,
-			     void* aux);
+    static void bind_key_dne (const aid_t automaton,
+			      void* const key);
 
-    static void unbound (const aid_t binder,
-			 const bid_t bid);
+    static void unbound (const aid_t automaton,
+			 void* const key);
 
-    static void target_automaton_dne (const aid_t automaton,
-				      void* aux);
+    static void create_key_dne (const aid_t automaton,
+				void* const key);
 
-    static void destroyer_not_creator (const aid_t automaton,
-				       void* aux);
+    static void automaton_destroyed (const aid_t automaton,
+				     void* const key);
+    
+    static void recipient_dne (const aid_t automaton,
+			       void* const key);
 
-    static void automaton_destroyed (const aid_t parent,
-				     const aid_t child);
-
-    static void recipient_dne (const aid_t from,
-			       void* aux);
+    static void event_delivered (const aid_t automaton,
+				 void* const key);
   };
   
 }

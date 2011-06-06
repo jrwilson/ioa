@@ -22,8 +22,10 @@ unbind_unvalued_unparameterized_output_action ()
   ioa::action<automaton1, automaton1::p_uv_input_action> input2 (input2_handle, &automaton1::p_uv_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::up_uv_output_action> binding;
-  binding.bind (1, output_instance, output, input1_instance, input1, binder_handle, 0);
-  binding.bind (2, output_instance, output, input2_instance, input2, binder_handle, 0);
+  int binding1;
+  binding.bind (output_instance, output, input1_instance, input1, binder_handle, &binding1);
+  int binding2;
+  binding.bind (output_instance, output, input2_instance, input2, binder_handle, &binding2);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -41,7 +43,7 @@ unbind_unvalued_unparameterized_output_action ()
   mu_assert (input2_instance.p_uv_input.state);
   mu_assert (input2_instance.p_uv_input.last_parameter == input_parameter);
 
-  binding.unbind (binder_handle, 1);
+  binding.unbind (binder_handle, &binding1);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -52,7 +54,7 @@ unbind_unvalued_unparameterized_output_action ()
   mu_assert (!binding.involves_input_automaton (input1_handle));
   mu_assert (binding.involves_input_automaton (input2_handle));
 
-  binding.unbind (binder_handle, 2);
+  binding.unbind (binder_handle, &binding2);
 
   mu_assert (binding.empty ());
   mu_assert (!binding.involves_output (output));
@@ -86,8 +88,10 @@ unbind_unvalued_parameterized_output_action ()
   ioa::action<automaton1, automaton1::p_uv_input_action> input2 (input2_handle, &automaton1::p_uv_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::p_uv_output_action> binding;
-  binding.bind (1, output_instance, output, input1_instance, input1, binder_handle, 0);
-  binding.bind (2, output_instance, output, input2_instance, input2, binder_handle, 0);
+  int binding1;
+  binding.bind (output_instance, output, input1_instance, input1, binder_handle, &binding1);
+  int binding2;
+  binding.bind (output_instance, output, input2_instance, input2, binder_handle, &binding2);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -106,7 +110,7 @@ unbind_unvalued_parameterized_output_action ()
   mu_assert (input2_instance.p_uv_input.state);
   mu_assert (input2_instance.p_uv_input.last_parameter == input_parameter);
 
-  binding.unbind (binder_handle, 1);
+  binding.unbind (binder_handle, &binding1);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -117,7 +121,7 @@ unbind_unvalued_parameterized_output_action ()
   mu_assert (!binding.involves_input_automaton (input1_handle));
   mu_assert (binding.involves_input_automaton (input2_handle));
 
-  binding.unbind (binder_handle, 2);
+  binding.unbind (binder_handle, &binding2);
 
   mu_assert (binding.empty ());
   mu_assert (!binding.involves_output (output));
@@ -150,8 +154,10 @@ unbind_valued_unparameterized_output_action ()
   ioa::action<automaton1, automaton1::p_v_input_action> input2 (input2_handle, &automaton1::p_v_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::up_v_output_action> binding;
-  binding.bind (1, output_instance, output, input1_instance, input1, binder_handle, 0);
-  binding.bind (2, output_instance, output, input2_instance, input2, binder_handle, 0);
+  int binding1;
+  binding.bind (output_instance, output, input1_instance, input1, binder_handle, &binding1);
+  int binding2;
+  binding.bind (output_instance, output, input2_instance, input2, binder_handle, &binding2);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -169,7 +175,7 @@ unbind_valued_unparameterized_output_action ()
   mu_assert (input2_instance.p_v_input.value == 9845);
   mu_assert (input2_instance.p_v_input.last_parameter == input_parameter);
 
-  binding.unbind (binder_handle, 1);
+  binding.unbind (binder_handle, &binding1);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -180,7 +186,7 @@ unbind_valued_unparameterized_output_action ()
   mu_assert (!binding.involves_input_automaton (input1_handle));
   mu_assert (binding.involves_input_automaton (input2_handle));
 
-  binding.unbind (binder_handle, 2);
+  binding.unbind (binder_handle, &binding2);
 
   mu_assert (binding.empty ());
   mu_assert (!binding.involves_output (output));
@@ -214,8 +220,10 @@ unbind_valued_parameterized_output_action ()
   ioa::action<automaton1, automaton1::p_v_input_action> input2 (input2_handle, &automaton1::p_v_input, input_parameter, ioa::parameterized ());
 
   ioa::binding<automaton1::p_v_output_action> binding;
-  binding.bind (1, output_instance, output, input1_instance, input1, binder_handle, 0);
-  binding.bind (2, output_instance, output, input2_instance, input2, binder_handle, 0);
+  int binding1;
+  binding.bind (output_instance, output, input1_instance, input1, binder_handle, &binding1);
+  int binding2;
+  binding.bind (output_instance, output, input2_instance, input2, binder_handle, &binding2);
 
   binding.execute ();
 
@@ -225,7 +233,7 @@ unbind_valued_parameterized_output_action ()
   mu_assert (input2_instance.p_v_input.value == 9845);
   mu_assert (input2_instance.p_v_input.last_parameter == input_parameter);
 
-  binding.unbind (binder_handle, 1);
+  binding.unbind (binder_handle, &binding1);
 
   mu_assert (!binding.empty ());
   mu_assert (binding.involves_output (output));
@@ -236,7 +244,7 @@ unbind_valued_parameterized_output_action ()
   mu_assert (!binding.involves_input_automaton (input1_handle));
   mu_assert (binding.involves_input_automaton (input2_handle));
 
-  binding.unbind (binder_handle, 2);
+  binding.unbind (binder_handle, &binding2);
 
   mu_assert (binding.empty ());
   mu_assert (!binding.involves_output (output));

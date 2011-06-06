@@ -5,8 +5,8 @@ LDADD = $(top_builddir)/lib/libueioa.la
 TESTS = \
 action \
 binding \
-system \
-simple_scheduler
+system
+# simple_scheduler
 
 # configuration
 
@@ -18,7 +18,7 @@ binding_SOURCES = binding.cpp test_main.cpp test_system_scheduler.cpp
 
 system_SOURCES = system.cpp test_main.cpp test_system_scheduler.cpp
 
-simple_scheduler_SOURCES = simple_scheduler.cpp test_main.cpp
+# simple_scheduler_SOURCES = simple_scheduler.cpp test_main.cpp
 
 # AM_LDFLAGS = -lpthread -ljson
 # component_request_port_SOURCES = component_request_port.c

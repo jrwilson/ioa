@@ -6,18 +6,16 @@ namespace ioa {
 							  const aid_t aid) :
     m_instance (instance),
     m_aid (aid),
+    m_key (0),
     m_parent (0)
-  { }
+  {
+    // Initialize the automaton.
+    system_scheduler::init (m_aid);
+  }
 
   automaton_record::~automaton_record () {
     // Sanity check.
     assert (m_children.empty ());
-    
-    if (this->get_parent () != 0) {
-      // Inform the parent that this child is destroyed.
-      aid_t parent_aid = this->get_parent ()->get_aid ();
-      system_scheduler::automaton_destroyed (parent_aid, m_aid);
-    }     
   }
 
   const aid_t automaton_record::get_aid () const {
@@ -36,28 +34,42 @@ namespace ioa {
     m_bids.replace (bid);
   }
 
-  void automaton_record::add_child (automaton_record* child) {
-    m_children.insert (child);
-    child->set_parent (this);
+  bool automaton_record::create_key_exists (void* const key) const {
+    return m_children.count (key) != 0;
   }
 
-  void automaton_record::remove_child (automaton_record* child) {
-    m_children.erase (child);
+  void automaton_record::add_child (void* const key,
+				    automaton_record* child) {
+    m_children.insert (std::make_pair (key, child));
+    // Tell the parent that the child was created.
+    system_scheduler::automaton_created (m_aid, key, child->m_aid);
   }
 
-  automaton_record* automaton_record::get_child () const {
+  void automaton_record::remove_child (void* const key) {
+    m_children.erase (key);
+    // Tell the parent that the child was destroyed.
+    system_scheduler::automaton_destroyed (m_aid, key);
+  }
+
+  std::pair<void*, automaton_record*> automaton_record::get_first_child () const {
     if (m_children.empty ()) {
-      return 0;
+      return std::pair<void*, automaton_record*> (0, 0);
     }
     else {
       return *(m_children.begin ());
     }
   }
 
-  void automaton_record::set_parent (automaton_record* parent) {
+  void automaton_record::set_parent (void* const key,
+				     automaton_record* parent) {
+    m_key = key;
     m_parent = parent;
   }
-    
+
+  void* automaton_record::get_key () const {
+    return m_key;
+  }
+
   automaton_record* automaton_record::get_parent () const {
     return m_parent;
   }
