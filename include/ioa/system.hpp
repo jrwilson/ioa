@@ -10,15 +10,63 @@
 
 #include <map>
 #include <list>
+#include <iostream>
 
 namespace ioa {
+
+  class action_executor_interface
+  {
+  public:
+    virtual ~action_executor_interface () { }
+    virtual bool fetch_instance () = 0;
+    virtual void operator() () const = 0;
+    // TODO:  Remove this method from the interface and all descendants.
+    virtual automaton_interface* get_instance () const = 0;
+    virtual const action_interface& get_action () const = 0;
+  };
+  
+  class output_executor_interface :
+    public action_executor_interface
+  {
+  public:
+    virtual ~output_executor_interface () { }
+  };
+
+  class input_executor_interface :
+    public action_executor_interface
+  {
+  public:
+    virtual ~input_executor_interface () { }
+  };
+  
+  class internal_executor_interface :
+    public action_executor_interface
+  {
+  public:
+    virtual ~internal_executor_interface () { }
+  };
+  
+  class event_executor_interface :
+    public action_executor_interface
+  {
+  public:
+    virtual ~event_executor_interface () { }
+  };
+
+  class bind_executor_interface
+  {
+  public:
+    virtual ~bind_executor_interface () { }
+    virtual output_executor_interface& get_output () = 0;
+    virtual input_executor_interface& get_input () = 0;
+  };
 
   // TODO:  Memory allocation.
 
   class system
   {
-  private:    
 
+  private:    
     // Can't construct one.
     system () { }
     
@@ -73,21 +121,21 @@ namespace ioa {
       }
     };
 
-    class binding_aid_aux_equal
+    class binding_aid_key_equal
     {
     private:
       aid_t const m_aid;
-      void* const m_aux;
+      void* const m_key;
 
     public:
-      binding_aid_aux_equal (aid_t const aid,
-			     void* const aux) :
+      binding_aid_key_equal (aid_t const aid,
+			     void* const key) :
 	m_aid (aid),
-	m_aux (aux)
+	m_key (key)
       { }
 
       bool operator() (const binding_interface* c) const {
-	return c->involves_aid_aux (m_aid, m_aux);
+	return c->involves_aid_key (m_aid, m_key);
       }
     };
     
@@ -97,6 +145,9 @@ namespace ioa {
     static std::map<aid_t, automaton_record*> m_records;
     static std::list<binding_interface*> m_bindings;
 
+    static void inner_destroy (automaton_record* automaton);
+    static void execute0 (const action_executor_interface& exec);
+
     template <class I>
     static I* automaton_handle_to_instance (const automaton_handle<I>& handle) {
       if (!m_aids.contains (handle)) {
@@ -104,218 +155,284 @@ namespace ioa {
       }
       return dynamic_cast<I*> (m_records[handle]->get_instance ());
     }
-
-    static void inner_destroy (automaton_record* automaton);
     
   public:
-    
+
     static void clear (void);
     static aid_t create (std::auto_ptr<generator_interface> generator);
     static aid_t create (const aid_t automaton,
 			 std::auto_ptr<generator_interface> generator,
 			 void* const key);
 
-  private:
-    template <class OI, class OM, class II, class IM>
-    static bid_t
-    bind (const action<OI, OM>& output,
-	  output_category /* */,
-	  const action<II, IM>& input,
-	  input_category /* */,
+    static int
+    bind (bind_executor_interface& bind_exec,
 	  const aid_t binder,
-	  void* aux)
+	  void* const key)
     {
+      unique_lock lock (m_mutex);
+
       if (!m_aids.contains (binder)) {
   	// Binder DNE.
   	return -1;
       }
 
-      OI* output_instance = automaton_handle_to_instance (output.automaton);
-
-      if (0 == output_instance) {
-	system_scheduler::output_automaton_dne (binder, aux);
+      if (m_records[binder]->bind_key_exists (key)) {
+	// Bind key already in use.
+	system_scheduler::bind_key_exists (binder, key);
 	return -1;
       }
 
-      II* input_instance = automaton_handle_to_instance (input.automaton);
+      output_executor_interface& output = bind_exec.get_output ();
+      input_executor_interface& input = bind_exec.get_input ();
 
-      if (0 == input_instance) {
-	system_scheduler::input_automaton_dne (binder, aux);
-	return -1;
+      if (!output.fetch_instance ()) {
+      	system_scheduler::output_automaton_dne (binder, key);
+      	return -1;
+      }
+
+      if (!input.fetch_instance ()) {
+      	system_scheduler::input_automaton_dne (binder, key);
+      	return -1;
       }
       
       std::list<binding_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
-									m_bindings.end (),
-									binding_equal (output, input, binder));
+      									m_bindings.end (),
+      									binding_equal (output.get_action (), input.get_action (), binder));
       
       if (pos != m_bindings.end ()) {
-  	// Bound.
-	system_scheduler::binding_exists (binder, aux);
-	return -1;
+      	// Bound.
+      	system_scheduler::binding_exists (binder, key);
+      	return -1;
       }
       
       std::list<binding_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
-									   m_bindings.end (),
-									   binding_input_equal (input));
+      									   m_bindings.end (),
+      									   binding_input_equal (input.get_action ()));
       
       if (in_pos != m_bindings.end ()) {
-  	// Input unavailable.
-	system_scheduler::input_action_unavailable (binder, aux);
-	return -1;
+      	// Input unavailable.
+      	system_scheduler::input_action_unavailable (binder, key);
+      	return -1;
       }
       
       std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
-									    m_bindings.end (),
-									    binding_output_equal (output));
+      									    m_bindings.end (),
+      									    binding_output_equal (output.get_action ()));
       
-      if (output.get_aid () == input.get_aid () ||
-  	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_aid ()))) {
-  	// Output unavailable.
-	system_scheduler::output_action_unavailable (binder, aux);
-	return -1;
+      if (output.get_action ().get_aid () == input.get_action ().get_aid () ||
+      	  (out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_action ().get_aid ()))) {
+      	// Output unavailable.
+      	system_scheduler::output_action_unavailable (binder, key);
+      	return -1;
       }
       
-      binding<OM>* c;
+      // binding* c;
       
-      if (out_pos != m_bindings.end ()) {
-	c = dynamic_cast<binding<OM>*> (*out_pos);
-	assert (c != 0);
-      }
-      else {
-	c = new binding<OM> ();
-	m_bindings.push_front (c);
-      }
+      // if (out_pos != m_bindings.end ()) {
+      // 	c = *out_pos;
+      // }
+      // else {
+      // 	c = new binding ();
+      // 	m_bindings.push_front (c);
+      // }
     
-      // Bind.
-      bid_t bid = m_records[binder]->take_bid ();
+      // // Bind.
+      // c->bind (output, input, binder, key);
+      // m_records[binder]->add_bind_key (key);
 
-      // TODO:  Think about the bound and unbound actions so we don't need these instance.
-      c->bind (bid, *output_instance, output, *input_instance, input, binder, aux);
-
-      return bid;
+      return 0;
     }    
 
-  public:
-    template <class OI, class OM, class II, class IM>
-    static bid_t
-    bind (const action<OI, OM>& output,
-	  const action<II, IM>& input,
-	  const aid_t binder,
-	  void* aux)
-    {
-      unique_lock lock (m_mutex);
-      
-      return bind (output,
-		   typename action<OI, OM>::action_category (),
-		   input,
-		   typename action<II, IM>::action_category (),
-		   binder,
-		   aux);
-    }
+    static int unbind (const aid_t binder,
+		       void* const key);
 
-    static bool unbind (const bid_t bid,
-			const aid_t binder,
-			void* aux);
+    static int destroy (const aid_t target);
+    static int destroy (const aid_t automaton,
+			void* const key);
 
-    static bool destroy (const aid_t target);
-    static bool destroy (const aid_t automaton,
-			 const aid_t target,
-			 void* aux);
-
-  private:
-
-    template <class I, class M>
-    static void
-    execute0 (I* instance, const action<I, M>& ac)
-    {
-      lock_automaton (ac.get_aid ());
-      system_scheduler::set_current_aid (ac.get_aid (), *instance);
-      ac (*instance);
-      system_scheduler::clear_current_aid ();
-      unlock_automaton (ac.get_aid ());
-    }
-
-    template <class I, class M>
-    static void
-    execute1 (I* instance,
-	      const action<I, M>& ac,
-	      output_category /* */)
-    {      
-      std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
-									    m_bindings.end (),
-									    binding_output_equal (ac));
-      
-      if (out_pos == m_bindings.end ()) {
-	// Not bound.
-	execute0 (instance, ac);
-      }
-      else {	
-	(*out_pos)->execute ();
-      }
-    }
-
-    template <class I, class M>
-    static void
-    execute1 (I* instance,
-	      const action<I, M>& ac,
-	      internal_category /* */)
-    {
-      execute0 (instance, ac);
-    }
-
-    template <class I, class M>
-    static void
-    execute1 (I* instance,
-	      const action<I, M>& ac,
-	      event_category /* */)
-    {
-      execute0 (instance, ac);
-    }
-
-  public:
-    
-    template <class I, class M>
-    static bool
-    execute (const action<I, M>& ac)
-    {
-      shared_lock lock (m_mutex);
-
-      I* instance = automaton_handle_to_instance (ac.automaton);
-      if (0 == instance) {
-	return false;
-      }
-
-      execute1 (instance, ac, typename action<I, M>::action_category ());
-      return true;
-    }
-
-    template <class I, class M>
-    static bool
-    execute (const aid_t from,
-	     const action<I, M>& ac,
-	     void* aux)
-    {
-      shared_lock lock (m_mutex);
-
-      if (!m_aids.contains (from)) {
-	// Deliverer does not exists.
-	return false;
-      }
-
-      I* instance = automaton_handle_to_instance (ac.automaton);
-
-      if (0 == instance) {
-	// Recipient does not exist.
-	system_scheduler::recipient_dne (from, aux);
-	return false;
-      }
-
-      execute1 (instance, ac, typename action<I, M>::action_category ());
-      return true;
-    }
+    static int execute (output_executor_interface& exec);
+    static int execute (internal_executor_interface& exec);
+    static int execute (const aid_t from,
+			event_executor_interface& exec,
+			void* const key);
 
     static void lock_automaton (const aid_t handle);
     static void unlock_automaton (const aid_t handle);
+
+    template <class I, class M, class K> class action_executor_impl;
+    
+    template <class I, class M>
+    class action_executor_impl<I, M, output_category> :
+      public output_executor_interface
+    {
+    private:
+      const action<I, M> m_action;
+      I* m_instance;
+      
+    public:
+      action_executor_impl (const action<I, M>& action) :
+	m_action (action),
+	m_instance (0)
+      { }
+      
+      bool fetch_instance () {
+	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	return m_instance != 0;
+      }
+      
+      void operator() () const {
+	assert (m_instance != 0);
+	m_action (*m_instance);
+      }
+    
+      automaton_interface* get_instance () const {
+	return m_instance;
+      }
+      
+      const action_interface& get_action () const {
+	return m_action;
+      }
+      
+    };
+
+    template <class I, class M>
+    class action_executor_impl<I, M, input_category> :
+      public input_executor_interface
+    {
+    private:
+      const action<I, M> m_action;
+      I* m_instance;
+      
+    public:
+      action_executor_impl (const action<I, M>& action) :
+	m_action (action),
+	m_instance (0)
+      { }
+      
+      bool fetch_instance () {
+	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	return m_instance != 0;
+      }
+      
+      void operator() () const {
+	assert (m_instance != 0);
+	m_action (*m_instance);
+      }
+    
+      automaton_interface* get_instance () const {
+	return m_instance;
+      }
+      
+      const action_interface& get_action () const {
+	return m_action;
+      }
+      
+    };
+    
+    template <class I, class M>
+    class action_executor_impl<I, M, internal_category> :
+      public internal_executor_interface
+    {
+    private:
+      const action<I, M> m_action;
+      I* m_instance;
+      
+    public:
+      action_executor_impl (const action<I, M>& action) :
+	m_action (action),
+	m_instance (0)
+      { }
+      
+      bool fetch_instance () {
+	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	return m_instance != 0;
+      }
+      
+      void operator() () const {
+	assert (m_instance != 0);
+	m_action (*m_instance);
+      }
+      
+      automaton_interface* get_instance () const {
+	return m_instance;
+      }
+      
+      const action_interface& get_action () const {
+	return m_action;
+      }
+      
+    };
+    
+    template <class I, class M>
+    class action_executor_impl<I, M, event_category> :
+      public event_executor_interface
+    {
+    private:
+      const action<I, M> m_action;
+      I* m_instance;
+      
+    public:
+      action_executor_impl (const action<I, M>& action) :
+	m_action (action),
+	m_instance (0)
+      { }
+      
+      bool fetch_instance () {
+	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	return m_instance != 0;
+      }
+      
+      void operator() () const {
+	assert (m_instance != 0);
+	m_action (*m_instance);
+      }
+      
+      automaton_interface* get_instance () const {
+	return m_instance;
+      }
+      
+      const action_interface& get_action () const {
+	return m_action;
+      }
+      
+    };
+    
+    template <class I, class M>
+    class action_executor :
+      public action_executor_impl<I, M, typename M::action_category>
+    {
+    public:
+      action_executor (const action<I, M>& ac) :
+	action_executor_impl<I, M, typename M::action_category> (ac)
+      { }
+    };
+
+
+    template <class OI, class OM, class II, class IM>
+    class bind_executor :
+      public bind_executor_interface
+    {
+    private:
+      action_executor<OI, OM> m_output;
+      action_executor<II, IM> m_input;
+
+    public:
+      bind_executor (const action<OI, OM>& output,
+		     const action<II, IM>& input) :
+	m_output (output),
+	m_input (input)
+      { }
+
+      output_executor_interface& get_output () {
+	return m_output;
+      }
+
+      input_executor_interface& get_input () {
+	return m_input;
+      }
+
+    };
+      
   };
 
 }

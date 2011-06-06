@@ -281,8 +281,8 @@ namespace ioa {
   				   const aid_t binder) const = 0;
     virtual bool involves_input (const action_interface& input) const = 0;
     virtual bool involves_input_automaton (const aid_t automaton) const = 0;
-    virtual bool involves_aid_aux (aid_t const binder,
-  				   void* const aux) const = 0;
+    virtual bool involves_aid_key (aid_t const binder,
+  				   void* const key) const = 0;
     virtual void execute () = 0;
     virtual bool empty () const = 0;
     virtual void unbind (aid_t const binder,
@@ -356,7 +356,7 @@ namespace ioa {
     }
     
     bool
-    involves_aid_aux (aid_t const binder,
+    involves_aid_key (aid_t const binder,
 		      void* const aux) const
     {
       return std::find_if (m_inputs.begin (),

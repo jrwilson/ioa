@@ -26,14 +26,6 @@ namespace ioa {
     return m_instance.get ();
   }
 
-  bid_t automaton_record::take_bid () {
-    return m_bids.take ();
-  }
-
-  void automaton_record::replace_bid (const bid_t bid) {
-    m_bids.replace (bid);
-  }
-
   bool automaton_record::create_key_exists (void* const key) const {
     return m_children.count (key) != 0;
   }
@@ -49,6 +41,16 @@ namespace ioa {
     m_children.erase (key);
     // Tell the parent that the child was destroyed.
     system_scheduler::automaton_destroyed (m_aid, key);
+  }
+
+  automaton_record* automaton_record::get_child (void* const key) const {
+    std::map<void*, automaton_record*>::const_iterator pos = m_children.find (key);
+    if (pos != m_children.end ()) {
+      return pos->second;
+    }
+    else {
+      return 0;
+    }
   }
 
   std::pair<void*, automaton_record*> automaton_record::get_first_child () const {
@@ -72,6 +74,18 @@ namespace ioa {
 
   automaton_record* automaton_record::get_parent () const {
     return m_parent;
+  }
+
+  bool automaton_record::bind_key_exists (void* const key) const {
+    return m_bind_keys.count (key) != 0;
+  }
+
+  void automaton_record::add_bind_key (void* const key) {
+    m_bind_keys.insert (key);
+  }
+
+  void automaton_record::remove_bind_key (void* const key) {
+    m_bind_keys.erase (key);
   }
 
 }

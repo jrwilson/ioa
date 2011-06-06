@@ -105,77 +105,67 @@ namespace ioa {
     return aid;
   }
 
-  bool system::unbind (const bid_t bid,
-		       const aid_t binder,
-		       void* aux)
+  int system::unbind (const aid_t binder,
+		      void* const key)
   {
     if (!m_aids.contains (binder)) {
       // Binder does not exist.
-      return false;
+      return -1;
     }
     
     std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
 								m_bindings.end (),
-								binding_aid_aux_equal (binder, aux));
+								binding_aid_key_equal (binder, key));
     
     if (pos == m_bindings.end ()) {
       // Not bound.
-      system_scheduler::bind_key_dne (binder, aux);
-      return false;
+      system_scheduler::bind_key_dne (binder, key);
+      return -1;
     }
     
     binding_interface* c = *pos;
     
     // Unbind.
-    c->unbind (binder, aux);
-    m_records[binder]->replace_bid (bid);
+    c->unbind (binder, key);
+    m_records[binder]->remove_bind_key (key);
     
     if (c->empty ()) {
       delete c;
       m_bindings.erase (pos);
     }
     
-    return true;
+    return 0;
   }
 
-  bool system::destroy (const aid_t target)
+  int system::destroy (const aid_t target)
   {
     unique_lock lock (m_mutex);
     
     if (!m_aids.contains (target)) {
-      return false;
+      return -1;
     }
     
     inner_destroy (m_records[target]);
-    return true;
+    return 0;
   }
   
-  bool system::destroy (const aid_t automaton,
-			const aid_t target,
-			void* aux)
+  int system::destroy (const aid_t automaton,
+		       void* const key)
   {
     unique_lock lock (m_mutex);
     
     if (!m_aids.contains (automaton)) {
       // Destroyer does not exist.
-      return false;
+      return -1;
     }
-    
-    if (!m_aids.contains (target)) {
-      //system_scheduler::target_automaton_dne (automaton, aux);
-      return false;
+
+    if (!m_records[automaton]->create_key_exists (key)) {
+      system_scheduler::create_key_dne (automaton, key);
+      return -1;
     }
-    
-    automaton_record* parent = m_records[automaton];
-    automaton_record* child = m_records[target];
-    
-    if (parent != child->get_parent ()) {
-      //system_scheduler::destroyer_not_creator (automaton, aux);
-      return false;
-    }
-    
-    inner_destroy (child);
-    return true;
+
+    inner_destroy (m_records[automaton]->get_child (key));
+    return 0;
   }
 
   void system::inner_destroy (automaton_record* automaton)
@@ -213,6 +203,71 @@ namespace ioa {
     delete automaton;
   }
 
+  void system::execute0 (const action_executor_interface& exec) {
+    lock_automaton (exec.get_action ().get_aid ());
+    system_scheduler::set_current_aid (exec.get_action ().get_aid (), *(exec.get_instance ()));
+    exec ();
+    system_scheduler::clear_current_aid ();
+    unlock_automaton (exec.get_action ().get_aid ());
+  }
+
+  int system::execute (output_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+    
+    std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
+									  m_bindings.end (),
+									  binding_output_equal (exec.get_action ()));
+    
+    if (out_pos == m_bindings.end ()) {
+      // Not bound.
+      execute0 (exec);
+    }
+    else {	
+      (*out_pos)->execute ();
+    }
+    
+    return 0;
+  }
+  
+  int system::execute (internal_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+    
+    execute0 (exec);
+    return 0;
+  }
+  
+  int system::execute (const aid_t from,
+		       event_executor_interface& exec,
+		       void* const key) {
+    shared_lock lock (m_mutex);
+    
+    if (!m_aids.contains (from)) {
+      // Deliverer does not exists.
+      return -1;
+    }
+    
+    if (!exec.fetch_instance ()) {
+      // Recipient does not exist.
+      system_scheduler::recipient_dne (from, key);
+      return -1;
+    }
+    
+    execute0 (exec);
+    
+    system_scheduler::event_delivered (from, key);
+    return 0;
+  }
+  
   void system::lock_automaton (const aid_t handle) {
     m_records[handle]->lock ();
   }
