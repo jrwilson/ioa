@@ -1,5 +1,6 @@
 #include <ioa/system.hpp>
-#include <ioa/automaton_locker.hpp>
+
+#include <algorithm>
 
 namespace ioa {
 
@@ -7,7 +8,7 @@ namespace ioa {
   sequential_set<aid_t> system::m_aids;
   std::set<automaton_interface*> system::m_instances;
   std::map<aid_t, automaton_record*> system::m_records;
-  std::list<binding_interface*> system::m_bindings;
+  std::list<output_executor_interface*> system::m_bindings;
 
   void system::clear (void) {
    // Delete all root automata.
@@ -105,6 +106,84 @@ namespace ioa {
     return aid;
   }
 
+  int system::bind (bind_executor_interface& bind_exec,
+		    const aid_t binder,
+		    void* const key) {
+    
+    unique_lock lock (m_mutex);
+    
+    if (!m_aids.contains (binder)) {
+      // Binder DNE.
+      return -1;
+    }
+    
+    if (m_records[binder]->bind_key_exists (key)) {
+      // Bind key already in use.
+      system_scheduler::bind_key_exists (binder, key);
+      return -1;
+    }
+    
+    output_executor_interface& output = bind_exec.get_output ();
+    input_executor_interface& input = bind_exec.get_input ();
+    
+    if (!output.fetch_instance ()) {
+      system_scheduler::output_automaton_dne (binder, key);
+      return -1;
+    }
+    
+    if (!input.fetch_instance ()) {
+      system_scheduler::input_automaton_dne (binder, key);
+      return -1;
+    }
+    
+    std::list<output_executor_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
+									      m_bindings.end (),
+									      binding_equal (output.get_action (), input.get_action (), binder));
+    
+    if (pos != m_bindings.end ()) {
+      // Bound.
+      system_scheduler::binding_exists (binder, key);
+      return -1;
+    }
+    
+    std::list<output_executor_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
+										 m_bindings.end (),
+										 binding_input_equal (input.get_action ()));
+    
+    if (in_pos != m_bindings.end ()) {
+      // Input unavailable.
+      system_scheduler::input_action_unavailable (binder, key);
+      return -1;
+    }
+    
+    std::list<output_executor_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
+										  m_bindings.end (),
+										  binding_output_equal (output.get_action ()));
+    
+    if (output.get_action ().get_aid () == input.get_action ().get_aid () ||
+	(out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_action ().get_aid ()))) {
+      // Output unavailable.
+      system_scheduler::output_action_unavailable (binder, key);
+      return -1;
+    }
+    
+    output_executor_interface* c;
+    
+    if (out_pos != m_bindings.end ()) {
+      c = *out_pos;
+    }
+    else {
+      c = output.clone ();
+      m_bindings.push_front (c);
+    }
+    
+    // Bind.
+    c->bind (input, binder, key);
+    m_records[binder]->add_bind_key (key);
+    
+    return 0;
+  }    
+
   int system::unbind (const aid_t binder,
 		      void* const key)
   {
@@ -113,9 +192,9 @@ namespace ioa {
       return -1;
     }
     
-    std::list<binding_interface*>::iterator pos = std::find_if (m_bindings.begin (),
-								m_bindings.end (),
-								binding_aid_key_equal (binder, key));
+    std::list<output_executor_interface*>::iterator pos = std::find_if (m_bindings.begin (),
+									m_bindings.end (),
+									binding_aid_key_equal (binder, key));
     
     if (pos == m_bindings.end ()) {
       // Not bound.
@@ -123,7 +202,7 @@ namespace ioa {
       return -1;
     }
     
-    binding_interface* c = *pos;
+    output_executor_interface* c = *pos;
     
     // Unbind.
     c->unbind (binder, key);
@@ -178,7 +257,7 @@ namespace ioa {
     }
     
     // Update bindings.
-    for (std::list<binding_interface*>::iterator pos = m_bindings.begin ();
+    for (std::list<output_executor_interface*>::iterator pos = m_bindings.begin ();
 	 pos != m_bindings.end ();
 	 ) {
       (*pos)->unbind_automaton (automaton->get_aid ());
@@ -203,14 +282,6 @@ namespace ioa {
     delete automaton;
   }
 
-  void system::execute0 (const action_executor_interface& exec) {
-    lock_automaton (exec.get_action ().get_aid ());
-    system_scheduler::set_current_aid (exec.get_action ().get_aid (), *(exec.get_instance ()));
-    exec ();
-    system_scheduler::clear_current_aid ();
-    unlock_automaton (exec.get_action ().get_aid ());
-  }
-
   int system::execute (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
@@ -219,16 +290,16 @@ namespace ioa {
       return -1;
     }
     
-    std::list<binding_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
-									  m_bindings.end (),
-									  binding_output_equal (exec.get_action ()));
+    std::list<output_executor_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
+										  m_bindings.end (),
+										  binding_output_equal (exec.get_action ()));
     
     if (out_pos == m_bindings.end ()) {
       // Not bound.
-      execute0 (exec);
+      exec ();
     }
-    else {	
-      (*out_pos)->execute ();
+    else {
+      (*(*out_pos)) ();
     }
     
     return 0;
@@ -242,7 +313,7 @@ namespace ioa {
       return -1;
     }
     
-    execute0 (exec);
+    exec ();
     return 0;
   }
   
@@ -262,7 +333,7 @@ namespace ioa {
       return -1;
     }
     
-    execute0 (exec);
+    exec ();
     
     system_scheduler::event_delivered (from, key);
     return 0;
@@ -274,16 +345,6 @@ namespace ioa {
 
   void system::unlock_automaton (const aid_t handle) {
     m_records[handle]->unlock ();
-  }
-  
-  // Implement automaton_locker.
-
-  void automaton_locker::lock_automaton (const aid_t handle) {
-    system::lock_automaton (handle);
-  }
-
-  void automaton_locker::unlock_automaton (const aid_t handle) {
-    system::unlock_automaton (handle);
   }
 
 }

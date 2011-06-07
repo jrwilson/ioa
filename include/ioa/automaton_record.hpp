@@ -5,7 +5,6 @@
 #include <ioa/automaton_interface.hpp>
 #include <ioa/aid.hpp>
 #include <ioa/sequential_set.hpp>
-#include <ioa/bid.hpp>
 #include <ioa/system_scheduler.hpp>
 
 #include <memory>

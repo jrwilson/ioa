@@ -2,7 +2,6 @@
 #define __test_system_scheduler_hpp__
 
 #include <ioa/aid.hpp>
-#include <ioa/bid.hpp>
 
 #include <set>
 

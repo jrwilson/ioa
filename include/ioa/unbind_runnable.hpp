@@ -11,12 +11,12 @@ namespace ioa {
     public runnable_interface
   {
   private:
-    const bid_t m_bid;
+    const int m_bid;
     const automaton_handle<C> m_automaton;
     D& m_d;
     
   public:
-    unbind_runnable (const bid_t bid,
+    unbind_runnable (const int bid,
 		     const automaton_handle<C>& automaton,
 		     D& d) :
       m_bid (bid),
@@ -30,7 +30,7 @@ namespace ioa {
   };
   
   template <class C, class D>
-  unbind_runnable<C, D>* make_unbind_runnable (const bid_t bid,
+  unbind_runnable<C, D>* make_unbind_runnable (const int bid,
 					       const automaton_handle<C>& automaton,
 					       D& d) {
     return new unbind_runnable<C, D> (bid, automaton, d);

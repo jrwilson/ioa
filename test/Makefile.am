@@ -4,7 +4,6 @@ LDADD = $(top_builddir)/lib/libueioa.la
 
 TESTS = \
 action \
-binding \
 system
 # simple_scheduler
 
@@ -13,8 +12,6 @@ system
 check_PROGRAMS = $(TESTS)
 
 action_SOURCES = action.cpp test_main.cpp test_system_scheduler.cpp
-
-binding_SOURCES = binding.cpp test_main.cpp test_system_scheduler.cpp
 
 system_SOURCES = system.cpp test_main.cpp test_system_scheduler.cpp
 

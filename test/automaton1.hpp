@@ -2,7 +2,6 @@
 #define __automaton1_hpp__
 
 #include <ioa/action.hpp>
-#include <ioa/bid.hpp>
 #include <ioa/automaton_interface.hpp>
 
 template <class T>

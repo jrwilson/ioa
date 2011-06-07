@@ -13,6 +13,7 @@
 #include <ioa/thread.hpp>
 #include <ioa/thread_key.hpp>
 #include <queue>
+#include <algorithm>
 #include <fcntl.h>
 #include <sys/select.h>
 #include <unistd.h>
@@ -269,7 +270,7 @@ namespace ioa {
     
     template <class C, class D>
     static void unbind (const C* ptr,
-			const bid_t bid,
+			const int bid,
 			D& d) {
       schedule_sysq (make_unbind_runnable (bid, get_current_aid (ptr), d));
     }
@@ -396,7 +397,7 @@ namespace ioa {
   
   template <class C, class D>
   void scheduler::unbind (const C* ptr,
-			  const bid_t bid,
+			  const int bid,
 			  D& d) {
     simple_scheduler::unbind (ptr, bid, d);
   }

@@ -335,6 +335,9 @@ output_action_unavailable ()
   return 0;
 }
 
+/*
+  TODO:  Incorporate all of the tests in binding.cpp.
+ */
 static const char*
 bound ()
 {
@@ -664,35 +667,35 @@ ioa::system::action_executor<automaton1, automaton1::uv_event_action> exec1 (ioa
   return 0;
 }
 
-static const char*
-execute_system_input ()
-{
-  // Reset the system.
-  ioa::system::clear ();
+// static const char*
+// execute_system_input ()
+// {
+//   // Reset the system.
+//   ioa::system::clear ();
   
-  automaton1* event_instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (event_instance));
+//   automaton1* event_instance = new automaton1 ();
+//   std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (event_instance));
 
-  ioa::automaton_handle<automaton1> from = create (ioa::make_generator<automaton1> ());
-  ioa::automaton_handle<automaton1> to = create (holder);
+//   ioa::automaton_handle<automaton1> from = create (ioa::make_generator<automaton1> ());
+//   ioa::automaton_handle<automaton1> to = create (holder);
 
-  // tss.reset ();
-  // int key1;
-  // mu_assert (ioa::system::execute (from, ioa::make_action (to, &automaton1::uv_event), &key1) == 0);
-  // mu_assert (tss.m_event_delivered_automaton == from);
-  // mu_assert (tss.m_event_delivered_key == &key1);
-  // mu_assert (event_instance->uv_event.state);
+//   // tss.reset ();
+//   // int key1;
+//   // mu_assert (ioa::system::execute (from, ioa::make_action (to, &automaton1::uv_event), &key1) == 0);
+//   // mu_assert (tss.m_event_delivered_automaton == from);
+//   // mu_assert (tss.m_event_delivered_key == &key1);
+//   // mu_assert (event_instance->uv_event.state);
 
-  // tss.reset ();
-  // int key2;
-  // mu_assert (ioa::system::execute (from, ioa::make_action (to, &automaton1::v_event, 37), &key2) == 0);
-  // mu_assert (tss.m_event_delivered_automaton == from);
-  // mu_assert (tss.m_event_delivered_key == &key2);
-  // mu_assert (event_instance->v_event.state);
-  // mu_assert (event_instance->v_event.last_value == 37);
+//   // tss.reset ();
+//   // int key2;
+//   // mu_assert (ioa::system::execute (from, ioa::make_action (to, &automaton1::v_event, 37), &key2) == 0);
+//   // mu_assert (tss.m_event_delivered_automaton == from);
+//   // mu_assert (tss.m_event_delivered_key == &key2);
+//   // mu_assert (event_instance->v_event.state);
+//   // mu_assert (event_instance->v_event.last_value == 37);
 
-  return 0;
-}
+//   return 0;
+// }
 
 const char*
 all_tests ()
@@ -720,7 +723,7 @@ all_tests ()
   mu_run_test (execute_internal);
   mu_run_test (recipient_dne);
   mu_run_test (event_delivered);
-  mu_run_test (execute_system_input);
+  // mu_run_test (execute_system_input);
   // mu_run_test (execute_create);
   // mu_run_test (execute_bind);
   // mu_run_test (execute_unbind);

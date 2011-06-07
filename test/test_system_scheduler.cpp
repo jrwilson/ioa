@@ -1,15 +1,11 @@
 #include "test_system_scheduler.hpp"
 
 #include <ioa/system_scheduler.hpp>
-#include <ioa/automaton_locker.hpp>
 
 test_system_scheduler tss;
 
 namespace ioa {
   
-  void automaton_locker::lock_automaton (aid_t) { }
-  void automaton_locker::unlock_automaton (aid_t) { }
-
   void system_scheduler::set_current_aid (aid_t, const automaton_interface&) { }
   void system_scheduler::clear_current_aid () { }
 

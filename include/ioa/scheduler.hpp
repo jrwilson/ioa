@@ -4,7 +4,6 @@
 #include <memory>
 #include <ioa/generator_interface.hpp>
 #include <ioa/action.hpp>
-#include <ioa/bid.hpp>
 #include <ioa/time.hpp>
 
 /*
@@ -33,7 +32,7 @@ namespace ioa {
 
     template <class C, class D>
     static void unbind (const C* ptr,
-			const bid_t bid,
+			const int bid,
 			D& d);
 
     template <class C, class I, class D>
