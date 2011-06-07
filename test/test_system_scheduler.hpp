@@ -7,8 +7,6 @@
 
 struct test_system_scheduler
 {
-  ioa::aid_t m_init_automaton;
-
   ioa::aid_t m_create_key_exists_automaton;
   void* m_create_key_exists_key;
 
@@ -57,8 +55,6 @@ struct test_system_scheduler
   void* m_event_delivered_key;
 
   void reset () {
-    m_init_automaton = -1;
-    
     m_create_key_exists_automaton = -1;
     m_create_key_exists_key = 0;
     

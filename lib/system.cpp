@@ -1,6 +1,11 @@
 #include <ioa/system.hpp>
 
+#include <ioa/shared_mutex.hpp>
+#include <ioa/unique_lock.hpp>
+#include <ioa/shared_lock.hpp>
 #include <algorithm>
+#include <ioa/generator_interface.hpp>
+#include <ioa/automaton_interface.hpp>
 
 namespace ioa {
 
@@ -29,7 +34,7 @@ namespace ioa {
     assert (m_bindings.empty ());
   }
   
-  aid_t system::create (std::auto_ptr<generator_interface> generator)
+  aid_t system::create (shared_ptr<generator_interface> generator)
   {
     unique_lock lock (m_mutex);
     
@@ -60,7 +65,7 @@ namespace ioa {
   }
   
   aid_t system::create (const aid_t automaton,
-			std::auto_ptr<generator_interface> generator,
+			shared_ptr<generator_interface> generator,
 			void* const key)
   {
     unique_lock lock (m_mutex);
@@ -249,7 +254,6 @@ namespace ioa {
 
   void system::inner_destroy (automaton_record* automaton)
   {
-    
     for (std::pair<void*, automaton_record*> p = automaton->get_first_child ();
 	 p.second != 0;
 	 p = automaton->get_first_child ()) {
@@ -338,7 +342,69 @@ namespace ioa {
     system_scheduler::event_delivered (from, key);
     return 0;
   }
-  
+
+  int system::execute (system_input_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+    
+    exec ();
+    return 0;
+  }
+
+  int system::execute_sys_create (const aid_t automaton) {
+    shared_lock lock (m_mutex);
+
+    if (!m_aids.contains (automaton)) {
+      // Automaton does not exists.
+      return -1;
+    }
+
+    action<automaton_interface, automaton_interface::sys_create_type> ac (automaton, &automaton_interface::sys_create);
+
+    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+
+    lock_automaton (automaton);
+    system_scheduler::set_current_aid (automaton);
+    std::pair<bool, std::pair<shared_ptr<generator_interface>, void*> > t = ac (*instance);
+    system_scheduler::clear_current_aid ();
+    unlock_automaton (automaton);
+
+    if (t.first) {
+      system_scheduler::create (automaton, t.second.first, t.second.second);
+    }
+
+    return 0;
+  }
+
+  int system::execute_sys_destroy (const aid_t automaton) {
+    shared_lock lock (m_mutex);
+
+    if (!m_aids.contains (automaton)) {
+      // Automaton does not exists.
+      return -1;
+    }
+
+    action<automaton_interface, automaton_interface::sys_destroy_type> ac (automaton, &automaton_interface::sys_destroy);
+
+    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+
+    lock_automaton (automaton);
+    system_scheduler::set_current_aid (automaton);
+    std::pair<bool, void*> t = ac (*instance);
+    system_scheduler::clear_current_aid ();
+    unlock_automaton (automaton);
+
+    if (t.first) {
+      system_scheduler::destroy (automaton, t.second);
+    }
+
+    return 0;
+  }
+
   void system::lock_automaton (const aid_t handle) {
     m_records[handle]->lock ();
   }

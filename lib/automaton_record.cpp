@@ -3,15 +3,12 @@
 namespace ioa {
 
   automaton_record::automaton_record (automaton_interface* instance,
-							  const aid_t aid) :
+				      const aid_t aid) :
     m_instance (instance),
     m_aid (aid),
     m_key (0),
     m_parent (0)
-  {
-    // Initialize the automaton.
-    system_scheduler::init (m_aid);
-  }
+  { }
 
   automaton_record::~automaton_record () {
     // Sanity check.

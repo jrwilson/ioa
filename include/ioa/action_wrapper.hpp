@@ -406,27 +406,6 @@ namespace ioa {
     }
   };
 
-  template <class C>
-  class system_input_wrapper :
-    public system_input
-  {
-  private:
-    C& m_c;
-    void (C::*m_member_function_ptr)();
-    
-  public:
-    system_input_wrapper (C& c,
-			  void (C::*member_function_ptr)(),
-			  system_input_wrapper C::*member_object_ptr) :
-      m_c (c),
-      m_member_function_ptr (member_function_ptr)
-    { }
-    
-    void operator() () {
-      (m_c.*m_member_function_ptr) ();
-    }
-  };
-
 }
 
 #define UV_UP_INPUT(c, name) \
@@ -506,13 +485,6 @@ namespace ioa {
   name##_type name; \
   private: \
   void _##name (const type & var)
-
-#define SYSTEM_INPUT(c, name) \
-  public: \
-  typedef ioa::system_input_wrapper<c> name##_type; \
-  name##_type name; \
-  private:	    \
-  void _##name ()
 
 #define ACTION(c, name) name (*this, &c::_##name, &c::name)
 

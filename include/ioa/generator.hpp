@@ -1,8 +1,8 @@
 #ifndef __instance_generator_hpp__
 #define __instance_generator_hpp__
 
-#include <memory>
 #include <ioa/generator_interface.hpp>
+#include <ioa/shared_ptr.hpp>
 
 namespace ioa {
   
@@ -23,8 +23,8 @@ namespace ioa {
   };
 
   template <class I>
-  std::auto_ptr<generator_interface> make_generator () {
-    return std::auto_ptr<generator_interface> (new generator<I> ());
+  shared_ptr<generator_interface> make_generator () {
+    return shared_ptr<generator_interface> (new generator<I> ());
   }
   
   template <class T, class A0>
@@ -44,8 +44,8 @@ namespace ioa {
   };
 
   template <class I, class A0>
-  std::auto_ptr<generator_interface> make_generator (A0 a0) {
-    return std::auto_ptr<generator_interface> (new generator1<I, A0> (a0));
+  shared_ptr<generator_interface> make_generator (A0 a0) {
+    return shared_ptr<generator_interface> (new generator1<I, A0> (a0));
   }
 
 }

@@ -2,10 +2,10 @@
 #define __automaton_record_hpp__
 
 #include <ioa/mutex.hpp>
-#include <ioa/automaton_interface.hpp>
 #include <ioa/aid.hpp>
 #include <ioa/sequential_set.hpp>
 #include <ioa/system_scheduler.hpp>
+#include <ioa/automaton_interface.hpp>
 
 #include <memory>
 #include <cassert>

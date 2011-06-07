@@ -2,7 +2,8 @@
 #define __system_scheduler_hpp__
 
 #include <ioa/aid.hpp>
-#include <ioa/automaton_interface.hpp>
+#include <ioa/shared_ptr.hpp>
+#include <ioa/generator_interface.hpp>
 
 namespace ioa {
 
@@ -16,11 +17,14 @@ namespace ioa {
   {
   public:
     static void set_current_aid (const aid_t aid);
-    static void set_current_aid (const aid_t aid,
-				 const automaton_interface& current_this);
     static void clear_current_aid ();
 
-    static void init (const aid_t automaton);
+    static void create (const aid_t automaton,
+			shared_ptr<generator_interface> generator,
+			void* const key);
+
+    static void destroy (const aid_t automaton,
+			 void* const key);
 
     static void create_key_exists (const aid_t automaton,
 				   void* const key);

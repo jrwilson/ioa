@@ -1,18 +1,21 @@
 #ifndef __system_hpp__
 #define __system_hpp__
 
-#include <ioa/automaton_record.hpp>
-
-#include <ioa/generator_interface.hpp>
-#include <ioa/unique_lock.hpp>
-#include <ioa/shared_lock.hpp>
-
+#include <ioa/action.hpp>
+#include <ioa/sequential_set.hpp>
 #include <map>
 #include <list>
+#include <ioa/shared_ptr.hpp>
+#include <ioa/system_scheduler.hpp>
+#include <ioa/automaton_record.hpp>
 
 // TODO:  Cleanup redundancy.
 
 namespace ioa {
+
+  class automaton_interface;
+  class generator_interface;
+  class shared_mutex;
 
   template <class OVS, class OVT, class IVS, class IVT> struct bind_check;
   
@@ -115,6 +118,13 @@ namespace ioa {
   {
   public:
     virtual ~event_executor_interface () { }
+  };
+
+  class system_input_executor_interface :
+    public local_executor_interface
+  {
+  public:
+    virtual ~system_input_executor_interface () { }
   };
 
   class bind_executor_interface
@@ -224,9 +234,9 @@ namespace ioa {
   public:
 
     static void clear (void);
-    static aid_t create (std::auto_ptr<generator_interface> generator);
+    static aid_t create (shared_ptr<generator_interface> generator);
     static aid_t create (const aid_t automaton,
-			 std::auto_ptr<generator_interface> generator,
+			 shared_ptr<generator_interface> generator,
 			 void* const key);
     static int bind (bind_executor_interface& bind_exec,
 		     const aid_t binder,
@@ -241,6 +251,9 @@ namespace ioa {
     static int execute (const aid_t from,
 			event_executor_interface& exec,
 			void* const key);
+    static int execute (system_input_executor_interface& exec);
+    static int execute_sys_create (const aid_t automaton);
+    static int execute_sys_destroy (const aid_t automaton);
 
     template <class I, class M, class K, class VS, class VT> class action_executor_impl;
 
@@ -270,7 +283,7 @@ namespace ioa {
       
       void operator() () const {
 	assert (m_instance != 0);
-	system_scheduler::set_current_aid (m_action.get_aid (), *m_instance);
+	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
       }
@@ -420,7 +433,7 @@ namespace ioa {
 
 
 	// Execute.
-	system_scheduler::set_current_aid (m_action.get_aid (), *m_instance);
+	system_scheduler::set_current_aid (m_action.get_aid ());
 	bool t = m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
 
@@ -652,7 +665,7 @@ namespace ioa {
 
 
 	// Execute.
-	system_scheduler::set_current_aid (m_action.get_aid (), *m_instance);
+	system_scheduler::set_current_aid (m_action.get_aid ());
 	std::pair<bool, VT> t = m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
 
@@ -811,7 +824,7 @@ namespace ioa {
 	assert (m_instance != 0);
 
 	system::lock_automaton (m_action.get_aid ());
-	system_scheduler::set_current_aid (m_action.get_aid (), *m_instance);
+	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
 	unlock_automaton (m_action.get_aid ());
@@ -846,7 +859,42 @@ namespace ioa {
 	assert (m_instance != 0);
 
 	system::lock_automaton (m_action.get_aid ());
-	system_scheduler::set_current_aid (m_action.get_aid (), *m_instance);
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action (*m_instance);
+	system_scheduler::clear_current_aid ();
+	unlock_automaton (m_action.get_aid ());
+      }
+      
+      const action_interface& get_action () const {
+	return m_action;
+      }
+      
+    };
+
+    template <class I, class M, class VS, class VT>
+    class action_executor_impl<I, M, system_input_category, VS, VT> :
+      public system_input_executor_interface
+    {
+    private:
+      const action<I, M> m_action;
+      I* m_instance;
+      
+    public:
+      action_executor_impl (const action<I, M>& action) :
+	m_action (action),
+	m_instance (0)
+      { }
+      
+      bool fetch_instance () {
+	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	return m_instance != 0;
+      }
+      
+      void operator() () const {
+	assert (m_instance != 0);
+	
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
 	unlock_automaton (m_action.get_aid ());

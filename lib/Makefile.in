@@ -71,10 +71,10 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_LIBADD =
-am_libueioa_la_OBJECTS = automaton_record.lo condition_variable.lo \
-	lock.lo mutex.lo observer.lo runnable_interface.lo \
-	simple_scheduler.lo shared_lock.lo shared_mutex.lo system.lo \
-	thread.lo time.lo unique_lock.lo
+am_libueioa_la_OBJECTS = automaton_interface.lo automaton_record.lo \
+	condition_variable.lo lock.lo mutex.lo observer.lo \
+	runnable_interface.lo simple_scheduler.lo shared_lock.lo \
+	shared_mutex.lo system.lo thread.lo time.lo unique_lock.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/ioa
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -215,6 +215,7 @@ top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libueioa.la
 libueioa_la_SOURCES = \
+automaton_interface.cpp \
 automaton_record.cpp \
 condition_variable.cpp \
 lock.cpp \
@@ -303,6 +304,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automaton_interface.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automaton_record.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/condition_variable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock.Plo@am__quote@

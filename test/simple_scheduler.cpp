@@ -3,156 +3,94 @@
 #include <ioa/simple_scheduler.hpp>
 #include <ioa/generator.hpp>
 #include "automaton2.hpp"
-
 #include "instance_holder.hpp"
+#include <iostream>
 
-// class create_exists :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   enum state_type {
-//     START,
-//     CREATE1_SENT,
-//     CREATE1_RECV,
-//     CREATE2_SENT,
-//     CREATE2_RECV,
-//     STOP
-//   };
-//   state_type m_state;
+static bool goal_reached;
 
-//   struct create1_d
-//   {
-//     create_exists& m_ce;
+class create_instance_exists :
+  public ioa::automaton_interface
+{
+private:
+  automaton2* m_instance;
 
-//     create1_d (create_exists& ce) :
-//       m_ce (ce)
-//     { }
+   struct helper :
+    public ioa::automaton_helper_interface
+  {
+    automaton2* m_instance;
 
-//     template <class I>
-//     void automaton_created (const ioa::automaton_handle<I>&) {
-//       m_ce.m_state = CREATE1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &create_exists::transition);
-//     }
+    helper (automaton2* instance) :
+      m_instance (instance)
+    { }
 
-//     template <class I>
-//     void instance_exists (const I*) {
-//       BOOST_CHECK (false);
-//     }
+    ioa::shared_ptr<ioa::generator_interface> get_generator () const {
+      return ioa::shared_ptr<ioa::generator_interface> (new instance_holder<automaton2> (m_instance));
+    }
 
-//     void automaton_destroyed () {
-//       // Okay.
-//     }
-//   };
+    void instance_exists () {
+      goal_reached = true;
+    }
+    
+    void automaton_created (const ioa::aid_t aid) {
+      // Okay.
+    }
 
-//   struct create2_d
-//   {
-//     create_exists& m_ce;
-
-//     create2_d (create_exists& ce) :
-//       m_ce (ce)
-//     { }
-
-//     template <class I>
-//     void automaton_created (const ioa::automaton_handle<I>&) {
-//       BOOST_CHECK (false);
-//     }
-
-//     template <class I>
-//     void instance_exists (const I*) {
-//       m_ce.m_state = CREATE2_RECV;
-//       ioa::scheduler.schedule (&m_ce, &create_exists::transition);
-//     }
-
-//     void automaton_destroyed () {
-//       BOOST_CHECK (false);
-//     }
-//   };
-
-//   create1_d m_create1_d;
-//   create2_d m_create2_d;
-//   automaton2* m_instance;
-
-//   UP_INTERNAL (create_exists, transition) {
-//     switch (m_state) {
-//     case START:
-//       ioa::scheduler.create (this, std::auto_ptr<ioa::generator_interface<automaton2> > (new instance_holder<automaton2> (m_instance)), m_create1_d);
-//       m_state = CREATE1_SENT;
-//       break;
-//     case CREATE1_RECV:
-//       ioa::scheduler.create (this, std::auto_ptr<ioa::generator_interface<automaton2> > (new instance_holder<automaton2> (m_instance)), m_create2_d);
-//       m_state = CREATE2_SENT;
-//       break;
-//     case CREATE2_RECV:
-//       m_state = STOP;
-//       break;
-//     default:
-//       BOOST_CHECK (false);
-//       break;
-//     }
-//   }
-
-// public:
-//   create_exists () :
-//     m_state (START),
-//     m_create1_d (*this),
-//     m_create2_d (*this),
-//     m_instance (new automaton2 ()),
-//     ACTION (create_exists, transition)
-//   { }
-
-//   void init () {
-//     ioa::scheduler.schedule (this, &create_exists::transition);
-//   }
+    void automaton_destroyed () {
+      // Clean up.
+      delete this;
+    }
+  };
   
-//   ~create_exists () {
-//     BOOST_CHECK_EQUAL (m_state, STOP);
-//   }
-// };
+public:  
+  create_instance_exists () :
+    m_instance (new automaton2 ())
+  {
+    create (new helper (m_instance));
+    create (new helper (m_instance));
+  }
+};
 
-// BOOST_AUTO_TEST_CASE (scheduler_create_exists)
-// {
-//   ioa::scheduler.run (ioa::make_instance_generator<create_exists> ());
-//   ioa::scheduler.clear ();
-// }
+static const char*
+instance_exists ()
+{
+  ioa::scheduler::clear ();
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<create_instance_exists> ());
+  mu_assert (goal_reached);
+  ioa::scheduler::clear ();
+  return 0;
+}
 
 class create_automaton_created :
   public ioa::automaton_interface
 {
-public:
-  enum state_type {
-    START,
-    CREATE1_SENT,
-    CREATE1_RECV,
-    STOP
-  };
-  state_type m_state;
-
 private:
-  UP_INTERNAL (create_automaton_created, transition) {
-    switch (m_state) {
-    case START:
-      ioa::scheduler::create (this, ioa::make_generator<automaton2> (), 0);
-      m_state = CREATE1_SENT;
-      break;
-    case CREATE1_RECV:
-      m_state = STOP;
-      break;
-    default:
-      //BOOST_CHECK (false);
-      break;
+
+  struct helper :
+    public ioa::automaton_helper_interface
+  {
+    ioa::shared_ptr<ioa::generator_interface> get_generator () const {
+      return ioa::make_generator<automaton2> ();
     }
-  }
+
+    void instance_exists () {
+      assert (false);
+    }
+
+    void automaton_created (const ioa::aid_t aid) {
+      goal_reached = true;
+    }
+
+    void automaton_destroyed () {
+      // Clean up.
+      delete this;
+    }
+  };
 
 public:
-
-  create_automaton_created () :
-    m_state (START),
-    ACTION (create_automaton_created, transition)
-  { }
-
-  void init () {
-    assert (false);
-    // ioa::scheduler::schedule (this, &create_automaton_created::transition);
+  
+  create_automaton_created () {
+    create (new helper ());
   }
 };
 
@@ -160,12 +98,10 @@ static const char*
 automaton_created ()
 {
   ioa::scheduler::clear ();
-
-  create_automaton_created* instance = new create_automaton_created ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<create_automaton_created> (instance));
-  ioa::scheduler::run (holder);
-  mu_assert (instance->m_state == create_automaton_created::STOP);
-
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<create_automaton_created> ());
+  mu_assert (goal_reached);
+  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -1667,365 +1603,119 @@ automaton_created ()
 //   ioa::scheduler.clear ();
 // }
 
-// class destroy_helper :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   enum state_type {
-//     START,
-//     DESTROY1_SENT,
-//     DESTROY1_RECV,
-//     STOP,
-//   };
-//   state_type m_state;
+class destroy_automaton_destroyed :
+  public ioa::automaton_interface
+{
+private:
 
-// private:
+  struct helper :
+    public ioa::automaton_helper_interface
+  {
+    bool created;
 
-//   struct destroy1_d
-//   {
-    
-//     destroy_helper& m_ce;
+    helper () :
+      created (false)
+    { }
 
-//     destroy1_d (destroy_helper& ce) :
-//       m_ce (ce)
-//     { }
+    ioa::shared_ptr<ioa::generator_interface> get_generator () const {
+      return ioa::make_generator<automaton2> ();
+    }
 
-//     void target_automaton_dne () {
-//       BOOST_CHECK (false);
-//     }
+    void instance_exists () {
+      assert (false);
+    }
 
-//     void destroyer_not_creator () {
-//       m_ce.m_state = DESTROY1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &destroy_helper::transition);
-//     }
+    void automaton_created (const ioa::aid_t aid) {
+      created = true;
+    }
 
-//   };
+    void automaton_destroyed () {
+      goal_reached = true;
+      // Clean up.
+      delete this;
+    }
+  };
 
-//   destroy1_d m_destroy1_d;
-//   ioa::automaton_handle<automaton2> m_automaton;
+  helper* m_helper;
 
-//   UP_INTERNAL (destroy_helper, transition) {
-//     switch (m_state) {
-//     case START:
-//       ioa::scheduler.destroy (this, m_automaton, m_destroy1_d);
-//       m_state = DESTROY1_SENT;
-//       break;
-//     case DESTROY1_RECV:
-//       m_state = STOP;
-//       break;
-//     default:
-//       BOOST_CHECK (false);
-//       break;
-//     }
-//   }
+  UP_INTERNAL (destroy_automaton_destroyed, poll) {
+    // We poll until the automaton is created.  Then we destroy it.
+    if (!m_helper->created) {
+      ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
+    }
+    else {
+      destroy (m_helper);
+    }
+  }
 
-// public:
-//   destroy_helper (const ioa::automaton_handle<automaton2>& automaton) :
-//     m_state (START),
-//     m_destroy1_d (*this),
-//     m_automaton (automaton),
-//     ACTION (destroy_helper, transition)
-//   { }
+public:  
+  destroy_automaton_destroyed () :
+    m_helper (new helper ()),
+    ACTION (destroy_automaton_destroyed, poll)
+  {
+    create (m_helper);
+    ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
+  }
+};
 
-//   void init () {
-//     ioa::scheduler.schedule (this, &destroy_helper::transition);
-//   }
+static const char*
+automaton_destroyed ()
+{
+  ioa::scheduler::clear ();
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<destroy_automaton_destroyed> ());
+  mu_assert (goal_reached);
+  ioa::scheduler::clear ();
+  return 0;
+}
 
-//   ~destroy_helper () {
-//     BOOST_CHECK_EQUAL (m_state, destroy_helper::STOP);
-//   }
-// };
+class destroy_automaton_destroyed2 :
+  public ioa::automaton_interface
+{
+private:
 
-// class destroy_destroyer_not_creator :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   enum state_type {
-//     START,
-//     CREATE1_SENT,
-//     CREATE1_RECV,
-//     CREATE2_SENT,
-//     CREATE2_RECV,
-//     STOP
-//   };
-//   state_type m_state;
+  struct helper :
+    public ioa::automaton_helper_interface
+  {
+    ioa::shared_ptr<ioa::generator_interface> get_generator () const {
+      return ioa::make_generator<automaton2> ();
+    }
 
-// private:
+    void instance_exists () {
+      assert (false);
+    }
 
-//   struct create1_d
-//   {
-//     destroy_destroyer_not_creator& m_ce;
+    void automaton_created (const ioa::aid_t aid) {
+      assert (false);
+    }
 
-//     create1_d (destroy_destroyer_not_creator& ce) :
-//       m_ce (ce)
-//     { }
+    void automaton_destroyed () {
+      goal_reached = true;
+      // Clean up.
+      delete this;
+    }
+  };
 
-//     void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-//       m_ce.m_child1 = automaton;
-//       m_ce.m_state = CREATE1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &destroy_destroyer_not_creator::transition);
-//     }
+public:  
+  destroy_automaton_destroyed2 ()
+  {
+    helper* h = new helper ();
+    // Create and destroy a helper before it is created.
+    create (h);
+    destroy (h);
+  }
+};
 
-//     template <class I>
-//     void instance_exists (const I*) {
-//       BOOST_CHECK (false);
-//     }
-
-//     void automaton_destroyed () {
-//       // Okay.
-//     }
-//   };
-
-//   struct create2_d
-//   {
-//     destroy_destroyer_not_creator& m_ce;
-
-//     create2_d (destroy_destroyer_not_creator& ce) :
-//       m_ce (ce)
-//     { }
-
-//     void automaton_created (const ioa::automaton_handle<destroy_helper>& automaton) {
-//       m_ce.m_child2 = automaton;
-//       m_ce.m_state = CREATE2_RECV;
-//       ioa::scheduler.schedule (&m_ce, &destroy_destroyer_not_creator::transition);
-//     }
-
-//     template <class I>
-//     void instance_exists (const I*) {
-//       BOOST_CHECK (false);
-//     }
-
-//     void automaton_destroyed () {
-//       // Okay.
-//     }
-//   };
-
-//   create1_d m_create1_d;
-//   create2_d m_create2_d;
-//   ioa::automaton_handle<automaton2> m_child1;
-//   ioa::automaton_handle<destroy_helper> m_child2;
-  
-//   UP_INTERNAL (destroy_destroyer_not_creator, transition) {
-//     switch (m_state) {
-//     case START:
-//       ioa::scheduler.create (this, ioa::make_generator<automaton2> (), m_create1_d);
-//       m_state = CREATE1_SENT;
-//       break;
-//     case CREATE1_RECV:
-//       ioa::scheduler.create (this, ioa::make_generator<destroy_helper, ioa::automaton_handle<automaton2> > (m_child1), m_create2_d);
-//       m_state = CREATE2_SENT;
-//       break;
-//     case CREATE2_RECV:
-//       m_state = STOP;
-//       break;
-//     default:
-//       BOOST_CHECK (false);
-//       break;
-//     }
-//   }
-
-// public:
-//   destroy_destroyer_not_creator () :
-//     m_state (START),
-//     m_create1_d (*this),
-//     m_create2_d (*this),
-//     ACTION (destroy_destroyer_not_creator, transition)
-//   { }
-
-//   void init () {
-//     ioa::scheduler.schedule (this, &destroy_destroyer_not_creator::transition);
-//   }
-
-//   ~destroy_destroyer_not_creator () {
-//     BOOST_CHECK_EQUAL (m_state, destroy_destroyer_not_creator::STOP);
-//   }
-// };
-
-// BOOST_AUTO_TEST_CASE (scheduler_destroy_destroyer_not_creator)
-// {
-//   ioa::scheduler.run (ioa::make_generator <destroy_destroyer_not_creator> ());
-//   ioa::scheduler.clear ();
-// }
-
-// class destroy_target_automaton_dne :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   enum state_type {
-//     START,
-//     DESTROY1_SENT,
-//     DESTROY1_RECV,
-//     STOP
-//   };
-//   state_type m_state;
-
-// private:
-
-//   struct destroy1_d
-//   {
-    
-//     destroy_target_automaton_dne& m_ce;
-
-//     destroy1_d (destroy_target_automaton_dne& ce) :
-//       m_ce (ce)
-//     { }
-
-//     void target_automaton_dne () {
-//       m_ce.m_state = DESTROY1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &destroy_target_automaton_dne::transition);
-//     }
-
-//     void destroyer_not_creator () {
-//       BOOST_CHECK (false);
-//     }
-
-//   };
-  
-//   destroy1_d m_destroy1_d;
-//   ioa::automaton_handle<automaton2> m_child;
-  
-//   UP_INTERNAL (destroy_target_automaton_dne, transition) {
-//     switch (m_state) {
-//     case START:
-//       ioa::scheduler.destroy (this, m_child, m_destroy1_d);
-//       m_state = DESTROY1_SENT;
-//       break;
-//     case DESTROY1_RECV:
-//       m_state = STOP;
-//       break;
-//     default:
-//       BOOST_CHECK (false);
-//       break;
-//     }
-//   }
-
-// public:
-//   destroy_target_automaton_dne () :
-//     m_state (START),
-//     m_destroy1_d (*this),
-//     ACTION (destroy_target_automaton_dne, transition)
-//   { }
-
-//   void init () {
-//     ioa::scheduler.schedule (this, &destroy_target_automaton_dne::transition);
-//   }
-
-//   ~destroy_target_automaton_dne () {
-//     BOOST_CHECK_EQUAL (m_state, destroy_target_automaton_dne::STOP);
-//   }
-// };
-
-// BOOST_AUTO_TEST_CASE (scheduler_destroy_target_automaton_dne)
-// {
-//   ioa::scheduler.run (ioa::make_generator<destroy_target_automaton_dne> ());
-//   ioa::scheduler.clear ();
-// }
-
-// class destroy_automaton_destroyed :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   enum state_type {
-//     START,
-//     CREATE1_SENT,
-//     CREATE1_RECV,
-//     DESTROY1_SENT,
-//     DESTROY1_RECV,
-//     STOP
-//   };
-//   state_type m_state;
-
-// private:
-
-//   struct create1_d
-//   {
-//     destroy_automaton_destroyed& m_ce;
-
-//     create1_d (destroy_automaton_destroyed& ce) :
-//       m_ce (ce)
-//     { }
-
-//     void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-//       m_ce.m_child = automaton;
-//       m_ce.m_state = CREATE1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &destroy_automaton_destroyed::transition);
-//     }
-
-//     template <class I>
-//     void instance_exists (const I*) {
-//       BOOST_CHECK (false);
-//     }
-
-//     void automaton_destroyed () {
-//       m_ce.m_state = DESTROY1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &destroy_automaton_destroyed::transition);
-//     }
-//   };
-
-//   struct destroy1_d
-//   {
-
-//     destroy_automaton_destroyed& m_ce;
-
-//     destroy1_d (destroy_automaton_destroyed& ce) :
-//       m_ce (ce)
-//     { }
-
-//     void target_automaton_dne () {
-//       BOOST_CHECK (false);
-//     }
-
-//     void destroyer_not_creator () {
-//       BOOST_CHECK (false);
-//     }
-
-//   };
-
-//   create1_d m_create1_d;
-//   destroy1_d m_destroy1_d;
-//   ioa::automaton_handle<automaton2> m_child;
-
-//   UP_INTERNAL (destroy_automaton_destroyed, transition) {
-//     switch (m_state) {
-//     case START:
-//       ioa::scheduler.create (this, ioa::make_generator<automaton2> (), m_create1_d);
-//       m_state = CREATE1_SENT;
-//       break;
-//     case CREATE1_RECV:
-//       ioa::scheduler.destroy (this, m_child, m_destroy1_d);
-//       m_state = DESTROY1_SENT;
-//       break;
-//     case DESTROY1_RECV:
-//       m_state = STOP;
-//       break;
-//     default:
-//       BOOST_CHECK (false);
-//       break;
-//     }
-//   }
-
-// public:
-//   destroy_automaton_destroyed () :
-//     m_state (START),
-//     m_create1_d (*this),
-//     m_destroy1_d (*this),
-//     ACTION (destroy_automaton_destroyed, transition)
-//   { }
-
-//   void init () {
-//     ioa::scheduler.schedule (this, &destroy_automaton_destroyed::transition);
-//   }
-
-//   ~destroy_automaton_destroyed () {
-//     BOOST_CHECK_EQUAL (m_state, destroy_automaton_destroyed::STOP);
-//   }
-// };
-
-// BOOST_AUTO_TEST_CASE (scheduler_destroy_automaton_destroyed)
-// {
-//   ioa::scheduler.run (ioa::make_generator<destroy_automaton_destroyed> ());
-//   ioa::scheduler.clear ();
-// }
+static const char*
+automaton_destroyed2 ()
+{
+  ioa::scheduler::clear ();
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<destroy_automaton_destroyed2> ());
+  mu_assert (goal_reached);
+  ioa::scheduler::clear ();
+  return 0;
+}
 
 // class schedule_output :
 //   public ioa::dispatching_automaton
@@ -2079,8 +1769,7 @@ automaton_created ()
 const char*
 all_tests ()
 {
-  // mu_run_test (creator_dne);
-  // mu_run_test (instance_exists);
+  mu_run_test (instance_exists);
   mu_run_test (automaton_created);
   // mu_run_test (binder_dne);
   // mu_run_test (output_automaton_dne);
@@ -2092,10 +1781,8 @@ all_tests ()
   // mu_run_test (unbinder_dne);
   // mu_run_test (binding_dne);
   // mu_run_test (unbound);
-  // mu_run_test (destroyer_dne);
-  // mu_run_test (destroyer_not_creator);
-  // mu_run_test (target_automaton_dne);
-  // mu_run_test (automaton_destroyed);
+  mu_run_test (automaton_destroyed);
+  mu_run_test (automaton_destroyed2);
   // mu_run_test (execute_output_automaton_dne);
   // mu_run_test (execute_output);
   // mu_run_test (execute_event_automaton_dne);

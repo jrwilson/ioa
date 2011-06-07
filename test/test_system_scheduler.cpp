@@ -6,12 +6,8 @@ test_system_scheduler tss;
 
 namespace ioa {
   
-  void system_scheduler::set_current_aid (aid_t, const automaton_interface&) { }
+  void system_scheduler::set_current_aid (aid_t) { }
   void system_scheduler::clear_current_aid () { }
-
-  void system_scheduler::init (const aid_t automaton) {
-    tss.m_init_automaton = automaton;
-  }
   
   void system_scheduler::create_key_exists (const aid_t automaton,
 					    void* const key) {

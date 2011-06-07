@@ -1,9 +1,8 @@
 #ifndef __action_hpp__
 #define __action_hpp__
 
-#include <cstddef>
-#include <utility>
 #include <ioa/automaton_handle.hpp>
+#include <utility>
 
 namespace ioa {
 
@@ -82,8 +81,12 @@ namespace ioa {
     typedef event_category action_category;
   };
 
-  struct system_input : public no_value, public no_parameter {
+  struct system_input : public no_parameter {
     typedef system_input_category action_category;
+  };
+
+  struct system_output : public no_parameter {
+    typedef system_output_category action_category;
   };
 
   /*
@@ -429,6 +432,49 @@ namespace ioa {
       return false;
     }
 
+  };
+
+  template <class I, class M, typename VT>
+  class action_impl<system_input_category, I, M, valued, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  private:
+    VT m_value;
+
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+		 M I::*ptr,
+		 const VT& value) :
+      action_core<I, M> (a, ptr),
+      m_value (value)
+    { }
+
+    void operator() (I& i) const {
+      (i.*this->member_ptr) (m_value);
+    }
+
+    // System inputs are unique (like events).
+    virtual bool operator== (const action_interface& x) const {
+      return false;
+    }
+
+  };
+
+  template <class I, class M, class VT>
+  class action_impl<system_output_category, I, M, valued, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+  		 M I::*ptr) :
+      action_core<I, M> (a, ptr)
+    { }
+
+    std::pair<bool, VT> operator() (I& i) const {
+      return (i.*this->member_ptr) ();
+    }
   };
 
   template <class I, class M>

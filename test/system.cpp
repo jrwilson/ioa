@@ -7,22 +7,20 @@
 #include "instance_holder.hpp"
 #include "test_system_scheduler.hpp"
 
-ioa::aid_t create (std::auto_ptr<ioa::generator_interface> generator) {
+ioa::aid_t create (ioa::shared_ptr<ioa::generator_interface> generator) {
   tss.reset ();
   ioa::aid_t handle = ioa::system::create (generator);
   assert (handle != -1);
-  assert (tss.m_init_automaton == handle);
 
   return handle;
 }
 
 ioa::aid_t create (const ioa::aid_t creator,
-		   std::auto_ptr<ioa::generator_interface> generator,
+		   ioa::shared_ptr<ioa::generator_interface> generator,
 		   void* const key) {
   tss.reset ();
   ioa::aid_t handle = ioa::system::create (creator, generator, key);
   assert (handle != -1);
-  assert (tss.m_init_automaton == handle);
   assert (tss.m_automaton_created_automaton == creator);
   assert (tss.m_automaton_created_key == key);
   assert (tss.m_automaton_created_child == handle);
@@ -91,8 +89,8 @@ instance_exists ()
   ioa::system::clear ();
 
   automaton1* instance2 = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder2 (new instance_holder<automaton1> (instance2));
-  std::auto_ptr<ioa::generator_interface> holder3 (new instance_holder<automaton1> (instance2));
+  ioa::shared_ptr<ioa::generator_interface> holder2 (new instance_holder<automaton1> (instance2));
+  ioa::shared_ptr<ioa::generator_interface> holder3 (new instance_holder<automaton1> (instance2));
 
   ioa::aid_t creator = create (ioa::make_generator<automaton1> ());
 
@@ -120,7 +118,6 @@ automaton_created ()
   int key;
   ioa::aid_t handle = ioa::system::create (creator, ioa::make_generator<automaton1> (), &key);
   mu_assert (handle != -1);
-  mu_assert (tss.m_init_automaton == handle);
   mu_assert (tss.m_automaton_created_automaton == creator);
   mu_assert (tss.m_automaton_created_key == &key);
   mu_assert (tss.m_automaton_created_child == handle);
@@ -349,7 +346,7 @@ bound ()
   ioa::automaton_handle<automaton1> output = create (ioa::make_generator<automaton1> ());
 
   automaton1* instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (instance));
+  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> input = create (holder);
 
@@ -566,7 +563,7 @@ execute_output ()
   ioa::system::clear ();
   
   automaton1* output_instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
+  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (holder);
 
@@ -598,7 +595,7 @@ execute_internal ()
   ioa::system::clear ();
   
   automaton1* output_instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
+  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (holder);
 
@@ -642,7 +639,7 @@ event_delivered ()
   ioa::system::clear ();
   
   automaton1* event_instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (event_instance));
+  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (event_instance));
 
   ioa::automaton_handle<automaton1> from = create (ioa::make_generator<automaton1> ());
   ioa::automaton_handle<automaton1> to = create (holder);
