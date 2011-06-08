@@ -34,9 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = asynch_lcr$(EXEEXT) clock_213$(EXEEXT) \
-	count_to_ten$(EXEEXT) file_reader$(EXEEXT) \
-	peterson_leader$(EXEEXT) slow_count$(EXEEXT)
+noinst_PROGRAMS = clock_213$(EXEEXT) count_to_ten$(EXEEXT) \
+	slow_count$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -51,30 +50,21 @@ CONFIG_HEADER = $(top_builddir)/include/ioa/config.hpp
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_asynch_lcr_OBJECTS = asynch_lcr.$(OBJEXT)
-asynch_lcr_OBJECTS = $(am_asynch_lcr_OBJECTS)
-asynch_lcr_LDADD = $(LDADD)
-asynch_lcr_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_clock_213_OBJECTS = clock_213.$(OBJEXT)
 clock_213_OBJECTS = $(am_clock_213_OBJECTS)
 clock_213_LDADD = $(LDADD)
-clock_213_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+clock_213_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+	$(top_builddir)/lib/libueioa_simple_scheduler.la
 am_count_to_ten_OBJECTS = count_to_ten.$(OBJEXT)
 count_to_ten_OBJECTS = $(am_count_to_ten_OBJECTS)
 count_to_ten_LDADD = $(LDADD)
-count_to_ten_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_file_reader_OBJECTS = file_reader.$(OBJEXT)
-file_reader_OBJECTS = $(am_file_reader_OBJECTS)
-file_reader_LDADD = $(LDADD)
-file_reader_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
-am_peterson_leader_OBJECTS = peterson_leader.$(OBJEXT)
-peterson_leader_OBJECTS = $(am_peterson_leader_OBJECTS)
-peterson_leader_LDADD = $(LDADD)
-peterson_leader_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+count_to_ten_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+	$(top_builddir)/lib/libueioa_simple_scheduler.la
 am_slow_count_OBJECTS = slow_count.$(OBJEXT)
 slow_count_OBJECTS = $(am_slow_count_OBJECTS)
 slow_count_LDADD = $(LDADD)
-slow_count_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+slow_count_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+	$(top_builddir)/lib/libueioa_simple_scheduler.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/ioa
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -88,12 +78,10 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
-	$(count_to_ten_SOURCES) $(file_reader_SOURCES) \
-	$(peterson_leader_SOURCES) $(slow_count_SOURCES)
-DIST_SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
-	$(count_to_ten_SOURCES) $(file_reader_SOURCES) \
-	$(peterson_leader_SOURCES) $(slow_count_SOURCES)
+SOURCES = $(clock_213_SOURCES) $(count_to_ten_SOURCES) \
+	$(slow_count_SOURCES)
+DIST_SOURCES = $(clock_213_SOURCES) $(count_to_ten_SOURCES) \
+	$(slow_count_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -216,12 +204,17 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
-LDADD = $(top_builddir)/lib/libueioa.la
-asynch_lcr_SOURCES = asynch_lcr.cpp
+LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_scheduler.la
+
+# asynch_lcr \
+# file_reader \
+# peterson_leader
+
+# asynch_lcr_SOURCES = asynch_lcr.cpp
 clock_213_SOURCES = clock_213.cpp
 count_to_ten_SOURCES = count_to_ten.cpp
-file_reader_SOURCES = file_reader.cpp
-peterson_leader_SOURCES = peterson_leader.cpp
+# file_reader_SOURCES = file_reader.cpp
+# peterson_leader_SOURCES = peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
 all: all-am
 
@@ -266,21 +259,12 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-asynch_lcr$(EXEEXT): $(asynch_lcr_OBJECTS) $(asynch_lcr_DEPENDENCIES) 
-	@rm -f asynch_lcr$(EXEEXT)
-	$(CXXLINK) $(asynch_lcr_OBJECTS) $(asynch_lcr_LDADD) $(LIBS)
 clock_213$(EXEEXT): $(clock_213_OBJECTS) $(clock_213_DEPENDENCIES) 
 	@rm -f clock_213$(EXEEXT)
 	$(CXXLINK) $(clock_213_OBJECTS) $(clock_213_LDADD) $(LIBS)
 count_to_ten$(EXEEXT): $(count_to_ten_OBJECTS) $(count_to_ten_DEPENDENCIES) 
 	@rm -f count_to_ten$(EXEEXT)
 	$(CXXLINK) $(count_to_ten_OBJECTS) $(count_to_ten_LDADD) $(LIBS)
-file_reader$(EXEEXT): $(file_reader_OBJECTS) $(file_reader_DEPENDENCIES) 
-	@rm -f file_reader$(EXEEXT)
-	$(CXXLINK) $(file_reader_OBJECTS) $(file_reader_LDADD) $(LIBS)
-peterson_leader$(EXEEXT): $(peterson_leader_OBJECTS) $(peterson_leader_DEPENDENCIES) 
-	@rm -f peterson_leader$(EXEEXT)
-	$(CXXLINK) $(peterson_leader_OBJECTS) $(peterson_leader_LDADD) $(LIBS)
 slow_count$(EXEEXT): $(slow_count_OBJECTS) $(slow_count_DEPENDENCIES) 
 	@rm -f slow_count$(EXEEXT)
 	$(CXXLINK) $(slow_count_OBJECTS) $(slow_count_LDADD) $(LIBS)
@@ -291,11 +275,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asynch_lcr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_213.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/count_to_ten.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_reader.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/peterson_leader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slow_count.Po@am__quote@
 
 .cpp.o:

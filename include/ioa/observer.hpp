@@ -15,11 +15,12 @@ namespace ioa {
     std::set<observable*> m_observables;
 
     friend class observable;
-    void stop_observing (observable* o);
+    void stop_observing_dispatcher (observable* o);
 
   public:
     virtual ~observer ();
-    virtual void observe () = 0;
+    virtual void observe (observable* o) = 0;
+    virtual void stop_observing (observable* o);
     void add_observable (observable* o);
     void remove_observable (observable* o);
   };

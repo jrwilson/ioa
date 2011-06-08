@@ -20,7 +20,8 @@ private:
   V_UP_OUTPUT (automaton2, v_up_output, int) { return std::pair<bool, int> (); }
   V_P_OUTPUT (automaton2, v_p_output, int, float, pole) { m_pole += pole; return std::pair<bool, int> (); }
 
-  UP_INTERNAL (automaton2, up_internal) { }
+  DECLARE_UP_INTERNAL (automaton2, up_internal);
+
   P_INTERNAL (automaton2, p_internal, float, pole) { m_pole += pole; }
   
   UV_UP_INPUT (automaton2, uv_up_input2) { }
@@ -34,11 +35,12 @@ public:
     ACTION (automaton2, uv_p_output),
     ACTION (automaton2, v_up_output),
     ACTION (automaton2, v_p_output),
-    ACTION (automaton2, up_internal),
     ACTION (automaton2, p_internal),
     ACTION (automaton2, uv_up_input2)
   { }
 
 };
+
+DEFINE_UP_INTERNAL (automaton2, up_internal) { }
 
 #endif

@@ -15,7 +15,7 @@ private:
   automaton2* m_instance;
 
    struct helper :
-    public ioa::automaton_helper_interface
+    public ioa::system_automaton_helper_interface
   {
     automaton2* m_instance;
 
@@ -69,7 +69,7 @@ class create_automaton_created :
 private:
 
   struct helper :
-    public ioa::automaton_helper_interface
+    public ioa::system_automaton_helper_interface
   {
     ioa::shared_ptr<ioa::generator_interface> get_generator () const {
       return ioa::make_generator<automaton2> ();
@@ -114,7 +114,7 @@ private:
 
   template <class OI, class OM, class IH, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename IH::instance II;
@@ -178,7 +178,7 @@ private:
       assert (false);
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_input_handle = m_input_helper->get_handle ();
       m_automaton.bind (this);
     }
@@ -188,7 +188,7 @@ public:
   
   bind_output_automaton_dne ()
   {
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<automaton2, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
@@ -211,7 +211,7 @@ private:
 
   template <class OH, class OM, class II, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -275,7 +275,7 @@ private:
       assert (false);
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_automaton.bind (this);
     }
@@ -285,7 +285,7 @@ public:
   
   bind_input_automaton_dne ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, automaton2, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, &automaton2::uv_up_input);
   }
 };
@@ -308,7 +308,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -383,7 +383,7 @@ private:
       delete this;
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_input_handle = m_input_helper->get_handle ();
       if (m_output_handle != -1 && m_input_handle != -1) {
@@ -396,8 +396,8 @@ public:
   
   bind_binding_exists ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
@@ -421,7 +421,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -496,7 +496,7 @@ private:
       delete this;
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_input_handle = m_input_helper->get_handle ();
       if (m_output_handle != -1 && m_input_handle != -1) {
@@ -509,9 +509,9 @@ public:
   
   bind_input_action_unavailable ()
   {
-    ioa::automaton_helper<automaton2>* m_output1 = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_output2 = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output1 = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output2 = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output1, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output2, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
@@ -535,7 +535,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -610,7 +610,7 @@ private:
       delete this;
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_input_handle = m_input_helper->get_handle ();
       if (m_output_handle != -1 && m_input_handle != -1) {
@@ -623,8 +623,8 @@ public:
   
   bind_output_action_unavailable ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input2_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input2);
   }
@@ -648,7 +648,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -722,7 +722,7 @@ private:
       delete this;
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_input_handle = m_input_helper->get_handle ();
       if (m_output_handle != -1 && m_input_handle != -1) {
@@ -735,8 +735,8 @@ public:
   
   bind_bound ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
@@ -759,7 +759,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -836,7 +836,7 @@ private:
       delete this;
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_input_handle = m_input_helper->get_handle ();
       if (m_output_handle != -1 && m_input_handle != -1) {
@@ -847,27 +847,28 @@ private:
 
   helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type>* m_helper;
 
-  UP_INTERNAL (bind_unbound, poll) {
-    // We poll until the automaton is created.  Then we destroy it.
-    if (!m_helper->is_bound) {
-      ioa::scheduler::schedule (&bind_unbound::poll);
-    }
-    else {
-      unbind (m_helper);
-    }
-  }
+  DECLARE_UP_INTERNAL (bind_unbound, poll);
 
 public:
   
-  bind_unbound () :
-    ACTION (bind_unbound, poll)
+  bind_unbound ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     m_helper = new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     ioa::scheduler::schedule (&bind_unbound::poll);
   }
 };
+
+DEFINE_UP_INTERNAL (bind_unbound, poll) {
+  // We poll until the automaton is created.  Then we destroy it.
+  if (!m_helper->is_bound) {
+    ioa::scheduler::schedule (&bind_unbound::poll);
+  }
+  else {
+    unbind (m_helper);
+  }
+}
 
 static const char*
 unbound ()
@@ -887,7 +888,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   class helper :
-    public ioa::bind_helper_interface,
+    public ioa::system_bind_helper_interface,
     public ioa::observer
   {
   public:
@@ -963,7 +964,7 @@ private:
       delete this;
     }
 
-    void observe () {
+    void observe (ioa::observable*) {
       m_output_handle = m_output_helper->get_handle ();
       m_input_handle = m_input_helper->get_handle ();
       if (m_output_handle != -1 && m_input_handle != -1) {
@@ -977,8 +978,8 @@ public:
   
   bind_unbound2 ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
@@ -1000,7 +1001,7 @@ class destroy_automaton_destroyed :
 private:
 
   struct helper :
-    public ioa::automaton_helper_interface
+    public ioa::system_automaton_helper_interface
   {
     bool created;
 
@@ -1029,25 +1030,26 @@ private:
 
   helper* m_helper;
 
-  UP_INTERNAL (destroy_automaton_destroyed, poll) {
-    // We poll until the automaton is created.  Then we destroy it.
-    if (!m_helper->created) {
-      ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
-    }
-    else {
-      destroy (m_helper);
-    }
-  }
+  DECLARE_UP_INTERNAL (destroy_automaton_destroyed, poll);
 
 public:  
   destroy_automaton_destroyed () :
-    m_helper (new helper ()),
-    ACTION (destroy_automaton_destroyed, poll)
+    m_helper (new helper ())
   {
     create (m_helper);
     ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
   }
 };
+
+DEFINE_UP_INTERNAL (destroy_automaton_destroyed, poll) {
+  // We poll until the automaton is created.  Then we destroy it.
+  if (!m_helper->created) {
+    ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
+  }
+  else {
+    destroy (m_helper);
+  }
+}
 
 static const char*
 automaton_destroyed ()
@@ -1066,7 +1068,7 @@ class destroy_automaton_destroyed2 :
 private:
 
   struct helper :
-    public ioa::automaton_helper_interface
+    public ioa::system_automaton_helper_interface
   {
     ioa::shared_ptr<ioa::generator_interface> get_generator () const {
       return ioa::make_generator<automaton2> ();

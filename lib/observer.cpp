@@ -13,10 +13,15 @@ namespace ioa {
     }
   }
 
-  void observer::stop_observing (observable* o) {
+  void observer::stop_observing_dispatcher (observable* o) {
     // Observable is going away.
-    m_observables.erase (o);
+    if (m_observables.count (o) != 0) {
+      m_observables.erase (o);
+      stop_observing (o);
+    }
   }
+
+  void observer::stop_observing (observable*) { }
 
   void observer::add_observable (observable* o) {
     assert (o != 0);
@@ -40,7 +45,7 @@ namespace ioa {
     for (std::set<observer*>::const_iterator pos = m_observers.begin ();
 	 pos != m_observers.end ();
 	 ++pos) {
-      (*pos)->observe ();
+      (*pos)->observe (this);
     }
     m_notify = false;
 
@@ -61,7 +66,7 @@ namespace ioa {
     for (std::set<observer*>::const_iterator pos = m_observers.begin ();
 	 pos != m_observers.end ();
 	 ++pos) {
-      (*pos)->stop_observing (this);
+      (*pos)->stop_observing_dispatcher (this);
     }
   }
   

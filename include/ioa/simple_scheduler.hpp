@@ -163,7 +163,7 @@ namespace ioa {
     template <class I, class M>
     static void schedule (M I::*member_ptr,
   			  time offset) {
-      schedule_timerq (make_action_runnable (make_action (get_current_aid (), member_ptr)), offset);
+      schedule_timerq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), offset);
     }
     
     static void run (shared_ptr<generator_interface> generator);

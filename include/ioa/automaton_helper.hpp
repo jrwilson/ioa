@@ -7,25 +7,34 @@
 namespace ioa {
 
   template <class I>
-  class automaton_helper :
-    public automaton_helper_interface,
+  class automaton_helper_interface :
     public observable
+  {
+  public:
+    virtual ~automaton_helper_interface () { }
+    virtual automaton_handle<I> get_handle () const = 0;
+  };
+  
+  template <class I>
+  class automaton_helper :
+    public system_automaton_helper_interface,
+    public automaton_helper_interface<I>
   {
   public:
     typedef I instance;
 
   private:
-    automaton_interface& m_automaton;
+    automaton_interface* m_automaton;
     shared_ptr<generator_interface> m_generator;
     automaton_handle<I> m_handle;
 
   public:
-    automaton_helper (automaton_interface& automaton,
+    automaton_helper (automaton_interface* automaton,
 		      shared_ptr<generator_interface> generator) :
       m_automaton (automaton),
       m_generator (generator)
     {
-      m_automaton.create (this);
+      m_automaton->create (this);
     }
 
   private:
@@ -35,7 +44,7 @@ namespace ioa {
   public:
 
     void destroy () {
-      m_automaton.destroy (this);
+      m_automaton->destroy (this);
     }
 
     shared_ptr<generator_interface> get_generator () const {
@@ -48,7 +57,7 @@ namespace ioa {
 
     void automaton_created (const aid_t aid) {
       m_handle = aid;
-      notify_observers ();
+      this->notify_observers ();
     }
 
     void automaton_destroyed () {

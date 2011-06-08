@@ -3,35 +3,43 @@
 */
 
 #include <ioa.hpp>
-#include <ioa/simple_scheduler.hpp>
 
-#include <cstdlib>
 #include <iostream>
 
 class count_to_ten :
-  public ioa::dispatching_automaton
+  public ioa::automaton_interface
 {
 private:
   int m_count;
 
-  UP_INTERNAL (count_to_ten, increment) {
-    ++m_count;
-    std::cout << m_count << std::endl;
-    if (m_count < 10) {
-      ioa::scheduler::schedule (this, &count_to_ten::increment);
+  bool increment_precondition () const {
+    return m_count <= 10;
+  }
+
+  DECLARE_UP_INTERNAL (count_to_ten, increment);
+
+  void schedule () const {
+    if (increment_precondition ()) {
+      ioa::scheduler::schedule (&count_to_ten::increment);
     }
   }
 
 public:
-  count_to_ten ()
-    : m_count (0),
-      ACTION (count_to_ten, increment)
-  { }
-
-  void init () {
-    ioa::scheduler::schedule (this, &count_to_ten::increment);
+  count_to_ten () :
+    m_count (1)
+  {
+    schedule ();
   }
 };
+
+DEFINE_UP_INTERNAL (count_to_ten, increment) {
+  std::cout << m_count << std::endl;
+  if (increment_precondition ()) {
+    ++m_count;
+  }
+  
+  schedule ();
+}
 
 int
 main () {
