@@ -35,7 +35,7 @@ private:
     else {
       // Do nothing.
     }
-    
+
     schedule ();
   }
 

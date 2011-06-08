@@ -40,7 +40,7 @@ namespace ioa {
     static void destroy (const C* ptr,
 			 const automaton_handle<I>& automaton,
 			 D& d);
-    
+
     template <class I, class M>
     static void schedule (const I* ptr,
 			  M I::*member_ptr);
@@ -48,8 +48,13 @@ namespace ioa {
     template <class I, class M>
     static void schedule (const I* ptr,
 			  M I::*member_ptr,
+			  const typename M::parameter_type & param);
+
+    template <class I, class M>
+    static void schedule (const I* ptr,
+			  M I::*member_ptr,
 			  time offset);
-    
+
     template <class I>
     static void run (std::auto_ptr<generator_interface<I> > generator);
   };

@@ -36,7 +36,8 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = asynch_lcr$(EXEEXT) clock_213$(EXEEXT) \
 	count_to_ten$(EXEEXT) file_reader$(EXEEXT) \
-	peterson_leader$(EXEEXT) slow_count$(EXEEXT)
+	peterson_leader$(EXEEXT) slow_count$(EXEEXT) \
+	spanning_tree$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -75,6 +76,10 @@ am_slow_count_OBJECTS = slow_count.$(OBJEXT)
 slow_count_OBJECTS = $(am_slow_count_OBJECTS)
 slow_count_LDADD = $(LDADD)
 slow_count_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+am_spanning_tree_OBJECTS = spanning_tree.$(OBJEXT)
+spanning_tree_OBJECTS = $(am_spanning_tree_OBJECTS)
+spanning_tree_LDADD = $(LDADD)
+spanning_tree_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/ioa
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -90,10 +95,12 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
 	$(count_to_ten_SOURCES) $(file_reader_SOURCES) \
-	$(peterson_leader_SOURCES) $(slow_count_SOURCES)
+	$(peterson_leader_SOURCES) $(slow_count_SOURCES) \
+	$(spanning_tree_SOURCES)
 DIST_SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
 	$(count_to_ten_SOURCES) $(file_reader_SOURCES) \
-	$(peterson_leader_SOURCES) $(slow_count_SOURCES)
+	$(peterson_leader_SOURCES) $(slow_count_SOURCES) \
+	$(spanning_tree_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -223,6 +230,7 @@ count_to_ten_SOURCES = count_to_ten.cpp
 file_reader_SOURCES = file_reader.cpp
 peterson_leader_SOURCES = peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
+spanning_tree_SOURCES = spanning_tree.cpp
 all: all-am
 
 .SUFFIXES:
@@ -284,6 +292,9 @@ peterson_leader$(EXEEXT): $(peterson_leader_OBJECTS) $(peterson_leader_DEPENDENC
 slow_count$(EXEEXT): $(slow_count_OBJECTS) $(slow_count_DEPENDENCIES) 
 	@rm -f slow_count$(EXEEXT)
 	$(CXXLINK) $(slow_count_OBJECTS) $(slow_count_LDADD) $(LIBS)
+spanning_tree$(EXEEXT): $(spanning_tree_OBJECTS) $(spanning_tree_DEPENDENCIES) 
+	@rm -f spanning_tree$(EXEEXT)
+	$(CXXLINK) $(spanning_tree_OBJECTS) $(spanning_tree_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -297,6 +308,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_reader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/peterson_leader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slow_count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spanning_tree.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

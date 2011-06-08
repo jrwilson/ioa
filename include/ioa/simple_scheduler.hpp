@@ -46,7 +46,7 @@ namespace ioa {
 	  runnable* r = runq.pop ();
 	    // Do something with runnable and delete it.
   	  }
-	  
+
   	  It is possible that keep_going () was true to enable the loop but becomes false immediatley before calling runq.pop ().
   	  Since there are no runnables and no runnables will be produced, the thread will block forever.
   	  Consequenty, we push a sentinel value to unblock the processing threads.
@@ -57,11 +57,11 @@ namespace ioa {
       }
       return retval;
     }
-    
+
     static void schedule_sysq (runnable_interface* r) {
       m_sysq.push (std::make_pair (true, r));
     }
-    
+
     static void process_sysq () {
       clear_current_aid ();
       while (thread_keep_going ()) {
@@ -76,11 +76,11 @@ namespace ioa {
     struct action_runnable_equal
     {
       const action_runnable_interface* m_ptr;
-      
+
       action_runnable_equal (const action_runnable_interface* ptr) :
   	m_ptr (ptr)
       { }
-      
+
       bool operator() (const std::pair<bool, action_runnable_interface*>& x) const {
   	if (x.first) {
   	  return (*m_ptr) == (*x.second);
@@ -90,7 +90,7 @@ namespace ioa {
   	}
       }
     };
-    
+
     static void schedule_execq (action_runnable_interface* r) {
       /*
   	Imagine an automaton with with an internal action that does nothing but schedule itself twice.
@@ -124,7 +124,7 @@ namespace ioa {
   	delete r;
       }
     }
-    
+
     static void process_execq () {
       clear_current_aid ();
       while (thread_keep_going ()) {
@@ -148,22 +148,22 @@ namespace ioa {
       assert (s == 0);
       time release_time (now);
       release_time += offset;
-      
+
       // TODO:  Only wake thread if the queue goes from empty to non-empty.
       m_timerq.push (std::make_pair (r, release_time));
       wakeup_timer_thread ();
     }
-    
+
     static void process_timerq () {
       clear_current_aid ();
-      
+
       int r;
-      
+
       std::priority_queue<action_time,
 			  std::vector<action_time>,
 			  std::greater<action_time> > timer_queue;
       fd_set read_set;
-      
+
       while (thread_keep_going ()) {
 	// Process registrations.
 	{
@@ -173,25 +173,25 @@ namespace ioa {
 	    m_timerq.list.pop_front ();
 	  }
 	}
-	
+
 	struct timeval n;
 	r = gettimeofday (&n, 0);
 	assert (r == 0);
 	time now (n);
-	
+
 	while (!timer_queue.empty () && timer_queue.top ().second < now) {
 	  schedule_execq (timer_queue.top ().first);
 	  timer_queue.pop ();
 	}
-	
+
 	struct timeval timeout;
 	struct timeval* test_timeout = 0;
-	
+
 	if (!timer_queue.empty ()) {
 	  timeout = timer_queue.top ().second - now;
 	  test_timeout = &timeout;
 	}
-	
+
 	// TODO: Do better than FD_SETSIZE.
 	// TODO: Don't ZERO every time.
 	FD_ZERO (&read_set);
@@ -210,16 +210,16 @@ namespace ioa {
 	}
       }
     }
-    
+
   public:
-    
+
     static void set_current_aid (const aid_t aid) {
       // This is to be used during generation so that any allocated memory can be associated with the automaton.
       assert (aid != -1);
       m_current_aid.set (aid);
       m_current_this.set (0);
     }
-    
+
     static void set_current_aid (const aid_t aid,
 				 const automaton_interface& current_this) {
       // This is for all cases except generation.
@@ -228,27 +228,27 @@ namespace ioa {
       m_current_aid.set (aid);
       m_current_this.set (&current_this);
     }
-    
+
     static void clear_current_aid () {
       m_current_aid.set (-1);
       m_current_this.set (0);
     }
-    
+
     template <class I>
     static automaton_handle<I> get_current_aid (const I* ptr) {
       // The system uses set_current_aid to alert the scheduler that the code that is executing belongs to the given automaton.
       // When the automaton invokes the scheduler, this ID is used in the production of the corresponding runnable.
       // To be type-safe, we require an automaton_handle<T> instead of an aid_t.
       // This function (get_current_aid) is responsible for producing the handle.
-      
+
       // First, we check that set_current_aid was called.
       assert (m_current_aid.get () != -1);
       assert (m_current_this.get () != 0);
-      
+
       // Second, we need to make sure that the user didn't inappropriately cast "this."
       const I* tmp = dynamic_cast<const I*> (m_current_this.get ());
       assert (tmp == ptr);
-      
+
       return system::cast_aid (ptr, m_current_aid.get ());
     }
 
@@ -258,7 +258,7 @@ namespace ioa {
 			D& d) {
       schedule_sysq (make_create_runnable (get_current_aid (ptr), generator, d));
     }
-    
+
     template <class C, class OI, class OM, class II, class IM, class D>
     static void bind (const C* ptr,
 		      const action<OI, OM>& output_action,
@@ -266,25 +266,32 @@ namespace ioa {
 		      D& d) {
       schedule_sysq (make_bind_runnable (output_action, input_action, get_current_aid (ptr), d));
     }
-    
+
     template <class C, class D>
     static void unbind (const C* ptr,
 			const bid_t bid,
 			D& d) {
       schedule_sysq (make_unbind_runnable (bid, get_current_aid (ptr), d));
     }
-    
+
     template <class C, class I, class D>
     static void destroy (const C* ptr,
 			 const automaton_handle<I>& automaton,
 			 D& d) {
       schedule_sysq (make_destroy_runnable (get_current_aid (ptr), automaton, d));
     }
-  
+
     template <class I, class M>
     static void schedule (const I* ptr,
   			  M I::*member_ptr) {
       schedule_execq (make_action_runnable (make_action (get_current_aid (ptr), member_ptr)));
+    }
+
+    template <class I, class M>
+    static void schedule (const I* ptr,
+                          M I::*member_ptr,
+                          const typename M::parameter_type & param) {
+      schedule_execq (make_action_runnable (make_action (get_current_aid (ptr), member_ptr, param)));
     }
 
     template <class I, class M>
@@ -297,12 +304,12 @@ namespace ioa {
     template <class I>
     static void run (std::auto_ptr<generator_interface<I> > generator) {
       int r;
-      
+
       assert (m_sysq.list.size () == 0);
       assert (m_execq.list.size () == 0);
       assert (!keep_going ());
       system::create (generator);
-      
+
       // Create a pipe to communicate with the timer thread.
       r = pipe (m_wakeup_fd);
       assert (r == 0);
@@ -310,20 +317,20 @@ namespace ioa {
       assert (r == 0);
       r = fcntl (m_wakeup_fd[1], F_SETFL, O_NONBLOCK);
       assert (r == 0);
-      
+
       thread sysq_thread (&simple_scheduler::process_sysq);
       thread execq_thread (&simple_scheduler::process_execq);
       thread timerq_thread (&simple_scheduler::process_timerq);
-      
+
       sysq_thread.join ();
       execq_thread.join ();
       timerq_thread.join ();
-      
+
       // TODO:  Do I need to close both ends?
       close (m_wakeup_fd[0]);
       close (m_wakeup_fd[1]);
     }
-    
+
   };
 
   // Implement the system scheduler.
@@ -347,14 +354,14 @@ namespace ioa {
   automaton_handle<I> scheduler::get_current_aid (const I* ptr) {
     return simple_scheduler::get_current_aid (ptr);
   }
-  
+
   template <class C, class I, class D>
   void scheduler::create (const C* ptr,
 			  std::auto_ptr<generator_interface<I> > generator,
 			  D& d) {
     simple_scheduler::create (ptr, generator, d);
   }
-  
+
   template <class C, class OI, class OM, class II, class IM, class D>
   void scheduler::bind (const C* ptr,
 			const action<OI, OM>& output_action,
@@ -362,34 +369,41 @@ namespace ioa {
 			D& d) {
     simple_scheduler::bind (ptr, output_action, input_action, d);
   }
-  
+
   template <class C, class D>
   void scheduler::unbind (const C* ptr,
 			  const bid_t bid,
 			  D& d) {
     simple_scheduler::unbind (ptr, bid, d);
   }
-  
+
   template <class C, class I, class D>
   void scheduler::destroy (const C* ptr,
 			   const automaton_handle<I>& automaton,
 			   D& d) {
     simple_scheduler::destroy (ptr, automaton, d);
   }
-  
+
   template <class I, class M>
   void scheduler::schedule (const I* ptr,
 			    M I::*member_ptr) {
     simple_scheduler::schedule (ptr, member_ptr);
   }
-  
+
+  template <class I, class M>
+  void scheduler::schedule (const I* ptr,
+			    M I::*member_ptr,
+          const typename M::parameter_type & p) {
+    simple_scheduler::schedule (ptr, member_ptr, p);
+  }
+
   template <class I, class M>
   void scheduler::schedule (const I* ptr,
 			    M I::*member_ptr,
 			    time offset) {
     simple_scheduler::schedule (ptr, member_ptr, offset);
   }
-  
+
   template <class I>
   void scheduler::run (std::auto_ptr<generator_interface<I> > generator) {
     simple_scheduler::run (generator);
@@ -424,7 +438,7 @@ namespace ioa {
   //     assert (m_execq.list.size () == 0);
   //     assert (!keep_going ());
   //   }
-            
+
   // };
 
 }

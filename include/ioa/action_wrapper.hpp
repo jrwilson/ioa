@@ -17,7 +17,7 @@ namespace ioa {
     C& m_c;
     void (C::*m_member_function_ptr)();
     bool m_bind_status;
-    
+
   public:
     uv_up_input_wrapper (C& c,
 			 void (C::*member_function_ptr) (),
@@ -26,7 +26,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr),
       m_bind_status (false)
     { }
-    
+
     void operator() () {
       (m_c.*m_member_function_ptr) ();
     }
@@ -47,7 +47,7 @@ namespace ioa {
 
   };
 
-  template <class C, class P>
+  template <class C, typename P>
   class uv_p_input_wrapper :
     public input,
     public no_value,
@@ -58,7 +58,7 @@ namespace ioa {
     C& m_c;
     void (C::*m_member_function_ptr) (P);
     std::set<P> m_parameters;
-    
+
   public:
     uv_p_input_wrapper (C& c,
 			void (C::*member_function_ptr)(P),
@@ -66,11 +66,11 @@ namespace ioa {
       m_c (c),
       m_member_function_ptr (member_function_ptr)
     { }
-    
+
     void operator() (P p) {
       (m_c.*m_member_function_ptr) (p);
     }
-    
+
     void bound (P p) {
       m_parameters.insert (p);
       notify_observers ();
@@ -81,12 +81,12 @@ namespace ioa {
       notify_observers ();
     }
 
-    void is_bound (P p) const {
+    bool is_bound (P p) const {
       return m_parameters.count (p) != 0;
     }
   };
 
-  template <class C, class T>
+  template <class C, typename T>
   class v_up_input_wrapper :
     public input,
     public value<T>,
@@ -97,7 +97,7 @@ namespace ioa {
     C& m_c;
     void (C::*m_member_function_ptr)(const T&);
     bool m_bind_status;
-    
+
   public:
     v_up_input_wrapper (C& c,
 			void (C::*member_function_ptr)(const T&),
@@ -106,11 +106,11 @@ namespace ioa {
  	m_member_function_ptr (member_function_ptr),
 	m_bind_status (false)
     { }
-    
+
     void operator() (const T& t) {
       (m_c.*m_member_function_ptr) (t);
     }
-    
+
     void bound () {
       m_bind_status = true;
       notify_observers ();
@@ -126,7 +126,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class P >
+  template <class C, typename T, typename P >
   class v_p_input_wrapper :
     public input,
     public value<T>,
@@ -137,7 +137,7 @@ namespace ioa {
     C& m_c;
     void (C::*m_member_function_ptr)(const T&, P);
     std::set<P> m_parameters;
-    
+
   public:
     v_p_input_wrapper (C& c,
 		       void (C::*member_function_ptr)(const T&, P),
@@ -145,11 +145,11 @@ namespace ioa {
       : m_c (c),
  	m_member_function_ptr (member_function_ptr)
     { }
-    
+
     void operator() (const T& t, P p) {
       (m_c.*m_member_function_ptr) (t, p);
     }
-    
+
     void bound (P p) {
       m_parameters.insert (p);
       notify_observers ();
@@ -160,7 +160,7 @@ namespace ioa {
       notify_observers ();
     }
 
-    void is_bound (P p) const {
+    bool is_bound (P p) const {
       return m_parameters.count (p) != 0;
     }
   };
@@ -177,7 +177,7 @@ namespace ioa {
     bool (C::*m_member_function_ptr)(void);
     uv_up_output_wrapper C::*m_member_object_ptr;
     bool m_bind_status;
-    
+
   public:
     uv_up_output_wrapper (C& c,
 			  bool (C::*member_function_ptr) (void),
@@ -187,7 +187,7 @@ namespace ioa {
       m_member_object_ptr (member_object_ptr),
       m_bind_status (false)
     { }
-    
+
     bool operator() () {
       return (m_c.*m_member_function_ptr) ();
     }
@@ -209,7 +209,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class P>
+  template <class C, typename P>
   class uv_p_output_wrapper :
     public output,
     public no_value,
@@ -221,7 +221,7 @@ namespace ioa {
     bool (C::*m_member_function_ptr)(P);
     uv_p_output_wrapper C::*m_member_object_ptr;
     std::set<P> m_parameters;
-    
+
   public:
     uv_p_output_wrapper (C& c,
 			 bool (C::*member_function_ptr) (P),
@@ -230,7 +230,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr),
       m_member_object_ptr (member_object_ptr)
     { }
-    
+
     bool operator() (P p) {
       return (m_c.*m_member_function_ptr) (p);
     }
@@ -247,12 +247,12 @@ namespace ioa {
       notify_observers ();
     }
 
-    void is_bound (P p) const {
+    bool is_bound (P p) const {
       return m_parameters.count (p) != 0;
     }
   };
 
-  template <class C, class T>
+  template <class C, typename T>
   class v_up_output_wrapper :
     public output,
     public value<T>,
@@ -264,7 +264,7 @@ namespace ioa {
     std::pair<bool, T> (C::*m_member_function_ptr)(void);
     v_up_output_wrapper C::*m_member_object_ptr;
     bool m_bind_status;
-    
+
   public:
     v_up_output_wrapper (C& c,
 			 std::pair<bool, T> (C::*member_function_ptr)(void),
@@ -274,18 +274,18 @@ namespace ioa {
       m_member_object_ptr (member_object_ptr),
       m_bind_status (false)
     { }
-    
+
     std::pair<bool, T> operator() () {
       return (m_c.*m_member_function_ptr) ();
     }
-    
+
     void bound () {
       m_bind_status = true;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (&m_c, m_member_object_ptr);
       notify_observers ();
     }
-    
+
     void unbound () {
       m_bind_status = false;
       notify_observers ();
@@ -296,7 +296,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class P>
+  template <class C, typename T, typename P>
   class v_p_output_wrapper :
     public output,
     public value<T>,
@@ -308,7 +308,7 @@ namespace ioa {
     std::pair<bool, T> (C::*m_member_function_ptr)(P);
     v_p_output_wrapper C::*m_member_object_ptr;
     std::set<P> m_parameters;
-    
+
   public:
     v_p_output_wrapper (C& c,
 			std::pair<bool, T> (C::*member_function_ptr)(P),
@@ -317,24 +317,24 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr),
       m_member_object_ptr (member_object_ptr)
     { }
-    
+
     std::pair<bool, T> operator() (P p) {
       return (m_c.*m_member_function_ptr) (p);
     }
-    
+
     void bound (P p) {
       m_parameters.insert (p);
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (&m_c, m_member_object_ptr, p);
       notify_observers ();
     }
-    
+
     void unbound (P p) {
       m_parameters.erase (p);
       notify_observers ();
     }
 
-    void is_bound (P p) const {
+    bool is_bound (P p) const {
       return m_parameters.count (p) != 0;
     }
 
@@ -348,7 +348,7 @@ namespace ioa {
   private:
     C& m_c;
     void (C::*m_member_function_ptr)();
-    
+
   public:
     up_internal_wrapper (C& c,
 			 void (C::*member_function_ptr)(),
@@ -356,13 +356,13 @@ namespace ioa {
       m_c (c),
       m_member_function_ptr (member_function_ptr)
     { }
-    
+
     void operator() () {
       (m_c.*m_member_function_ptr) ();
     }
   };
 
-  template <class C, class P>
+  template <class C, typename P>
   class p_internal_wrapper :
     public internal,
     public parameter<P>
@@ -370,7 +370,7 @@ namespace ioa {
   private:
     C& m_c;
     void (C::*m_member_function_ptr)(P);
-    
+
   public:
     p_internal_wrapper (C& c,
 			void (C::*member_function_ptr)(P),
@@ -378,7 +378,7 @@ namespace ioa {
       m_c (c),
       m_member_function_ptr (member_function_ptr)
     { }
-    
+
     void operator() (P p) {
       (m_c.*m_member_function_ptr) (p);
     }
@@ -392,7 +392,7 @@ namespace ioa {
   private:
     C& m_c;
     void (C::*m_member_function_ptr)();
-    
+
   public:
     uv_event_wrapper (C& c,
 		      void (C::*member_function_ptr)(),
@@ -400,7 +400,7 @@ namespace ioa {
       m_c (c),
       m_member_function_ptr (member_function_ptr)
     { }
-    
+
     void operator() () {
       (m_c.*m_member_function_ptr) ();
     }

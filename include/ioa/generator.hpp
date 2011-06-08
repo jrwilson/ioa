@@ -5,18 +5,18 @@
 #include <ioa/generator_interface.hpp>
 
 namespace ioa {
-  
+
   /*
     Utility classes for generators of 0 and 1 arguments.
     TODO:  Define generators for N arguments.
   */
-  
+
   template <class T>
   struct generator :
     public generator_interface<T>
   {
     typedef T result_type;
-    
+
     T* operator() () {
       return new T ();
     }
@@ -26,26 +26,74 @@ namespace ioa {
   std::auto_ptr<ioa::generator_interface<I> > make_generator () {
     return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator<I> ());
   }
-  
-  template <class T, class A0>
+
+  template <class T, typename A0>
   struct generator1 :
     public generator_interface<T>
   {
     typedef T result_type;
     A0 m_a0;
-    
+
     generator1 (A0 a0) :
       m_a0 (a0)
     { }
-    
+
     T* operator() () {
       return new T (m_a0);
     }
   };
 
-  template <class I, class A0>
+  template <class I, typename A0>
   std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0) {
     return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator1<I, A0> (a0));
+  }
+
+  template <class T, typename A0, typename A1>
+  struct generator2 :
+    public generator_interface<T>
+  {
+    typedef T result_type;
+    A0 m_a0;
+    A1 m_a1;
+
+    generator2 (A0 a0, A1 a1) :
+      m_a0 (a0),
+      m_a1 (a1)
+    { }
+
+    T* operator() () {
+      return new T (m_a0, m_a1);
+    }
+  };
+
+  template <class I, typename A0, typename A1>
+  std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0, A1 a1) {
+    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator2<I, A0, A1> (a0, a1));
+  }
+
+  template <class T, typename A0, typename A1, typename A2>
+  struct generator3 :
+    public generator_interface<T>
+  {
+    typedef T result_type;
+    A0 m_a0;
+    A1 m_a1;
+    A2 m_a2;
+
+    generator3 (A0 a0, A1 a1, A2 a2) :
+      m_a0 (a0),
+      m_a1 (a1),
+      m_a2 (a2)
+    { }
+
+    T* operator() () {
+      return new T (m_a0, m_a1, m_a2);
+    }
+  };
+
+  template <class I, typename A0, typename A1, typename A2>
+  std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0, A1 a1, A2 a2) {
+    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator3<I, A0, A1, A2> (a0, a1, a2));
   }
 
 }
