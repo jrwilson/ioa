@@ -27,7 +27,7 @@ namespace ioa {
       m_bind_status (false)
     { }
     
-    void operator() () {
+    void operator() (C&) {
       (m_c.*m_member_function_ptr) ();
     }
 
@@ -67,7 +67,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr)
     { }
     
-    void operator() (P p) {
+    void operator() (C&, P p) {
       (m_c.*m_member_function_ptr) (p);
     }
     
@@ -107,7 +107,7 @@ namespace ioa {
 	m_bind_status (false)
     { }
     
-    void operator() (const T& t) {
+    void operator() (C&, const T& t) {
       (m_c.*m_member_function_ptr) (t);
     }
     
@@ -146,7 +146,7 @@ namespace ioa {
  	m_member_function_ptr (member_function_ptr)
     { }
     
-    void operator() (const T& t, P p) {
+    void operator() (C&, const T& t, P p) {
       (m_c.*m_member_function_ptr) (t, p);
     }
     
@@ -188,7 +188,7 @@ namespace ioa {
       m_bind_status (false)
     { }
     
-    bool operator() () {
+    bool operator() (C&) {
       return (m_c.*m_member_function_ptr) ();
     }
 
@@ -231,7 +231,7 @@ namespace ioa {
       m_member_object_ptr (member_object_ptr)
     { }
     
-    bool operator() (P p) {
+    bool operator() (C&, P p) {
       return (m_c.*m_member_function_ptr) (p);
     }
 
@@ -275,7 +275,7 @@ namespace ioa {
       m_bind_status (false)
     { }
     
-    std::pair<bool, T> operator() () {
+    std::pair<bool, T> operator() (C&) {
       return (m_c.*m_member_function_ptr) ();
     }
     
@@ -318,7 +318,7 @@ namespace ioa {
       m_member_object_ptr (member_object_ptr)
     { }
     
-    std::pair<bool, T> operator() (P p) {
+    std::pair<bool, T> operator() (C&, P p) {
       return (m_c.*m_member_function_ptr) (p);
     }
     
@@ -357,7 +357,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr)
     { }
     
-    void operator() () {
+    void operator() (C&) {
       (m_c.*m_member_function_ptr) ();
     }
   };
@@ -379,7 +379,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr)
     { }
     
-    void operator() (P p) {
+    void operator() (C&, P p) {
       (m_c.*m_member_function_ptr) (p);
     }
   };
@@ -401,7 +401,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr)
     { }
     
-    void operator() () {
+    void operator() (C&) {
       (m_c.*m_member_function_ptr) ();
     }
   };

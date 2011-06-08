@@ -35,13 +35,26 @@ namespace ioa {
   }
 
   void observable::notify_observers () {
+    m_notify = true;
     // Notify the observers.
     for (std::set<observer*>::const_iterator pos = m_observers.begin ();
 	 pos != m_observers.end ();
 	 ++pos) {
       (*pos)->observe ();
     }
+    m_notify = false;
+
+    m_observers.insert (m_add.begin (), m_add.end ());
+    for (std::set<observer*>::const_iterator pos = m_remove.begin ();
+	 pos != m_remove.end ();
+	 ++pos) {
+      m_observers.erase (*pos);
+    }
   }
+
+  observable::observable () :
+    m_notify (false)
+  { }
 
   observable::~observable () {
     // Notify the observers.
@@ -54,11 +67,23 @@ namespace ioa {
   
   void observable::add_observer (observer* o) {
     assert (o != 0);
-    m_observers.insert (o);
+    if (m_notify) {
+      m_add.insert (o);
+      m_remove.erase (o);
+    }
+    else {
+      m_observers.insert (o);
+    }
   }
   
   void observable::remove_observer (observer* o) {
-    m_observers.erase (o);
+    if (m_notify) {
+      m_remove.insert (o);
+      m_add.erase (o);
+    }
+    else {
+      m_observers.erase (o);      
+    }
   }
 
 }

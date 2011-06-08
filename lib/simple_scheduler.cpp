@@ -248,7 +248,12 @@ namespace ioa {
 			       void* const key) {
     schedule_sysq (new bind_runnable (automaton, exec, key));
   }
-
+  
+  void simple_scheduler::unbind (const aid_t automaton,
+				 void* const key) {
+    schedule_sysq (new unbind_runnable (automaton, key));
+  }
+  
   void simple_scheduler::destroy (const aid_t automaton,
 				  void* const key) {
     schedule_sysq (new destroy_runnable (automaton, key));
@@ -355,6 +360,11 @@ namespace ioa {
 			       shared_ptr<bind_executor_interface> exec,
 			       void* const key) {
     simple_scheduler::bind (automaton, exec, key);
+  }
+
+  void system_scheduler::unbind (const aid_t automaton,
+				 void* const key) {
+    simple_scheduler::unbind (automaton, key);
   }
   
   void system_scheduler::destroy (const aid_t automaton,

@@ -28,6 +28,9 @@ namespace ioa {
 		      shared_ptr<bind_executor_interface> exec,
 		      void* const key);
 
+    static void unbind (const aid_t automaton,
+			void* const key);
+
     static void destroy (const aid_t automaton,
 			 void* const key);
 

@@ -73,9 +73,13 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libueioa_la_LIBADD =
 am_libueioa_la_OBJECTS = automaton_interface.lo automaton_record.lo \
 	condition_variable.lo lock.lo mutex.lo observer.lo \
-	runnable_interface.lo simple_scheduler.lo shared_lock.lo \
-	shared_mutex.lo system.lo thread.lo time.lo unique_lock.lo
+	runnable_interface.lo shared_lock.lo shared_mutex.lo system.lo \
+	thread.lo time.lo unique_lock.lo
 libueioa_la_OBJECTS = $(am_libueioa_la_OBJECTS)
+libueioa_simple_scheduler_la_LIBADD =
+am_libueioa_simple_scheduler_la_OBJECTS = simple_scheduler.lo
+libueioa_simple_scheduler_la_OBJECTS =  \
+	$(am_libueioa_simple_scheduler_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/ioa
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -89,8 +93,10 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libueioa_la_SOURCES)
-DIST_SOURCES = $(libueioa_la_SOURCES)
+SOURCES = $(libueioa_la_SOURCES) \
+	$(libueioa_simple_scheduler_la_SOURCES)
+DIST_SOURCES = $(libueioa_la_SOURCES) \
+	$(libueioa_simple_scheduler_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -213,7 +219,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
-lib_LTLIBRARIES = libueioa.la
+lib_LTLIBRARIES = libueioa.la libueioa_simple_scheduler.la
 libueioa_la_SOURCES = \
 automaton_interface.cpp \
 automaton_record.cpp \
@@ -222,13 +228,15 @@ lock.cpp \
 mutex.cpp \
 observer.cpp \
 runnable_interface.cpp \
-simple_scheduler.cpp \
 shared_lock.cpp \
 shared_mutex.cpp \
 system.cpp \
 thread.cpp \
 time.cpp \
 unique_lock.cpp
+
+libueioa_simple_scheduler_la_SOURCES = \
+simple_scheduler.cpp
 
 all: all-am
 
@@ -297,6 +305,8 @@ clean-libLTLIBRARIES:
 	done
 libueioa.la: $(libueioa_la_OBJECTS) $(libueioa_la_DEPENDENCIES) 
 	$(CXXLINK) -rpath $(libdir) $(libueioa_la_OBJECTS) $(libueioa_la_LIBADD) $(LIBS)
+libueioa_simple_scheduler.la: $(libueioa_simple_scheduler_la_OBJECTS) $(libueioa_simple_scheduler_la_DEPENDENCIES) 
+	$(CXXLINK) -rpath $(libdir) $(libueioa_simple_scheduler_la_OBJECTS) $(libueioa_simple_scheduler_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

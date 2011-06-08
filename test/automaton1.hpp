@@ -52,7 +52,7 @@ struct automaton1 :
       state (false)
     { }
 
-    void operator() () {
+    void operator() (automaton1&) {
       state = true;
     }
   };
@@ -72,7 +72,7 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (int parameter) {
+    void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
@@ -91,7 +91,7 @@ struct automaton1 :
     up_v_input_action () :
       value (0) { }
 
-    void operator() (const int t) {
+    void operator() (automaton1&, const int t) {
       value = t;
     }
   };
@@ -111,7 +111,7 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (const int t, int parameter) {
+    void operator() (automaton1&, const int t, int parameter) {
       value = t;
       last_parameter = parameter;
     }
@@ -129,7 +129,7 @@ struct automaton1 :
     up_uv_output_action () :
       state (false) { }
 
-    bool operator() () {
+    bool operator() (automaton1&) {
       state = true;
       return true;
     }
@@ -150,7 +150,7 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool operator() (int parameter) {
+    bool operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
       return true;
@@ -170,7 +170,7 @@ struct automaton1 :
       state (false)
     { }
 
-    std::pair<bool, int> operator() () {
+    std::pair<bool, int> operator() (automaton1&) {
       state = true;
       return std::make_pair (true, 9845);
     }
@@ -191,7 +191,7 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    std::pair<bool, int> operator() (int parameter) {
+    std::pair<bool, int> operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
       return std::make_pair (true, 9845);
@@ -206,7 +206,7 @@ struct automaton1 :
     bool state;
     up_internal_action()
       : state(false) { }
-    void operator()() {
+    void operator() (automaton1&) {
       state = true;
     }
   };
@@ -221,7 +221,7 @@ struct automaton1 :
 
     p_internal_action()
       : state(false) { }
-    void operator()(int parameter) {
+    void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
@@ -235,7 +235,7 @@ struct automaton1 :
     bool state;
     uv_event_action()
       : state(false) { }
-    void operator()() {
+    void operator() (automaton1&) {
       state = true;
     }
   };
@@ -251,7 +251,7 @@ struct automaton1 :
       state (false),
       last_value (0)
     { }
-    void operator() (int value) {
+    void operator() (automaton1&, int value) {
       state = true;
       last_value = value;
     }

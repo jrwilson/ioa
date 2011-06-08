@@ -5,7 +5,6 @@
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
 #include <ioa/automaton_helper.hpp>
-#include <iostream>
 
 static bool goal_reached;
 
@@ -881,201 +880,119 @@ unbound ()
   return 0;
 }
 
+class bind_unbound2 :
+  public ioa::automaton_interface
+{
+private:
 
-// class unbind_unbound :
-//   public ioa::dispatching_automaton
-// {
-// private:
-//   enum state_type {
-//     START,
-//     CREATE_CHILD1_SENT,
-//     CREATE_CHILD1_RECV,
-//     CREATE_CHILD2_SENT,
-//     CREATE_CHILD2_RECV,
-//     BIND1_SENT,
-//     BIND1_RECV,
-//     UNBIND1_SENT,
-//     UNBIND1_RECV,
-//     STOP
-//   };
-//   state_type m_state;
+  template <class OH, class OM, class IH, class IM>
+  class helper :
+    public ioa::bind_helper_interface,
+    public ioa::observer
+  {
+  public:
+    typedef typename OH::instance OI;
+    typedef typename IH::instance II;
 
-// private:
-
-//   struct create1_d
-//   {
-//     unbind_unbound& m_ce;
-
-//     create1_d (unbind_unbound& ce) :
-//       m_ce (ce)
-//     { }
-
-//     void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-//       m_ce.m_child1 = automaton;
-//       m_ce.m_state = CREATE_CHILD1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
-//     }
-
-//     template <class I>
-//     void instance_exists (const I*) {
-//       BOOST_CHECK (false);
-//     }
-
-//     void automaton_destroyed () {
-//       // Okay.
-//     }
-//   };
-
-//   struct create2_d
-//   {
-//     unbind_unbound& m_ce;
-
-//     create2_d (unbind_unbound& ce) :
-//       m_ce (ce)
-//     { }
-
-//     void automaton_created (const ioa::automaton_handle<automaton2>& automaton) {
-//       m_ce.m_child2 = automaton;
-//       m_ce.m_state = CREATE_CHILD2_RECV;
-//       ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
-//     }
-
-//     template <class I>
-//     void instance_exists (const I*) {
-//       BOOST_CHECK (false);
-//     }
-
-//     void automaton_destroyed () {
-//       // Okay.
-//     }
-//   };
-
-//   struct bind1_d
-//   {
-//     unbind_unbound& m_ce;
-
-//     bind1_d (unbind_unbound& ce) :
-//       m_ce (ce)
-//     { }
+    automaton_interface& m_automaton;
+    OH* m_output_helper;
+    ioa::automaton_handle<OI> m_output_handle;
+    OM OI::*m_output_member_ptr;
+    IH* m_input_helper;
+    ioa::automaton_handle<II> m_input_handle;
+    IM II::*m_input_member_ptr;
     
-//     void output_automaton_dne () {
-//       BOOST_CHECK (false);
-//     }
+    helper (automaton_interface& automaton,
+	    OH* output_helper,
+	    OM OI::*output_member_ptr,
+	    IH* input_helper,
+	    IM II::*input_member_ptr) :
+      m_automaton (automaton),
+      m_output_helper (output_helper),
+      m_output_member_ptr (output_member_ptr),
+      m_input_helper (input_helper),
+      m_input_member_ptr (input_member_ptr)
+    {
+      if (m_output_helper->get_handle () != -1) {
+       	m_output_handle = m_output_helper->get_handle ();
+      }
+      else {
+	add_observable (m_output_helper);
+      }
 
-//     void input_automaton_dne () {
-//       BOOST_CHECK (false);
-//     }
+      if (m_input_helper->get_handle () != -1) {
+       	m_input_handle = m_input_helper->get_handle ();
+      }
+      else {
+	add_observable (m_input_helper);
+      }
+    }
 
-//     void output_parameter_dne () {
-//       BOOST_CHECK (false);
-//     }
+    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
+				      ioa::make_action (m_input_handle, m_input_member_ptr));
+    }
 
-//     void input_parameter_dne () {
-//       BOOST_CHECK (false);
-//     }
+    void output_automaton_dne () {
+      assert (false);
+    }
 
-//     void binding_exists () {
-//       BOOST_CHECK (false);
-//     }
+    void input_automaton_dne () {
+      assert (false);
+    }
 
-//     void input_action_unavailable () {
-//       BOOST_CHECK (false);
-//     }
+    void binding_exists () {
+      assert (false);
+    }
 
-//     void output_action_unavailable () {
-//       BOOST_CHECK (false);
-//     }
+    void output_action_unavailable () {
+      assert (false);
+    }
 
-//     void bound (const ioa::bid_t bid) {
-//       m_ce.m_bid = bid;
-//       m_ce.m_state = BIND1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
-//     }
+    void input_action_unavailable () {
+      assert (false);
+    }
 
-//     void unbound () {
-//       m_ce.m_state = UNBIND1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
-//     }
+    void bound () {
+      assert (false);
+    }
 
-//   };
+    void unbound () {
+      // Cleanup.
+      goal_reached = true;
+      delete this;
+    }
 
-//   struct unbind1_d
-//   {
-//     unbind_unbound& m_ce;
+    void observe () {
+      m_output_handle = m_output_helper->get_handle ();
+      m_input_handle = m_input_helper->get_handle ();
+      if (m_output_handle != -1 && m_input_handle != -1) {
+	m_automaton.bind (this);
+	m_automaton.unbind (this);
+      }
+    }
+  };
 
-//     unbind1_d (unbind_unbound& ce) :
-//       m_ce (ce)
-//     { }
-    
-//     void binding_dne () {
-//       m_ce.m_state = UNBIND1_RECV;
-//       ioa::scheduler.schedule (&m_ce, &unbind_unbound::transition);
-//     }
-    
-//   };
+public:
+  
+  bind_unbound2 ()
+  {
+    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (*this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+  }
+};
 
-//   create1_d m_create1_d;
-//   create2_d m_create2_d;
-//   bind1_d m_bind1_d;
-//   unbind1_d m_unbind1_d;
-//   ioa::automaton_handle<automaton2> m_child1;
-//   ioa::automaton_handle<automaton2> m_child2;
-//   ioa::bid_t m_bid;
-
-//   UP_INTERNAL (unbind_unbound, transition) {
-//     switch (m_state) {
-//     case START:
-//       ioa::scheduler.create (this, ioa::make_generator<automaton2> (), m_create1_d);
-//       m_state = CREATE_CHILD1_SENT;
-//       break;
-//     case CREATE_CHILD1_RECV:
-//       ioa::scheduler.create (this, ioa::make_generator<automaton2> (), m_create2_d);
-//       m_state = CREATE_CHILD2_SENT;
-//       break;
-//     case CREATE_CHILD2_RECV:
-//       ioa::scheduler.bind (this,
-// 			   ioa::make_action (m_child1, &automaton2::uv_up_output),
-// 			   ioa::make_action (m_child2, &automaton2::uv_up_input),
-// 			   m_bind1_d);
-//       m_state = BIND1_SENT;
-//       break;
-//     case BIND1_RECV:
-//       ioa::scheduler.unbind (this, m_bid, m_unbind1_d);
-//       m_state = UNBIND1_SENT;
-//       break;
-//     case UNBIND1_RECV:
-//       m_state = STOP;
-//       break;
-//     default:
-//       BOOST_CHECK (false);
-//       break;
-//     }
-//   }
-
-// public:
-//   unbind_unbound () :
-//     m_state (START),
-//     m_create1_d (*this),
-//     m_create2_d (*this),
-//     m_bind1_d (*this),
-//     m_unbind1_d (*this),
-//     ACTION (unbind_unbound, transition)
-//   { }
-
-//   void init () {
-//     ioa::scheduler.schedule (this, &unbind_unbound::transition);
-//   }
-
-//   ~unbind_unbound () {
-//     BOOST_CHECK_EQUAL (m_state, unbind_unbound::STOP);
-//   }
-// };
-
-// BOOST_AUTO_TEST_CASE (scheduler_unbind_unbound)
-// {
-//   ioa::scheduler.run (ioa::make_generator <unbind_unbound> ());
-//   ioa::scheduler.clear ();
-// }
+static const char*
+unbound2 ()
+{
+  ioa::scheduler::clear ();
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<bind_unbound2> ());
+  mu_assert (goal_reached);
+  ioa::scheduler::clear ();
+  return 0;
+}
 
 class destroy_automaton_destroyed :
   public ioa::automaton_interface
@@ -1203,6 +1120,7 @@ all_tests ()
   mu_run_test (output_action_unavailable);
   mu_run_test (bound);
   mu_run_test (unbound);
+  mu_run_test (unbound2);
   mu_run_test (automaton_destroyed);
   mu_run_test (automaton_destroyed2);
 

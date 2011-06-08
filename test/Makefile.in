@@ -58,8 +58,8 @@ action_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
 am_simple_scheduler_OBJECTS = simple_scheduler.$(OBJEXT) \
 	test_main.$(OBJEXT)
 simple_scheduler_OBJECTS = $(am_simple_scheduler_OBJECTS)
-simple_scheduler_LDADD = $(LDADD)
-simple_scheduler_DEPENDENCIES = $(top_builddir)/lib/libueioa.la
+simple_scheduler_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+	$(top_builddir)/lib/libueioa_simple_scheduler.la
 am_system_OBJECTS = system.$(OBJEXT) test_main.$(OBJEXT) \
 	test_system_scheduler.$(OBJEXT)
 system_OBJECTS = $(am_system_OBJECTS)
@@ -210,6 +210,7 @@ LDADD = $(top_builddir)/lib/libueioa.la
 action_SOURCES = action.cpp test_main.cpp test_system_scheduler.cpp
 system_SOURCES = system.cpp test_main.cpp test_system_scheduler.cpp
 simple_scheduler_SOURCES = simple_scheduler.cpp test_main.cpp
+simple_scheduler_LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_scheduler.la
 all: all-am
 
 .SUFFIXES:

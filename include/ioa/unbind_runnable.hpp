@@ -6,35 +6,24 @@
 
 namespace ioa {
   
-  template <class C, class D>
   class unbind_runnable :
     public runnable_interface
   {
   private:
-    const int m_bid;
-    const automaton_handle<C> m_automaton;
-    D& m_d;
+    const aid_t m_automaton;
+    void* const m_key;
     
   public:
-    unbind_runnable (const int bid,
-		     const automaton_handle<C>& automaton,
-		     D& d) :
-      m_bid (bid),
+    unbind_runnable (const aid_t automaton,
+		     void* const key) :
       m_automaton (automaton),
-      m_d (d)
+      m_key (key)
     { }
     
     void operator() () {
-      system::unbind (m_bid, m_automaton, m_d);
+      system::unbind (m_automaton, m_key);
     }
   };
-  
-  template <class C, class D>
-  unbind_runnable<C, D>* make_unbind_runnable (const int bid,
-					       const automaton_handle<C>& automaton,
-					       D& d) {
-    return new unbind_runnable<C, D> (bid, automaton, d);
-  }
   
 }
 

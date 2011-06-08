@@ -28,6 +28,9 @@ namespace ioa {
   {
   private:
     std::set<observer*> m_observers;
+    std::set<observer*> m_add;
+    std::set<observer*> m_remove;
+    bool m_notify;
 
     friend class observer;
     void add_observer (observer* o);
@@ -37,6 +40,7 @@ namespace ioa {
     void notify_observers ();
 
   public:
+    observable ();
     virtual ~observable ();
   };
 

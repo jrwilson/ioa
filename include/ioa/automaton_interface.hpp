@@ -11,24 +11,28 @@
 #define COMMA ,
 
 #define SYSTEM_INPUT(c, name, type, var)		\
+  void _##name (type const & var); \
   public: \
-  typedef ioa::system_input_wrapper<c, type> name##_type;	\
-  name##_type name; \
-  private:	    \
-  void _##name (type const & var)
+  typedef ioa::system_input_wrapper<c, type, &c::_##name> name##_type;	\
+  name##_type name;
+
+#define SYSTEM_INPUT_DEF(c, name, type, var)	\
+  void c::_##name (type const & var)
 
 #define SYSTEM_OUTPUT(c, name, type)			\
+  std::pair<bool, type> _##name (); \
   public: \
-  typedef ioa::system_output_wrapper<c, type> name##_type;	\
+  typedef ioa::system_output_wrapper<c, type, &c::_##name> name##_type;	\
   name##_type name; \
-  private:	    \
-  std::pair<bool, type> _##name ()
+
+#define SYSTEM_OUTPUT_DEF(c, name, type)			\
+  std::pair<bool, type> c::_##name ()
 
 #define ACTION(c, name) name (*this, &c::_##name, &c::name)
 
 namespace ioa {
 
-  template <class C, class T>
+  template <class C, class T, void (C::*mem_fun_ptr)(T const &)>
   class system_input_wrapper :
     public system_input,
     public value<T>
@@ -45,12 +49,12 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr)
     { }
     
-    void operator() (T const & t) {
+    void operator() (C&, T const & t) {
       (m_c.*m_member_function_ptr) (t);
     }
   };
 
-  template <class C, class T>
+  template <class C, class T, std::pair<bool, T> (C::*mem_fun_ptr)()>
   class system_output_wrapper :
     public system_output,
     public value<T>
@@ -67,7 +71,7 @@ namespace ioa {
       m_member_function_ptr (member_function_ptr)
     { }
     
-    std::pair<bool, T> operator() () {
+    std::pair<bool, T> operator() (C&) {
       return (m_c.*m_member_function_ptr) ();
     }
   };
@@ -112,362 +116,42 @@ namespace ioa {
     std::set<bind_helper_interface*> m_unbind_send;
     std::set<bind_helper_interface*> m_unbind_recv;
 
-  protected:
-    automaton_interface () :
-      ACTION (automaton_interface, sys_create),
-      ACTION (automaton_interface, sys_bind),
-      ACTION (automaton_interface, sys_unbind),
-      ACTION (automaton_interface, sys_destroy),
-
-      ACTION (automaton_interface, sys_create_key_exists),
-      ACTION (automaton_interface, sys_instance_exists),
-      ACTION (automaton_interface, sys_automaton_created),
-      ACTION (automaton_interface, sys_bind_key_exists),
-      ACTION (automaton_interface, sys_output_automaton_dne),
-      ACTION (automaton_interface, sys_input_automaton_dne),
-      ACTION (automaton_interface, sys_binding_exists),
-      ACTION (automaton_interface, sys_output_action_unavailable),
-      ACTION (automaton_interface, sys_input_action_unavailable),
-      ACTION (automaton_interface, sys_bound),
-      ACTION (automaton_interface, sys_bind_key_dne),
-      ACTION (automaton_interface, sys_unbound),
-      ACTION (automaton_interface, sys_create_key_dne),
-      ACTION (automaton_interface, sys_automaton_destroyed),
-      ACTION (automaton_interface, sys_recipient_dne),
-      ACTION (automaton_interface, sys_event_delivered)
-    { }
-
   public:
-    virtual ~automaton_interface () {
-      // Send the helpers a destroyed signal.
-      for (std::set<automaton_helper_interface*>::const_iterator pos = m_create_send.begin ();
-	   pos != m_create_send.end ();
-	   ++pos) {
-	(*pos)->automaton_destroyed ();
-      }
-      for (std::set<automaton_helper_interface*>::const_iterator pos = m_create_recv.begin ();
-	   pos != m_create_recv.end ();
-	   ++pos) {
-	(*pos)->automaton_destroyed ();
-      }
-      for (std::set<automaton_helper_interface*>::const_iterator pos = m_destroy_send.begin ();
-	   pos != m_destroy_send.end ();
-	   ++pos) {
-	(*pos)->automaton_destroyed ();
-      }
-      for (std::set<automaton_helper_interface*>::const_iterator pos = m_destroy_recv.begin ();
-	   pos != m_destroy_recv.end ();
-	   ++pos) {
-	(*pos)->automaton_destroyed ();
-      }
-      for (std::set<bind_helper_interface*>::const_iterator pos = m_bind_send.begin ();
-	   pos != m_bind_send.end ();
-	   ++pos) {
-	(*pos)->unbound ();
-      }
-      for (std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.begin ();
-	   pos != m_bind_recv.end ();
-	   ++pos) {
-	(*pos)->unbound ();
-      }
-      for (std::set<bind_helper_interface*>::const_iterator pos = m_unbind_send.begin ();
-	   pos != m_unbind_send.end ();
-	   ++pos) {
-	(*pos)->unbound ();
-      }
-      for (std::set<bind_helper_interface*>::const_iterator pos = m_unbind_recv.begin ();
-	   pos != m_unbind_recv.end ();
-	   ++pos) {
-	(*pos)->unbound ();
-      }
-    }
-
-  public:
-    void create (automaton_helper_interface* helper) {
-      assert (helper != 0);
-      // We should not have seen this helper before.  Otherwise, we will get a create_key_exists error.
-      assert (m_create_send.count (helper) == 0 &&
-	      m_create_recv.count (helper) == 0 &&
-	      m_destroy_send.count (helper) == 0 &&
-	      m_destroy_recv.count (helper) == 0);
-      // Add to the send set and schedule.
-      m_create_send.insert (helper);
-      schedule ();
-    }
-
-    void bind (bind_helper_interface* helper) {
-      assert (helper != 0);
-      // We should not have seen this helper before.  Otherwise, we will get a bind_key_exists error.
-      assert (m_bind_send.count (helper) == 0 &&
-	      m_bind_recv.count (helper) == 0 &&
-	      m_unbind_send.count (helper) == 0 &&
-	      m_unbind_recv.count (helper) == 0);
-      // Add to the send set and schedule.
-      m_bind_send.insert (helper);
-      schedule ();
-    }
-
-    void unbind (bind_helper_interface* helper) {
-      assert (helper != 0);
-
-      // Error to unbind again.
-      assert (m_unbind_send.count (helper) == 0 &&
-	      m_unbind_recv.count (helper) == 0);
-
-      std::set<bind_helper_interface*>::const_iterator send_iter = m_bind_send.find (helper);
-      std::set<bind_helper_interface*>::const_iterator recv_iter = m_bind_recv.find (helper);
-
-      if (send_iter != m_bind_send.end () && recv_iter != m_bind_recv.end ()) {
-	// Invariant is violated.
-	assert (false);
-      }
-      else if (send_iter != m_bind_send.end () && recv_iter == m_bind_recv.end ()) {
-	// We haven't sent the bind request yet.  We can just remove and send it unbound.
-	m_bind_send.erase (send_iter);
-	helper->unbound ();
-      }
-      else if (send_iter == m_bind_send.end () && recv_iter != m_bind_recv.end ()) {
-	// We have sent the bind request.  Move from bind receive to unbind send.
-	m_bind_recv.erase (recv_iter);
-	m_unbind_send.insert (helper);
-      }
-      else {
-	// We should have seen this helper before.  Otherwise, we will get a bind_key_dne error.
-	assert (false);
-      }
-
-      schedule ();
-    }
-
-    void destroy (automaton_helper_interface* helper) {
-      assert (helper != 0);
-
-      // Error to destroy again.
-      assert (m_destroy_send.count (helper) == 0 &&
-	      m_destroy_recv.count (helper) == 0);
-
-      std::set<automaton_helper_interface*>::const_iterator send_iter = m_create_send.find (helper);
-      std::set<automaton_helper_interface*>::const_iterator recv_iter = m_create_recv.find (helper);
-
-      if (send_iter != m_create_send.end () && recv_iter != m_create_recv.end ()) {
-	// Invariant is violated.
-	assert (false);
-      }
-      else if (send_iter != m_create_send.end () && recv_iter == m_create_recv.end ()) {
-	// We haven't sent the create request yet.  We can just remove and send it destroyed.
-	m_create_send.erase (send_iter);
-	helper->automaton_destroyed ();
-      }
-      else if (send_iter == m_create_send.end () && recv_iter != m_create_recv.end ()) {
-	// We have sent the create request.  Move from create receive to destroy send.
-	m_create_recv.erase (recv_iter);
-	m_destroy_send.insert (helper);
-      }
-      else {
-	// We should have seen this helper before.  Otherwise, we will get a create_key_dne error.
-	assert (false);
-      }
-
-      schedule ();
-    }
+    automaton_interface ();
+    virtual ~automaton_interface ();
+    void create (automaton_helper_interface* helper);
+    void bind (bind_helper_interface* helper);
+    void unbind (bind_helper_interface* helper);
+    void destroy (automaton_helper_interface* helper);
 
   private:
-
     void schedule ();
 
-    bool sys_create_precondition () const {
-      return !m_create_send.empty ();
-    }
+    bool sys_create_precondition () const;
+    SYSTEM_OUTPUT (automaton_interface, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);
+    bool sys_bind_precondition () const;
+    SYSTEM_OUTPUT (automaton_interface, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
+    bool sys_unbind_precondition () const;
+    SYSTEM_OUTPUT (automaton_interface, sys_unbind, void*);
+    bool sys_destroy_precondition () const;
+    SYSTEM_OUTPUT (automaton_interface, sys_destroy, void*);
 
-    SYSTEM_OUTPUT (automaton_interface, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>) {
-      std::pair<bool, std::pair<shared_ptr<generator_interface>, void*> > retval;
-
-      if (sys_create_precondition ()) {
-	std::set<automaton_helper_interface*>::iterator pos = m_create_send.begin ();
-	automaton_helper_interface* helper = *pos;
-	m_create_send.erase (pos);
-	m_create_recv.insert (helper);
-	retval = std::make_pair (true, std::make_pair (helper->get_generator (), helper));
-      }
-
-      schedule ();
-      return retval;
-    }
-
-    bool sys_bind_precondition () const {
-      return !m_bind_send.empty ();
-    }
-
-    SYSTEM_OUTPUT (automaton_interface, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>) {
-      std::pair<bool, std::pair<shared_ptr<bind_executor_interface>, void*> > retval;
-
-      if (sys_bind_precondition ()) {
-	std::set<bind_helper_interface*>::iterator pos = m_bind_send.begin ();
-	bind_helper_interface* helper = *pos;
-	m_bind_send.erase (pos);
-	m_bind_recv.insert (helper);
-	retval = std::make_pair (true, std::make_pair (helper->get_executor (), helper));
-      }
-
-      schedule ();
-      return retval;
-    }
-
-    bool sys_unbind_precondition () const {
-      return !m_unbind_send.empty ();
-    }
-    
-    SYSTEM_OUTPUT (automaton_interface, sys_unbind, void*) {
-      assert (false);
-    }
-
-    bool sys_destroy_precondition () const {
-      return !m_destroy_send.empty ();
-    }
-
-    SYSTEM_OUTPUT (automaton_interface, sys_destroy, void*) {
-      std::pair<bool, void*> retval;
-
-      if (sys_destroy_precondition ()) {
-	std::set<automaton_helper_interface*>::iterator pos = m_destroy_send.begin ();
-	automaton_helper_interface* helper = *pos;
-	m_destroy_send.erase (pos);
-	m_destroy_recv.insert (helper);
-	retval = std::make_pair (true, helper);
-      }
-
-      schedule ();
-      return retval;
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_create_key_exists, void*, t) {
-      // We prevent this in create.
-      assert (false);
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_instance_exists, void*, t) {
-      // Find the helper (sanity check).
-      std::set<automaton_helper_interface*>::const_iterator pos = m_create_recv.find (static_cast<automaton_helper_interface*> (t));
-      assert (pos != m_create_recv.end ());
-      (*pos)->instance_exists ();
-      // The creation failed so erase.
-      m_create_recv.erase (pos);
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_automaton_created, std::pair<void* COMMA aid_t>, t) {
-      // Find the helper (sanity check).
-      std::set<automaton_helper_interface*>::const_iterator pos = m_create_recv.find (static_cast<automaton_helper_interface*> (t.first));
-      assert (pos != m_create_recv.end ());
-      (*pos)->automaton_created (t.second);
-      // The create succeeded.  Leave in set.
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_bind_key_exists, void*, t) {
-      // We prevent this in bind.
-      assert (false);
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_output_automaton_dne, void*, t) {
-      // Find the helper (sanity check).
-      std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<bind_helper_interface*> (t));
-      assert (pos != m_bind_recv.end ());
-      (*pos)->output_automaton_dne ();
-      // The bind failed so erase.
-      m_bind_recv.erase (pos);
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_input_automaton_dne, void*, t) {
-      // Find the helper (sanity check).
-      std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<bind_helper_interface*> (t));
-      assert (pos != m_bind_recv.end ());
-      (*pos)->input_automaton_dne ();
-      // The bind failed so erase.
-      m_bind_recv.erase (pos);
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_binding_exists, void*, t) {
-      // Find the helper (sanity check).
-      std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<bind_helper_interface*> (t));
-      assert (pos != m_bind_recv.end ());
-      (*pos)->binding_exists ();
-      // The bind failed so erase.
-      m_bind_recv.erase (pos);
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_output_action_unavailable, void*, t) {
-      // Find the helper (sanity check).
-      std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<bind_helper_interface*> (t));
-      assert (pos != m_bind_recv.end ());
-      (*pos)->output_action_unavailable ();
-      // The bind failed so erase.
-      m_bind_recv.erase (pos);
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_input_action_unavailable, void*, t) {
-      // Find the helper (sanity check).
-      std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<bind_helper_interface*> (t));
-      assert (pos != m_bind_recv.end ());
-      (*pos)->input_action_unavailable ();
-      // The bind failed so erase.
-      m_bind_recv.erase (pos);
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_bound, void*, t) {
-      // Find the helper (sanity check).
-      std::set<bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<bind_helper_interface*> (t));
-      assert (pos != m_bind_recv.end ());
-      (*pos)->bound ();
-      // The bind succeeded.  Leave in set.
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_bind_key_dne, void*, t) {
-      // We prevent this in unbind.
-      assert (false);
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_unbound, void*, t) {
-      assert (false);
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_create_key_dne, void*, t) {
-      // We prevent this in destroy.
-      assert (false);
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_automaton_destroyed, void*, t) {
-      // An automaton was destroyed.
-      // It can be in m_create_recv, m_destroy_send, or m_destroy_recv.
-
-      automaton_helper_interface* helper = static_cast<automaton_helper_interface*> (t);
-
-      if (m_create_recv.count (helper) != 0) {
-	m_create_recv.erase (helper);
-      }
-      else if (m_destroy_send.count (helper) != 0) {
-	m_destroy_send.erase (helper);
-      }
-      else if (m_destroy_recv.count (helper) != 0) {
-	m_destroy_recv.erase (helper);
-      }
-      else {
-	// Didn't find the helper.
-	assert (false);
-      }
-	
-      helper->automaton_destroyed ();
-      schedule ();
-    }
-
-    SYSTEM_INPUT (automaton_interface, sys_recipient_dne, void*, t) { assert (false); }
-    SYSTEM_INPUT (automaton_interface, sys_event_delivered, void*, t) { assert (false); }
+    SYSTEM_INPUT (automaton_interface, sys_create_key_exists, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_instance_exists, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_automaton_created, std::pair<void* COMMA aid_t>, t);
+    SYSTEM_INPUT (automaton_interface, sys_bind_key_exists, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_output_automaton_dne, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_input_automaton_dne, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_binding_exists, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_output_action_unavailable, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_input_action_unavailable, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_bound, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_bind_key_dne, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_unbound, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_create_key_dne, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_automaton_destroyed, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_recipient_dne, void*, t);
+    SYSTEM_INPUT (automaton_interface, sys_event_delivered, void*, t);
   };
 
 }

@@ -3,6 +3,7 @@
 
 #include <ioa/automaton_handle.hpp>
 #include <utility>
+#include <cstddef>
 
 namespace ioa {
 
@@ -229,7 +230,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) ();
+      (i.*this->member_ptr) (i);
     }
 
   };
@@ -247,7 +248,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) (this->parameter);
+      (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -263,7 +264,7 @@ namespace ioa {
     { }
 
     void operator() (I& i, const VT& v) const {
-      (i.*this->member_ptr) (v);
+      (i.*this->member_ptr) (i, v);
     }
   };
 
@@ -280,7 +281,7 @@ namespace ioa {
     { }
 
     void operator() (I& i, const VT& v) const {
-      (i.*this->member_ptr) (v, this->parameter);
+      (i.*this->member_ptr) (i, v, this->parameter);
     }
   };
 
@@ -296,7 +297,7 @@ namespace ioa {
     { }
 
     bool operator() (I& i) const {
-      return (i.*this->member_ptr) ();
+      return (i.*this->member_ptr) (i);
     }
   };
 
@@ -313,7 +314,7 @@ namespace ioa {
     { }
 
     bool operator() (I& i) const {
-      return (i.*this->member_ptr) (this->parameter);
+      return (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -329,7 +330,7 @@ namespace ioa {
     { }
 
     std::pair<bool, VT> operator() (I& i) const {
-      return (i.*this->member_ptr) ();
+      return (i.*this->member_ptr) (i);
     }
   };
 
@@ -346,7 +347,7 @@ namespace ioa {
     { }
 
     std::pair<bool, VT> operator() (I& i) const {
-      return (i.*this->member_ptr) (this->parameter);
+      return (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -362,7 +363,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) ();
+      (i.*this->member_ptr) (i);
     }
 
   };
@@ -380,7 +381,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) (this->parameter);
+      (i.*this->member_ptr) (i, this->parameter);
     }
 
   };
@@ -397,7 +398,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) ();
+      (i.*this->member_ptr) (i);
     }
 
     // Events are unique.
@@ -424,7 +425,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) (m_value);
+      (i.*this->member_ptr) (i, m_value);
     }
 
     // Events are unique.
@@ -451,7 +452,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) (m_value);
+      (i.*this->member_ptr) (i, m_value);
     }
 
     // System inputs are unique (like events).
@@ -473,7 +474,7 @@ namespace ioa {
     { }
 
     std::pair<bool, VT> operator() (I& i) const {
-      return (i.*this->member_ptr) ();
+      return (i.*this->member_ptr) (i);
     }
   };
 

@@ -16,6 +16,7 @@ action_SOURCES = action.cpp test_main.cpp test_system_scheduler.cpp
 system_SOURCES = system.cpp test_main.cpp test_system_scheduler.cpp
 
 simple_scheduler_SOURCES = simple_scheduler.cpp test_main.cpp
+simple_scheduler_LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_scheduler.la
 
 # AM_LDFLAGS = -lpthread -ljson
 # component_request_port_SOURCES = component_request_port.c
