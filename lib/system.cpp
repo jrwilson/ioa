@@ -111,8 +111,8 @@ namespace ioa {
     return aid;
   }
 
-  int system::bind (bind_executor_interface& bind_exec,
-		    const aid_t binder,
+  int system::bind (const aid_t binder,
+		    shared_ptr<bind_executor_interface> bind_exec,
 		    void* const key) {
     
     unique_lock lock (m_mutex);
@@ -128,8 +128,8 @@ namespace ioa {
       return -1;
     }
     
-    output_executor_interface& output = bind_exec.get_output ();
-    input_executor_interface& input = bind_exec.get_input ();
+    output_executor_interface& output = bind_exec->get_output ();
+    input_executor_interface& input = bind_exec->get_input ();
     
     if (!output.fetch_instance ()) {
       system_scheduler::output_automaton_dne (binder, key);
@@ -375,6 +375,56 @@ namespace ioa {
 
     if (t.first) {
       system_scheduler::create (automaton, t.second.first, t.second.second);
+    }
+
+    return 0;
+  }
+
+  int system::execute_sys_bind (const aid_t automaton) {
+    shared_lock lock (m_mutex);
+
+    if (!m_aids.contains (automaton)) {
+      // Automaton does not exists.
+      return -1;
+    }
+
+    action<automaton_interface, automaton_interface::sys_bind_type> ac (automaton, &automaton_interface::sys_bind);
+
+    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+
+    lock_automaton (automaton);
+    system_scheduler::set_current_aid (automaton);
+    std::pair<bool, std::pair<shared_ptr<bind_executor_interface>, void*> > t = ac (*instance);
+    system_scheduler::clear_current_aid ();
+    unlock_automaton (automaton);
+
+    if (t.first) {
+      system_scheduler::bind (automaton, t.second.first, t.second.second);
+    }
+
+    return 0;
+  }
+
+  int system::execute_sys_unbind (const aid_t automaton) {
+    shared_lock lock (m_mutex);
+
+    if (!m_aids.contains (automaton)) {
+      // Automaton does not exists.
+      return -1;
+    }
+
+    action<automaton_interface, automaton_interface::sys_unbind_type> ac (automaton, &automaton_interface::sys_unbind);
+
+    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+
+    lock_automaton (automaton);
+    system_scheduler::set_current_aid (automaton);
+    std::pair<bool, void*> t = ac (*instance);
+    system_scheduler::clear_current_aid ();
+    unlock_automaton (automaton);
+
+    if (t.first) {
+      system_scheduler::unbind (automaton, t.second);
     }
 
     return 0;

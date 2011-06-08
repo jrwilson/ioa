@@ -243,6 +243,12 @@ namespace ioa {
     schedule_sysq (new create_runnable (automaton, generator, key));
   }
 
+  void simple_scheduler::bind (const aid_t automaton,
+			       shared_ptr<bind_executor_interface> exec,
+			       void* const key) {
+    schedule_sysq (new bind_runnable (automaton, exec, key));
+  }
+
   void simple_scheduler::destroy (const aid_t automaton,
 				  void* const key) {
     schedule_sysq (new destroy_runnable (automaton, key));
@@ -340,9 +346,15 @@ namespace ioa {
   }
   
   void system_scheduler::create (const aid_t automaton,
-			       shared_ptr<generator_interface> generator,
+				 shared_ptr<generator_interface> generator,
 				 void* const key) {
     simple_scheduler::create (automaton, generator, key);
+  }
+
+  void system_scheduler::bind (const aid_t automaton,
+			       shared_ptr<bind_executor_interface> exec,
+			       void* const key) {
+    simple_scheduler::bind (automaton, exec, key);
   }
   
   void system_scheduler::destroy (const aid_t automaton,
@@ -395,7 +407,7 @@ namespace ioa {
 						    void* const key) {
     simple_scheduler::output_action_unavailable (automaton, key);
   }
-  
+
   void system_scheduler::bound (const aid_t automaton,
 			      void* const key) {
     simple_scheduler::bound (automaton, key);

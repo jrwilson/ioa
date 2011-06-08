@@ -4,6 +4,8 @@
 #include <ioa/scheduler.hpp>
 
 #include <ioa/sys_create_runnable.hpp>
+#include <ioa/sys_bind_runnable.hpp>
+#include <ioa/sys_unbind_runnable.hpp>
 #include <ioa/sys_destroy_runnable.hpp>
 
 #include <ioa/create_runnable.hpp>
@@ -73,6 +75,10 @@ namespace ioa {
 			shared_ptr<generator_interface> generator,
 			void* const key);
 
+    static void bind (const aid_t automaton,
+		      shared_ptr<bind_executor_interface> generator,
+		      void* const key);
+
     static void destroy (const aid_t automaton,
 			 void* const key);
 
@@ -127,32 +133,18 @@ namespace ioa {
     
     static aid_t get_current_aid ();
 
-    // template <class C, class OI, class OM, class II, class IM, class D>
-    // static void bind (const C* ptr,
-    // 		      const action<OI, OM>& output_action,
-    // 		      const action<II, IM>& input_action,
-    // 		      D& d) {
-    //   schedule_sysq (make_bind_runnable (output_action, input_action, get_current_aid (ptr), d));
-    // }
-    
-    // template <class C, class D>
-    // static void unbind (const C* ptr,
-    // 			const int bid,
-    // 			D& d) {
-    //   schedule_sysq (make_unbind_runnable (bid, get_current_aid (ptr), d));
-    // }
-    
-    // template <class C, class I, class D>
-    // static void destroy (const C* ptr,
-    // 			 const automaton_handle<I>& automaton,
-    // 			 D& d) {
-    //   schedule_sysq (make_destroy_runnable (get_current_aid (ptr), automaton, d));
-    // }
-
     // TODO:  Move these functions and includes to cpp file.
 
     static void schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr) {
       schedule_execq (new sys_create_runnable (get_current_aid ()));
+    }
+
+    static void schedule (automaton_interface::sys_bind_type automaton_interface::*member_ptr) {
+      schedule_execq (new sys_bind_runnable (get_current_aid ()));
+    }
+
+    static void schedule (automaton_interface::sys_unbind_type automaton_interface::*member_ptr) {
+      schedule_execq (new sys_unbind_runnable (get_current_aid ()));
     }
 
     static void schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr) {

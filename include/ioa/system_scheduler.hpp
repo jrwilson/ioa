@@ -4,6 +4,7 @@
 #include <ioa/aid.hpp>
 #include <ioa/shared_ptr.hpp>
 #include <ioa/generator_interface.hpp>
+#include <ioa/executor_interface.hpp>
 
 namespace ioa {
 
@@ -22,6 +23,10 @@ namespace ioa {
     static void create (const aid_t automaton,
 			shared_ptr<generator_interface> generator,
 			void* const key);
+
+    static void bind (const aid_t automaton,
+		      shared_ptr<bind_executor_interface> exec,
+		      void* const key);
 
     static void destroy (const aid_t automaton,
 			 void* const key);

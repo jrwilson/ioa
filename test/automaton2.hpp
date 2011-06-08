@@ -23,6 +23,7 @@ private:
   UP_INTERNAL (automaton2, up_internal) { }
   P_INTERNAL (automaton2, p_internal, float, pole) { m_pole += pole; }
   
+  UV_UP_INPUT (automaton2, uv_up_input2) { }
 public:
   automaton2 () :
     ACTION (automaton2, uv_up_input),
@@ -34,64 +35,9 @@ public:
     ACTION (automaton2, v_up_output),
     ACTION (automaton2, v_p_output),
     ACTION (automaton2, up_internal),
-    ACTION (automaton2, p_internal)
+    ACTION (automaton2, p_internal),
+    ACTION (automaton2, uv_up_input2)
   { }
-
-  void init () { }
-
-  template <class I, class D>
-  void instance_exists (const I* i,
-			D&) {
-  }
-
-  template <class I, class D>
-  void automaton_created (const ioa::automaton_handle<I>& handle,
-			  D&) {
-  }
-
-  template <class D>
-  void automaton_destroyed (D&) {
-  }
-
-  template <class D>
-  void output_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void input_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void binding_exists (D&) {
-  }
-
-  template <class D>
-  void input_action_unavailable (D&) {
-  }
-
-  template <class D>
-  void output_action_unavailable (D&) {
-  }
-
-  template <class D>
-  void bound (D&) {
-  }
-
-  template <class D>
-  void unbound (D&) {
-  }
-
-  template <class D>
-  void binding_dne (D&) {
-  }
-
-  template <class D>
-  void target_automaton_dne (D&) {
-  }
-
-  template <class D>
-  void destroyer_not_creator (D&) {
-  }
 
 };
 

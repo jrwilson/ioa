@@ -20,10 +20,12 @@ namespace ioa {
   {
   private:
     pthread_t m_thread;
+    pthread_attr_t m_attr;
     std::auto_ptr<thread_arg> m_thread_arg;
     
   public:
     thread (void (*func) ());
+    ~thread ();
     void join ();
   };
   

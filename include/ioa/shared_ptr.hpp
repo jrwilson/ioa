@@ -62,6 +62,10 @@ namespace ioa {
       return *this;
     }
 
+    T* operator-> () {
+      return m_ptr;
+    }
+
     T& operator* () {
       return *m_ptr;
     }

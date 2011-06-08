@@ -22,7 +22,16 @@ namespace ioa {
   thread::thread (void (*func) ()) :
     m_thread_arg (new thread_arg (func))
   {
-    int r = pthread_create (&m_thread, 0, thread_func, m_thread_arg.get ());
+    int r;
+
+    r = pthread_attr_init (&m_attr);
+    assert (r == 0);
+    r = pthread_create (&m_thread, &m_attr, thread_func, m_thread_arg.get ());
+    assert (r == 0);
+  }
+
+  thread::~thread () {
+    int r = pthread_attr_destroy (&m_attr);
     assert (r == 0);
   }
   

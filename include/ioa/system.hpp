@@ -27,114 +27,6 @@ namespace ioa {
   template <class VT>
   struct bind_check<valued, VT, valued, VT> { };
 
-  class action_executor_interface
-  {
-  public:
-    virtual ~action_executor_interface () { }
-    virtual bool fetch_instance () = 0;
-    virtual const action_interface& get_action () const = 0;
-  };
-
-  class input_executor_interface :
-    public action_executor_interface
-  {
-  public:
-    virtual ~input_executor_interface () { }
-    virtual input_executor_interface* clone () const = 0;
-  };
-
-  class unvalued_input_executor_interface :
-    public input_executor_interface
-  {
-  public:
-    virtual ~unvalued_input_executor_interface () { }
-    virtual void operator() () const = 0;
-  };
-
-  template <typename T>
-  class valued_input_executor_interface :
-    public input_executor_interface
-  {
-  public:
-    virtual ~valued_input_executor_interface () { }
-    virtual void operator() (const T& t) const = 0;
-  };
-
-  class local_executor_interface :
-    public action_executor_interface
-  {
-  public:
-    virtual ~local_executor_interface () { }
-    virtual void operator() () const = 0;
-  };
-  
-  class output_executor_interface :
-    public local_executor_interface
-  {
-  public:
-    virtual ~output_executor_interface () { }
-    virtual output_executor_interface* clone () const = 0;
-    virtual bool involves_output (const action_interface&) const = 0;
-    virtual bool involves_input (const action_interface&) const = 0;
-    virtual bool involves_input_automaton (const aid_t) const = 0;
-    virtual bool involves_binding (const action_interface&,
-				   const action_interface&,
-				   const aid_t) const = 0;
-    virtual bool involves_aid_key (const aid_t,
-				   void* const) const = 0;
-    virtual bool empty () const = 0;
-    virtual void bind (const input_executor_interface&,
-		       const aid_t,
-		       void* const) = 0;
-    virtual void unbind (const aid_t,
-			 void* const) = 0;
-    virtual void unbind_automaton (const aid_t) = 0;
-  };
-
-  class unvalued_output_executor_interface :
-    public output_executor_interface
-  {
-  public:
-    virtual ~unvalued_output_executor_interface () { }
-  };
-
-  template <typename T>
-  class valued_output_executor_interface :
-    public output_executor_interface
-  {
-  public:
-    virtual ~valued_output_executor_interface () { }
-  };
-  
-  class internal_executor_interface :
-    public local_executor_interface
-  {
-  public:
-    virtual ~internal_executor_interface () { }
-  };
-  
-  class event_executor_interface :
-    public local_executor_interface
-  {
-  public:
-    virtual ~event_executor_interface () { }
-  };
-
-  class system_input_executor_interface :
-    public local_executor_interface
-  {
-  public:
-    virtual ~system_input_executor_interface () { }
-  };
-
-  class bind_executor_interface
-  {
-  public:
-    virtual ~bind_executor_interface () { }
-    virtual output_executor_interface& get_output () = 0;
-    virtual input_executor_interface& get_input () = 0;
-  };
-
   // TODO:  Memory allocation.
 
   class system
@@ -238,10 +130,10 @@ namespace ioa {
     static aid_t create (const aid_t automaton,
 			 shared_ptr<generator_interface> generator,
 			 void* const key);
-    static int bind (bind_executor_interface& bind_exec,
-		     const aid_t binder,
+    static int bind (const aid_t automaton,
+		     shared_ptr<bind_executor_interface> exec,
 		     void* const key);
-    static int unbind (const aid_t binder,
+    static int unbind (const aid_t automaton,
 		       void* const key);
     static int destroy (const aid_t target);
     static int destroy (const aid_t automaton,
@@ -253,6 +145,8 @@ namespace ioa {
 			void* const key);
     static int execute (system_input_executor_interface& exec);
     static int execute_sys_create (const aid_t automaton);
+    static int execute_sys_bind (const aid_t automaton);
+    static int execute_sys_unbind (const aid_t automaton);
     static int execute_sys_destroy (const aid_t automaton);
 
     template <class I, class M, class K, class VS, class VT> class action_executor_impl;
@@ -323,7 +217,7 @@ namespace ioa {
       
       void operator() (const VT& t) const {
 	assert (m_instance != 0);
-	system_scheduler::set_current_aid (m_action.get_aid (), *m_instance);
+	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action (*m_instance, t);
 	system_scheduler::clear_current_aid ();
       }
@@ -943,6 +837,12 @@ namespace ioa {
     };
       
   };
+
+  template <class OI, class OM, class II, class IM>
+  shared_ptr<bind_executor_interface> make_bind_executor (const action<OI, OM>& output,
+							  const action<II, IM>& input) {
+    return shared_ptr<bind_executor_interface> (new system::bind_executor<OI, OM, II, IM> (output, input));
+  }
 
 }
 

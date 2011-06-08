@@ -7,7 +7,12 @@ namespace ioa {
     if (sys_create_precondition ()) {
       scheduler::schedule (&automaton_interface::sys_create);
     }
-
+    if (sys_bind_precondition ()) {
+      scheduler::schedule (&automaton_interface::sys_bind);
+    }
+    if (sys_unbind_precondition ()) {
+      scheduler::schedule (&automaton_interface::sys_unbind);
+    }
     if (sys_destroy_precondition ()) {
       scheduler::schedule (&automaton_interface::sys_destroy);
     }

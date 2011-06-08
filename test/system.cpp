@@ -28,12 +28,11 @@ ioa::aid_t create (const ioa::aid_t creator,
   return handle;
 }
 
-template <class OI, class OM, class II, class IM>
-void bind (ioa::system::bind_executor<OI, OM, II, IM>& exec,
-	   const ioa::aid_t binder,
+void bind (const ioa::aid_t binder,
+	   ioa::shared_ptr<ioa::bind_executor_interface> exec,
 	   void* const key) {
   tss.reset ();
-  assert (ioa::system::bind (exec, binder, key) == 0);
+  assert (ioa::system::bind (binder, exec, key) == 0);
   assert (tss.m_bound_automaton == binder);
   assert (tss.m_bound_key == key);
 }
@@ -138,11 +137,10 @@ binder_dne ()
   
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
   
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::up_uv_input));
-									    
-  mu_assert (ioa::system::bind (b, binder, 0) == -1);
+  mu_assert (ioa::system::bind (binder,
+				ioa::make_bind_executor(ioa::make_action (output, &automaton1::up_uv_output),
+							ioa::make_action (input, &automaton1::up_uv_input)),
+				0) == -1);
   
   return 0;
 }
@@ -159,23 +157,22 @@ bind_key_exists ()
   
   ioa::automaton_handle<automaton1> input1 = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b1 (ioa::make_action (output1, &automaton1::up_uv_output),
-									     ioa::make_action (input1, &automaton1::up_uv_input));
 
   ioa::automaton_handle<automaton1> output2 = create (ioa::make_generator<automaton1> ());
   
   ioa::automaton_handle<automaton1> input2 = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b2 (ioa::make_action (output2, &automaton1::up_uv_output),
-									     ioa::make_action (input2, &automaton1::up_uv_input));
-
   int key;
-  bind (b1, binder, &key);
+  bind (binder,
+	ioa::make_bind_executor (ioa::make_action (output1, &automaton1::up_uv_output),
+				 ioa::make_action (input1, &automaton1::up_uv_input)),
+	&key);
   
   tss.reset ();
-  mu_assert (ioa::system::bind (b2, binder, &key) == -1);
+  mu_assert (ioa::system::bind (binder,
+				ioa::make_bind_executor (ioa::make_action (output2, &automaton1::up_uv_output),
+							 ioa::make_action (input2, &automaton1::up_uv_input)),
+				&key) == -1);
   mu_assert (tss.m_bind_key_exists_automaton == binder);
   mu_assert (tss.m_bind_key_exists_key == &key);
   
@@ -195,13 +192,12 @@ output_automaton_dne ()
   
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::up_uv_input));
-
   tss.reset ();
   int key;
-  mu_assert (ioa::system::bind (b, binder, &key) == -1);
+  mu_assert (ioa::system::bind (binder,
+				ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+							 ioa::make_action (input, &automaton1::up_uv_input)),
+				&key) == -1);
   mu_assert (tss.m_output_automaton_dne_automaton == binder);
   mu_assert (tss.m_output_automaton_dne_key == &key);
   
@@ -220,15 +216,15 @@ input_automaton_dne ()
   
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::up_uv_input));
 
   destroy (input);
   
   tss.reset ();
   int key;
-  mu_assert (ioa::system::bind (b, binder, &key) == -1);
+  mu_assert (ioa::system::bind (binder,
+				ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+							 ioa::make_action (input, &automaton1::up_uv_input)),
+				&key) == -1);
   mu_assert (tss.m_input_automaton_dne_automaton == binder);
   mu_assert (tss.m_input_automaton_dne_key == &key);
   
@@ -247,16 +243,19 @@ binding_exists ()
   
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::up_uv_input));
 
   int key1;
-  bind (b, binder, &key1);
+  bind (binder,
+	ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+				 ioa::make_action (input, &automaton1::up_uv_input)),
+	&key1);
   
   tss.reset ();
   int key2;
-  mu_assert (ioa::system::bind (b, binder, &key2) == -1);
+  mu_assert (ioa::system::bind (binder,
+				ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+							 ioa::make_action (input, &automaton1::up_uv_input)),
+				&key2) == -1);
   mu_assert (tss.m_binding_exists_automaton == binder);
   mu_assert (tss.m_binding_exists_key == &key2);
 
@@ -277,21 +276,18 @@ input_action_unavailable ()
   
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b1 (ioa::make_action (output1, &automaton1::up_uv_output),
-									     ioa::make_action (input, &automaton1::up_uv_input));
-  
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b2 (ioa::make_action (output2, &automaton1::up_uv_output),
-									     ioa::make_action (input, &automaton1::up_uv_input));
-
-
   int key1;
-  bind (b1, binder, &key1);
+  bind (binder,
+	ioa::make_bind_executor (ioa::make_action (output1, &automaton1::up_uv_output),
+				 ioa::make_action (input, &automaton1::up_uv_input)),
+	&key1);
 
   tss.reset ();
   int key2;
-  mu_assert (ioa::system::bind (b2, binder, &key2) == -1);
+  mu_assert (ioa::system::bind (binder,
+				ioa::make_bind_executor (ioa::make_action (output2, &automaton1::up_uv_output),
+							 ioa::make_action (input, &automaton1::up_uv_input)),
+				&key2) == -1);
   mu_assert (tss.m_input_action_unavailable_automaton == binder);
   mu_assert (tss.m_input_action_unavailable_key == &key2);
 
@@ -311,21 +307,19 @@ output_action_unavailable ()
   ioa::automaton_handle<automaton1> output = create (ioa::make_generator<automaton1> ());
 
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
-
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b1 (ioa::make_action (output, &automaton1::up_uv_output),
-									     ioa::make_action (input, &automaton1::up_uv_input));
-  
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::p_uv_input_action> b2 (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::p_uv_input, parameter));
-  
+    
   int key1;
-  bind (b1, binder, &key1);
+  bind (binder,
+	ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+				 ioa::make_action (input, &automaton1::up_uv_input)),
+	&key1);
 
   tss.reset ();
   int key2;
-  mu_assert (ioa::system::bind (b2, input, &key2) == -1);
+  mu_assert (ioa::system::bind (input,
+				ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+							 ioa::make_action (input, &automaton1::p_uv_input, parameter)),
+				&key2) == -1);
   mu_assert (tss.m_output_action_unavailable_automaton == input);
   mu_assert (tss.m_output_action_unavailable_key == &key2);
 
@@ -349,14 +343,13 @@ bound ()
   ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> input = create (holder);
-
-  ioa::system::bind_executor<automaton1, automaton1::p_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::p_uv_output, parameter),
-									    ioa::make_action (input, &automaton1::up_uv_input));
   
   tss.reset ();
   int key;
-  mu_assert (ioa::system::bind (b, output, &key) == 0);
+  mu_assert (ioa::system::bind (output,
+				ioa::make_bind_executor (ioa::make_action (output, &automaton1::p_uv_output, parameter),
+							 ioa::make_action (input, &automaton1::up_uv_input)),
+				&key) == 0);
   mu_assert (tss.m_bound_automaton == output);
   mu_assert (tss.m_bound_key == &key);
 
@@ -379,12 +372,11 @@ unbinder_dne ()
   ioa::automaton_handle<automaton1> output = create (ioa::make_generator<automaton1> ());
 
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
-
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::up_uv_input));
   
-  bind (b, binder, 0);
+  bind (binder,
+	ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+				 ioa::make_action (input, &automaton1::up_uv_input)),
+	0);
   
   destroy (binder);
 
@@ -406,12 +398,11 @@ bind_key_dne ()
 
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::up_uv_output),
-									    ioa::make_action (input, &automaton1::up_uv_input));
-
   int key;
-  bind (b, binder, &key);
+  bind (binder,
+	ioa::make_bind_executor (ioa::make_action (output, &automaton1::up_uv_output),
+				 ioa::make_action (input, &automaton1::up_uv_input)),
+	&key);
   
   tss.reset ();
   mu_assert (ioa::system::unbind (binder,
@@ -439,12 +430,11 @@ unbound ()
 
   ioa::automaton_handle<automaton1> input = create (ioa::make_generator<automaton1> ());
 
-  ioa::system::bind_executor<automaton1, automaton1::p_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b (ioa::make_action (output, &automaton1::p_uv_output, parameter),
-									    ioa::make_action (input, &automaton1::up_uv_input));
-
   int key;
-  bind (b, output, &key);
+  bind (output,
+	ioa::make_bind_executor (ioa::make_action (output, &automaton1::p_uv_output, parameter),
+				 ioa::make_action (input, &automaton1::up_uv_input)),
+	&key);
   
   tss.reset ();
   mu_assert (ioa::system::unbind (output,
@@ -510,24 +500,21 @@ automaton_destroyed ()
   int gamma_key;
   ioa::automaton_handle<automaton1> gamma = create (beta, ioa::make_generator<automaton1> (), &gamma_key);
 
-  ioa::system::bind_executor<automaton1, automaton1::p_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b1 (ioa::make_action (alpha, &automaton1::p_uv_output, parameter),
-									     ioa::make_action (beta, &automaton1::up_uv_input));
-
-  ioa::system::bind_executor<automaton1, automaton1::p_uv_output_action,
-			     automaton1, automaton1::up_uv_input_action> b2 (ioa::make_action (beta, &automaton1::p_uv_output, parameter),
-									     ioa::make_action (gamma, &automaton1::up_uv_input));
-
-  ioa::system::bind_executor<automaton1, automaton1::up_uv_output_action,
-			     automaton1, automaton1::p_uv_input_action> b3 (ioa::make_action (gamma, &automaton1::up_uv_output),
-									    ioa::make_action (beta, &automaton1::p_uv_input, parameter));
-
   int bind1;
-  bind (b1, alpha, &bind1);
+  bind (alpha,
+	ioa::make_bind_executor (ioa::make_action (alpha, &automaton1::p_uv_output, parameter),
+				 ioa::make_action (beta, &automaton1::up_uv_input)),
+	&bind1);
   int bind2;
-  bind (b2, beta, &bind2);
+  bind (beta,
+	ioa::make_bind_executor (ioa::make_action (beta, &automaton1::p_uv_output, parameter),
+				 ioa::make_action (gamma, &automaton1::up_uv_input)),
+	&bind2);
   int bind3;
-  bind (b3, beta, &bind3);
+  bind (beta,
+	ioa::make_bind_executor (ioa::make_action (gamma, &automaton1::up_uv_output),
+				 ioa::make_action (beta, &automaton1::p_uv_input, parameter)),
+	&bind3);
 
   tss.reset ();
   mu_assert (ioa::system::destroy (beta) == 0);
