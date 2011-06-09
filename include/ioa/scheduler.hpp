@@ -22,8 +22,6 @@ namespace ioa {
 			  time offset);
     
     static void run (shared_ptr<generator_interface> generator);
-    
-    static void clear ();
   };
 
 }

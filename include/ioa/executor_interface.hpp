@@ -19,6 +19,8 @@ namespace ioa {
   public:
     virtual ~input_executor_interface () { }
     virtual input_executor_interface* clone () const = 0;
+    virtual void bound () const = 0;
+    virtual void unbound () const = 0;
   };
 
   class unvalued_input_executor_interface :
@@ -67,6 +69,8 @@ namespace ioa {
     virtual void unbind (const aid_t,
 			 void* const) = 0;
     virtual void unbind_automaton (const aid_t) = 0;
+    virtual void bound () const = 0;
+    virtual void unbound () const = 0;
   };
 
   class unvalued_output_executor_interface :

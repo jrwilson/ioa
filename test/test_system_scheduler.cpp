@@ -71,6 +71,20 @@ namespace ioa {
     tss.m_bound_key = key;
   }
 
+  void system_scheduler::output_bound (const output_executor_interface& exec) {
+    const action_interface& ac = exec.get_action ();
+    tss.m_output_bound_aid = ac.get_aid ();
+    tss.m_output_bound_member_ptr = ac.get_member_ptr ();
+    tss.m_output_bound_pid = ac.get_pid ();
+  }
+
+  void system_scheduler::input_bound (const input_executor_interface& exec) {
+    const action_interface& ac = exec.get_action ();
+    tss.m_input_bound_aid = ac.get_aid ();
+    tss.m_input_bound_member_ptr = ac.get_member_ptr ();
+    tss.m_input_bound_pid = ac.get_pid ();
+  }
+
   void system_scheduler::bind_key_dne (const aid_t automaton,
 				       void* const key) {
     tss.m_bind_key_dne_automaton = automaton;
@@ -80,6 +94,16 @@ namespace ioa {
   void system_scheduler::unbound (const aid_t automaton,
 				  void* const key) {
     tss.m_unbound.insert (std::make_pair (automaton, key));
+  }
+
+  void system_scheduler::output_unbound (const output_executor_interface& exec) {
+    const action_interface& ac = exec.get_action ();
+    tss.m_output_unbound.insert (unbound_record (ac));
+  }
+
+  void system_scheduler::input_unbound (const input_executor_interface& exec) {
+    const action_interface& ac = exec.get_action ();
+    tss.m_input_unbound.insert (unbound_record (ac));
   }
   
   void system_scheduler::create_key_dne (const aid_t automaton,

@@ -11,47 +11,45 @@
 
 template <class T>
 class channel_automaton :
-  public ioa::dispatching_automaton
+  public ioa::automaton_interface
 {
 private:
   std::queue<T> m_queue;
 
-  V_UP_INPUT (channel_automaton, send, T, t) {
+  void send_action (const T& t) {
     m_queue.push (t);
     schedule ();
   }
+
+  V_UP_INPUT (channel_automaton, send, T);
   
   bool receive_precondition () const {
-    return !m_queue.empty () && receive.is_bound ();
+    return !m_queue.empty () && receive.bind_count () != 0;
   }
 
-  V_UP_OUTPUT (channel_automaton, receive, T) {
-    std::pair<bool, T> retval;
-
-    if (receive_precondition ()) {
-      retval = std::make_pair (true, m_queue.front ());
-      m_queue.pop ();
-    }
-
+  T receive_action () {
+    T retval =  m_queue.front ();
+    m_queue.pop ();
     schedule ();
     return retval;
   }
 
+  V_UP_OUTPUT (channel_automaton, receive, T);
 
   void schedule () {
     if (receive_precondition ()) {
-      ioa::scheduler::schedule (this, &channel_automaton::receive);
+      ioa::scheduler::schedule (&channel_automaton::receive);
     }
   }
 
 public:
 
   channel_automaton () :
-    ACTION (channel_automaton, send),
     ACTION (channel_automaton, receive)
-  { }
-  
-  void init () { }
+  {
+    schedule ();
+  }
+
 };
 
 #endif

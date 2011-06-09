@@ -1,24 +1,14 @@
 #ifndef __automaton_helper_hpp__
 #define __automaton_helper_hpp__
 
-#include <ioa/automaton_interface.hpp>
-#include <ioa/observer.hpp>
+#include <ioa/automaton_helper_interface.hpp>
 
 namespace ioa {
-
-  template <class I>
-  class automaton_helper_interface :
-    public observable
-  {
-  public:
-    virtual ~automaton_helper_interface () { }
-    virtual automaton_handle<I> get_handle () const = 0;
-  };
   
   template <class I>
   class automaton_helper :
     public system_automaton_helper_interface,
-    public automaton_helper_interface<I>
+    public automaton_handle_interface<I>
   {
   public:
     typedef I instance;

@@ -35,6 +35,12 @@ void bind (const ioa::aid_t binder,
   assert (ioa::system::bind (binder, exec, key) == 0);
   assert (tss.m_bound_automaton == binder);
   assert (tss.m_bound_key == key);
+  assert (tss.m_output_bound_aid == exec->get_output ().get_action ().get_aid ());
+  assert (tss.m_output_bound_member_ptr == exec->get_output ().get_action ().get_member_ptr ());
+  assert (tss.m_output_bound_pid == exec->get_output ().get_action ().get_pid ());
+  assert (tss.m_input_bound_aid == exec->get_input ().get_action ().get_aid ());
+  assert (tss.m_input_bound_member_ptr == exec->get_input ().get_action ().get_member_ptr ());
+  assert (tss.m_input_bound_pid == exec->get_input ().get_action ().get_pid ());
 }
 
 void destroy (const ioa::aid_t automaton)
@@ -440,6 +446,8 @@ unbound ()
   mu_assert (ioa::system::unbind (output,
 				  &key) == 0);
   mu_assert (tss.m_unbound.count (std::make_pair (output, &key)) == 1);
+  mu_assert (tss.m_output_unbound.count (unbound_record (ioa::make_action (output, &automaton1::p_uv_output, parameter))) == 1);
+  mu_assert (tss.m_input_unbound.count (unbound_record (ioa::make_action (input, &automaton1::up_uv_input))) == 1);
 
   return 0;
 }
@@ -524,6 +532,14 @@ automaton_destroyed ()
   mu_assert (tss.m_unbound.count (std::make_pair (beta, &bind2)) == 1);
   mu_assert (tss.m_unbound.count (std::make_pair (beta, &bind3)) == 1);
   
+  mu_assert (tss.m_output_unbound.count (unbound_record (ioa::make_action (alpha, &automaton1::p_uv_output, parameter))) == 1);
+  mu_assert (tss.m_output_unbound.count (unbound_record (ioa::make_action (beta, &automaton1::p_uv_output, parameter))) == 1);
+  mu_assert (tss.m_output_unbound.count (unbound_record (ioa::make_action (gamma, &automaton1::up_uv_output))) == 1);
+
+  mu_assert (tss.m_input_unbound.count (unbound_record (ioa::make_action (beta, &automaton1::up_uv_input))) == 1);
+  mu_assert (tss.m_input_unbound.count (unbound_record (ioa::make_action (gamma, &automaton1::up_uv_input))) == 1);
+  mu_assert (tss.m_input_unbound.count (unbound_record (ioa::make_action (beta, &automaton1::p_uv_input, parameter))) == 1);
+
   return 0;
 }
 

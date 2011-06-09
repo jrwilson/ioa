@@ -2,26 +2,9 @@
 #define __simple_scheduler_hpp__
 
 #include <ioa/scheduler.hpp>
-
-#include <ioa/sys_create_runnable.hpp>
-#include <ioa/sys_bind_runnable.hpp>
-#include <ioa/sys_unbind_runnable.hpp>
-#include <ioa/sys_destroy_runnable.hpp>
-
-#include <ioa/create_runnable.hpp>
-#include <ioa/bind_runnable.hpp>
-#include <ioa/unbind_runnable.hpp>
-#include <ioa/destroy_runnable.hpp>
 #include <ioa/action_runnable.hpp>
-
 #include <ioa/blocking_list.hpp>
-#include <ioa/thread.hpp>
 #include <ioa/thread_key.hpp>
-#include <queue>
-#include <algorithm>
-#include <fcntl.h>
-#include <sys/select.h>
-#include <unistd.h>
 #include <ioa/time.hpp>
 
 namespace ioa {
@@ -116,11 +99,19 @@ namespace ioa {
     static void bound (const aid_t automaton,
 		       void* const key);
 
+    static void output_bound (const output_executor_interface&);
+
+    static void input_bound (const input_executor_interface&);
+
     static void bind_key_dne (const aid_t automaton,
 			      void* const key);
 
     static void unbound (const aid_t automaton,
 			 void* const key);
+
+    static void output_unbound (const output_executor_interface&);
+
+    static void input_unbound (const input_executor_interface&);
 
     static void create_key_dne (const aid_t automaton,
 				void* const key);
@@ -136,23 +127,13 @@ namespace ioa {
     
     static aid_t get_current_aid ();
 
-    // TODO:  Move these functions and includes to cpp file.
+    static void schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr);
 
-    static void schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr) {
-      schedule_execq (new sys_create_runnable (get_current_aid ()));
-    }
+    static void schedule (automaton_interface::sys_bind_type automaton_interface::*member_ptr);
 
-    static void schedule (automaton_interface::sys_bind_type automaton_interface::*member_ptr) {
-      schedule_execq (new sys_bind_runnable (get_current_aid ()));
-    }
+    static void schedule (automaton_interface::sys_unbind_type automaton_interface::*member_ptr);
 
-    static void schedule (automaton_interface::sys_unbind_type automaton_interface::*member_ptr) {
-      schedule_execq (new sys_unbind_runnable (get_current_aid ()));
-    }
-
-    static void schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr) {
-      schedule_execq (new sys_destroy_runnable (get_current_aid ()));
-    }
+    static void schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr);
   
     template <class I, class M>
     static void schedule (M I::*member_ptr) {
@@ -167,7 +148,6 @@ namespace ioa {
     }
     
     static void run (shared_ptr<generator_interface> generator);
-    static void clear (void);
   };
 
   // Implement the scheduler.

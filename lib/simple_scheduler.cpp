@@ -1,5 +1,24 @@
 #include <ioa/simple_scheduler.hpp>
 
+#include <algorithm>
+#include <queue>
+
+#include <fcntl.h>
+#include <sys/select.h>
+#include <unistd.h>
+#include <ioa/thread.hpp>
+#include <ioa/sys_create_runnable.hpp>
+#include <ioa/sys_bind_runnable.hpp>
+#include <ioa/sys_unbind_runnable.hpp>
+#include <ioa/sys_destroy_runnable.hpp>
+
+#include <ioa/create_runnable.hpp>
+#include <ioa/bind_runnable.hpp>
+#include <ioa/unbind_runnable.hpp>
+#include <ioa/destroy_runnable.hpp>
+
+#include <ioa/output_bound_runnable.hpp>
+
 namespace ioa {
 
   blocking_list<std::pair<bool, runnable_interface*> > simple_scheduler::m_sysq;
@@ -173,6 +192,22 @@ namespace ioa {
     return retval;
   }
   
+  void simple_scheduler::schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr) {
+    schedule_sysq (new sys_create_runnable (get_current_aid ()));
+  }
+  
+  void simple_scheduler::schedule (automaton_interface::sys_bind_type automaton_interface::*member_ptr) {
+    schedule_sysq (new sys_bind_runnable (get_current_aid ()));
+  }
+
+  void simple_scheduler::schedule (automaton_interface::sys_unbind_type automaton_interface::*member_ptr) {
+    schedule_sysq (new sys_unbind_runnable (get_current_aid ()));
+  }
+  
+  void simple_scheduler::schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr) {
+    schedule_sysq (new sys_destroy_runnable (get_current_aid ()));
+  }
+
   void simple_scheduler::run (shared_ptr<generator_interface> generator) {
     int r;
     
@@ -196,13 +231,12 @@ namespace ioa {
     sysq_thread.join ();
     execq_thread.join ();
     timerq_thread.join ();
-    
-    // TODO:  Do I need to close both ends?
-    close (m_wakeup_fd[0]);
-    close (m_wakeup_fd[1]);
-  }
-  
-  void simple_scheduler::clear (void) {
+
+    // There are no runnables left in the system, thus, there is no more work to do.
+    // If all of the automata have been coded correctly, then we have reached "fixed point".
+
+    // Consequently, we are going to reset.
+
     // We clear the system first because it might add something to a run queue.
     system::clear ();
     
@@ -221,7 +255,11 @@ namespace ioa {
     }
     m_execq.list.clear ();
     
-    // Notice that the post-conditions of clear () match those of run ().
+    // TODO:  Do I need to close both ends?
+    close (m_wakeup_fd[0]);
+    close (m_wakeup_fd[1]);
+
+    // Notice that the post-conditions match the preconditions.
     assert (m_sysq.list.size () == 0);
     assert (m_execq.list.size () == 0);
     assert (!keep_going ());
@@ -261,83 +299,99 @@ namespace ioa {
 
   void simple_scheduler::create_key_exists (const aid_t automaton,
 					    void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_create_key_exists, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_create_key_exists, key)));
   }
 
   void simple_scheduler::instance_exists (const aid_t automaton,
 					  void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_instance_exists, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_instance_exists, key)));
   }
   
   void simple_scheduler::automaton_created (const aid_t automaton,
 					    void* const key,
 					    const aid_t child) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_automaton_created, std::make_pair (key, child))));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_automaton_created, std::make_pair (key, child))));
   }
   
   void simple_scheduler::bind_key_exists (const aid_t automaton,
 					  void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bind_key_exists, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bind_key_exists, key)));
   }
 
   void simple_scheduler::output_automaton_dne (const aid_t automaton,
 					       void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_output_automaton_dne, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_output_automaton_dne, key)));
   }
 
   void simple_scheduler::input_automaton_dne (const aid_t automaton,
 					      void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_input_automaton_dne, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_input_automaton_dne, key)));
   }
   
   void simple_scheduler::binding_exists (const aid_t automaton,
 					 void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_binding_exists, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_binding_exists, key)));
   }
   
   void simple_scheduler::input_action_unavailable (const aid_t automaton,
 						   void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_input_action_unavailable, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_input_action_unavailable, key)));
   }
   
   void simple_scheduler::output_action_unavailable (const aid_t automaton,
 						    void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_output_action_unavailable, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_output_action_unavailable, key)));
   }
     
   void simple_scheduler::bound (const aid_t automaton,
 				void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bound, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bound, key)));
+  }
+
+  void simple_scheduler::output_bound (const output_executor_interface& exec) {
+    schedule_sysq (new output_bound_runnable (exec));
+  }
+
+  void simple_scheduler::input_bound (const input_executor_interface& exec) {
+    schedule_sysq (new input_bound_runnable (exec));
   }
 
   void simple_scheduler::bind_key_dne (const aid_t automaton,
 				       void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bind_key_dne, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bind_key_dne, key)));
   }
   
   void simple_scheduler::unbound (const aid_t automaton,
 				  void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_unbound, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_unbound, key)));
+  }
+
+  void simple_scheduler::output_unbound (const output_executor_interface& exec) {
+    schedule_sysq (new output_unbound_runnable (exec));
+  }
+
+  void simple_scheduler::input_unbound (const input_executor_interface& exec) {
+    schedule_sysq (new input_unbound_runnable (exec));
   }
 
   void simple_scheduler::create_key_dne (const aid_t automaton,
 					 void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_create_key_dne, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_create_key_dne, key)));
   }
   
   void simple_scheduler::automaton_destroyed (const aid_t automaton,
 					      void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_automaton_destroyed, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_automaton_destroyed, key)));
   }
   
   void simple_scheduler::recipient_dne (const aid_t automaton,
 					void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_recipient_dne, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_recipient_dne, key)));
   }
 
   void simple_scheduler::event_delivered (const aid_t automaton,
 					  void* const key) {
-    schedule_execq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_event_delivered, key)));
+    schedule_sysq (make_action_runnable (make_action (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_event_delivered, key)));
   }
 
   // Implement the system scheduler.
@@ -422,6 +476,14 @@ namespace ioa {
 			      void* const key) {
     simple_scheduler::bound (automaton, key);
   }
+
+  void system_scheduler::output_bound (const output_executor_interface& exec) {
+    simple_scheduler::output_bound (exec);
+  }
+
+  void system_scheduler::input_bound (const input_executor_interface& exec) {
+    simple_scheduler::input_bound (exec);
+  }
   
   void system_scheduler::bind_key_dne (const aid_t automaton,
 				       void* const key) {
@@ -431,6 +493,14 @@ namespace ioa {
   void system_scheduler::unbound (const aid_t automaton,
 				  void* const key) {
     simple_scheduler::unbound (automaton, key);
+  }
+
+  void system_scheduler::output_unbound (const output_executor_interface& exec) {
+    simple_scheduler::output_unbound (exec);
+  }
+
+  void system_scheduler::input_unbound (const input_executor_interface& exec) {
+    simple_scheduler::input_unbound (exec);
   }
   
   void system_scheduler::create_key_dne (const aid_t automaton,
@@ -459,10 +529,6 @@ namespace ioa {
   
   void scheduler::run (shared_ptr<generator_interface> generator) {
     simple_scheduler::run (generator);
-  }
-  
-  void scheduler::clear () {
-    simple_scheduler::clear ();
   }
   
 }

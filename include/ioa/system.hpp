@@ -148,6 +148,10 @@ namespace ioa {
     static int execute_sys_bind (const aid_t automaton);
     static int execute_sys_unbind (const aid_t automaton);
     static int execute_sys_destroy (const aid_t automaton);
+    static int execute_output_bound (output_executor_interface& exec);
+    static int execute_input_bound (input_executor_interface& exec);
+    static int execute_output_unbound (output_executor_interface& exec);
+    static int execute_input_unbound (input_executor_interface& exec);
 
     template <class I, class M, class K, class VS, class VT> class action_executor_impl;
 
@@ -182,6 +186,24 @@ namespace ioa {
 	system_scheduler::clear_current_aid ();
       }
     
+      void bound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.bound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
+      void unbound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.unbound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
       const action_interface& get_action () const {
 	return m_action;
       }
@@ -221,6 +243,24 @@ namespace ioa {
 	m_action (*m_instance, t);
 	system_scheduler::clear_current_aid ();
       }
+
+      void bound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.bound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
+      void unbound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.unbound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
     
       const action_interface& get_action () const {
 	return m_action;
@@ -238,42 +278,29 @@ namespace ioa {
     private:
       struct record
       {
-	const unvalued_input_executor_interface* const m_input;
+	const unvalued_output_executor_interface& m_output;
+	std::auto_ptr<unvalued_input_executor_interface> m_input;
 	const aid_t m_binder;
 	void* const m_key;
 
-	record (const unvalued_input_executor_interface* const input,
+	record (const unvalued_output_executor_interface& output,
+		const input_executor_interface& input,
 		const aid_t binder,
 		void* const key) :
-	  m_input (input),
+	  m_output (output),
+	  m_input (dynamic_cast<unvalued_input_executor_interface*> (input.clone ())),
 	  m_binder (binder),
 	  m_key (key)
 	{
 	  system_scheduler::bound (m_binder, m_key);
-	  
-	  // TODO:  Implement and move to bind.
-	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
-	  // m_output_action.bound (m_output_ref);
-	  // system_scheduler::clear_current_aid ();
-	  
-	  // system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
-	  // m_input_action.bound (m_input_ref);
-	  // system_scheduler::clear_current_aid ();
+	  system_scheduler::output_bound (m_output);
+	  system_scheduler::input_bound (*m_input.get ());
 	}
 
 	~record () {
-	  delete m_input;
-
 	  system_scheduler::unbound (m_binder, m_key);
-
-	  // TODO:  Implement and move to unbind.
-	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
-	  // m_output_action.unbound (m_output_ref);
-	  // system_scheduler::clear_current_aid ();
-	  
-	  // system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
-	  // m_input_action.unbound (m_input_ref);
-	  // system_scheduler::clear_current_aid ();
+	  system_scheduler::output_unbound (m_output);
+	  system_scheduler::input_unbound (*m_input.get ());
 	}
 
       };
@@ -356,6 +383,24 @@ namespace ioa {
 	}
       }
 
+      void bound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.bound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
+      void unbound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.unbound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
       const action_interface& get_action () const {
 	return m_action;
       }
@@ -414,10 +459,7 @@ namespace ioa {
       void bind (const input_executor_interface& input,
 		 const aid_t binder,
 		 void* const key) {
-	// TODO:  I think we can prove that this dynamic cast will always succeed.  Thus, we can make it a static cast.
-	const unvalued_input_executor_interface* i = dynamic_cast<const unvalued_input_executor_interface*> (input.clone ());
-	assert (i != 0);
-	m_records.insert (std::make_pair (input.get_action ().get_aid (), new record (i, binder, key)));
+	m_records.insert (std::make_pair (input.get_action ().get_aid (), new record (*this, input, binder, key)));
       }
 
       void unbind (const aid_t binder,
@@ -473,42 +515,29 @@ namespace ioa {
     private:
       struct record
       {
-	const valued_input_executor_interface<VT>* const m_input;
+	const valued_output_executor_interface<VT>& m_output;
+	std::auto_ptr<valued_input_executor_interface<VT> > m_input;
 	const aid_t m_binder;
 	void* const m_key;
 
-	record (const valued_input_executor_interface<VT>* const input,
+	record (const valued_output_executor_interface<VT>& output,
+		const input_executor_interface& input,
 		const aid_t binder,
 		void* const key) :
-	  m_input (input),
+	  m_output (output),
+	  m_input (dynamic_cast<valued_input_executor_interface<VT>*> (input.clone ())),
 	  m_binder (binder),
 	  m_key (key)
 	{
 	  system_scheduler::bound (m_binder, m_key);
-	  
-	  // TODO:  See previous.
-	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
-	  // m_output_action.bound (m_output_ref);
-	  // system_scheduler::clear_current_aid ();
-	  
-	  // system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
-	  // m_input_action.bound (m_input_ref);
-	  // system_scheduler::clear_current_aid ();
+	  system_scheduler::output_bound (m_output);
+	  system_scheduler::input_bound (*m_input.get ());
 	}
 
 	~record () {
-	  delete m_input;
-
 	  system_scheduler::unbound (m_binder, m_key);
-
-	  // TODO:  See previous.
-	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
-	  // m_output_action.unbound (m_output_ref);
-	  // system_scheduler::clear_current_aid ();
-	  
-	  // system_scheduler::set_current_aid (m_input_action.get_aid (), m_input_ref);
-	  // m_input_action.unbound (m_input_ref);
-	  // system_scheduler::clear_current_aid ();
+	  system_scheduler::output_unbound (m_output);
+	  system_scheduler::input_unbound (*m_input.get ());
 	}
 
       };
@@ -592,6 +621,24 @@ namespace ioa {
 	}
       }
 
+      void bound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.bound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
+      void unbound () const {
+	assert (m_instance != 0);
+	system::lock_automaton (m_action.get_aid ());
+	system_scheduler::set_current_aid (m_action.get_aid ());
+	m_action.unbound (*m_instance);
+	system_scheduler::clear_current_aid ();
+	system::unlock_automaton (m_action.get_aid ());
+      }
+
       const action_interface& get_action () const {
 	return m_action;
       }
@@ -650,10 +697,7 @@ namespace ioa {
       void bind (const input_executor_interface& input,
 		 const aid_t binder,
 		 void* const key) {
-	// TODO:  I think we can prove that this dynamic cast will always succeed.  Thus, we can make it a static cast.
-	const valued_input_executor_interface<VT>* i = dynamic_cast<const valued_input_executor_interface<VT>*> (input.clone ());
-	assert (i != 0);
-	m_records.insert (std::make_pair (input.get_action ().get_aid (), new record (i, binder, key)));
+	m_records.insert (std::make_pair (input.get_action ().get_aid (), new record (*this, input, binder, key)));
       }
 
       void unbind (const aid_t binder,

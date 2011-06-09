@@ -4,6 +4,8 @@
 #include <ioa/scheduler.hpp>
 #include <ioa/observer.hpp>
 
+// TODO:  Eliminate redundancy.
+
 namespace ioa {
 
   template <class C, void (C::*action_ptr) ()>
@@ -14,11 +16,11 @@ namespace ioa {
     public observable
   {
   private:
-    bool m_bind_status;
+    bool m_bound;
     
   public:
     uv_up_input_wrapper () :
-      m_bind_status (false)
+      m_bound (false)
     { }
     
     void operator() (C& c) {
@@ -26,17 +28,19 @@ namespace ioa {
     }
 
     void bound () {
-      m_bind_status = true;
+      assert (!m_bound);
+      m_bound = true;
       notify_observers ();
     }
 
     void unbound () {
-      m_bind_status = false;
+      assert (m_bound);
+      m_bound = false;
       notify_observers ();
     }
 
     bool is_bound () const {
-      return m_bind_status;
+      return m_bound;
     }
 
   };
@@ -50,6 +54,7 @@ namespace ioa {
   {
   private:
     std::set<P> m_parameters;
+    P m_recent_parameter;
     
   public:
     void operator() (C& c, P p) {
@@ -57,16 +62,24 @@ namespace ioa {
     }
     
     void bound (P p) {
+      assert (m_parameters.count (p) == 0);
       m_parameters.insert (p);
+      m_recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
+      assert (m_parameters.count (p) == 1);
       m_parameters.erase (p);
+      m_recent_parameter = p;
       notify_observers ();
     }
 
-    void is_bound (P p) const {
+    P recent_parameter () const {
+      return m_recent_parameter;
+    }
+
+    bool is_bound (P p) const {
       return m_parameters.count (p) != 0;
     }
   };
@@ -79,11 +92,11 @@ namespace ioa {
     public observable
   {
   private:
-    bool m_bind_status;
+    bool m_bound;
     
   public:
     v_up_input_wrapper () :
-      m_bind_status (false)
+      m_bound (false)
     { }
     
     void operator() (C& c, const T& t) {
@@ -91,17 +104,19 @@ namespace ioa {
     }
     
     void bound () {
-      m_bind_status = true;
+      assert (!m_bound);
+      m_bound = true;
       notify_observers ();
     }
 
     void unbound () {
-      m_bind_status = false;
+      assert (m_bound);
+      m_bound = false;
       notify_observers ();
     }
 
     bool is_bound () const {
-      return m_bind_status;
+      return m_bound;
     }
   };
 
@@ -114,6 +129,7 @@ namespace ioa {
   {
   private:
     std::set<P> m_parameters;
+    P m_recent_parameter;
     
   public:
     void operator() (C& c, const T& t, P p) {
@@ -121,13 +137,21 @@ namespace ioa {
     }
     
     void bound (P p) {
+      assert (m_parameters.count (p) == 0);
       m_parameters.insert (p);
+      m_recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
+      assert (m_parameters.count (p) == 1);
       m_parameters.erase (p);
+      m_recent_parameter = p;
       notify_observers ();
+    }
+
+    P recent_parameter () const {
+      return m_recent_parameter;
     }
 
     void is_bound (P p) const {
@@ -144,12 +168,12 @@ namespace ioa {
   {
   private:
     uv_up_output_wrapper C::*m_member_object_ptr;
-    bool m_bind_status;
+    size_t m_bind_count;
     
   public:
     uv_up_output_wrapper (uv_up_output_wrapper C::*member_object_ptr) :
       m_member_object_ptr (member_object_ptr),
-      m_bind_status (false)
+      m_bind_count (0)
     { }
     
     bool precondition (C& c) const {
@@ -161,19 +185,20 @@ namespace ioa {
     }
 
     void bound () {
-      m_bind_status = true;
+      ++m_bind_count;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr);
       notify_observers ();
     }
 
     void unbound () {
-      m_bind_status = false;
+      assert (m_bind_count > 0);
+      --m_bind_count;
       notify_observers ();
     }
 
-    bool is_bound () const {
-      return m_bind_status;
+    size_t bind_count () const {
+      return m_bind_count;
     }
   };
 
@@ -186,7 +211,8 @@ namespace ioa {
   {
   private:
     uv_p_output_wrapper C::*m_member_object_ptr;
-    std::set<P> m_parameters;
+    std::map<P, size_t> m_parameters;
+    P m_recent_parameter;
     
   public:
     uv_p_output_wrapper (uv_p_output_wrapper C::*member_object_ptr) :
@@ -202,19 +228,38 @@ namespace ioa {
     }
     
     void bound (P p) {
-      m_parameters.insert (p);
+      if (m_parameters.find (p) == m_parameters.end ()) {
+	m_parameters.insert (std::make_pair (p, 0));
+      }
+      ++m_parameters[p];
+      m_recent_parameter = p;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr, p);
       notify_observers ();
     }
 
     void unbound (P p) {
-      m_parameters.erase (p);
+      assert (m_parameters.find (p) != m_parameters.end ());
+      --m_parameters[p];
+      if (m_parameters[p] == 0) {
+	m_parameters.erase (p);
+      }
+      m_recent_parameter = p;
       notify_observers ();
     }
 
-    void is_bound (P p) const {
-      return m_parameters.count (p) != 0;
+    P recent_parameter () const {
+      return m_recent_parameter;
+    }
+
+    size_t bind_count (P p) const {
+      typename std::map<P, size_t>::const_iterator pos = m_parameters.find (p);
+      if (pos != m_parameters.end ()) {
+	return pos->second;
+      }
+      else {
+	return 0;
+      }
     }
   };
 
@@ -227,12 +272,12 @@ namespace ioa {
   {
   private:
     v_up_output_wrapper C::*m_member_object_ptr;
-    bool m_bind_status;
+    size_t m_bind_count;
     
   public:
     v_up_output_wrapper (v_up_output_wrapper C::*member_object_ptr) :
       m_member_object_ptr (member_object_ptr),
-      m_bind_status (false)
+      m_bind_count (0)
     { }
     
     bool precondition (C& c) const {
@@ -244,19 +289,20 @@ namespace ioa {
     }
     
     void bound () {
-      m_bind_status = true;
+      ++m_bind_count;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr);
       notify_observers ();
     }
     
     void unbound () {
-      m_bind_status = false;
+      assert (m_bind_count > 0);
+      --m_bind_count;
       notify_observers ();
     }
 
-    bool is_bound () const {
-      return m_bind_status;
+    size_t bind_count () const {
+      return m_bind_count;
     }
   };
 
@@ -269,7 +315,8 @@ namespace ioa {
   {
   private:
     v_p_output_wrapper C::*m_member_object_ptr;
-    std::set<P> m_parameters;
+    std::map<P, size_t> m_parameters;
+    P m_recent_parameter;
     
   public:
     v_p_output_wrapper (v_p_output_wrapper C::*member_object_ptr) :
@@ -285,19 +332,38 @@ namespace ioa {
     }
     
     void bound (P p) {
-      m_parameters.insert (p);
+      if (m_parameters.find (p) == m_parameters.end ()) {
+	m_parameters.insert (std::make_pair (p, 0));
+      }
+      ++m_parameters[p];
+      m_recent_parameter = p;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr, p);
       notify_observers ();
     }
     
     void unbound (P p) {
-      m_parameters.erase (p);
+      assert (m_parameters.find (p) != m_parameters.end ());
+      --m_parameters[p];
+      if (m_parameters[p] == 0) {
+	m_parameters.erase (p);
+      }
+      m_recent_parameter = p;
       notify_observers ();
     }
 
-    void is_bound (P p) const {
-      return m_parameters.count (p) != 0;
+    P recent_parameter () const {
+      return m_recent_parameter;
+    }
+
+    size_t bind_count (P p) const {
+      typename std::map<P, size_t>::const_iterator pos = m_parameters.find (p);
+      if (pos != m_parameters.end ()) {
+	return pos->second;
+      }
+      else {
+	return 0;
+      }
     }
 
   };

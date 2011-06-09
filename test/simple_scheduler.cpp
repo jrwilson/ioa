@@ -6,6 +6,8 @@
 #include "instance_holder.hpp"
 #include <ioa/automaton_helper.hpp>
 
+#include <iostream>
+
 static bool goal_reached;
 
 class create_instance_exists :
@@ -55,11 +57,10 @@ public:
 static const char*
 instance_exists ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<create_instance_exists> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -99,11 +100,10 @@ public:
 static const char*
 automaton_created ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<create_automaton_created> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -196,11 +196,10 @@ public:
 static const char*
 output_automaton_dne ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_output_automaton_dne> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -293,11 +292,10 @@ public:
 static const char*
 input_automaton_dne ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_input_automaton_dne> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -406,11 +404,10 @@ public:
 static const char*
 binding_exists ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_binding_exists> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -520,11 +517,10 @@ public:
 static const char*
 input_action_unavailable ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_input_action_unavailable> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -633,11 +629,10 @@ public:
 static const char*
 output_action_unavailable ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_output_action_unavailable> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -744,11 +739,10 @@ public:
 static const char*
 bound ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_bound> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -877,11 +871,10 @@ public:
 static const char*
 unbound ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_unbound> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -991,11 +984,10 @@ public:
 static const char*
 unbound2 ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<bind_unbound2> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -1062,11 +1054,10 @@ public:
 static const char*
 automaton_destroyed ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<destroy_automaton_destroyed> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 
@@ -1110,11 +1101,10 @@ public:
 static const char*
 automaton_destroyed2 ()
 {
-  ioa::scheduler::clear ();
+  std::cout << __func__ << std::endl;
   goal_reached = false;
   ioa::scheduler::run (ioa::make_generator<destroy_automaton_destroyed2> ());
   mu_assert (goal_reached);
-  ioa::scheduler::clear ();
   return 0;
 }
 

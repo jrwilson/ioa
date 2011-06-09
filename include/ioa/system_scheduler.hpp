@@ -65,11 +65,19 @@ namespace ioa {
     static void bound (const aid_t automaton,
 		       void* const key);
 
+    static void output_bound (const output_executor_interface&);
+
+    static void input_bound (const input_executor_interface&);
+
     static void bind_key_dne (const aid_t automaton,
 			      void* const key);
 
     static void unbound (const aid_t automaton,
 			 void* const key);
+
+    static void output_unbound (const output_executor_interface&);
+
+    static void input_unbound (const input_executor_interface&);
 
     static void create_key_dne (const aid_t automaton,
 				void* const key);

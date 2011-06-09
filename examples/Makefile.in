@@ -34,8 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = clock_213$(EXEEXT) count_to_ten$(EXEEXT) \
-	slow_count$(EXEEXT)
+noinst_PROGRAMS = asynch_lcr$(EXEEXT) clock_213$(EXEEXT) \
+	count_to_ten$(EXEEXT) slow_count$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -50,6 +50,11 @@ CONFIG_HEADER = $(top_builddir)/include/ioa/config.hpp
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_asynch_lcr_OBJECTS = asynch_lcr.$(OBJEXT)
+asynch_lcr_OBJECTS = $(am_asynch_lcr_OBJECTS)
+asynch_lcr_LDADD = $(LDADD)
+asynch_lcr_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+	$(top_builddir)/lib/libueioa_simple_scheduler.la
 am_clock_213_OBJECTS = clock_213.$(OBJEXT)
 clock_213_OBJECTS = $(am_clock_213_OBJECTS)
 clock_213_LDADD = $(LDADD)
@@ -78,10 +83,10 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(clock_213_SOURCES) $(count_to_ten_SOURCES) \
-	$(slow_count_SOURCES)
-DIST_SOURCES = $(clock_213_SOURCES) $(count_to_ten_SOURCES) \
-	$(slow_count_SOURCES)
+SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
+	$(count_to_ten_SOURCES) $(slow_count_SOURCES)
+DIST_SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
+	$(count_to_ten_SOURCES) $(slow_count_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -206,11 +211,9 @@ top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_scheduler.la
 
-# asynch_lcr \
 # file_reader \
 # peterson_leader
-
-# asynch_lcr_SOURCES = asynch_lcr.cpp
+asynch_lcr_SOURCES = asynch_lcr.cpp
 clock_213_SOURCES = clock_213.cpp
 count_to_ten_SOURCES = count_to_ten.cpp
 # file_reader_SOURCES = file_reader.cpp
@@ -259,6 +262,9 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+asynch_lcr$(EXEEXT): $(asynch_lcr_OBJECTS) $(asynch_lcr_DEPENDENCIES) 
+	@rm -f asynch_lcr$(EXEEXT)
+	$(CXXLINK) $(asynch_lcr_OBJECTS) $(asynch_lcr_LDADD) $(LIBS)
 clock_213$(EXEEXT): $(clock_213_OBJECTS) $(clock_213_DEPENDENCIES) 
 	@rm -f clock_213$(EXEEXT)
 	$(CXXLINK) $(clock_213_OBJECTS) $(clock_213_LDADD) $(LIBS)
@@ -275,6 +281,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asynch_lcr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_213.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/count_to_ten.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slow_count.Po@am__quote@

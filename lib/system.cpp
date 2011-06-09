@@ -472,6 +472,54 @@ namespace ioa {
     return 0;
   }
 
+  int system::execute_output_bound (output_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+    
+    exec.bound ();
+    return 0;
+  }
+
+  int system::execute_input_bound (input_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+
+    exec.bound ();
+    return 0;
+  }
+
+  int system::execute_output_unbound (output_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+    
+    exec.unbound ();
+    return 0;
+  }
+
+  int system::execute_input_unbound (input_executor_interface& exec) {
+    shared_lock lock (m_mutex);
+    
+    if (!exec.fetch_instance ()) {
+      // Automaton does not exist.
+      return -1;
+    }
+
+    exec.unbound ();
+    return 0;
+  }
+
   void system::lock_automaton (const aid_t handle) {
     m_records[handle]->lock ();
   }
