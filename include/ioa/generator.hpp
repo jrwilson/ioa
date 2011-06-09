@@ -43,20 +43,14 @@ namespace ioa {
     }
   };
 
-<<<<<<< HEAD
-  template <class I, typename A0>
-  std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0) {
-    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator1<I, A0> (a0));
-=======
   template <class I, class A0>
   shared_ptr<generator_interface> make_generator (A0 a0) {
     return shared_ptr<generator_interface> (new generator1<I, A0> (a0));
->>>>>>> new_syscall_interface
   }
 
   template <class T, typename A0, typename A1>
   struct generator2 :
-    public generator_interface<T>
+    public generator_interface
   {
     typedef T result_type;
     A0 m_a0;
@@ -73,13 +67,13 @@ namespace ioa {
   };
 
   template <class I, typename A0, typename A1>
-  std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0, A1 a1) {
-    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator2<I, A0, A1> (a0, a1));
+  shared_ptr<generator_interface> make_generator (A0 a0, A1 a1) {
+    return shared_ptr<generator_interface> (new generator2<I, A0, A1> (a0, a1));
   }
 
   template <class T, typename A0, typename A1, typename A2>
   struct generator3 :
-    public generator_interface<T>
+    public generator_interface
   {
     typedef T result_type;
     A0 m_a0;
@@ -98,8 +92,8 @@ namespace ioa {
   };
 
   template <class I, typename A0, typename A1, typename A2>
-  std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0, A1 a1, A2 a2) {
-    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator3<I, A0, A1, A2> (a0, a1, a2));
+  shared_ptr<generator_interface> make_generator (A0 a0, A1 a1, A2 a2) {
+    return shared_ptr<generator_interface> (new generator3<I, A0, A1, A2> (a0, a1, a2));
   }
 
 }
