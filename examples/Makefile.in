@@ -35,7 +35,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = asynch_lcr$(EXEEXT) clock_213$(EXEEXT) \
-	count_to_ten$(EXEEXT) slow_count$(EXEEXT)
+	count_to_ten$(EXEEXT) peterson_leader$(EXEEXT) \
+	slow_count$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -65,6 +66,11 @@ count_to_ten_OBJECTS = $(am_count_to_ten_OBJECTS)
 count_to_ten_LDADD = $(LDADD)
 count_to_ten_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
 	$(top_builddir)/lib/libueioa_simple_scheduler.la
+am_peterson_leader_OBJECTS = peterson_leader.$(OBJEXT)
+peterson_leader_OBJECTS = $(am_peterson_leader_OBJECTS)
+peterson_leader_LDADD = $(LDADD)
+peterson_leader_DEPENDENCIES = $(top_builddir)/lib/libueioa.la \
+	$(top_builddir)/lib/libueioa_simple_scheduler.la
 am_slow_count_OBJECTS = slow_count.$(OBJEXT)
 slow_count_OBJECTS = $(am_slow_count_OBJECTS)
 slow_count_LDADD = $(LDADD)
@@ -84,9 +90,11 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
-	$(count_to_ten_SOURCES) $(slow_count_SOURCES)
+	$(count_to_ten_SOURCES) $(peterson_leader_SOURCES) \
+	$(slow_count_SOURCES)
 DIST_SOURCES = $(asynch_lcr_SOURCES) $(clock_213_SOURCES) \
-	$(count_to_ten_SOURCES) $(slow_count_SOURCES)
+	$(count_to_ten_SOURCES) $(peterson_leader_SOURCES) \
+	$(slow_count_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -211,13 +219,12 @@ top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_scheduler.la
 
-# file_reader \
-# peterson_leader
+# file_reader
 asynch_lcr_SOURCES = asynch_lcr.cpp
 clock_213_SOURCES = clock_213.cpp
 count_to_ten_SOURCES = count_to_ten.cpp
 # file_reader_SOURCES = file_reader.cpp
-# peterson_leader_SOURCES = peterson_leader.cpp
+peterson_leader_SOURCES = peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
 all: all-am
 
@@ -271,6 +278,9 @@ clock_213$(EXEEXT): $(clock_213_OBJECTS) $(clock_213_DEPENDENCIES)
 count_to_ten$(EXEEXT): $(count_to_ten_OBJECTS) $(count_to_ten_DEPENDENCIES) 
 	@rm -f count_to_ten$(EXEEXT)
 	$(CXXLINK) $(count_to_ten_OBJECTS) $(count_to_ten_LDADD) $(LIBS)
+peterson_leader$(EXEEXT): $(peterson_leader_OBJECTS) $(peterson_leader_DEPENDENCIES) 
+	@rm -f peterson_leader$(EXEEXT)
+	$(CXXLINK) $(peterson_leader_OBJECTS) $(peterson_leader_LDADD) $(LIBS)
 slow_count$(EXEEXT): $(slow_count_OBJECTS) $(slow_count_DEPENDENCIES) 
 	@rm -f slow_count$(EXEEXT)
 	$(CXXLINK) $(slow_count_OBJECTS) $(slow_count_LDADD) $(LIBS)
@@ -284,6 +294,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asynch_lcr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_213.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/count_to_ten.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/peterson_leader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slow_count.Po@am__quote@
 
 .cpp.o:
