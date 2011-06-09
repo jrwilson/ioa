@@ -6,39 +6,27 @@
 
 namespace ioa {
 
-  template <class OI, class OM, class II, class IM, class C, class D>
   class bind_runnable :
     public runnable_interface
   {
   private:
-    const action<OI, OM> m_output_action;
-    const action<II, IM> m_input_action;
-    const automaton_handle<C> m_automaton;
-    D& m_d;
+    const aid_t m_automaton;
+    shared_ptr<bind_executor_interface> m_exec;
+    void* const m_key;
     
   public:
-    bind_runnable (const action<OI, OM> output_action,
-		   const action<II, IM> input_action,
-		   const automaton_handle<C>& automaton,
-		   D& d) :
-      m_output_action (output_action),
-      m_input_action (input_action),
+    bind_runnable (const aid_t automaton,
+		   shared_ptr<bind_executor_interface> exec,
+		   void* const key) :
       m_automaton (automaton),
-      m_d (d)
+      m_exec (exec),
+      m_key (key)
     { }
     
     void operator() () {
-      system::bind (m_output_action, m_input_action, m_automaton, m_d);
+      system::bind (m_automaton, m_exec, m_key);
     }
   };
-  
-  template <class OI, class OM, class II, class IM, class C, class D>
-  bind_runnable<OI, OM, II, IM, C, D>* make_bind_runnable (const action<OI, OM> output_action,
-							   const action<II, IM> input_action,
-							   const automaton_handle<C>& automaton,
-							   D& d) {
-    return new bind_runnable<OI, OM, II, IM, C, D> (output_action, input_action, automaton, d);
-  }
   
 }
 

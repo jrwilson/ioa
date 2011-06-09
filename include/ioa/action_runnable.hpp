@@ -24,19 +24,19 @@ namespace ioa {
     public action_runnable_interface
   {
   private:
-    const action<I, M> m_action;
+    system::action_executor<I, M> m_exec;
     
   public:
     action_runnable (const action<I, M> action) :
-      m_action (action)
+      m_exec (action)
     { }
     
     void operator() () {
-      system::execute (m_action);
+      system::execute (m_exec);
     }
     
     const action_interface& get_action () const {
-      return m_action;
+      return m_exec.get_action ();
     }
   };
   

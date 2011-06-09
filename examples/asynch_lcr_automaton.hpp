@@ -11,7 +11,7 @@
 */
 
 class asynch_lcr_automaton :
-  public ioa::dispatching_automaton
+  public ioa::automaton_interface
 {
 private:
   typedef enum {
@@ -24,8 +24,7 @@ private:
   std::queue<uuid> m_send;
   status_t m_status;
 
-  V_UP_INPUT (asynch_lcr_automaton, receive, uuid, v) {
-
+  void receive_action (const uuid& v) {
     if (v > m_u) {
       m_send.push (v);
     }
@@ -35,50 +34,36 @@ private:
     else {
       // Do nothing.
     }
-
     schedule ();
   }
 
   bool send_precondition () const {
-    return !m_send.empty () && send.is_bound ();
+    return !m_send.empty () && send.bind_count () != 0;
   }
 
-  V_UP_OUTPUT (asynch_lcr_automaton, send, uuid) {
-
-    std::pair<bool, uuid> retval;
-
-    if (send_precondition ()) {
-      retval = std::make_pair (true, m_send.front ());
-      m_send.pop ();
-    }
-
+  uuid send_action () {
+    uuid retval = m_send.front ();
+    m_send.pop ();
     schedule ();
     return retval;
   }
 
   bool leader_precondition () const {
-    return m_status == CHOSEN && leader.is_bound ();
+    return m_status == CHOSEN && leader.bind_count () != 0;
   }
 
-  UV_UP_OUTPUT (asynch_lcr_automaton, leader) {
-    bool retval = false;
-
-    if (leader_precondition ()) {
-      retval = true;
-      m_status = REPORTED;
-    }
-
+  void leader_action () {
+    m_status = REPORTED;
     schedule ();
-    return retval;
   }
 
   void schedule () {
     if (send_precondition ()) {
-      ioa::scheduler::schedule (this, &asynch_lcr_automaton::send);
+      ioa::scheduler::schedule (&asynch_lcr_automaton::send);
     }
 
     if (leader_precondition ()) {
-      ioa::scheduler::schedule (this, &asynch_lcr_automaton::leader);
+      ioa::scheduler::schedule (&asynch_lcr_automaton::leader);
     }
   }
 
@@ -87,16 +72,16 @@ public:
   asynch_lcr_automaton () :
     m_u (true),
     m_status (UNKNOWN),
-    ACTION (asynch_lcr_automaton, receive),
     ACTION (asynch_lcr_automaton, send),
     ACTION (asynch_lcr_automaton, leader)
   {
     m_send.push (m_u);
-  }
-
-  void init () {
     schedule ();
   }
+
+  V_UP_INPUT (asynch_lcr_automaton, receive, uuid);
+  V_UP_OUTPUT (asynch_lcr_automaton, send, uuid);
+  UV_UP_OUTPUT (asynch_lcr_automaton, leader);
 
 };
 

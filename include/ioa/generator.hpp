@@ -1,8 +1,8 @@
 #ifndef __instance_generator_hpp__
 #define __instance_generator_hpp__
 
-#include <memory>
 #include <ioa/generator_interface.hpp>
+#include <ioa/shared_ptr.hpp>
 
 namespace ioa {
 
@@ -13,7 +13,7 @@ namespace ioa {
 
   template <class T>
   struct generator :
-    public generator_interface<T>
+    public generator_interface
   {
     typedef T result_type;
 
@@ -23,13 +23,13 @@ namespace ioa {
   };
 
   template <class I>
-  std::auto_ptr<ioa::generator_interface<I> > make_generator () {
-    return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator<I> ());
+  shared_ptr<generator_interface> make_generator () {
+    return shared_ptr<generator_interface> (new generator<I> ());
   }
 
   template <class T, typename A0>
   struct generator1 :
-    public generator_interface<T>
+    public generator_interface
   {
     typedef T result_type;
     A0 m_a0;
@@ -43,9 +43,15 @@ namespace ioa {
     }
   };
 
+<<<<<<< HEAD
   template <class I, typename A0>
   std::auto_ptr<ioa::generator_interface<I> > make_generator (A0 a0) {
     return std::auto_ptr<ioa::generator_interface<I> > (new ioa::generator1<I, A0> (a0));
+=======
+  template <class I, class A0>
+  shared_ptr<generator_interface> make_generator (A0 a0) {
+    return shared_ptr<generator_interface> (new generator1<I, A0> (a0));
+>>>>>>> new_syscall_interface
   }
 
   template <class T, typename A0, typename A1>

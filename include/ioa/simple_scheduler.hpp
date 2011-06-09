@@ -2,20 +2,10 @@
 #define __simple_scheduler_hpp__
 
 #include <ioa/scheduler.hpp>
-
-#include <ioa/create_runnable.hpp>
-#include <ioa/bind_runnable.hpp>
-#include <ioa/unbind_runnable.hpp>
-#include <ioa/destroy_runnable.hpp>
 #include <ioa/action_runnable.hpp>
-
 #include <ioa/blocking_list.hpp>
-#include <ioa/thread.hpp>
 #include <ioa/thread_key.hpp>
-#include <queue>
-#include <fcntl.h>
-#include <sys/select.h>
-#include <unistd.h>
+#include <ioa/time.hpp>
 
 namespace ioa {
 
@@ -30,6 +20,7 @@ namespace ioa {
     static int m_wakeup_fd[2];
     static blocking_list<action_time> m_timerq;
     static thread_key<aid_t> m_current_aid;
+<<<<<<< HEAD
     static thread_key<const automaton_interface*> m_current_this;
 
     static bool keep_going () {
@@ -72,6 +63,8 @@ namespace ioa {
 	}
       }
     }
+=======
+>>>>>>> new_syscall_interface
 
     struct action_runnable_equal
     {
@@ -91,6 +84,7 @@ namespace ioa {
       }
     };
 
+<<<<<<< HEAD
     static void schedule_execq (action_runnable_interface* r) {
       /*
   	Imagine an automaton with with an internal action that does nothing but schedule itself twice.
@@ -108,15 +102,24 @@ namespace ioa {
   	lock lock (m_execq.list_mutex);
   	duplicate = std::find_if (m_execq.list.begin (), m_execq.list.end (), action_runnable_equal (r)) != m_execq.list.end ();
       }
+=======
+    static bool keep_going ();
+    static bool thread_keep_going ();
+    static void schedule_sysq (runnable_interface* r);
+    static void process_sysq ();
+    static void schedule_execq (action_runnable_interface* r);
+    static void process_execq ();
+    static void wakeup_timer_thread ();
+    static void schedule_timerq (action_runnable_interface* r, const time& offset);
+    static void process_timerq ();
+    
+  public:
+>>>>>>> new_syscall_interface
 
-      /*
-  	One might ask, "Can't someone sneak in a duplicate action_runnable between unlocking m_execq.mutex and executing m_execq.push ()?"
-  	The answer is no and here's why.
-  	Automata can only schedule their own actions.
-  	In order to insert a duplicate, an automaton would have to call schedule () concurrently.
-  	We explicitly prevent this to adhere to the I/O automata model.
-       */
+    static void set_current_aid (const aid_t aid);
+    static void clear_current_aid ();
 
+<<<<<<< HEAD
       if (!duplicate) {
   	m_execq.push (std::make_pair (true, r));
       }
@@ -135,13 +138,17 @@ namespace ioa {
 	}
       }
     }
+=======
+    static void create (const aid_t automaton,
+			shared_ptr<generator_interface> generator,
+			void* const key);
+>>>>>>> new_syscall_interface
 
-    static void wakeup_timer_thread () {
-      char c;
-      ssize_t bytes_written = write (m_wakeup_fd[1], &c, 1);
-      assert (bytes_written == 1);
-    }
+    static void bind (const aid_t automaton,
+		      shared_ptr<bind_executor_interface> generator,
+		      void* const key);
 
+<<<<<<< HEAD
     static void schedule_timerq (action_runnable_interface* r, const time& offset) {
       struct timeval now;
       int s = gettimeofday (&now, 0);
@@ -281,13 +288,89 @@ namespace ioa {
       schedule_sysq (make_destroy_runnable (get_current_aid (ptr), automaton, d));
     }
 
+=======
+    static void unbind (const aid_t automaton,
+			void* const key);
+
+    static void destroy (const aid_t automaton,
+			 void* const key);
+
+    static void create_key_exists (const aid_t automaton,
+				   void* const key);
+
+    static void instance_exists (const aid_t automaton,
+				 void* const key);
+
+    static void automaton_created (const aid_t automaton,
+				   void* const key,
+				   const aid_t child);
+
+    static void bind_key_exists (const aid_t automaton,
+				 void* const key);
+
+    static void output_automaton_dne (const aid_t automaton,
+				      void* const key);
+
+    static void input_automaton_dne (const aid_t automaton,
+				      void* const key);
+
+    static void binding_exists (const aid_t automaton,
+				void* const key);
+
+    static void input_action_unavailable (const aid_t automaton,
+					  void* const key);
+
+    static void output_action_unavailable (const aid_t automaton,
+					   void* const key);
+    
+    static void bound (const aid_t automaton,
+		       void* const key);
+
+    static void output_bound (const output_executor_interface&);
+
+    static void input_bound (const input_executor_interface&);
+
+    static void bind_key_dne (const aid_t automaton,
+			      void* const key);
+
+    static void unbound (const aid_t automaton,
+			 void* const key);
+
+    static void output_unbound (const output_executor_interface&);
+
+    static void input_unbound (const input_executor_interface&);
+
+    static void create_key_dne (const aid_t automaton,
+				void* const key);
+
+    static void automaton_destroyed (const aid_t automaton,
+				     void* const key);
+    
+    static void recipient_dne (const aid_t automaton,
+			       void* const key);
+
+    static void event_delivered (const aid_t automaton,
+				 void* const key);
+    
+    static aid_t get_current_aid ();
+
+    static void schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr);
+
+    static void schedule (automaton_interface::sys_bind_type automaton_interface::*member_ptr);
+
+    static void schedule (automaton_interface::sys_unbind_type automaton_interface::*member_ptr);
+
+    static void schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr);
+  
+>>>>>>> new_syscall_interface
     template <class I, class M>
-    static void schedule (const I* ptr,
-  			  M I::*member_ptr) {
-      schedule_execq (make_action_runnable (make_action (get_current_aid (ptr), member_ptr)));
+    static void schedule (M I::*member_ptr) {
+      schedule_execq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)));
     }
 
+
     template <class I, class M>
+<<<<<<< HEAD
     static void schedule (const I* ptr,
                           M I::*member_ptr,
                           const typename M::parameter_type & param) {
@@ -356,24 +439,18 @@ namespace ioa {
       assert (!keep_going ());
     }
 
+=======
+    static void schedule (M I::*member_ptr,
+  			  time offset) {
+      schedule_timerq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), offset);
+    }
+    
+    static void run (shared_ptr<generator_interface> generator);
+>>>>>>> new_syscall_interface
   };
 
-  // Implement the system scheduler.
-  // These don't belong in a *.cpp file because each scheduler defines them differently.
-  void system_scheduler::set_current_aid (const aid_t aid) {
-    simple_scheduler::set_current_aid (aid);
-  }
-
-  void system_scheduler::set_current_aid (const aid_t aid,
-					  const automaton_interface& current_this) {
-    simple_scheduler::set_current_aid (aid, current_this);
-  }
-
-  void system_scheduler::clear_current_aid () {
-    simple_scheduler::clear_current_aid ();
-  }
-
   // Implement the scheduler.
+<<<<<<< HEAD
 
   template <class I>
   automaton_handle<I> scheduler::get_current_aid (const I* ptr) {
@@ -409,10 +486,12 @@ namespace ioa {
     simple_scheduler::destroy (ptr, automaton, d);
   }
 
+=======
+  
+>>>>>>> new_syscall_interface
   template <class I, class M>
-  void scheduler::schedule (const I* ptr,
-			    M I::*member_ptr) {
-    simple_scheduler::schedule (ptr, member_ptr);
+  void scheduler::schedule (M I::*member_ptr) {
+    simple_scheduler::schedule (member_ptr);
   }
 
   template <class I, class M>
@@ -423,11 +502,11 @@ namespace ioa {
   }
 
   template <class I, class M>
-  void scheduler::schedule (const I* ptr,
-			    M I::*member_ptr,
+  void scheduler::schedule (M I::*member_ptr,
 			    time offset) {
-    simple_scheduler::schedule (ptr, member_ptr, offset);
+    simple_scheduler::schedule (member_ptr, offset);
   }
+<<<<<<< HEAD
 
   template <class I>
   void scheduler::run (std::auto_ptr<generator_interface<I> > generator) {
@@ -469,6 +548,11 @@ namespace ioa {
 
   // };
 
+=======
+  
+  // TODO:  EVENTS!!!
+  // TODO:  What happens when we send an event to a destroyed automaton?
+>>>>>>> new_syscall_interface
 }
 
 #endif

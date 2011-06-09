@@ -1,22 +1,18 @@
 #ifndef __scheduler_hpp__
 #define __scheduler_hpp__
 
-#include <memory>
+#include <ioa/aid.hpp>
+#include <ioa/time.hpp>
+#include <ioa/shared_ptr.hpp>
 #include <ioa/generator_interface.hpp>
 #include <ioa/action.hpp>
-#include <ioa/bid.hpp>
-#include <ioa/time.hpp>
-
-/*
-  The scheduler from the user's perspective.
-  These functions must be implemented by a scheduler implmentation.
- */
 
 namespace ioa {
 
   class scheduler
   {
   public:
+<<<<<<< HEAD
     template <class I>
     static automaton_handle<I> get_current_aid (const I* ptr);
 
@@ -41,11 +37,15 @@ namespace ioa {
 			 const automaton_handle<I>& automaton,
 			 D& d);
 
+=======
+    static aid_t get_current_aid ();
+    
+>>>>>>> new_syscall_interface
     template <class I, class M>
-    static void schedule (const I* ptr,
-			  M I::*member_ptr);
-
+    static void schedule (M I::*member_ptr);
+    
     template <class I, class M>
+<<<<<<< HEAD
     static void schedule (const I* ptr,
 			  M I::*member_ptr,
 			  const typename M::parameter_type & param);
@@ -59,8 +59,16 @@ namespace ioa {
     static void run (std::auto_ptr<generator_interface<I> > generator);
 
     static void clear ();
+=======
+    static void schedule (M I::*member_ptr,
+			  time offset);
+    
+    static void run (shared_ptr<generator_interface> generator);
+>>>>>>> new_syscall_interface
   };
 
 }
+
+#include <ioa/simple_scheduler.hpp>
 
 #endif

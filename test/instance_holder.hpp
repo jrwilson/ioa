@@ -3,7 +3,7 @@
 
 template <class T>
 class instance_holder :
-  public ioa::generator_interface<T>
+  public ioa::generator_interface
 {
 private:
   T* m_instance;

@@ -1,9 +1,8 @@
 #ifndef __automaton1_hpp__
 #define __automaton1_hpp__
 
-#include <action.hpp>
-#include <binding_handle.hpp>
-#include "instance_generator.hpp"
+#include <ioa/action.hpp>
+#include <ioa/automaton_interface.hpp>
 
 template <class T>
 struct bindable
@@ -53,7 +52,7 @@ struct automaton1 :
       state (false)
     { }
 
-    void operator() () {
+    void operator() (automaton1&) {
       state = true;
     }
   };
@@ -73,7 +72,7 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (int parameter) {
+    void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
@@ -92,7 +91,7 @@ struct automaton1 :
     up_v_input_action () :
       value (0) { }
 
-    void operator() (const int t) {
+    void operator() (automaton1&, const int t) {
       value = t;
     }
   };
@@ -112,7 +111,7 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (const int t, int parameter) {
+    void operator() (automaton1&, const int t, int parameter) {
       value = t;
       last_parameter = parameter;
     }
@@ -130,9 +129,12 @@ struct automaton1 :
     up_uv_output_action () :
       state (false) { }
 
-    bool operator() () {
-      state = true;
+    bool precondition (automaton1&) const {
       return true;
+    }
+
+    void operator() (automaton1&) {
+      state = true;
     }
   };
   up_uv_output_action up_uv_output;
@@ -151,10 +153,13 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool operator() (int parameter) {
+    bool precondition (automaton1&, int parameter) {
+      return true;
+    }
+
+    void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
-      return true;
     }
   };
   p_uv_output_action p_uv_output;
@@ -171,9 +176,13 @@ struct automaton1 :
       state (false)
     { }
 
-    std::pair<bool, int> operator() () {
+    bool precondition (automaton1&) const {
+      return true;
+    }
+
+    int operator() (automaton1&) {
       state = true;
-      return std::make_pair (true, 9845);
+      return 9845;
     }
   };
   up_v_output_action up_v_output;
@@ -192,10 +201,14 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    std::pair<bool, int> operator() (int parameter) {
+    bool precondition (automaton1&, int parameter) {
+      return true;
+    }
+
+    int operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
-      return std::make_pair (true, 9845);
+      return 9845;
     }
   };
   p_v_output_action p_v_output;
@@ -207,7 +220,12 @@ struct automaton1 :
     bool state;
     up_internal_action()
       : state(false) { }
-    void operator()() {
+
+    bool precondition (automaton1&) const {
+      return true;
+    }
+
+    void operator() (automaton1&) {
       state = true;
     }
   };
@@ -222,7 +240,12 @@ struct automaton1 :
 
     p_internal_action()
       : state(false) { }
-    void operator()(int parameter) {
+
+    bool precondition (automaton1&, int parameter) const {
+      return true;
+    }
+
+    void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
@@ -236,7 +259,7 @@ struct automaton1 :
     bool state;
     uv_event_action()
       : state(false) { }
-    void operator()() {
+    void operator() (automaton1&) {
       state = true;
     }
   };
@@ -252,122 +275,13 @@ struct automaton1 :
       state (false),
       last_value (0)
     { }
-    void operator() (int value) {
+    void operator() (automaton1&, int value) {
       state = true;
       last_value = value;
     }
   };
   v_event_action v_event;
 
-  bool inited;
-  const automaton1* existing_instance;
-  ioa::automaton_handle<automaton1> created_handle;
-  bool m_automaton_destroyed;
-  bool m_output_automaton_dne;
-  bool m_input_automaton_dne;
-  bool m_binding_exists;
-  bool m_input_action_unavailable;
-  bool m_output_action_unavailable;
-  bool m_bid;
-  bool m_unbound;
-  bool m_binding_dne;
-  bool m_target_automaton_dne;
-  bool m_destroyer_not_creator;
-  bool m_recipient_dne;
-
-  automaton1 () :
-    inited (false),
-    existing_instance (0),
-    m_automaton_destroyed (false),
-    m_output_automaton_dne (false),
-    m_input_automaton_dne (false),
-    m_binding_exists (false),
-    m_input_action_unavailable (false),
-    m_output_action_unavailable (false),
-    m_bid (-1),
-    m_unbound (false),
-    m_binding_dne (false),
-    m_target_automaton_dne (false),
-    m_destroyer_not_creator (false),
-    m_recipient_dne (false)
-  { }
-
-  void init () {
-    inited = true;
-  }
-
-  template <class D>
-  void instance_exists (const automaton1* i,
-			D&) {
-    existing_instance = i;
-  }
-
-  template <class D>
-  void automaton_created (const ioa::automaton_handle<automaton1>& handle,
-			  D&) {
-    created_handle = handle;
-  }
-
-  template <class D>
-  void automaton_destroyed (D&) {
-    m_automaton_destroyed = true;
-  }
-
-  template <class D>
-  void output_automaton_dne (D&) {
-    m_output_automaton_dne = true;
-  }
-
-  template <class D>
-  void input_automaton_dne (D&) {
-    m_input_automaton_dne = true;
-  }
-
-  template <class D>
-  void binding_exists (D&) {
-    m_binding_exists = true;
-  }
-
-  template <class D>
-  void input_action_unavailable (D&) {
-    m_input_action_unavailable = true;
-  }
-
-  template <class D>
-  void output_action_unavailable (D&) {
-    m_output_action_unavailable = true;
-  }
-
-  template <class D>
-  void bound (const ioa::bid_t bid,
-	      D&) {
-    m_bid = bid;
-  }
-
-  template <class D>
-  void unbound (D&) {
-    m_unbound = true;
-  }
-
-  template <class D>
-  void binding_dne (D&) {
-    m_binding_dne = true;
-  }
-
-  template <class D>
-  void target_automaton_dne (D&) {
-    m_target_automaton_dne = true;
-  }
-
-  template <class D>
-  void destroyer_not_creator (D&) {
-    m_destroyer_not_creator = true;
-  }
-
-  template <class D>
-  void recipient_dne (D&) {
-    m_recipient_dne = true;
-  }
 };
 
 #endif

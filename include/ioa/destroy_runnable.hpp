@@ -6,35 +6,24 @@
 
 namespace ioa {
   
-  template <class C, class I, class D>
   class destroy_runnable :
     public runnable_interface
   {
   private:
-    const automaton_handle<C> m_automaton;
-    const automaton_handle<I> m_target;
-    D& m_d;
+    const aid_t m_automaton;
+    void* const m_key;
     
   public:
-    destroy_runnable (const automaton_handle<C>& automaton,
-		      const automaton_handle<I>& target,
-		      D& d) :
+    destroy_runnable (const aid_t automaton,
+		      void* const key) :
       m_automaton (automaton),
-      m_target (target),
-      m_d (d)
+      m_key (key)
     { }
     
     void operator() () {
-      system::destroy (m_automaton, m_target, m_d);
+      system::destroy (m_automaton, m_key);
     }
   };
-  
-  template <class C, class I, class D>
-  destroy_runnable<C, I, D>* make_destroy_runnable (const automaton_handle<C>& automaton,
-						    const automaton_handle<I>& target,
-						    D& d) {
-    return new destroy_runnable<C, I, D> (automaton, target, d);
-  }
   
 }
 

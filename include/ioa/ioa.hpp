@@ -4,9 +4,10 @@
 /*
   This file includes other files containing classes that are useful for writing automata.
  */
-#include <ioa/dispatching_automaton.hpp>
+#include <ioa/automaton_interface.hpp>
 #include <ioa/action_wrapper.hpp>
 #include <ioa/generator.hpp>
+#include <ioa/self_helper.hpp>
 #include <ioa/automaton_helper.hpp>
 #include <ioa/bind_helper.hpp>
 

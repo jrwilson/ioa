@@ -1,31 +1,38 @@
-#include <cstdlib>
+#include <ioa.hpp>
+
 #include <iostream>
 
-#include <ioa.hpp>
-#include <ioa/simple_scheduler.hpp>
-
 class count_to_ten :
-  public ioa::dispatching_automaton
+  public ioa::automaton_interface
 {
 private:
   int m_count;
 
-  UP_INTERNAL (count_to_ten, increment) {
-    ++m_count;
+  bool increment_precondition () const {
+    return m_count <= 10;
+  }
+
+  void increment_action () {
     std::cout << m_count << std::endl;
-    if (m_count < 10) {
-      ioa::scheduler::schedule (this, &count_to_ten::increment, ioa::time (1, 0));
+    if (increment_precondition ()) {
+      ++m_count;
+    }
+    schedule ();
+  }
+
+  UP_INTERNAL (count_to_ten, increment);
+
+  void schedule () const {
+    if (increment_precondition ()) {
+      ioa::scheduler::schedule (&count_to_ten::increment, ioa::time (1, 0));
     }
   }
 
 public:
-  count_to_ten ()
-    : m_count (0),
-      ACTION (count_to_ten, increment)
-  { }
-
-  void init () {
-    ioa::scheduler::schedule (this, &count_to_ten::increment);
+  count_to_ten () :
+    m_count (1)
+  {
+    schedule ();
   }
 };
 
@@ -34,3 +41,4 @@ main () {
   ioa::scheduler::run (ioa::make_generator<count_to_ten> ());
   return 0; 
 }
+

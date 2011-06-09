@@ -6,34 +6,26 @@
 
 namespace ioa {
   
-  template <class C, class I, class D>
   class create_runnable :
     public runnable_interface
   {
   private:
-    const automaton_handle<C> m_automaton;
-    std::auto_ptr<generator_interface<I> > m_generator;
-    D& m_d;
+    const aid_t m_automaton;
+    shared_ptr<generator_interface> m_generator;
+    void* const m_key;
   public:
-    create_runnable (const automaton_handle<C>& automaton,
-		     std::auto_ptr<generator_interface<I> > generator,
-		     D& d) :
+    create_runnable (const aid_t automaton,
+		     shared_ptr<generator_interface> generator,
+		     void* const key) :
       m_automaton (automaton),
       m_generator (generator),
-      m_d (d)
+      m_key (key)
     { }
     
     void operator() () {
-      system::create (m_automaton, m_generator, m_d);
+      system::create (m_automaton, m_generator, m_key);
     }
   };
-  
-  template <class C, class I, class D>
-  create_runnable<C, I, D>* make_create_runnable (const automaton_handle<C>& automaton,
-						  std::auto_ptr<generator_interface<I> > generator,
-						  D& d) {
-    return new create_runnable<C, I, D> (automaton, generator, d);
-  }
   
 }
 

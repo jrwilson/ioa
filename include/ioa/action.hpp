@@ -1,9 +1,8 @@
 #ifndef __action_hpp__
 #define __action_hpp__
 
-#include <cstddef>
-#include <utility>
 #include <ioa/automaton_handle.hpp>
+#include <cstddef>
 
 namespace ioa {
 
@@ -27,6 +26,8 @@ namespace ioa {
   struct output_category { };
   struct internal_category { };
   struct event_category { };
+  struct system_input_category { };
+  struct system_output_category { };
 
   /* Indicates if an input, outputs, or events has an associated value. */
   struct unvalued { };
@@ -78,6 +79,14 @@ namespace ioa {
 
   struct event : public no_parameter {
     typedef event_category action_category;
+  };
+
+  struct system_input : public no_parameter {
+    typedef system_input_category action_category;
+  };
+
+  struct system_output : public no_parameter {
+    typedef system_output_category action_category;
   };
 
   /*
@@ -134,7 +143,7 @@ namespace ioa {
     { }
 
     const aid_t get_aid () const {
-      return automaton.aid ();
+      return automaton;
     }
 
     const void* get_member_ptr () const {
@@ -220,7 +229,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) ();
+      (i.*this->member_ptr) (i);
     }
 
   };
@@ -238,7 +247,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) (this->parameter);
+      (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -254,7 +263,7 @@ namespace ioa {
     { }
 
     void operator() (I& i, const VT& v) const {
-      (i.*this->member_ptr) (v);
+      (i.*this->member_ptr) (i, v);
     }
   };
 
@@ -271,7 +280,7 @@ namespace ioa {
     { }
 
     void operator() (I& i, const VT& v) const {
-      (i.*this->member_ptr) (v, this->parameter);
+      (i.*this->member_ptr) (i, v, this->parameter);
     }
   };
 
@@ -286,8 +295,12 @@ namespace ioa {
       unparameterized_bound<I, M> (a, ptr)
     { }
 
-    bool operator() (I& i) const {
-      return (i.*this->member_ptr) ();
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
+    void operator() (I& i) const {
+      (i.*this->member_ptr) (i);
     }
   };
 
@@ -303,8 +316,12 @@ namespace ioa {
       parameterized_bound<I, M, PT> (a, ptr, parameter)
     { }
 
-    bool operator() (I& i) const {
-      return (i.*this->member_ptr) (this->parameter);
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i, this->parameter);
+    }
+
+    void operator() (I& i) const {
+      (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -319,8 +336,12 @@ namespace ioa {
       unparameterized_bound<I, M> (a, ptr)
     { }
 
-    std::pair<bool, VT> operator() (I& i) const {
-      return (i.*this->member_ptr) ();
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
+    VT operator() (I& i) const {
+      return (i.*this->member_ptr) (i);
     }
   };
 
@@ -336,8 +357,12 @@ namespace ioa {
       parameterized_bound<I, M, PT> (a, ptr, param)
     { }
 
-    std::pair<bool, VT> operator() (I& i) const {
-      return (i.*this->member_ptr) (this->parameter);
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i, this->parameter);
+    }
+
+    VT operator() (I& i) const {
+      return (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -352,8 +377,12 @@ namespace ioa {
       action_core<I, M> (a, ptr)
     { }
 
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
     void operator() (I& i) const {
-      (i.*this->member_ptr) ();
+      (i.*this->member_ptr) (i);
     }
 
   };
@@ -370,8 +399,12 @@ namespace ioa {
       parameter_core<I, M, PT> (a, ptr, param)
     { }
 
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i, this->parameter);
+    }
+
     void operator() (I& i) const {
-      (i.*this->member_ptr) (this->parameter);
+      (i.*this->member_ptr) (i, this->parameter);
     }
 
   };
@@ -388,7 +421,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) ();
+      (i.*this->member_ptr) (i);
     }
 
     // Events are unique.
@@ -415,7 +448,7 @@ namespace ioa {
     { }
 
     void operator() (I& i) const {
-      (i.*this->member_ptr) (m_value);
+      (i.*this->member_ptr) (i, m_value);
     }
 
     // Events are unique.
@@ -423,6 +456,53 @@ namespace ioa {
       return false;
     }
 
+  };
+
+  template <class I, class M, typename VT>
+  class action_impl<system_input_category, I, M, valued, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  private:
+    VT m_value;
+
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+		 M I::*ptr,
+		 const VT& value) :
+      action_core<I, M> (a, ptr),
+      m_value (value)
+    { }
+
+    void operator() (I& i) const {
+      (i.*this->member_ptr) (i, m_value);
+    }
+
+    // System inputs are unique (like events).
+    virtual bool operator== (const action_interface& x) const {
+      return false;
+    }
+
+  };
+
+  template <class I, class M, class VT>
+  class action_impl<system_output_category, I, M, valued, VT, unparameterized, null_type> :
+    public action_core<I, M>
+  {
+  public:
+
+    action_impl (const automaton_handle<I>& a,
+  		 M I::*ptr) :
+      action_core<I, M> (a, ptr)
+    { }
+
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
+    VT operator() (I& i) const {
+      return (i.*this->member_ptr) (i);
+    }
   };
 
   template <class I, class M>

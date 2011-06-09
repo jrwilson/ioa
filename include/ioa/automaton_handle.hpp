@@ -7,7 +7,7 @@ namespace ioa {
 
   // Be be type-safe, we associate a type with an automaton ID and call it an automaton handle.
 
-  template <class T>
+  template <typename T>
   class automaton_handle
   {
   private:
@@ -18,19 +18,11 @@ namespace ioa {
       m_aid (-1)
     { }
 
-    // The only entity that should strike new handles is the system.
-    // However, if TEST_AUTOMATON_CTOR is defined, then anyone can strike new handles.
-#ifndef TEST_AUTOMATON_CTOR
-  private:
-    friend class system;
-#endif
     automaton_handle (aid_t a) :
       m_aid (a)
     { }
 
-  public:
-
-    aid_t aid () const {
+    operator aid_t () const {
       return m_aid;
     }
 
