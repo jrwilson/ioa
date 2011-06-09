@@ -251,7 +251,7 @@ namespace ioa {
 	{
 	  system_scheduler::bound (m_binder, m_key);
 	  
-	  // TODO
+	  // TODO:  Implement and move to bind.
 	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
 	  // m_output_action.bound (m_output_ref);
 	  // system_scheduler::clear_current_aid ();
@@ -266,7 +266,7 @@ namespace ioa {
 
 	  system_scheduler::unbound (m_binder, m_key);
 
-	  // TODO
+	  // TODO:  Implement and move to unbind.
 	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
 	  // m_output_action.unbound (m_output_ref);
 	  // system_scheduler::clear_current_aid ();
@@ -328,7 +328,10 @@ namespace ioa {
 
 	// Execute.
 	system_scheduler::set_current_aid (m_action.get_aid ());
-	bool t = m_action (*m_instance);
+	bool t = m_action.precondition (*m_instance);
+	if (t) {
+	  m_action (*m_instance);
+	}
 	system_scheduler::clear_current_aid ();
 
 	if (t) {
@@ -483,7 +486,7 @@ namespace ioa {
 	{
 	  system_scheduler::bound (m_binder, m_key);
 	  
-	  // TODO
+	  // TODO:  See previous.
 	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
 	  // m_output_action.bound (m_output_ref);
 	  // system_scheduler::clear_current_aid ();
@@ -498,7 +501,7 @@ namespace ioa {
 
 	  system_scheduler::unbound (m_binder, m_key);
 
-	  // TODO
+	  // TODO:  See previous.
 	  // system_scheduler::set_current_aid (m_output_action.get_aid (), m_output_ref);
 	  // m_output_action.unbound (m_output_ref);
 	  // system_scheduler::clear_current_aid ();
@@ -560,14 +563,18 @@ namespace ioa {
 
 	// Execute.
 	system_scheduler::set_current_aid (m_action.get_aid ());
-	std::pair<bool, VT> t = m_action (*m_instance);
+	bool t = m_action.precondition (*m_instance);
+	VT value;
+	if (t) {
+	  value = m_action (*m_instance);
+	}
 	system_scheduler::clear_current_aid ();
 
-	if (t.first) {
+	if (t) {
 	  for (typename std::map<aid_t, record*>::const_iterator pos = m_records.begin ();
 	       pos != m_records.end ();
 	       ++pos) {
-	    (*(pos->second->m_input)) (t.second);
+	    (*(pos->second->m_input)) (value);
 	  }	  
 	}
 
@@ -719,7 +726,9 @@ namespace ioa {
 
 	system::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
-	m_action (*m_instance);
+	if (m_action.precondition (*m_instance)) {
+	  m_action (*m_instance);
+	}
 	system_scheduler::clear_current_aid ();
 	unlock_automaton (m_action.get_aid ());
       }

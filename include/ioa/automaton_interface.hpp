@@ -9,28 +9,6 @@
 
 #define COMMA ,
 
-#define DECLARE_SYSTEM_INPUT(c, name, type, var)		\
-  private: \
-  void _##name (type const & var); \
-  public: \
-  typedef ioa::system_input_wrapper<c, type, &c::_##name> name##_type;	\
-  name##_type name; \
-  private:
-
-#define DEFINE_SYSTEM_INPUT(c, name, type, var)	\
-  void c::_##name (type const & var)
-
-#define DECLARE_SYSTEM_OUTPUT(c, name, type)		\
-  private: \
-  std::pair<bool, type> _##name (); \
-  public: \
-  typedef ioa::system_output_wrapper<c, type, &c::_##name> name##_type;	\
-  name##_type name; \
-  private:
-
-#define DEFINE_SYSTEM_OUTPUT(c, name, type)			\
-  std::pair<bool, type> c::_##name ()
-
 namespace ioa {
 
   template <class C, class T, void (C::*member_function_ptr)(T const &)>
@@ -43,15 +21,27 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, std::pair<bool, T> (C::*member_function_ptr)()>
+  template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*member_function_ptr)()>
   struct system_output_wrapper :
     public system_output,
     public value<T>
   {
-    std::pair<bool, T> operator() (C& c) {
+    bool precondition (C& c) {
+      return (c.*precondition_ptr) ();
+    }
+    
+    T operator() (C& c) {
       return (c.*member_function_ptr) ();
     }
   };
+
+#define SYSTEM_INPUT(c, name, type)		\
+  typedef ioa::system_input_wrapper<c, type, &c::name##_action> name##_type;	\
+  name##_type name;
+
+#define SYSTEM_OUTPUT(c, name, type)		\
+  typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_action> name##_type; \
+  name##_type name;
 
   class system_automaton_helper_interface
   {
@@ -104,30 +94,56 @@ namespace ioa {
     void schedule ();
 
     bool sys_create_precondition () const;
-    DECLARE_SYSTEM_OUTPUT (automaton_interface, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);
-    bool sys_bind_precondition () const;
-    DECLARE_SYSTEM_OUTPUT (automaton_interface, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
-    bool sys_unbind_precondition () const;
-    DECLARE_SYSTEM_OUTPUT (automaton_interface, sys_unbind, void*);
-    bool sys_destroy_precondition () const;
-    DECLARE_SYSTEM_OUTPUT (automaton_interface, sys_destroy, void*);
+    std::pair<shared_ptr<generator_interface>, void*> sys_create_action ();
 
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_create_key_exists, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_instance_exists, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_automaton_created, std::pair<void* COMMA aid_t>, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_bind_key_exists, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_output_automaton_dne, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_input_automaton_dne, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_binding_exists, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_output_action_unavailable, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_input_action_unavailable, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_bound, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_bind_key_dne, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_unbound, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_create_key_dne, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_automaton_destroyed, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_recipient_dne, void*, t);
-    DECLARE_SYSTEM_INPUT (automaton_interface, sys_event_delivered, void*, t);
+    bool sys_bind_precondition () const;
+    std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_action ();
+
+    bool sys_unbind_precondition () const;
+    void* sys_unbind_action ();
+
+    bool sys_destroy_precondition () const;
+    void* sys_destroy_action ();
+
+    void sys_create_key_exists_action (void* const &);
+    void sys_instance_exists_action (void* const &);
+    void sys_automaton_created_action (std::pair<void* COMMA aid_t> const &);
+    void sys_bind_key_exists_action (void* const &);
+    void sys_output_automaton_dne_action (void* const &);
+    void sys_input_automaton_dne_action (void* const &);
+    void sys_binding_exists_action (void* const &);
+    void sys_output_action_unavailable_action (void* const &);
+    void sys_input_action_unavailable_action (void* const &);
+    void sys_bound_action (void* const &);
+    void sys_bind_key_dne_action (void* const &);
+    void sys_unbound_action (void* const &);
+    void sys_create_key_dne_action (void* const &);
+    void sys_automaton_destroyed_action (void* const &);
+    void sys_recipient_dne_action (void* const &);
+    void sys_event_delivered_action (void* const &);
+
+  public:
+    SYSTEM_OUTPUT (automaton_interface, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton_interface, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton_interface, sys_unbind, void*);
+    SYSTEM_OUTPUT (automaton_interface, sys_destroy, void*);
+
+    SYSTEM_INPUT (automaton_interface, sys_create_key_exists, void*);
+    SYSTEM_INPUT (automaton_interface, sys_instance_exists, void*);
+    SYSTEM_INPUT (automaton_interface, sys_automaton_created, std::pair<void* COMMA aid_t>);
+    SYSTEM_INPUT (automaton_interface, sys_bind_key_exists, void*);
+    SYSTEM_INPUT (automaton_interface, sys_output_automaton_dne, void*);
+    SYSTEM_INPUT (automaton_interface, sys_input_automaton_dne, void*);
+    SYSTEM_INPUT (automaton_interface, sys_binding_exists, void*);
+    SYSTEM_INPUT (automaton_interface, sys_output_action_unavailable, void*);
+    SYSTEM_INPUT (automaton_interface, sys_input_action_unavailable, void*);
+    SYSTEM_INPUT (automaton_interface, sys_bound, void*);
+    SYSTEM_INPUT (automaton_interface, sys_bind_key_dne, void*);
+    SYSTEM_INPUT (automaton_interface, sys_unbound, void*);
+    SYSTEM_INPUT (automaton_interface, sys_create_key_dne, void*);
+    SYSTEM_INPUT (automaton_interface, sys_automaton_destroyed, void*);
+    SYSTEM_INPUT (automaton_interface, sys_recipient_dne, void*);
+    SYSTEM_INPUT (automaton_interface, sys_event_delivered, void*);
   };
 
 }

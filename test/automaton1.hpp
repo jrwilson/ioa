@@ -129,9 +129,12 @@ struct automaton1 :
     up_uv_output_action () :
       state (false) { }
 
-    bool operator() (automaton1&) {
-      state = true;
+    bool precondition (automaton1&) const {
       return true;
+    }
+
+    void operator() (automaton1&) {
+      state = true;
     }
   };
   up_uv_output_action up_uv_output;
@@ -150,10 +153,13 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool operator() (automaton1&, int parameter) {
+    bool precondition (automaton1&, int parameter) {
+      return true;
+    }
+
+    void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
-      return true;
     }
   };
   p_uv_output_action p_uv_output;
@@ -170,9 +176,13 @@ struct automaton1 :
       state (false)
     { }
 
-    std::pair<bool, int> operator() (automaton1&) {
+    bool precondition (automaton1&) const {
+      return true;
+    }
+
+    int operator() (automaton1&) {
       state = true;
-      return std::make_pair (true, 9845);
+      return 9845;
     }
   };
   up_v_output_action up_v_output;
@@ -191,10 +201,14 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    std::pair<bool, int> operator() (automaton1&, int parameter) {
+    bool precondition (automaton1&, int parameter) {
+      return true;
+    }
+
+    int operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
-      return std::make_pair (true, 9845);
+      return 9845;
     }
   };
   p_v_output_action p_v_output;
@@ -206,6 +220,11 @@ struct automaton1 :
     bool state;
     up_internal_action()
       : state(false) { }
+
+    bool precondition (automaton1&) const {
+      return true;
+    }
+
     void operator() (automaton1&) {
       state = true;
     }
@@ -221,6 +240,11 @@ struct automaton1 :
 
     p_internal_action()
       : state(false) { }
+
+    bool precondition (automaton1&, int parameter) const {
+      return true;
+    }
+
     void operator() (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;

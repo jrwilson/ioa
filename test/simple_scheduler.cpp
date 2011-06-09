@@ -847,7 +847,21 @@ private:
 
   helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type>* m_helper;
 
-  DECLARE_UP_INTERNAL (bind_unbound, poll);
+  bool poll_precondition () const {
+    return true;
+  }
+
+  void poll_action () {
+    // We poll until the automaton is created.  Then we destroy it.
+    if (!m_helper->is_bound) {
+      ioa::scheduler::schedule (&bind_unbound::poll);
+    }
+    else {
+      unbind (m_helper);
+    }
+  }
+
+  UP_INTERNAL (bind_unbound, poll);
 
 public:
   
@@ -859,16 +873,6 @@ public:
     ioa::scheduler::schedule (&bind_unbound::poll);
   }
 };
-
-DEFINE_UP_INTERNAL (bind_unbound, poll) {
-  // We poll until the automaton is created.  Then we destroy it.
-  if (!m_helper->is_bound) {
-    ioa::scheduler::schedule (&bind_unbound::poll);
-  }
-  else {
-    unbind (m_helper);
-  }
-}
 
 static const char*
 unbound ()
@@ -1030,7 +1034,21 @@ private:
 
   helper* m_helper;
 
-  DECLARE_UP_INTERNAL (destroy_automaton_destroyed, poll);
+  bool poll_precondition () const {
+    return true;
+  }
+
+  void poll_action () {
+    // We poll until the automaton is created.  Then we destroy it.
+    if (!m_helper->created) {
+      ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
+    }
+    else {
+      destroy (m_helper);
+    }
+  }
+
+  UP_INTERNAL (destroy_automaton_destroyed, poll);
 
 public:  
   destroy_automaton_destroyed () :
@@ -1040,16 +1058,6 @@ public:
     ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
   }
 };
-
-DEFINE_UP_INTERNAL (destroy_automaton_destroyed, poll) {
-  // We poll until the automaton is created.  Then we destroy it.
-  if (!m_helper->created) {
-    ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
-  }
-  else {
-    destroy (m_helper);
-  }
-}
 
 static const char*
 automaton_destroyed ()

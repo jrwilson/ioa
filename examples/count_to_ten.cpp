@@ -16,7 +16,15 @@ private:
     return m_count <= 10;
   }
 
-  DECLARE_UP_INTERNAL (count_to_ten, increment);
+  void increment_action () {
+    std::cout << m_count << std::endl;
+    if (increment_precondition ()) {
+      ++m_count;
+    }
+    schedule ();
+  }
+
+  UP_INTERNAL (count_to_ten, increment);
 
   void schedule () const {
     if (increment_precondition ()) {
@@ -31,15 +39,6 @@ public:
     schedule ();
   }
 };
-
-DEFINE_UP_INTERNAL (count_to_ten, increment) {
-  std::cout << m_count << std::endl;
-  if (increment_precondition ()) {
-    ++m_count;
-  }
-  
-  schedule ();
-}
 
 int
 main () {

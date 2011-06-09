@@ -7,14 +7,16 @@ class trigger :
 {
 private:
 
-  bool trigger_precondition () const {
+  bool request_precondition () const {
     return true;
   }
-
-  DECLARE_UV_UP_OUTPUT (trigger, request);
-
+  
+  void request_action () {
+    schedule ();
+  }
+  
   void schedule () {
-    if (trigger_precondition ()) {
+    if (request_precondition ()) {
       ioa::scheduler::schedule (&trigger::request);
     }
   }
@@ -25,16 +27,9 @@ public:
   {
     schedule ();
   }
-};
 
-DEFINE_UV_UP_OUTPUT (trigger, request) {
-  bool retval = false;
-  if (trigger_precondition ()) {
-    retval = true;
-  }
-  schedule ();
-  return retval;
-}
+  UV_UP_OUTPUT (trigger, request);
+};
 
 class ioa_clock :
   public ioa::automaton_interface
@@ -43,19 +38,31 @@ private:
   int m_counter;
   int m_flag;
 
-  DECLARE_UV_UP_INPUT (ioa_clock, request);
+  void request_action () {
+    m_flag = true;
+    schedule ();
+  }
 
   bool tick_precondition () const {
     return true;
   }
+  
+  void tick_action () {
+    m_counter = m_counter + 1;
+    schedule ();
+  }
 
-  DECLARE_UP_INTERNAL (ioa_clock, tick);
+  UP_INTERNAL (ioa_clock, tick);
 
   bool clock_precondition () const {
     return m_flag;
   }
 
-  DECLARE_V_UP_OUTPUT (ioa_clock, clock, int);
+  int clock_action () {
+    m_flag = false;
+    schedule ();
+    return m_counter;
+  }
 
   void schedule () {
     if (tick_precondition ()) {
@@ -76,42 +83,26 @@ public:
     schedule ();
   }
 
+  UV_UP_INPUT (ioa_clock, request);
+  V_UP_OUTPUT (ioa_clock, clock, int);
 };
 
-DEFINE_UV_UP_INPUT (ioa_clock, request) {
-  m_flag = true;
-  schedule ();
-}
-
-DEFINE_UP_INTERNAL (ioa_clock, tick) {
-  if (tick_precondition ()) {
-    m_counter = m_counter + 1;
-  }
-  schedule ();
-}
-
-DEFINE_V_UP_OUTPUT (ioa_clock, clock, int) {
-  std::pair<bool, int> retval;
-  if (clock_precondition ()) {
-    m_flag = false;
-    retval = std::make_pair (true, m_counter);
-  }
-  schedule ();
-  return retval;
-}
 
 class display :
   public ioa::automaton_interface
 {
 private:
 
-  DECLARE_V_UP_INPUT (display, clock, int, t);
+  void clock_action (int const & t) {
+    std::cout << "t = " << t << std::endl;
+  }
 
+public:
+  
+  V_UP_INPUT (display, clock, int);
+  
 };
 
-DEFINE_V_UP_INPUT (display, clock, int, t) {
-  std::cout << "t = " << t << std::endl;
-}
 
 class composer :
   public ioa::automaton_interface

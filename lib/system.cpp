@@ -369,12 +369,16 @@ namespace ioa {
 
     lock_automaton (automaton);
     system_scheduler::set_current_aid (automaton);
-    std::pair<bool, std::pair<shared_ptr<generator_interface>, void*> > t = ac (*instance);
+    bool t = ac.precondition (*instance);
+    std::pair<shared_ptr<generator_interface>, void*> key;
+    if (t) {
+      key = ac (*instance);
+    }
     system_scheduler::clear_current_aid ();
     unlock_automaton (automaton);
 
-    if (t.first) {
-      system_scheduler::create (automaton, t.second.first, t.second.second);
+    if (t) {
+      system_scheduler::create (automaton, key.first, key.second);
     }
 
     return 0;
@@ -394,12 +398,17 @@ namespace ioa {
 
     lock_automaton (automaton);
     system_scheduler::set_current_aid (automaton);
-    std::pair<bool, std::pair<shared_ptr<bind_executor_interface>, void*> > t = ac (*instance);
+    bool t = ac.precondition (*instance);
+    std::pair<shared_ptr<bind_executor_interface>, void*> key;
+    if (t) {
+      key = ac (*instance);
+    }
+
     system_scheduler::clear_current_aid ();
     unlock_automaton (automaton);
 
-    if (t.first) {
-      system_scheduler::bind (automaton, t.second.first, t.second.second);
+    if (t) {
+      system_scheduler::bind (automaton, key.first, key.second);
     }
 
     return 0;
@@ -419,12 +428,16 @@ namespace ioa {
 
     lock_automaton (automaton);
     system_scheduler::set_current_aid (automaton);
-    std::pair<bool, void*> t = ac (*instance);
+    bool t = ac.precondition (*instance);
+    void* key = 0;
+    if (t) {
+      key = ac (*instance);
+    }
     system_scheduler::clear_current_aid ();
     unlock_automaton (automaton);
 
-    if (t.first) {
-      system_scheduler::unbind (automaton, t.second);
+    if (t) {
+      system_scheduler::unbind (automaton, key);
     }
 
     return 0;
@@ -444,12 +457,16 @@ namespace ioa {
 
     lock_automaton (automaton);
     system_scheduler::set_current_aid (automaton);
-    std::pair<bool, void*> t = ac (*instance);
+    bool t = ac.precondition (*instance);
+    void* key = 0;
+    if (t) {
+      key = ac (*instance);
+    }
     system_scheduler::clear_current_aid ();
     unlock_automaton (automaton);
 
-    if (t.first) {
-      system_scheduler::destroy (automaton, t.second);
+    if (t) {
+      system_scheduler::destroy (automaton, key);
     }
 
     return 0;

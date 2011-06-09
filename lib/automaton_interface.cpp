@@ -139,84 +139,60 @@ namespace ioa {
     return !m_create_send.empty ();
   }
 
-  DEFINE_SYSTEM_OUTPUT (automaton_interface, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>) {
-    std::pair<bool, std::pair<shared_ptr<generator_interface>, void*> > retval;
-    
-    if (sys_create_precondition ()) {
-      std::set<system_automaton_helper_interface*>::iterator pos = m_create_send.begin ();
-      system_automaton_helper_interface* helper = *pos;
-      m_create_send.erase (pos);
-      m_create_recv.insert (helper);
-      retval = std::make_pair (true, std::make_pair (helper->get_generator (), helper));
-    }
-    
+  std::pair<shared_ptr<generator_interface>, void*> automaton_interface::sys_create_action () {
+    std::set<system_automaton_helper_interface*>::iterator pos = m_create_send.begin ();
+    system_automaton_helper_interface* helper = *pos;
+    m_create_send.erase (pos);
+    m_create_recv.insert (helper);
     schedule ();
-    return retval;
+    return std::make_pair (helper->get_generator (), helper);
   }
 
   bool automaton_interface::sys_bind_precondition () const {
     return !m_bind_send.empty ();
   }
   
-  DEFINE_SYSTEM_OUTPUT (automaton_interface, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>) {
-    std::pair<bool, std::pair<shared_ptr<bind_executor_interface>, void*> > retval;
-    
-    if (sys_bind_precondition ()) {
-      std::set<system_bind_helper_interface*>::iterator pos = m_bind_send.begin ();
-      system_bind_helper_interface* helper = *pos;
-      m_bind_send.erase (pos);
-      m_bind_recv.insert (helper);
-      retval = std::make_pair (true, std::make_pair (helper->get_executor (), helper));
-    }
-    
+  std::pair<shared_ptr<bind_executor_interface> , void*> automaton_interface::sys_bind_action () {
+    std::set<system_bind_helper_interface*>::iterator pos = m_bind_send.begin ();
+    system_bind_helper_interface* helper = *pos;
+    m_bind_send.erase (pos);
+    m_bind_recv.insert (helper);
     schedule ();
-    return retval;
+    return std::make_pair (helper->get_executor (), helper);
   }
 
   bool automaton_interface::sys_unbind_precondition () const {
     return !m_unbind_send.empty ();
   }
   
-  DEFINE_SYSTEM_OUTPUT (automaton_interface, sys_unbind, void*) {
-    std::pair<bool, void*> retval;
-    
-    if (sys_unbind_precondition ()) {
-      std::set<system_bind_helper_interface*>::iterator pos = m_unbind_send.begin ();
-      system_bind_helper_interface* helper = *pos;
-      m_unbind_send.erase (pos);
-      m_unbind_recv.insert (helper);
-      retval = std::make_pair (true, helper);
-    }
-    
+  void* automaton_interface::sys_unbind_action () {
+    std::set<system_bind_helper_interface*>::iterator pos = m_unbind_send.begin ();
+    system_bind_helper_interface* helper = *pos;
+    m_unbind_send.erase (pos);
+    m_unbind_recv.insert (helper);
     schedule ();
-    return retval;
+    return helper;
   }
 
   bool automaton_interface::sys_destroy_precondition () const {
     return !m_destroy_send.empty ();
   }
   
-  DEFINE_SYSTEM_OUTPUT (automaton_interface, sys_destroy, void*) {
-    std::pair<bool, void*> retval;
-    
-    if (sys_destroy_precondition ()) {
-      std::set<system_automaton_helper_interface*>::iterator pos = m_destroy_send.begin ();
-      system_automaton_helper_interface* helper = *pos;
-      m_destroy_send.erase (pos);
-      m_destroy_recv.insert (helper);
-      retval = std::make_pair (true, helper);
-    }
-    
+  void* automaton_interface::sys_destroy_action () {
+    std::set<system_automaton_helper_interface*>::iterator pos = m_destroy_send.begin ();
+    system_automaton_helper_interface* helper = *pos;
+    m_destroy_send.erase (pos);
+    m_destroy_recv.insert (helper);
     schedule ();
-    return retval;
+    return helper;
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_create_key_exists, void*, t) {
+  void automaton_interface::sys_create_key_exists_action (void* const &) {
     // We prevent this in create.
     assert (false);
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_instance_exists, void*, t) {
+  void automaton_interface::sys_instance_exists_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_automaton_helper_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_helper_interface*> (t));
     assert (pos != m_create_recv.end ());
@@ -226,7 +202,7 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_automaton_created, std::pair<void* COMMA aid_t>, t) {
+  void automaton_interface::sys_automaton_created_action (std::pair<void*, aid_t> const & t) {
     // Find the helper (sanity check).
     std::set<system_automaton_helper_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_helper_interface*> (t.first));
     assert (pos != m_create_recv.end ());
@@ -235,12 +211,12 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_bind_key_exists, void*, t) {
+  void automaton_interface::sys_bind_key_exists_action (void* const & t) {
     // We prevent this in bind.
     assert (false);
   }
   
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_output_automaton_dne, void*, t) {
+  void automaton_interface::sys_output_automaton_dne_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
     assert (pos != m_bind_recv.end ());
@@ -250,7 +226,7 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_input_automaton_dne, void*, t) {
+  void automaton_interface::sys_input_automaton_dne_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
     assert (pos != m_bind_recv.end ());
@@ -260,7 +236,7 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_binding_exists, void*, t) {
+  void automaton_interface::sys_binding_exists_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
     assert (pos != m_bind_recv.end ());
@@ -270,7 +246,7 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_output_action_unavailable, void*, t) {
+  void automaton_interface::sys_output_action_unavailable_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
     assert (pos != m_bind_recv.end ());
@@ -280,7 +256,7 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_input_action_unavailable, void*, t) {
+  void automaton_interface::sys_input_action_unavailable_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
     assert (pos != m_bind_recv.end ());
@@ -290,7 +266,7 @@ namespace ioa {
     schedule ();
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_bound, void*, t) {
+  void automaton_interface::sys_bound_action (void* const & t) {
     // Find the helper (sanity check).
     std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
     assert (pos != m_bind_recv.end ());
@@ -299,12 +275,12 @@ namespace ioa {
     schedule ();
   }
   
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_bind_key_dne, void*, t) {
+  void automaton_interface::sys_bind_key_dne_action (void* const & t) {
     // We prevent this in unbind.
     assert (false);
   }
   
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_unbound, void*, t) {
+  void automaton_interface::sys_unbound_action (void* const & t) {
     // Something was unbound.
     // It can be in m_bind_recv, m_unbind_send, or m_unbind_recv.
     
@@ -328,12 +304,12 @@ namespace ioa {
     schedule ();
   }
   
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_create_key_dne, void*, t) {
+  void automaton_interface::sys_create_key_dne_action (void* const & t) {
     // We prevent this in destroy.
     assert (false);
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_automaton_destroyed, void*, t) {
+  void automaton_interface::sys_automaton_destroyed_action (void* const & t) {
     // An automaton was destroyed.
     // It can be in m_create_recv, m_destroy_send, or m_destroy_recv.
     
@@ -357,12 +333,12 @@ namespace ioa {
     schedule ();
   }
   
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_recipient_dne, void*, t) {
+  void automaton_interface::sys_recipient_dne_action (void* const & t) {
     // TODO
     assert (false);
   }
 
-  DEFINE_SYSTEM_INPUT (automaton_interface, sys_event_delivered, void*, t) {
+  void automaton_interface::sys_event_delivered_action (void* const & t) {
     // TODO
     assert (false);
   }

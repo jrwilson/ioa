@@ -2,7 +2,6 @@
 #define __action_hpp__
 
 #include <ioa/automaton_handle.hpp>
-#include <utility>
 #include <cstddef>
 
 namespace ioa {
@@ -296,8 +295,12 @@ namespace ioa {
       unparameterized_bound<I, M> (a, ptr)
     { }
 
-    bool operator() (I& i) const {
-      return (i.*this->member_ptr) (i);
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
+    void operator() (I& i) const {
+      (i.*this->member_ptr) (i);
     }
   };
 
@@ -313,8 +316,12 @@ namespace ioa {
       parameterized_bound<I, M, PT> (a, ptr, parameter)
     { }
 
-    bool operator() (I& i) const {
-      return (i.*this->member_ptr) (i, this->parameter);
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i, this->parameter);
+    }
+
+    void operator() (I& i) const {
+      (i.*this->member_ptr) (i, this->parameter);
     }
   };
 
@@ -329,7 +336,11 @@ namespace ioa {
       unparameterized_bound<I, M> (a, ptr)
     { }
 
-    std::pair<bool, VT> operator() (I& i) const {
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
+    VT operator() (I& i) const {
       return (i.*this->member_ptr) (i);
     }
   };
@@ -346,7 +357,11 @@ namespace ioa {
       parameterized_bound<I, M, PT> (a, ptr, param)
     { }
 
-    std::pair<bool, VT> operator() (I& i) const {
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i, this->parameter);
+    }
+
+    VT operator() (I& i) const {
       return (i.*this->member_ptr) (i, this->parameter);
     }
   };
@@ -361,6 +376,10 @@ namespace ioa {
 		 M I::*ptr) :
       action_core<I, M> (a, ptr)
     { }
+
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
 
     void operator() (I& i) const {
       (i.*this->member_ptr) (i);
@@ -379,6 +398,10 @@ namespace ioa {
 		 PT param) :
       parameter_core<I, M, PT> (a, ptr, param)
     { }
+
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i, this->parameter);
+    }
 
     void operator() (I& i) const {
       (i.*this->member_ptr) (i, this->parameter);
@@ -473,7 +496,11 @@ namespace ioa {
       action_core<I, M> (a, ptr)
     { }
 
-    std::pair<bool, VT> operator() (I& i) const {
+    bool precondition (I& i) const {
+      return (i.*this->member_ptr).precondition (i);
+    }
+
+    VT operator() (I& i) const {
       return (i.*this->member_ptr) (i);
     }
   };

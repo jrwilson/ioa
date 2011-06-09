@@ -10,22 +10,44 @@ private:
   float m_pole;
   int m_vole;
 
-  DECLARE_UV_UP_INPUT (automaton2, uv_up_input);
-  DECLARE_UV_P_INPUT (automaton2, uv_p_input, float, pole);
-  DECLARE_V_UP_INPUT (automaton2, v_up_input, int, vole);
-  DECLARE_V_P_INPUT (automaton2, v_p_input, int, vole, float, pole);
+private:
+  void uv_up_input_action () { }
+  void uv_p_input_action (float pole) { m_pole += pole; }
+  void v_up_input_action (int const & vole) { m_vole += vole; }
+  void v_p_input_action (int const & vole, float pole) { m_vole += vole; m_pole += pole; }
 
-  DECLARE_UV_UP_OUTPUT (automaton2, uv_up_output);
-  DECLARE_UV_P_OUTPUT (automaton2, uv_p_output, float, pole);
-  DECLARE_V_UP_OUTPUT (automaton2, v_up_output, int);
-  DECLARE_V_P_OUTPUT (automaton2, v_p_output, int, float, pole);
+  bool uv_up_output_precondition () const { return true; }
+  void uv_up_output_action () { }
+  bool uv_p_output_precondition (float pole) const { return true; }
+  void uv_p_output_action (float pole) { m_pole += pole; }
+  bool v_up_output_precondition () const { return true; }
+  int v_up_output_action () { return 0; }
+  bool v_p_output_precondition (float pole) const { return true; }
+  int v_p_output_action (float pole) { m_pole += pole; return 0; }
 
-  DECLARE_UP_INTERNAL (automaton2, up_internal);
-  DECLARE_P_INTERNAL (automaton2, p_internal, float, pole);
-  
-  DECLARE_UV_UP_INPUT (automaton2, uv_up_input2);
+  bool up_internal_precondition () const { return true; }
+  void up_internal_action () { }
+  bool p_internal_precondition (float pole) const { return true; }
+  void p_internal_action (float pole) { m_pole += pole; }
+
+  void uv_up_input2_action () { }
 
 public:
+  UV_UP_INPUT (automaton2, uv_up_input);
+  UV_P_INPUT (automaton2, uv_p_input, float);
+  V_UP_INPUT (automaton2, v_up_input, int);
+  V_P_INPUT (automaton2, v_p_input, int, float);
+
+  UV_UP_OUTPUT (automaton2, uv_up_output);
+  UV_P_OUTPUT (automaton2, uv_p_output, float);
+  V_UP_OUTPUT (automaton2, v_up_output, int);
+  V_P_OUTPUT (automaton2, v_p_output, int, float);
+
+  UP_INTERNAL (automaton2, up_internal);
+  P_INTERNAL (automaton2, p_internal, float);
+  
+  UV_UP_INPUT (automaton2, uv_up_input2);
+
   automaton2 () :
     ACTION (automaton2, uv_up_output),
     ACTION (automaton2, uv_p_output),
@@ -34,21 +56,5 @@ public:
   { }
 
 };
-
-DEFINE_UV_UP_INPUT (automaton2, uv_up_input) { }
-DEFINE_UV_P_INPUT (automaton2, uv_p_input, float, pole) { m_pole += pole; }
-DEFINE_V_UP_INPUT (automaton2, v_up_input, int, vole) { m_vole += vole; }
-DEFINE_V_P_INPUT (automaton2, v_p_input, int, vole, float, pole) { m_vole += vole; m_pole += pole; }
-
-DEFINE_UV_UP_OUTPUT (automaton2, uv_up_output) { return false; }
-DEFINE_UV_P_OUTPUT (automaton2, uv_p_output, float, pole) { m_pole += pole; return false; }
-DEFINE_V_UP_OUTPUT (automaton2, v_up_output, int) { return std::pair<bool, int> (); }
-DEFINE_V_P_OUTPUT (automaton2, v_p_output, int, float, pole) { m_pole += pole; return std::pair<bool, int> (); }
-
-
-DEFINE_UP_INTERNAL (automaton2, up_internal) { }
-DEFINE_P_INTERNAL (automaton2, p_internal, float, pole) { m_pole += pole; }
-
-DEFINE_UV_UP_INPUT (automaton2, uv_up_input2) { }
 
 #endif

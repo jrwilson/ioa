@@ -110,8 +110,8 @@ unvalued_unparameterized_output_action ()
   mu_assert (action == action);
 
   automaton1 z;
-  bool r = action (z);
-  mu_assert (r);
+  mu_assert (action.precondition (z));
+  action (z);
   mu_assert (z.up_uv_output.state);
   action.bound (z);
   mu_assert (z.up_uv_output.bound_);
@@ -134,8 +134,8 @@ unvalued_parameterized_output_action ()
   mu_assert (action == action);
 
   automaton1 z;
-  bool r = action (z);
-  mu_assert (r);
+  mu_assert (action.precondition (z));
+  action (z);
   mu_assert (z.p_uv_output.state);
   mu_assert (parameter == z.p_uv_output.last_parameter);
   action.bound (z);
@@ -160,9 +160,8 @@ valued_unparameterized_output_action ()
   mu_assert (action == action);
 
   automaton1 z;
-  std::pair<bool, int> r = action (z);
-  mu_assert (r.first);
-  mu_assert (r.second == 9845);
+  mu_assert (action.precondition (z));
+  mu_assert (action (z) == 9845);
   mu_assert (z.up_v_output.state);
   action.bound (z);
   mu_assert (z.up_v_output.bound_);
@@ -185,9 +184,8 @@ valued_parameterized_output_action ()
   mu_assert (action == action);
 
   automaton1 z;
-  std::pair<bool, int> r = action (z);
-  mu_assert (r.first);
-  mu_assert (r.second == 9845);
+  mu_assert (action.precondition (z));
+  mu_assert (action (z) == 9845);
   mu_assert (z.p_v_output.state);
   mu_assert (parameter == z.p_v_output.last_parameter);
   action.bound (z);
@@ -212,6 +210,7 @@ unparameterized_internal_action ()
   mu_assert (action == action);
 
   automaton1 z;
+  mu_assert (action.precondition (z));
   action (z);
   mu_assert (z.up_internal.state);
 
@@ -231,6 +230,7 @@ parameterized_internal_action ()
   mu_assert (action == action);
 
   automaton1 z;
+  mu_assert (action.precondition (z));
   action (z);
   mu_assert (z.p_internal.state);
   mu_assert (parameter == z.p_internal.last_parameter);
