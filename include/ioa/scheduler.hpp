@@ -57,6 +57,8 @@ namespace ioa {
 
     template <class I>
     static void run (std::auto_ptr<generator_interface<I> > generator);
+
+    static void clear ();
   };
 
 }

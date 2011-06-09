@@ -9,7 +9,8 @@
 
 
 int main () {
-  ioa::scheduler::run (ioa::make_generator<bidirectional_spanning_tree<ast_automaton, 75, 63, 100> > ());
+  ioa::scheduler::run (ioa::make_generator<bidirectional_spanning_tree<ast_automaton, 20, 10, 100> > ());
+  ioa::scheduler::clear ();
   return 0;
 }
 

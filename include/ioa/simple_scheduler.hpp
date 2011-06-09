@@ -331,6 +331,31 @@ namespace ioa {
       close (m_wakeup_fd[1]);
     }
 
+    static void clear (void) {
+      // We clear the system first because it might add something to a run queue.
+      system::clear ();
+
+      // Then, we clear the run queues.
+      for (std::list<std::pair<bool, runnable_interface*> >::iterator pos = m_sysq.list.begin ();
+           pos != m_sysq.list.end ();
+           ++pos) {
+        delete pos->second;
+      }
+      m_sysq.list.clear ();
+
+      for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_execq.list.begin ();
+           pos != m_execq.list.end ();
+           ++pos) {
+        delete pos->second;
+      }
+      m_execq.list.clear ();
+
+      // Notice that the post-conditions of clear () match those of run ().
+      assert (m_sysq.list.size () == 0);
+      assert (m_execq.list.size () == 0);
+      assert (!keep_going ());
+    }
+
   };
 
   // Implement the system scheduler.
@@ -409,6 +434,9 @@ namespace ioa {
     simple_scheduler::run (generator);
   }
 
+  void scheduler::clear() {
+    simple_scheduler::clear();
+  }
   // TODO:  EVENTS!!!
   // TODO:  What happens when we send an event to a destroyed automaton?
 
