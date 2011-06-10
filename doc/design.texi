@@ -42,6 +42,50 @@ Published by ...
 
 @chapter Introduction
 
+@section Automaton Identifiers
+
+An @dfn{automaton identifier (aid)} is a unique identifier given to each automaton that serves as a flyweight for the related data structures and entries in the system.
+An @dfn{automaton handle} is a typed aid that allows referring to an automaton for the purpose of binding.
+An aid is valid if the corresponding data structures and entries exist and is invalid otherwise.
+A handle is valid if the corresponding aid is valid @emph{and} the type conveyed by the handle matches the type of the automaton referred to by the aid.
+An aid or handle can start in an invalid state due to improper initialization.
+An aid or handle can start in a valid state and become invalid due to the destruction of the automaton to which it refers.
+An aid or handle can be invalid and become valid due to the creation of a new automaton.
+The case just mentioned is something that the system should prevent or minimize in its approach to aid allocation.
+
+@subsection Approach 1:  Observer
+
+One approach is to make aids and handles observers of the system data structures.
+Aids and handles start in an invalid state.
+The system is the only object with the ability to construct valid aids and handles.
+The aids and handles can be copied.
+When an invalid aid or handle is copied, the receiver becomes invalid.
+When a valid aid or handles is copied, the system records the new receiver.
+When an automaton is destroyed, all aids and handles that refer to the automaton are sent an event that sets them to the invalid state.
+This approach eliminates the serendipitous case when an invalid aid or handle becomes valid due to the creation of an automaton.
+
+The reason that I did not pursue this approach is that a lock must be acquired every time an aid or handle is copied.
+My guess is that copying aids and handles in user space is probably not an issue.
+The main problem resides in the scheduler which copies an aid/handle upon every invocation.
+This might not be an issue in reality but the costs seem to outweigh the benefits.
+
+@subsection Approach 2:  The Long-Cycle No-Repeat ID Factory
+
+Another approach is to allocate identifiers in such a way as to minimize the likelihood of an invalid aid or handle becoming valid.
+If we had an infinite set of identifiers, then we would never have to reuse an identifier (no-repeat) and the problem is solved.
+However, aids have a finite size so the set of identifiers is finite.
+An approximation of a infinite set with a finite set would allocate all identifiers before repeating an identifier (long-cycle).
+Treating the set of unused identifiers as a queue solves the problem.
+New identifiers are allocated from the front of the queue and reclaimed identifiers are pushed to the back of the queue.
+Thus, the time, measured by allocations, between successive uses of an identifier is maximized.
+The drawback of this approach is that all unused identifiers must be maintained.
+This is not practical.
+Consequently, we replace the queue with an index.
+Identifiers are allocated by testing the index and incrementing it until an unallocated identifier is found.
+
+The @code{aid_t} type is an integral type for automaton identifiers.
+The class @code{sequential_set} implements the Long-Cycle No-Repeat ID Factory concept and is used for allocating aids.
+
 @chapter FAQ
 
 @bye
