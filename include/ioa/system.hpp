@@ -592,18 +592,19 @@ namespace ioa {
 
 	// Execute.
 	system_scheduler::set_current_aid (m_action.get_aid ());
-	bool t = m_action.precondition (*m_instance);
+	bool precondition = m_action.precondition (*m_instance);
 	VT value;
-	if (t) {
+	const VT& value_ref = value;
+	if (precondition) {
 	  value = m_action (*m_instance);
 	}
 	system_scheduler::clear_current_aid ();
 
-	if (t) {
+	if (precondition) {
 	  for (typename std::map<aid_t, record*>::const_iterator pos = m_records.begin ();
 	       pos != m_records.end ();
 	       ++pos) {
-	    (*(pos->second->m_input)) (value);
+	    (*(pos->second->m_input)) (value_ref);
 	  }	  
 	}
 

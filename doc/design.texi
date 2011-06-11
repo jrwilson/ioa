@@ -86,6 +86,131 @@ Identifiers are allocated by testing the index and incrementing it until an unal
 The @code{aid_t} type is an integral type for automaton identifiers.
 The class @code{sequential_set} implements the Long-Cycle No-Repeat ID Factory concept and is used for allocating aids.
 
+@node Thoughts on Garbage Collection
+
+@section Thoughts on Garbage Collection
+
+The system knows the aid of an automaton before it does anything including allocating memory.
+A nice thing to do would be to associate the relevant aid with each piece of allocated memory.
+When an automaton is destroyed, all storage still associated with the automaton, i.e., that not deallocated by the deconstructor and indicative of a memory leak, can be deallocated.
+This is a big project as it requires writing a memory allocator.
+
+@section Buffers
+
+Output actions must produce a value that can be copied as the system saves a copy to pass to bound inputs.
+If an input automaton wishes to save the data for later processing, then the automaton must make a copy of the data.
+This becomes inefficient for large values that might need to be copied many times.
+The straightforward solution is to put the data in a @dfn{buffer} and pass a pointer to the buffer.
+The pointer must be a smart pointer that is both reference-counting and thread-safe.
+Additionally, the buffer should be owned by the system and not the output automaton.
+@xref{Thoughts on Garbage Collection} for an explanation.
+Finally, the data should become read-only when the output automaton returns.
+
+If a buffer contains pointers to other buffers, then the buffers can form directed acyclic graph.
+Linked lists, trees, and other structures are all special cases of a directed acyclic graph.
+This leads to a powerful construct where automata can output a list of buffers to process.
+
+@section Thoughts on Performance and Optimization
+
+The first step is to profile the implementation to actually determine what needs optimizing.
+I suspect profiling with show these problems.
+@enumerate
+@item
+Unnecessary copying, especially of the values and parameters associated with actions. 
+@item
+Inefficiency when inserting, removing, and searching certain data structures.
+@end enumerate
+The solution to the first item is an appropriate use of references and const-correctness.
+This applies to the scheduler and system proper but also the helpers and wrappers just outside of the system.
+The solution to the second problem is to use better data structures.
+I believe that almost every ordered associative container (set and map) can be replaced by a unordered equivalent (hash set and hash map).
+One might also need auxiliary indices to acceleration certain operations.
+For example, run queues should not contain duplicate output and internal actions.
+To prevent an O(N) search, one should maintain a hash with the same contents of the queue.
+
+@section Thoughts on Scheduling
+
+@subsection Multicore
+
+For performance, we would like to pin every automaton to a processor to avoid cache contention.
+Ideally, the automata that are composed with that automaton also reside on the same processor.
+If the automata form clusters, then we can approximate this ideal by pinning collaborating automata to the same processor.
+The optimization problem is to minimize the number of @emph{action executions} that cross processor boundaries.
+I emphasized action executions to highlight the difference from actions in the static sense.
+If an action is executed often, then it is more costly if the automata are not co-located.
+Actions that are executed infrequently can be neglected.
+
+@subsection Real-Time
+
+There are interesting opportunities for real-time computation with I/O automata.
+For example, one could implement an EDF scheduler if one were to associated deadlines with each action.
+The lack of blocking calls allows one to provide a reasonable estimate of execution time of actions and eases real-time scheduling analysis.
+Moving from soft real-time to hard real-time would require making the system more deterministic and using finite data structures to bound execution time.
+
+@chapter Architecture
+
+@section Introduction
+
+@section System
+
+@subsection Type Safe Binding
+
+@subsection Use of Keys
+
+@subsection Execution
+
+Locking automata in order.
+
+@section Scheduler
+
+@section The Destroy Process
+
+automaton_interface
+How does it clean up stuff?
+
+@chapter Scheduling
+
+For every action there is a set of automata that are involved.
+For internal actions, this is just the automaton executing the action.
+For an output action, this is the automaton producing the output as well as the set of automata whose inputs will be activated.
+If the sets of automata for two actions are disjoint, then the actions can be executed concurrently.
+
+@section System Calls
+
+System calls must be processed in order locally to make sense.
+
+@section I/O
+
+@section I/O Helpers
+
+@enumerate
+@item file_automaton
+@item unicast_automaton
+@item acceptor_automaton
+@item connector_automaton
+@item multicast_automaton
+@item broadcast_automaton
+@end enumerate
+
+Back-pressure on send/write.
+
+@section The Simple Scheduler
+
+@chapter Helpers
+
+@subsection Rationale
+
+Why are they dynamic?
+
+Schedule on bound.
+Importance of knowing bind status.
+
+@chapter Testing
+
+I should write more tests.
+I should shoot for 100% code coverage.
+How do we test concurrent systems?
+
 @chapter FAQ
 
 @bye
