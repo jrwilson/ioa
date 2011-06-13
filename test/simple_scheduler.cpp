@@ -1,6 +1,6 @@
 #include "minunit.h"
 
-#include <ioa/simple_scheduler.hpp>
+#include <ioa/scheduler.hpp>
 #include <ioa/generator.hpp>
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
@@ -1108,6 +1108,156 @@ automaton_destroyed2 ()
   return 0;
 }
 
+class schedule_automaton :
+  public ioa::automaton_interface {
+private:
+
+  bool action_precondition () const {
+    return true;
+  }
+
+  void action_action () {
+    goal_reached = true;
+  }
+
+  UV_UP_OUTPUT (schedule_automaton, action);
+
+public:
+  schedule_automaton () :
+    ACTION (schedule_automaton, action)
+  {
+    ioa::scheduler::schedule (&schedule_automaton::action);
+  }
+  
+};
+
+static const char*
+schedule ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
+class schedule_automatonp :
+  public ioa::automaton_interface {
+private:
+
+  bool action_precondition (int param) const {
+    assert (param == 18887235);
+    return true;
+  }
+
+  void action_action (int param) {
+    assert (param == 18887235);
+    goal_reached = true;
+  }
+
+  UV_P_OUTPUT (schedule_automatonp, action, int);
+
+public:
+  schedule_automatonp () :
+    ACTION (schedule_automatonp, action)
+  {
+    ioa::scheduler::schedule (&schedule_automatonp::action, 18887235);
+  }
+  
+};
+
+static const char*
+schedulep ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_automatonp> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
+class schedule_after_automaton :
+  public ioa::automaton_interface {
+private:
+
+  time_t m_schedule_time;
+
+  bool action_precondition () const {
+    return true;
+  }
+
+  int action_action () {
+    time_t execute_time = time (0);
+    // Should be within three seconds of each other.
+    assert (execute_time - m_schedule_time <= 3);
+    goal_reached = true;
+    return 0;
+  }
+
+  V_UP_OUTPUT (schedule_after_automaton, action, int);
+
+public:
+  schedule_after_automaton () :
+    ACTION (schedule_after_automaton, action)
+  {
+    m_schedule_time = time (0);
+    ioa::scheduler::schedule_after (&schedule_after_automaton::action, ioa::time (1, 0));
+  }
+  
+};
+
+static const char*
+schedule_after ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_after_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
+class schedule_afterp_automaton :
+  public ioa::automaton_interface {
+private:
+
+  time_t m_schedule_time;
+
+  bool action_precondition (int param) const {
+    assert (param == 512);
+    return true;
+  }
+
+  int action_action (int param) {
+    assert (param == 512);
+    time_t execute_time = time (0);
+    // Should be within three seconds of each other.
+    assert (execute_time - m_schedule_time <= 3);
+    goal_reached = true;
+    return 0;
+  }
+
+  V_P_OUTPUT (schedule_afterp_automaton, action, int, int);
+
+public:
+  schedule_afterp_automaton () :
+    ACTION (schedule_afterp_automaton, action)
+  {
+    m_schedule_time = time (0);
+    ioa::scheduler::schedule_after (&schedule_afterp_automaton::action, 512, ioa::time (1, 0));
+  }
+  
+};
+
+static const char*
+schedule_afterp ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_afterp_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
 const char*
 all_tests ()
 {
@@ -1123,6 +1273,14 @@ all_tests ()
   mu_run_test (unbound2);
   mu_run_test (automaton_destroyed);
   mu_run_test (automaton_destroyed2);
+  mu_run_test (schedule);
+  mu_run_test (schedulep);
+  mu_run_test (schedule_after);
+  mu_run_test (schedule_afterp);
+  // mu_run_test (schedule_read_ready);
+  // mu_run_test (schedule_read_readyp);
+  // mu_run_test (schedule_write_ready);
+  // mu_run_test (schedule_write_readyp);
 
   return 0;
 }

@@ -20,11 +20,34 @@ namespace ioa {
     
     template <class I, class M>
     static void schedule (M I::*member_ptr,
-			  const typename M::parameter_type & param);
+			  const typename M::parameter_type& param);
 
     template <class I, class M>
-    static void schedule (M I::*member_ptr,
-			  time offset);
+    static void schedule_after (M I::*member_ptr,
+				time offset);
+    
+    template <class I, class M>
+    static void schedule_after (M I::*member_ptr,
+				const typename M::parameter_type& param,
+				time offset);
+    
+    template <class I, class M>
+    static void schedule_read_ready (M I::*member_ptr,
+				     int fd);
+    
+    template <class I, class M>
+    static void schedule_read_ready (M I::*member_ptr,
+				     const typename M::parameter_type& param,
+				     int fd);
+    
+    template <class I, class M>
+    static void schedule_write_ready (M I::*member_ptr,
+				      int fd);
+    
+    template <class I, class M>
+    static void schedule_write_ready (M I::*member_ptr,
+				      const typename M::parameter_type& param,
+				      int fd);
     
     static void run (shared_ptr<generator_interface> generator);
   };

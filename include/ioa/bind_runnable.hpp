@@ -2,7 +2,7 @@
 #define __bind_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/system.hpp>
+#include <ioa/model.hpp>
 
 namespace ioa {
 
@@ -24,7 +24,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::bind (m_automaton, m_exec, m_key);
+      model::bind (m_automaton, m_exec, m_key);
     }
   };
   

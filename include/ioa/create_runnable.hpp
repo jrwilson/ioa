@@ -2,7 +2,7 @@
 #define __create_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/system.hpp>
+#include <ioa/model.hpp>
 
 namespace ioa {
   
@@ -23,7 +23,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::create (m_automaton, m_generator, m_key);
+      model::create (m_automaton, m_generator, m_key);
     }
   };
   

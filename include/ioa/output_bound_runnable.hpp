@@ -2,7 +2,7 @@
 #define __output_bound_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/system.hpp>
+#include <ioa/model.hpp>
 
 namespace ioa {
 
@@ -18,7 +18,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::execute_output_bound (*m_exec);
+      model::execute_output_bound (*m_exec);
     }
   };
 
@@ -34,7 +34,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::execute_input_bound (*m_exec);
+      model::execute_input_bound (*m_exec);
     }
   };
 
@@ -50,7 +50,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::execute_output_unbound (*m_exec);
+      model::execute_output_unbound (*m_exec);
     }
   };
 
@@ -66,7 +66,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::execute_input_unbound (*m_exec);
+      model::execute_input_unbound (*m_exec);
     }
   };
   

@@ -2,7 +2,7 @@
 #define __sys_unbind_runnable_hpp__
 
 #include <ioa/action_runnable.hpp>
-#include <ioa/system.hpp>
+#include <ioa/model.hpp>
 #include <ioa/automaton_interface.hpp>
 
 namespace ioa {
@@ -21,7 +21,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::execute_sys_unbind (m_automaton);
+      model::execute_sys_unbind (m_automaton);
     }
 
     const action_interface& get_action () const {

@@ -1,4 +1,4 @@
-#include <ioa/system.hpp>
+#include <ioa/model.hpp>
 
 #include <ioa/shared_mutex.hpp>
 #include <ioa/unique_lock.hpp>
@@ -9,13 +9,13 @@
 
 namespace ioa {
 
-  shared_mutex system::m_mutex;
-  sequential_set<aid_t> system::m_aids;
-  std::set<automaton_interface*> system::m_instances;
-  std::map<aid_t, automaton_record*> system::m_records;
-  std::list<output_executor_interface*> system::m_bindings;
+  shared_mutex model::m_mutex;
+  sequential_set<aid_t> model::m_aids;
+  std::set<automaton_interface*> model::m_instances;
+  std::map<aid_t, automaton_record*> model::m_records;
+  std::list<output_executor_interface*> model::m_bindings;
 
-  void system::clear (void) {
+  void model::clear (void) {
    // Delete all root automata.
     while (!m_records.empty ()) {
       for (std::map<aid_t, automaton_record*>::const_iterator pos = m_records.begin ();
@@ -34,7 +34,7 @@ namespace ioa {
     assert (m_bindings.empty ());
   }
   
-  aid_t system::create (shared_ptr<generator_interface> generator)
+  aid_t model::create (shared_ptr<generator_interface> generator)
   {
     unique_lock lock (m_mutex);
     
@@ -64,7 +64,7 @@ namespace ioa {
     return aid;
   }
   
-  aid_t system::create (const aid_t automaton,
+  aid_t model::create (const aid_t automaton,
 			shared_ptr<generator_interface> generator,
 			void* const key)
   {
@@ -111,7 +111,7 @@ namespace ioa {
     return aid;
   }
 
-  int system::bind (const aid_t binder,
+  int model::bind (const aid_t binder,
 		    shared_ptr<bind_executor_interface> bind_exec,
 		    void* const key) {
     
@@ -189,7 +189,7 @@ namespace ioa {
     return 0;
   }    
 
-  int system::unbind (const aid_t binder,
+  int model::unbind (const aid_t binder,
 		      void* const key)
   {
     if (!m_aids.contains (binder)) {
@@ -221,7 +221,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::destroy (const aid_t target)
+  int model::destroy (const aid_t target)
   {
     unique_lock lock (m_mutex);
     
@@ -233,7 +233,7 @@ namespace ioa {
     return 0;
   }
   
-  int system::destroy (const aid_t automaton,
+  int model::destroy (const aid_t automaton,
 		       void* const key)
   {
     unique_lock lock (m_mutex);
@@ -252,7 +252,7 @@ namespace ioa {
     return 0;
   }
 
-  void system::inner_destroy (automaton_record* automaton)
+  void model::inner_destroy (automaton_record* automaton)
   {
     for (std::pair<void*, automaton_record*> p = automaton->get_first_child ();
 	 p.second != 0;
@@ -286,7 +286,7 @@ namespace ioa {
     delete automaton;
   }
 
-  int system::execute (output_executor_interface& exec) {
+  int model::execute (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -309,7 +309,7 @@ namespace ioa {
     return 0;
   }
   
-  int system::execute (internal_executor_interface& exec) {
+  int model::execute (internal_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -321,7 +321,7 @@ namespace ioa {
     return 0;
   }
   
-  int system::execute (const aid_t from,
+  int model::execute (const aid_t from,
 		       event_executor_interface& exec,
 		       void* const key) {
     shared_lock lock (m_mutex);
@@ -343,7 +343,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute (system_input_executor_interface& exec) {
+  int model::execute (system_input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -355,7 +355,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_sys_create (const aid_t automaton) {
+  int model::execute_sys_create (const aid_t automaton) {
     shared_lock lock (m_mutex);
 
     if (!m_aids.contains (automaton)) {
@@ -384,7 +384,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_sys_bind (const aid_t automaton) {
+  int model::execute_sys_bind (const aid_t automaton) {
     shared_lock lock (m_mutex);
 
     if (!m_aids.contains (automaton)) {
@@ -414,7 +414,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_sys_unbind (const aid_t automaton) {
+  int model::execute_sys_unbind (const aid_t automaton) {
     shared_lock lock (m_mutex);
 
     if (!m_aids.contains (automaton)) {
@@ -443,7 +443,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_sys_destroy (const aid_t automaton) {
+  int model::execute_sys_destroy (const aid_t automaton) {
     shared_lock lock (m_mutex);
 
     if (!m_aids.contains (automaton)) {
@@ -472,7 +472,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_output_bound (output_executor_interface& exec) {
+  int model::execute_output_bound (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -484,7 +484,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_input_bound (input_executor_interface& exec) {
+  int model::execute_input_bound (input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -496,7 +496,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_output_unbound (output_executor_interface& exec) {
+  int model::execute_output_unbound (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -508,7 +508,7 @@ namespace ioa {
     return 0;
   }
 
-  int system::execute_input_unbound (input_executor_interface& exec) {
+  int model::execute_input_unbound (input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
     if (!exec.fetch_instance ()) {
@@ -520,11 +520,11 @@ namespace ioa {
     return 0;
   }
 
-  void system::lock_automaton (const aid_t handle) {
+  void model::lock_automaton (const aid_t handle) {
     m_records[handle]->lock ();
   }
 
-  void system::unlock_automaton (const aid_t handle) {
+  void model::unlock_automaton (const aid_t handle) {
     m_records[handle]->unlock ();
   }
 

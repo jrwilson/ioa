@@ -2,7 +2,7 @@
 #define __action_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/system.hpp>
+#include <ioa/model.hpp>
 
 namespace ioa {
 
@@ -24,7 +24,7 @@ namespace ioa {
     public action_runnable_interface
   {
   private:
-    system::action_executor<I, M> m_exec;
+    model::action_executor<I, M> m_exec;
     
   public:
     action_runnable (const action<I, M> action) :
@@ -32,7 +32,7 @@ namespace ioa {
     { }
     
     void operator() () {
-      system::execute (m_exec);
+      model::execute (m_exec);
     }
     
     const action_interface& get_action () const {

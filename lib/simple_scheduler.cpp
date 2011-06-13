@@ -214,7 +214,6 @@ namespace ioa {
     assert (m_sysq.list.size () == 0);
     assert (m_execq.list.size () == 0);
     assert (!keep_going ());
-    system::create (generator);
     
     // Create a pipe to communicate with the timer thread.
     r = pipe (m_wakeup_fd);
@@ -223,6 +222,9 @@ namespace ioa {
     assert (r == 0);
     r = fcntl (m_wakeup_fd[1], F_SETFL, O_NONBLOCK);
     assert (r == 0);
+
+    // Comes pipe creation because we might want to schedule with delay.
+    model::create (generator);
     
     thread sysq_thread (&simple_scheduler::process_sysq);
     thread execq_thread (&simple_scheduler::process_execq);
@@ -238,7 +240,7 @@ namespace ioa {
     // Consequently, we are going to reset.
 
     // We clear the system first because it might add something to a run queue.
-    system::clear ();
+    model::clear ();
     
     // Then, we clear the run queues.
     for (std::list<std::pair<bool, runnable_interface*> >::iterator pos = m_sysq.list.begin ();

@@ -1,5 +1,5 @@
-#ifndef __system_hpp__
-#define __system_hpp__
+#ifndef __model_hpp__
+#define __model_hpp__
 
 #include <ioa/action.hpp>
 #include <ioa/sequential_set.hpp>
@@ -29,12 +29,12 @@ namespace ioa {
 
   // TODO:  Memory allocation.
 
-  class system
+  class model
   {
 
   private:    
     // Can't construct one.
-    system () { }
+    model () { }
     
     class binding_equal
     {
@@ -175,7 +175,7 @@ namespace ioa {
       { }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
@@ -188,20 +188,20 @@ namespace ioa {
     
       void bound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.bound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       void unbound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.unbound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       const action_interface& get_action () const {
@@ -233,7 +233,7 @@ namespace ioa {
       { }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
@@ -246,20 +246,20 @@ namespace ioa {
 
       void bound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.bound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       void unbound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.unbound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
     
       const action_interface& get_action () const {
@@ -329,7 +329,7 @@ namespace ioa {
       }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
@@ -346,10 +346,10 @@ namespace ioa {
 	     ++pos) {
 	  if (!output_processed &&
 	      m_action.get_aid () < pos->first) {
-	    system::lock_automaton (m_action.get_aid ());
+	    model::lock_automaton (m_action.get_aid ());
 	    output_processed = true;
 	  }
-	  system::lock_automaton (pos->first);
+	  model::lock_automaton (pos->first);
 	}
 
 
@@ -376,29 +376,29 @@ namespace ioa {
 	     ++pos) {
 	  if (!output_processed &&
 	      m_action.get_aid () < pos->first) {
-	    system::unlock_automaton (m_action.get_aid ());
+	    model::unlock_automaton (m_action.get_aid ());
 	    output_processed = true;
 	  }
-	  system::unlock_automaton (pos->first);
+	  model::unlock_automaton (pos->first);
 	}
       }
 
       void bound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.bound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       void unbound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.unbound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       const action_interface& get_action () const {
@@ -566,7 +566,7 @@ namespace ioa {
       }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
@@ -583,10 +583,10 @@ namespace ioa {
 	     ++pos) {
 	  if (!output_processed &&
 	      m_action.get_aid () < pos->first) {
-	    system::lock_automaton (m_action.get_aid ());
+	    model::lock_automaton (m_action.get_aid ());
 	    output_processed = true;
 	  }
-	  system::lock_automaton (pos->first);
+	  model::lock_automaton (pos->first);
 	}
 
 
@@ -615,29 +615,29 @@ namespace ioa {
 	     ++pos) {
 	  if (!output_processed &&
 	      m_action.get_aid () < pos->first) {
-	    system::unlock_automaton (m_action.get_aid ());
+	    model::unlock_automaton (m_action.get_aid ());
 	    output_processed = true;
 	  }
-	  system::unlock_automaton (pos->first);
+	  model::unlock_automaton (pos->first);
 	}
       }
 
       void bound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.bound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       void unbound () const {
 	assert (m_instance != 0);
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action.unbound (*m_instance);
 	system_scheduler::clear_current_aid ();
-	system::unlock_automaton (m_action.get_aid ());
+	model::unlock_automaton (m_action.get_aid ());
       }
 
       const action_interface& get_action () const {
@@ -762,14 +762,14 @@ namespace ioa {
       { }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
       void operator() () const {
 	assert (m_instance != 0);
 
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	if (m_action.precondition (*m_instance)) {
 	  m_action (*m_instance);
@@ -799,14 +799,14 @@ namespace ioa {
       { }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
       void operator() () const {
 	assert (m_instance != 0);
 
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
@@ -834,14 +834,14 @@ namespace ioa {
       { }
       
       bool fetch_instance () {
-	m_instance = system::automaton_handle_to_instance (m_action.automaton);
+	m_instance = model::automaton_handle_to_instance (m_action.automaton);
 	return m_instance != 0;
       }
       
       void operator() () const {
 	assert (m_instance != 0);
 	
-	system::lock_automaton (m_action.get_aid ());
+	model::lock_automaton (m_action.get_aid ());
 	system_scheduler::set_current_aid (m_action.get_aid ());
 	m_action (*m_instance);
 	system_scheduler::clear_current_aid ();
@@ -895,7 +895,7 @@ namespace ioa {
   template <class OI, class OM, class II, class IM>
   shared_ptr<bind_executor_interface> make_bind_executor (const action<OI, OM>& output,
 							  const action<II, IM>& input) {
-    return shared_ptr<bind_executor_interface> (new system::bind_executor<OI, OM, II, IM> (output, input));
+    return shared_ptr<bind_executor_interface> (new model::bind_executor<OI, OM, II, IM> (output, input));
   }
 
 }

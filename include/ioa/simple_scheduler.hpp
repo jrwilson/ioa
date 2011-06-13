@@ -142,14 +142,21 @@ namespace ioa {
 
     template <class I, class M>
     static void schedule (M I::*member_ptr,
-                          const typename M::parameter_type & param) {
+                          const typename M::parameter_type& param) {
       schedule_execq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)));
     }
 
     template <class I, class M>
-    static void schedule (M I::*member_ptr,
-  			  time offset) {
+    static void schedule_after (M I::*member_ptr,
+				time offset) {
       schedule_timerq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), offset);
+    }
+
+    template <class I, class M>
+    static void schedule_after (M I::*member_ptr,
+				const typename M::parameter_type& param,
+				time offset) {
+      schedule_timerq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), offset);
     }
     
     static void run (shared_ptr<generator_interface> generator);
@@ -169,13 +176,18 @@ namespace ioa {
   }
 
   template <class I, class M>
-  void scheduler::schedule (M I::*member_ptr,
-			    time offset) {
-    simple_scheduler::schedule (member_ptr, offset);
+  void scheduler::schedule_after (M I::*member_ptr,
+				  time offset) {
+    simple_scheduler::schedule_after (member_ptr, offset);
   }
   
-  // TODO:  EVENTS!!!
-  // TODO:  What happens when we send an event to a destroyed automaton?
+  template <class I, class M>
+  void scheduler::schedule_after (M I::*member_ptr,
+				  const typename M::parameter_type & p,
+				  time offset) {
+    simple_scheduler::schedule_after (member_ptr, p, offset);
+  }
+
 }
 
 #endif
