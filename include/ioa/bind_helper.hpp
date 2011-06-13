@@ -112,14 +112,14 @@ namespace ioa {
   private:
     void set_output_handle (const automaton_handle<OI>& output_handle) {
       m_output_handle = output_handle;
-      if (m_output_handle != -1 && m_input_handle != -1) { 
+      if (m_output_handle != -1 && m_input_handle != -1) {
   	m_automaton->bind (this);
       }
     }
 
     void set_input_handle (const automaton_handle<II>& input_handle) {
       m_input_handle = input_handle;
-      if (m_output_handle != -1 && m_input_handle != -1) { 
+      if (m_output_handle != -1 && m_input_handle != -1) {
   	m_automaton->bind (this);
       }
     }
@@ -166,7 +166,7 @@ namespace ioa {
     void binding_exists () {
       delete this;
     }
-    
+
     void input_action_unavailable () {
       delete this;
     }
@@ -197,7 +197,7 @@ namespace ioa {
       return ioa::make_bind_executor (ioa::make_action (this->m_output_handle, this->m_output_member_ptr),
 				      ioa::make_action (this->m_input_handle, this->m_input_member_ptr));
     }
-    
+
   public:
     bind_helper_impl (automaton_interface* automaton,
   		      automaton_handle_interface<OI>* output,
@@ -209,37 +209,32 @@ namespace ioa {
 
   };
 
-  // // Parameterized output.
-  // template <class T, class OH, class OM, class IH, class IM>
-  // class bind_helper_impl<T, OH, OM, parameterized, IH, IM, unparameterized> :
-  //   public bind_helper_core<T, OH, OM, IH, IM>
-  // {
-  // private:
-  //   typedef typename OH::instance OI;
-  //   typedef typename IH::instance II;
-  //   typedef typename OM::parameter_type OP;
+  // Parameterized output.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, parameterized, II, IM, unparameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+   {
+   private:
+     typedef typename OM::parameter_type OP;
 
-  //   OP m_output_parameter;
+     OP m_output_parameter;
 
-  //   void bind_dispatch () {
-  //     scheduler::bind (this->m_this,
-  // 		       make_action (this->m_output_handle, this->m_output_member_ptr, m_output_parameter),
-  // 		       make_action (this->m_input_handle, this->m_input_member_ptr),
-  // 		       *this);
-  //   }
+    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+      return ioa::make_bind_executor (ioa::make_action (this->m_output_handle, this->m_output_member_ptr, this->m_output_parameter),
+				      ioa::make_action (this->m_input_handle, this->m_input_member_ptr));
+    }
 
-  // public:
-  //   bind_helper_impl (const T* t,
-  // 		      OH* output_helper,
-  // 		      OM OI::*output_member_ptr,
-  // 		      const OP& output_parameter,
-  // 		      IH* input_helper,
-  // 		      IM II::*input_member_ptr) :
-  //     bind_helper_core<T, OH, OM, IH, IM> (t, output_helper, output_member_ptr, input_helper, input_member_ptr),
-  //     m_output_parameter (output_parameter)
-  //   { }
-
-  // };
+   public:
+     bind_helper_impl (automaton_interface* automaton,
+   		      automaton_handle_interface<OI>* output,
+   		      OM OI::*output_member_ptr,
+   		      const OP& output_parameter,
+   		      automaton_handle_interface<II>* input,
+   		      IM II::*input_member_ptr) :
+       bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr),
+       m_output_parameter (output_parameter)
+     { }
+   };
 
   // Parameterized input.
   template <class OI, class OM, class II, class IM>
@@ -312,7 +307,7 @@ namespace ioa {
   private:
     typedef typename OM::parameter_type OP;
     typedef typename IM::parameter_type IP;
-    
+
   public:
     bind_helper (automaton_interface* automaton,
   		 automaton_handle_interface<OI>* output,
@@ -359,6 +354,16 @@ namespace ioa {
 						 automaton_handle_interface<II>* input,
 						 IM II::*input_member_ptr) {
     return new bind_helper<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr);
+  }
+
+  template <class OI, class OM, class II, class IM>
+  bind_helper<OI, OM, II, IM>* make_bind_helper (automaton_interface* automaton,
+						 automaton_handle_interface<OI>* output,
+						 OM OI::*output_member_ptr,
+						 typename OM::parameter_type parameter,
+						 automaton_handle_interface<II>* input,
+						 IM II::*input_member_ptr) {
+    return new bind_helper<OI, OM, II, IM> (automaton, output, output_member_ptr, parameter, input, input_member_ptr);
   }
 
   template <class OI, class OM, class II, class IM>

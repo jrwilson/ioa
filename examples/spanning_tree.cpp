@@ -1,5 +1,6 @@
 #include "ast_automaton.hpp"
 #include "bidirectional_spanning_tree.hpp"
+
 #include <ioa/simple_scheduler.hpp>
 
 /*
@@ -9,8 +10,7 @@
 
 
 int main () {
-  ioa::scheduler::run (ioa::make_generator<bidirectional_spanning_tree<ast_automaton, 20, 10, 100> > ());
-  ioa::scheduler::clear ();
+  ioa::scheduler::run (ioa::make_generator<bidirectional_spanning_tree<ast_automaton, 50, 5, 100> > ());
   return 0;
 }
 

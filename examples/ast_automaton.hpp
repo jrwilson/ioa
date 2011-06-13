@@ -11,7 +11,7 @@ typedef enum {
 } search_t;
 
 class ast_automaton :
-  public ioa::dispatching_automaton
+  public ioa::automaton_interface
 {
 
 private:
@@ -27,44 +27,31 @@ private:
   size_t m_i0;
 
   bool parent_precondition () const {
-    return m_parent != size_t(-1) && !m_reported && parent.is_bound ();
+    return m_parent != size_t(-1) && !m_reported && parent.bind_count () != 0;
   }
 
-  V_UP_OUTPUT (ast_automaton, parent, size_t) {
-    std::pair<bool, size_t> retval;
-    if(parent_precondition()) {
-      m_reported = true;
-      retval = std::make_pair(true, m_parent);
-    }
-    schedule();
-    return retval;
-  }
-
-  bool send_precondition (size_t j) {
-    return m_send[j] == SEARCH && send.is_bound (j);
-  }
-
-  //Unvalued, parameterized output.
-  //@Param: ast_automaton is the class, send the name of the method
-  //size_t is the parameter type, and j is the parameter.
-  //this refers to what automaton is being sent to
-  V_P_OUTPUT (ast_automaton, send, search_t, size_t, j) {
-    std::pair<bool, search_t> retval;
-
-    if(send_precondition(j)) {
-      m_send[j] = NOSEARCH;
-      retval = std::make_pair(true, SEARCH_MESSAGE);
-    }
+  size_t parent_action () {
+    m_reported = true;
+    size_t retval = m_parent;
 
     schedule();
     return retval;
   }
 
-  //Unvalued, parameterized input.
-  //@Param: ast_automaton is the class, send the name of the method
-  //int is the parameter type, and sender is the parameter.
-  //this refers to what automaton we are receiving from
-  V_P_INPUT (ast_automaton, receive, search_t, ignored, size_t, j) {
+  bool send_precondition (size_t j) const {
+    //might be a different syntax than bind_count (j)
+    return m_send.find (j)->second == SEARCH && send.bind_count (j) != 0;
+  }
+
+  search_t send_action (size_t j) {
+    m_send[j] = NOSEARCH;
+    search_t retval = SEARCH_MESSAGE;
+
+    schedule();
+    return retval;
+  }
+
+  void receive_action (const search_t& ignored, size_t j) {
     if(m_i != m_i0 && m_parent == size_t(-1)) {
       m_parent = j;
 
@@ -82,13 +69,13 @@ private:
 
   void schedule () {
     if (parent_precondition ()) {
-      ioa::scheduler::schedule (this, &ast_automaton::parent);
+      ioa::scheduler::schedule (&ast_automaton::parent);
     }
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin();
         pos != m_nbrs.end();
         ++pos) {
       if (send_precondition (*pos)) {
-        ioa::scheduler::schedule (this, &ast_automaton::send, *pos);
+        ioa::scheduler::schedule (&ast_automaton::send, *pos);
       }
     }
   }
@@ -101,8 +88,7 @@ public:
     m_i(i),
     m_i0(i0),
     ACTION (ast_automaton, parent),
-    ACTION (ast_automaton, send),
-    ACTION (ast_automaton, receive)
+    ACTION (ast_automaton, send)
   {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin();
         pos != m_nbrs.end();
@@ -114,11 +100,13 @@ public:
         m_send[*pos] = NOSEARCH;
       }
     }
-  }
 
-  void init () {
     schedule();
   }
+
+  V_UP_OUTPUT (ast_automaton, parent, size_t);
+  V_P_OUTPUT (ast_automaton, send, search_t, size_t);
+  V_P_INPUT (ast_automaton, receive, search_t, size_t);
 
 };
 
