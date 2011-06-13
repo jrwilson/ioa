@@ -24,7 +24,7 @@ private:
 
   void schedule () const {
     if (increment_precondition ()) {
-      ioa::scheduler::schedule (&count_to_ten::increment, ioa::time (1, 0));
+      ioa::scheduler::schedule_after (&count_to_ten::increment, ioa::time (1, 0));
     }
   }
 
