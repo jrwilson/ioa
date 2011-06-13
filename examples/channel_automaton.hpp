@@ -44,8 +44,7 @@ private:
 
 public:
 
-  channel_automaton () :
-    ACTION (channel_automaton, receive)
+  channel_automaton ()
   {
     schedule ();
   }

@@ -1124,8 +1124,7 @@ private:
   UV_UP_OUTPUT (schedule_automaton, action);
 
 public:
-  schedule_automaton () :
-    ACTION (schedule_automaton, action)
+  schedule_automaton ()
   {
     ioa::scheduler::schedule (&schedule_automaton::action);
   }
@@ -1159,8 +1158,7 @@ private:
   UV_P_OUTPUT (schedule_automatonp, action, int);
 
 public:
-  schedule_automatonp () :
-    ACTION (schedule_automatonp, action)
+  schedule_automatonp ()
   {
     ioa::scheduler::schedule (&schedule_automatonp::action, 18887235);
   }
@@ -1198,8 +1196,7 @@ private:
   V_UP_OUTPUT (schedule_after_automaton, action, int);
 
 public:
-  schedule_after_automaton () :
-    ACTION (schedule_after_automaton, action)
+  schedule_after_automaton ()
   {
     m_schedule_time = time (0);
     ioa::scheduler::schedule_after (&schedule_after_automaton::action, ioa::time (1, 0));
@@ -1240,8 +1237,7 @@ private:
   V_P_OUTPUT (schedule_afterp_automaton, action, int, int);
 
 public:
-  schedule_afterp_automaton () :
-    ACTION (schedule_afterp_automaton, action)
+  schedule_afterp_automaton ()
   {
     m_schedule_time = time (0);
     ioa::scheduler::schedule_after (&schedule_afterp_automaton::action, 512, ioa::time (1, 0));
@@ -1276,8 +1272,7 @@ private:
   UV_UP_OUTPUT (schedule_read_ready_automaton, action);
 
 public:
-  schedule_read_ready_automaton () :
-    ACTION (schedule_read_ready_automaton, action)
+  schedule_read_ready_automaton ()
   {
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
@@ -1316,8 +1311,7 @@ private:
   UV_P_OUTPUT (schedule_read_readyp_automaton, action, int);
 
 public:
-  schedule_read_readyp_automaton () :
-    ACTION (schedule_read_readyp_automaton, action)
+  schedule_read_readyp_automaton ()
   {
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
@@ -1354,8 +1348,7 @@ private:
   UV_UP_OUTPUT (schedule_write_ready_automaton, action);
 
 public:
-  schedule_write_ready_automaton () :
-    ACTION (schedule_write_ready_automaton, action)
+  schedule_write_ready_automaton ()
   {
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
@@ -1394,8 +1387,7 @@ private:
   UV_P_OUTPUT (schedule_write_readyp_automaton, action, int);
 
 public:
-  schedule_write_readyp_automaton () :
-    ACTION (schedule_write_readyp_automaton, action)
+  schedule_write_readyp_automaton ()
   {
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);

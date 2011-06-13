@@ -86,9 +86,7 @@ public:
     m_reported(false),
     m_nbrs(nbrs),
     m_i(i),
-    m_i0(i0),
-    ACTION (ast_automaton, parent),
-    ACTION (ast_automaton, send)
+    m_i0(i0)
   {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin();
         pos != m_nbrs.end();

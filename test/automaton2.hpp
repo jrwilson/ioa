@@ -48,13 +48,6 @@ public:
   
   UV_UP_INPUT (automaton2, uv_up_input2);
 
-  automaton2 () :
-    ACTION (automaton2, uv_up_output),
-    ACTION (automaton2, uv_p_output),
-    ACTION (automaton2, v_up_output),
-    ACTION (automaton2, v_p_output)
-  { }
-
 };
 
 #endif

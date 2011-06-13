@@ -1,7 +1,6 @@
 #ifndef __action_wrapper_hpp__
 #define __action_wrapper_hpp__
 
-#include <ioa/scheduler.hpp>
 #include <ioa/observer.hpp>
 
 // TODO:  Eliminate redundancy.
@@ -103,12 +102,6 @@ namespace ioa {
     public no_parameter,
     public observable
   {
-    uv_up_output_wrapper C::*m_member_object_ptr;
-
-    uv_up_output_wrapper (uv_up_output_wrapper C::*member_object_ptr) :
-      m_member_object_ptr (member_object_ptr)
-    { }
-
     bool precondition (C& c) const {
       return (c.*precondition_ptr) ();
     }
@@ -118,9 +111,6 @@ namespace ioa {
     }
 
     void bound () {
-      // TODO:  Move this to system.
-      // We schedule the action because the precondition might test is_bound ().
-      scheduler::schedule (m_member_object_ptr);
       notify_observers ();
     }
 
@@ -136,12 +126,7 @@ namespace ioa {
     public parameter<P>,
     public observable
   {
-    uv_p_output_wrapper C::*m_member_object_ptr;
     P recent_parameter;
-    
-    uv_p_output_wrapper (uv_p_output_wrapper C::*member_object_ptr) :
-      m_member_object_ptr (member_object_ptr)
-    { }
     
     bool precondition (C& c, P p) const {
       return (c.*precondition_ptr) (p);
@@ -153,8 +138,6 @@ namespace ioa {
     
     void bound (P p) {
       recent_parameter = p;
-      // We schedule the action because the precondition might test is_bound ().
-      scheduler::schedule (m_member_object_ptr, p);
       notify_observers ();
     }
 
@@ -171,12 +154,6 @@ namespace ioa {
     public no_parameter,
     public observable
   {
-    v_up_output_wrapper C::*m_member_object_ptr;
-    
-    v_up_output_wrapper (v_up_output_wrapper C::*member_object_ptr) :
-      m_member_object_ptr (member_object_ptr)
-    { }
-    
     bool precondition (C& c) const {
       return (c.*precondition_ptr) ();
     }
@@ -186,8 +163,6 @@ namespace ioa {
     }
 
     void bound () {
-      // We schedule the action because the precondition might test is_bound ().
-      scheduler::schedule (m_member_object_ptr);
       notify_observers ();
     }
 
@@ -203,12 +178,7 @@ namespace ioa {
     public parameter<P>,
     public observable
   {
-    v_p_output_wrapper C::*m_member_object_ptr;
     P recent_parameter;
-    
-    v_p_output_wrapper (v_p_output_wrapper C::*member_object_ptr) :
-      m_member_object_ptr (member_object_ptr)
-    { }
     
     bool precondition (C& c, P p) const {
       return (c.*precondition_ptr) (p);
@@ -220,8 +190,6 @@ namespace ioa {
 
     void bound (P p) {
       recent_parameter = p;
-      // We schedule the action because the precondition might test is_bound ().
-      scheduler::schedule (m_member_object_ptr, p);
       notify_observers ();
     }
 
@@ -334,7 +302,5 @@ namespace ioa {
   name##_type name; \
   private: \
   void _##name (const type & var)
-
-#define ACTION(c, name) name (&c::name)
 
 #endif

@@ -71,9 +71,7 @@ public:
 
   asynch_lcr_automaton () :
     m_u (true),
-    m_status (UNKNOWN),
-    ACTION (asynch_lcr_automaton, send),
-    ACTION (asynch_lcr_automaton, leader)
+    m_status (UNKNOWN)
   {
     m_send.push (m_u);
     schedule ();

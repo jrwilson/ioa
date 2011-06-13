@@ -158,9 +158,7 @@ public:
   peterson_leader_automaton () :
     m_mode (ACTIVE),
     m_status (UNKNOWN),
-    m_u (true),
-    ACTION (peterson_leader_automaton, send),
-    ACTION (peterson_leader_automaton, leader)
+    m_u (true)
   {
     m_uid[0] = m_u;
     m_send.push (m_u);

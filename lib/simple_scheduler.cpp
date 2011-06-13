@@ -478,6 +478,8 @@ namespace ioa {
 
   void simple_scheduler::output_bound (const output_executor_interface& exec) {
     schedule_sysq (new output_bound_runnable (exec));
+    // Schedule the output.
+    schedule_execq (new output_exec_runnable (exec));
   }
 
   void simple_scheduler::input_bound (const input_executor_interface& exec) {

@@ -2,6 +2,7 @@
 #define __self_helper_hpp__
 
 #include <ioa/automaton_helper_interface.hpp>
+#include <ioa/scheduler.hpp>
 
 namespace ioa {
   

@@ -22,8 +22,7 @@ private:
   }
 
 public:
-  trigger () :
-    ACTION (trigger, request)
+  trigger ()
   {
     schedule ();
   }
@@ -82,8 +81,7 @@ public:
 
   clock_automaton () :
     m_counter (0),
-    m_flag (false),
-    ACTION (clock_automaton, clock)
+    m_flag (false)
   {
     schedule ();
   }
