@@ -153,6 +153,8 @@ namespace ioa {
     static int execute_output_unbound (output_executor_interface& exec);
     static int execute_input_unbound (input_executor_interface& exec);
 
+    static size_t bind_count (const action_interface& action);
+
     template <class I, class M, class K, class VS, class VT> class action_executor_impl;
 
     template <class I, class M>
@@ -456,6 +458,10 @@ namespace ioa {
 	return m_records.empty ();
       }
 
+      size_t size () const {
+	return m_records.size ();
+      }
+
       void bind (const input_executor_interface& input,
 		 const aid_t binder,
 		 void* const key) {
@@ -693,6 +699,10 @@ namespace ioa {
 
       bool empty () const {
 	return m_records.empty ();
+      }
+
+      size_t size () const {
+	return m_records.size ();
       }
 
       void bind (const input_executor_interface& input,

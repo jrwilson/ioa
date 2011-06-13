@@ -9,173 +9,106 @@
 namespace ioa {
 
   template <class C, void (C::*action_ptr) ()>
-  class uv_up_input_wrapper :
+  struct uv_up_input_wrapper :
     public input,
     public no_value,
     public no_parameter,
     public observable
   {
-  private:
-    bool m_bound;
-
-  public:
-    uv_up_input_wrapper () :
-      m_bound (false)
-    { }
-    
     void operator() (C& c) {
       (c.*action_ptr) ();
     }
-
+    
     void bound () {
-      assert (!m_bound);
-      m_bound = true;
       notify_observers ();
     }
-
+    
     void unbound () {
-      assert (m_bound);
-      m_bound = false;
       notify_observers ();
     }
-
-    bool is_bound () const {
-      return m_bound;
-    }
-
   };
 
   template <class C, class P, void (C::*action_ptr) (P)>
-  class uv_p_input_wrapper :
+  struct uv_p_input_wrapper :
     public input,
     public no_value,
     public parameter<P>,
     public observable
   {
-  private:
-    std::set<P> m_parameters;
-    P m_recent_parameter;
+    P recent_parameter;
     
-  public:
     void operator() (C& c, P p) {
       (c.*action_ptr) (p);
     }
 
     void bound (P p) {
-      assert (m_parameters.count (p) == 0);
-      m_parameters.insert (p);
-      m_recent_parameter = p;
+      recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
-      assert (m_parameters.count (p) == 1);
-      m_parameters.erase (p);
-      m_recent_parameter = p;
+      recent_parameter = p;
       notify_observers ();
-    }
-
-    P recent_parameter () const {
-      return m_recent_parameter;
-    }
-
-    bool is_bound (P p) const {
-      return m_parameters.count (p) != 0;
     }
   };
 
   template <class C, class T, void (C::*action_ptr) (const T&)>
-  class v_up_input_wrapper :
+  struct v_up_input_wrapper :
     public input,
     public value<T>,
     public no_parameter,
     public observable
   {
-  private:
-    bool m_bound;
-    
-  public:
-    v_up_input_wrapper () :
-      m_bound (false)
-    { }
-    
     void operator() (C& c, const T& t) {
       (c.*action_ptr) (t);
     }
-
+    
     void bound () {
-      assert (!m_bound);
-      m_bound = true;
       notify_observers ();
     }
 
     void unbound () {
-      assert (m_bound);
-      m_bound = false;
       notify_observers ();
-    }
-
-    bool is_bound () const {
-      return m_bound;
     }
   };
 
   template <class C, class T, class P, void (C::*action_ptr)(const T&, P) >
-  class v_p_input_wrapper :
+  struct v_p_input_wrapper :
     public input,
     public value<T>,
     public parameter<P>,
     public observable
   {
-  private:
-    std::set<P> m_parameters;
-    P m_recent_parameter;
+    P recent_parameter;
     
-  public:
     void operator() (C& c, const T& t, P p) {
       (c.*action_ptr) (t, p);
     }
 
     void bound (P p) {
-      assert (m_parameters.count (p) == 0);
-      m_parameters.insert (p);
-      m_recent_parameter = p;
+      recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
-      assert (m_parameters.count (p) == 1);
-      m_parameters.erase (p);
-      m_recent_parameter = p;
+      recent_parameter = p;
       notify_observers ();
-    }
-
-    P recent_parameter () const {
-      return m_recent_parameter;
-    }
-
-    void is_bound (P p) const {
-      return m_parameters.count (p) != 0;
     }
   };
 
   template <class C, bool (C::*precondition_ptr) () const, void (C::*action_ptr) ()>
-  class uv_up_output_wrapper :
+  struct uv_up_output_wrapper :
     public output,
     public no_value,
     public no_parameter,
     public observable
   {
-  private:
     uv_up_output_wrapper C::*m_member_object_ptr;
-    size_t m_bind_count;
-    
-  public:
+
     uv_up_output_wrapper (uv_up_output_wrapper C::*member_object_ptr) :
-      m_member_object_ptr (member_object_ptr),
-      m_bind_count (0)
+      m_member_object_ptr (member_object_ptr)
     { }
-    
+
     bool precondition (C& c) const {
       return (c.*precondition_ptr) ();
     }
@@ -185,36 +118,27 @@ namespace ioa {
     }
 
     void bound () {
-      ++m_bind_count;
+      // TODO:  Move this to system.
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr);
       notify_observers ();
     }
 
     void unbound () {
-      assert (m_bind_count > 0);
-      --m_bind_count;
       notify_observers ();
-    }
-
-    size_t bind_count () const {
-      return m_bind_count;
     }
   };
 
   template <class C, class P, bool (C::*precondition_ptr) (P) const, void (C::*action_ptr)(P)>
-  class uv_p_output_wrapper :
+  struct uv_p_output_wrapper :
     public output,
     public no_value,
     public parameter<P>,
     public observable
   {
-  private:
     uv_p_output_wrapper C::*m_member_object_ptr;
-    std::map<P, size_t> m_parameters;
-    P m_recent_parameter;
+    P recent_parameter;
     
-  public:
     uv_p_output_wrapper (uv_p_output_wrapper C::*member_object_ptr) :
       m_member_object_ptr (member_object_ptr)
     { }
@@ -228,56 +152,29 @@ namespace ioa {
     }
     
     void bound (P p) {
-      if (m_parameters.find (p) == m_parameters.end ()) {
-	m_parameters.insert (std::make_pair (p, 0));
-      }
-      ++m_parameters[p];
-      m_recent_parameter = p;
+      recent_parameter = p;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr, p);
       notify_observers ();
     }
 
     void unbound (P p) {
-      assert (m_parameters.find (p) != m_parameters.end ());
-      --m_parameters[p];
-      if (m_parameters[p] == 0) {
-	m_parameters.erase (p);
-      }
-      m_recent_parameter = p;
+      recent_parameter = p;
       notify_observers ();
-    }
-
-    P recent_parameter () const {
-      return m_recent_parameter;
-    }
-
-    size_t bind_count (P p) const {
-      typename std::map<P, size_t>::const_iterator pos = m_parameters.find (p);
-      if (pos != m_parameters.end ()) {
-	return pos->second;
-      }
-      else {
-	return 0;
-      }
     }
   };
 
   template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*action_ptr) (void)>
-  class v_up_output_wrapper :
+  struct v_up_output_wrapper :
     public output,
     public value<T>,
     public no_parameter,
     public observable
   {
-  private:
     v_up_output_wrapper C::*m_member_object_ptr;
-    size_t m_bind_count;
     
-  public:
     v_up_output_wrapper (v_up_output_wrapper C::*member_object_ptr) :
-      m_member_object_ptr (member_object_ptr),
-      m_bind_count (0)
+      m_member_object_ptr (member_object_ptr)
     { }
     
     bool precondition (C& c) const {
@@ -289,36 +186,26 @@ namespace ioa {
     }
 
     void bound () {
-      ++m_bind_count;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr);
       notify_observers ();
     }
 
     void unbound () {
-      assert (m_bind_count > 0);
-      --m_bind_count;
       notify_observers ();
-    }
-
-    size_t bind_count () const {
-      return m_bind_count;
     }
   };
 
   template <class C, class T, class P, bool (C::*precondition_ptr) (P) const, T (C::*action_ptr)(P)>
-  class v_p_output_wrapper :
+  struct v_p_output_wrapper :
     public output,
     public value<T>,
     public parameter<P>,
     public observable
   {
-  private:
     v_p_output_wrapper C::*m_member_object_ptr;
-    std::map<P, size_t> m_parameters;
-    P m_recent_parameter;
+    P recent_parameter;
     
-  public:
     v_p_output_wrapper (v_p_output_wrapper C::*member_object_ptr) :
       m_member_object_ptr (member_object_ptr)
     { }
@@ -332,40 +219,16 @@ namespace ioa {
     }
 
     void bound (P p) {
-      if (m_parameters.find (p) == m_parameters.end ()) {
-	m_parameters.insert (std::make_pair (p, 0));
-      }
-      ++m_parameters[p];
-      m_recent_parameter = p;
+      recent_parameter = p;
       // We schedule the action because the precondition might test is_bound ().
       scheduler::schedule (m_member_object_ptr, p);
       notify_observers ();
     }
 
     void unbound (P p) {
-      assert (m_parameters.find (p) != m_parameters.end ());
-      --m_parameters[p];
-      if (m_parameters[p] == 0) {
-	m_parameters.erase (p);
-      }
-      m_recent_parameter = p;
+      recent_parameter = p;
       notify_observers ();
     }
-
-    P recent_parameter () const {
-      return m_recent_parameter;
-    }
-
-    size_t bind_count (P p) const {
-      typename std::map<P, size_t>::const_iterator pos = m_parameters.find (p);
-      if (pos != m_parameters.end ()) {
-	return pos->second;
-      }
-      else {
-	return 0;
-      }
-    }
-
   };
 
   template <class C, bool (C::*precondition_ptr) () const, void (C::*action_ptr) ()>

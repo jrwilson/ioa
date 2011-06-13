@@ -245,6 +245,18 @@ namespace ioa {
     simple_scheduler::schedule_write_ready (member_ptr, param, fd);
   }
 
+  template <class I, class M>
+  size_t scheduler::bind_count (M I::*member_ptr) {
+    return model::bind_count (make_action (automaton_handle<I> (get_current_aid ()), member_ptr));
+  }
+  
+  template <class I, class M>
+  size_t scheduler::bind_count (M I::*member_ptr,
+				const typename M::parameter_type& param) {
+    return model::bind_count (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param));
+  }
+
+
 }
 
 #endif

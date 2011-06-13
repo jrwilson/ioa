@@ -48,6 +48,13 @@ namespace ioa {
     static void schedule_write_ready (M I::*member_ptr,
 				      const typename M::parameter_type& param,
 				      int fd);
+
+    template <class I, class M>
+    static size_t bind_count (M I::*member_ptr);
+    
+    template <class I, class M>
+    static size_t bind_count (M I::*member_ptr,
+			      const typename M::parameter_type& param);
     
     static void run (shared_ptr<generator_interface> generator);
   };

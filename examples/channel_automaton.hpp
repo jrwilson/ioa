@@ -24,7 +24,7 @@ private:
   V_UP_INPUT (channel_automaton, send, T);
   
   bool receive_precondition () const {
-    return !m_queue.empty () && receive.bind_count () != 0;
+    return !m_queue.empty () && ioa::scheduler::bind_count (&channel_automaton::receive) != 0;
   }
 
   T receive_action () {

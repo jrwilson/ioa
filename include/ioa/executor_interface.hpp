@@ -63,6 +63,7 @@ namespace ioa {
     virtual bool involves_aid_key (const aid_t,
 				   void* const) const = 0;
     virtual bool empty () const = 0;
+    virtual size_t size () const = 0;
     virtual void bind (const input_executor_interface&,
 		       const aid_t,
 		       void* const) = 0;

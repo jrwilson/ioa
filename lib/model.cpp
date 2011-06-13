@@ -528,4 +528,26 @@ namespace ioa {
     m_records[handle]->unlock ();
   }
 
+  // This should only be called from user code because we don't get a lock.
+  size_t model::bind_count (const action_interface& action) {
+    std::list<output_executor_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
+										 m_bindings.end (),
+										 binding_input_equal (action));
+    
+    if (in_pos != m_bindings.end ()) {
+      // Input is bound.
+      return 1;
+    }
+    
+    std::list<output_executor_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
+										  m_bindings.end (),
+										  binding_output_equal (action));
+    
+    if (out_pos != m_bindings.end ()) {
+      // Output is bound.
+      return (*out_pos)->size ();
+    }
+    
+    return 0;
+  }
 }
