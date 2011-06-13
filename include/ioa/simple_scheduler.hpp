@@ -10,6 +10,7 @@
 namespace ioa {
 
   typedef std::pair<action_runnable_interface*, time> action_time;
+  typedef std::pair<action_runnable_interface*, int> action_fd;
 
   class simple_scheduler
   {
@@ -19,6 +20,8 @@ namespace ioa {
     static blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
     static int m_wakeup_fd[2];
     static blocking_list<action_time> m_timerq;
+    static blocking_list<action_fd> m_readq;
+    static blocking_list<action_fd> m_writeq;
     static thread_key<aid_t> m_current_aid;
 
     struct action_runnable_equal
@@ -45,9 +48,11 @@ namespace ioa {
     static void process_sysq ();
     static void schedule_execq (action_runnable_interface* r);
     static void process_execq ();
-    static void wakeup_timer_thread ();
+    static void wakeup_io_thread ();
     static void schedule_timerq (action_runnable_interface* r, const time& offset);
-    static void process_timerq ();
+    static void schedule_readq (action_runnable_interface* r, int);
+    static void schedule_writeq (action_runnable_interface* r, int);
+    static void process_ioq ();
     
   public:
 
@@ -158,6 +163,32 @@ namespace ioa {
 				time offset) {
       schedule_timerq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), offset);
     }
+
+    template <class I, class M>
+    static void schedule_read_ready (M I::*member_ptr,
+				     int fd) {
+      schedule_readq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), fd);
+    }
+
+    template <class I, class M>
+    static void schedule_read_ready (M I::*member_ptr,
+				     const typename M::parameter_type& param,
+				     int fd) {
+      schedule_readq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), fd);
+    }
+
+    template <class I, class M>
+    static void schedule_write_ready (M I::*member_ptr,
+				     int fd) {
+      schedule_writeq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), fd);
+    }
+
+    template <class I, class M>
+    static void schedule_write_ready (M I::*member_ptr,
+				     const typename M::parameter_type& param,
+				     int fd) {
+      schedule_writeq (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), fd);
+    }
     
     static void run (shared_ptr<generator_interface> generator);
   };
@@ -186,6 +217,32 @@ namespace ioa {
 				  const typename M::parameter_type & p,
 				  time offset) {
     simple_scheduler::schedule_after (member_ptr, p, offset);
+  }
+
+  template <class I, class M>
+  void scheduler::schedule_read_ready (M I::*member_ptr,
+				       int fd) {
+    simple_scheduler::schedule_read_ready (member_ptr, fd);
+  }
+
+  template <class I, class M>
+  void scheduler::schedule_read_ready (M I::*member_ptr,
+				       const typename M::parameter_type& param,
+				       int fd) {
+    simple_scheduler::schedule_read_ready (member_ptr, param, fd);
+  }
+    
+  template <class I, class M>
+  void scheduler::schedule_write_ready (M I::*member_ptr,
+				       int fd) {
+    simple_scheduler::schedule_write_ready (member_ptr, fd);
+  }
+
+  template <class I, class M>
+  void scheduler::schedule_write_ready (M I::*member_ptr,
+				       const typename M::parameter_type& param,
+				       int fd) {
+    simple_scheduler::schedule_write_ready (member_ptr, param, fd);
   }
 
 }

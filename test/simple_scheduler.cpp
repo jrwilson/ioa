@@ -7,6 +7,7 @@
 #include <ioa/automaton_helper.hpp>
 
 #include <iostream>
+#include <fcntl.h>
 
 static bool goal_reached;
 
@@ -1258,6 +1259,162 @@ schedule_afterp ()
   return 0;
 }
 
+class schedule_read_ready_automaton :
+  public ioa::automaton_interface {
+private:
+  int m_fd;
+
+  bool action_precondition () const {
+    return true;
+  }
+
+  void action_action () {
+    close (m_fd);
+    goal_reached = true;
+  }
+
+  UV_UP_OUTPUT (schedule_read_ready_automaton, action);
+
+public:
+  schedule_read_ready_automaton () :
+    ACTION (schedule_read_ready_automaton, action)
+  {
+    m_fd = open ("test.txt", O_RDONLY);
+    assert (m_fd != -1);
+    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
+    ioa::scheduler::schedule_read_ready (&schedule_read_ready_automaton::action, m_fd);
+  }
+  
+};
+
+static const char*
+schedule_read_ready ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_read_ready_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
+class schedule_read_readyp_automaton :
+  public ioa::automaton_interface {
+private:
+  int m_fd;
+
+  bool action_precondition (int fd) const {
+    assert (fd == m_fd);
+    return true;
+  }
+
+  void action_action (int fd) {
+    assert (fd == m_fd);
+    close (m_fd);
+    goal_reached = true;
+  }
+
+  UV_P_OUTPUT (schedule_read_readyp_automaton, action, int);
+
+public:
+  schedule_read_readyp_automaton () :
+    ACTION (schedule_read_readyp_automaton, action)
+  {
+    m_fd = open ("test.txt", O_RDONLY);
+    assert (m_fd != -1);
+    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
+    ioa::scheduler::schedule_read_ready (&schedule_read_readyp_automaton::action, m_fd, m_fd);
+  }
+  
+};
+
+static const char*
+schedule_read_readyp ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_read_readyp_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
+class schedule_write_ready_automaton :
+  public ioa::automaton_interface {
+private:
+  int m_fd;
+
+  bool action_precondition () const {
+    return true;
+  }
+
+  void action_action () {
+    close (m_fd);
+    goal_reached = true;
+  }
+
+  UV_UP_OUTPUT (schedule_write_ready_automaton, action);
+
+public:
+  schedule_write_ready_automaton () :
+    ACTION (schedule_write_ready_automaton, action)
+  {
+    m_fd = open ("test.txt", O_RDONLY);
+    assert (m_fd != -1);
+    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
+    ioa::scheduler::schedule_write_ready (&schedule_write_ready_automaton::action, m_fd);
+  }
+  
+};
+
+static const char*
+schedule_write_ready ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_write_ready_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
+class schedule_write_readyp_automaton :
+  public ioa::automaton_interface {
+private:
+  int m_fd;
+
+  bool action_precondition (int fd) const {
+    assert (fd == m_fd);
+    return true;
+  }
+
+  void action_action (int fd) {
+    assert (fd == m_fd);
+    close (m_fd);
+    goal_reached = true;
+  }
+
+  UV_P_OUTPUT (schedule_write_readyp_automaton, action, int);
+
+public:
+  schedule_write_readyp_automaton () :
+    ACTION (schedule_write_readyp_automaton, action)
+  {
+    m_fd = open ("test.txt", O_RDONLY);
+    assert (m_fd != -1);
+    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
+    ioa::scheduler::schedule_read_ready (&schedule_write_readyp_automaton::action, m_fd, m_fd);
+  }
+  
+};
+
+static const char*
+schedule_write_readyp ()
+{
+  std::cout << __func__ << std::endl;
+  goal_reached = false;
+  ioa::scheduler::run (ioa::make_generator<schedule_write_readyp_automaton> ());
+  mu_assert (goal_reached);
+  return 0;
+}
+
 const char*
 all_tests ()
 {
@@ -1277,10 +1434,10 @@ all_tests ()
   mu_run_test (schedulep);
   mu_run_test (schedule_after);
   mu_run_test (schedule_afterp);
-  // mu_run_test (schedule_read_ready);
-  // mu_run_test (schedule_read_readyp);
-  // mu_run_test (schedule_write_ready);
-  // mu_run_test (schedule_write_readyp);
+  mu_run_test (schedule_read_ready);
+  mu_run_test (schedule_read_readyp);
+  mu_run_test (schedule_write_ready);
+  mu_run_test (schedule_write_readyp);
 
   return 0;
 }

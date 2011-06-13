@@ -42,6 +42,50 @@ Published by ...
 
 @chapter Introduction
 
+The two main pieces in @acronym{UEIOA} are the model and the scheduler.
+
+The @dfn{model} contains the set of automata and bindings that exist and executes all actions.
+Actions that correspond to the input, output, and internal actions of the I/O automata model are called @dfn{user actions}.
+Actions that change the set of automata (create, destroy) or the set of bindings (bind, unbind, destroy) are called @dfn{configuration actions}.
+Automata cannot execute or scheule configuration actions directly.  (Why not?)
+An action that schedules a configuration action is called a @dfn{system output}.
+An action that receives the result of a configuration action is called a @dfn{system input}.
+Collectively, system outputs and system inputs are known as @dfn{system actions}.
+User actions and system actions do not change the model and can be executed concurrently.
+The model is thread-safe to simply the design and implementation of multi-threaded schedulers.
+
+The @dfn{scheduler} contains the set of actions to be applied to the model.
+Usually, the scheduler consists of a set of queues that are processed by repeatedly removing an action from a queue and then applying it to the model.
+Applying an output or internal action to the model can result in additional actions being added to scheduler as automata invoke the scheduler in their actions.
+Applying a system output to the model can result in a configuration action being added to the scheduler.
+Applying a configuration action to the model can result in in a number of system inputs being added to the scheduler.
+Applying a system input to the model results in the appropriate result being transfered to the automaton.
+
+@chapter Architecture
+
+@section Introduction
+
+@section Model
+
+The model is thread safe.
+
+@subsection Type Safe Binding
+
+@subsection Use of Keys
+
+@subsection Execution
+
+Locking automata in order.
+
+@section Scheduler
+
+@section The Destroy Process
+
+automaton_interface
+How does it clean up stuff?
+
+@chapter Miscellaneous
+
 @section Automaton Identifiers
 
 An @dfn{automaton identifier (aid)} is a unique identifier given to each automaton that serves as a flyweight for the related data structures and entries in the system.
@@ -147,26 +191,6 @@ For example, one could implement an EDF scheduler if one were to associated dead
 The lack of blocking calls allows one to provide a reasonable estimate of execution time of actions and eases real-time scheduling analysis.
 Moving from soft real-time to hard real-time would require making the system more deterministic and using finite data structures to bound execution time.
 
-@chapter Architecture
-
-@section Introduction
-
-@section System
-
-@subsection Type Safe Binding
-
-@subsection Use of Keys
-
-@subsection Execution
-
-Locking automata in order.
-
-@section Scheduler
-
-@section The Destroy Process
-
-automaton_interface
-How does it clean up stuff?
 
 @chapter Scheduling
 

@@ -85,6 +85,13 @@ namespace ioa {
     }
     return usec < o.usec;
   }
+
+  bool time::operator> (const time& o) const {
+    if (sec != o.sec) {
+      return sec > o.sec;
+    }
+    return usec > o.usec;
+  }
   
   time::operator struct timeval () const {
     struct timeval retval;

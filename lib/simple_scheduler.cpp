@@ -25,6 +25,8 @@ namespace ioa {
   blocking_list<std::pair<bool, action_runnable_interface*> > simple_scheduler::m_execq;
   int simple_scheduler::m_wakeup_fd[2];
   blocking_list<action_time> simple_scheduler::m_timerq;
+  blocking_list<action_fd> simple_scheduler::m_readq;
+  blocking_list<action_fd> simple_scheduler::m_writeq;
   thread_key<aid_t> simple_scheduler::m_current_aid;
 
   bool simple_scheduler::keep_going () {
@@ -48,7 +50,7 @@ namespace ioa {
       */
       m_sysq.push (std::pair<bool, runnable_interface*> (false, 0));
       m_execq.push (std::pair<bool, action_runnable_interface*> (false, 0));
-      wakeup_timer_thread ();
+      wakeup_io_thread ();
     }
     return retval;
   }
@@ -113,7 +115,7 @@ namespace ioa {
     }
   }
 
-  void simple_scheduler::wakeup_timer_thread () {
+  void simple_scheduler::wakeup_io_thread () {
     char c;
     ssize_t bytes_written = write (m_wakeup_fd[1], &c, 1);
     assert (bytes_written == 1);
@@ -125,19 +127,37 @@ namespace ioa {
     assert (s == 0);
     time release_time (now);
     release_time += offset;
-    
-    // TODO:  Only wake thread if the queue goes from empty to non-empty.
-    m_timerq.push (std::make_pair (r, release_time));
-    wakeup_timer_thread ();
+
+    if (m_timerq.push (std::make_pair (r, release_time)) == 1) {
+      wakeup_io_thread ();
+    }
   }
   
-  void simple_scheduler::process_timerq () {
+  void simple_scheduler::schedule_readq (action_runnable_interface* r, int fd) {
+    if (m_readq.push (std::make_pair (r, fd)) == 1) {
+      wakeup_io_thread ();
+    }
+  }
+
+  void simple_scheduler::schedule_writeq (action_runnable_interface* r, int fd) {
+    if (m_writeq.push (std::make_pair (r, fd)) == 1) {
+      wakeup_io_thread ();
+    }
+  }
+
+  void simple_scheduler::process_ioq () {
     clear_current_aid ();
     
-    int r;
-    
     std::priority_queue<action_time, std::vector<action_time>, std::greater<action_time> > timer_queue;
+    std::map<int, action_runnable_interface*> read_actions;
+    std::map<int, action_runnable_interface*> write_actions;
+    
     fd_set read_set;
+    FD_ZERO (&read_set);
+    fd_set write_set;
+    FD_ZERO (&write_set);
+
+    // TODO:  We iterate over the same data structures many times.  Could we do this better?
     
     while (thread_keep_going ()) {
       // Process registrations.
@@ -148,41 +168,146 @@ namespace ioa {
 	  m_timerq.list.pop_front ();
 	}
       }
-      
-      struct timeval n;
-      r = gettimeofday (&n, 0);
-      assert (r == 0);
-      time now (n);
-      
-      while (!timer_queue.empty () && timer_queue.top ().second < now) {
-	schedule_execq (timer_queue.top ().first);
-	timer_queue.pop ();
-      }
-      
-      struct timeval timeout;
-      struct timeval* test_timeout = 0;
-      
-      if (!timer_queue.empty ()) {
-	timeout = timer_queue.top ().second - now;
-	test_timeout = &timeout;
-      }
-      
-      // TODO: Do better than FD_SETSIZE.
-      // TODO: Don't ZERO every time.
-      FD_ZERO (&read_set);
-      FD_SET (m_wakeup_fd[0], &read_set);
-      int r = select (FD_SETSIZE, &read_set, 0, 0, test_timeout);
-      if (r > 0) {
-	if (FD_ISSET (m_wakeup_fd[0], &read_set)) {
-	  // Drain the wakeup pipe.
-	  char c;
-	  // TODO:  Do better than reading one character at a time.
-	  while (read (m_wakeup_fd[0], &c, 1) == 1) { }
+
+      {
+	lock lock (m_readq.list_mutex);
+	while (!m_readq.list.empty ()) {
+	  std::map<int, action_runnable_interface*>::iterator pos = read_actions.find (m_readq.list.front ().second);
+	  if (pos != read_actions.end ()) {
+	    // Action already registered using this fd.
+	    delete pos->second;
+	    read_actions.erase (pos);
+	  }
+	  read_actions.insert (std::make_pair (m_readq.list.front ().second, m_readq.list.front ().first));
+	  m_readq.list.pop_front ();
 	}
       }
-      else if (r < 0) {
-	assert (false);
+
+      {
+	lock lock (m_writeq.list_mutex);
+	while (!m_writeq.list.empty ()) {
+	  std::map<int, action_runnable_interface*>::iterator pos = write_actions.find (m_writeq.list.front ().second);
+	  if (pos != write_actions.end ()) {
+	    // Action already registered using this fd.
+	    delete pos->second;
+	    write_actions.erase (pos);
+	  }
+	  write_actions.insert (std::make_pair (m_writeq.list.front ().second, m_writeq.list.front ().first));
+	  m_writeq.list.pop_front ();
+	}
       }
+
+      // Determine timeout for select.
+      // Default is to wait forever.
+      struct timeval* test_timeout;
+      struct timeval timeout;
+      
+      if (timer_queue.empty ()) {
+	test_timeout = 0;
+      }
+      else {
+	struct timeval n;
+	int r = gettimeofday (&n, 0);
+	assert (r == 0);
+	time now (n);
+
+	if (timer_queue.top ().second > now) {
+	  // Timer is some time in future.
+	  timeout = timer_queue.top ().second - now;
+	}
+	else {
+	  // Timer is in the past.  Return immediately.
+	  timeout = time (0, 0);
+	}
+
+	test_timeout = &timeout;
+      }
+
+      // Determine the read set.
+      for (std::map<int, action_runnable_interface*>::const_iterator pos = read_actions.begin ();
+	   pos != read_actions.end ();
+	   ++pos) {
+	FD_SET (pos->first, &read_set);
+      }
+
+      // Determine the write set.
+      for (std::map<int, action_runnable_interface*>::const_iterator pos = write_actions.begin ();
+	   pos != write_actions.end ();
+	   ++pos) {
+	FD_SET (pos->first, &write_set);
+      }
+      
+      // Add the wake-up channel.
+      FD_SET (m_wakeup_fd[0], &read_set);
+
+      // TODO: Do better than FD_SETSIZE.
+      int max_fd = m_wakeup_fd[0];
+      if (!read_actions.empty ()) {
+	max_fd = std::max ((--read_actions.end ())->first, max_fd);
+      }
+      if (!write_actions.empty ()) {
+	max_fd = std::max ((--write_actions.end ())->first, max_fd);
+      }
+      int select_result = select (max_fd + 1, &read_set, &write_set, 0, test_timeout);
+      assert (select_result >= 0);
+      
+      // Process timers.
+      {
+	struct timeval n;
+	int r = gettimeofday (&n, 0);
+	assert (r == 0);
+	time now (n);
+	
+	while (!timer_queue.empty () && timer_queue.top ().second < now) {
+	  schedule_execq (timer_queue.top ().first);
+	  timer_queue.pop ();
+	}
+      }
+
+      // Process reads.
+      if (select_result > 0) {
+	for (std::map<int, action_runnable_interface*>::iterator pos = read_actions.begin ();
+	     pos != read_actions.end ();
+	     ) {
+	  if (FD_ISSET (pos->first, &read_set)) {
+	    FD_CLR (pos->first, &read_set);
+	    schedule_execq (pos->second);
+	    read_actions.erase (pos++);
+	  }
+	  else {
+	    ++pos;
+	  }
+	}
+      }
+
+      // Process writes.
+      if (select_result > 0) {
+	for (std::map<int, action_runnable_interface*>::iterator pos = write_actions.begin ();
+	     pos != write_actions.end ();
+	     ) {
+	  if (FD_ISSET (pos->first, &write_set)) {
+	    FD_CLR (pos->first, &write_set);
+	    schedule_execq (pos->second);
+	    write_actions.erase (pos++);
+	  }
+	  else {
+	    ++pos;
+	  }
+	}
+      }
+
+      // Process the wakeup pipe.      
+      if (select_result > 0) {
+	if (FD_ISSET (m_wakeup_fd[0], &read_set)) {
+	  // Drain it.
+	  // There are three queues: timer, read, and write.
+	  // Each queue writes 1 byte when it goes from empty to non-empty.
+	  // Thus, we need to read 3 bytes at maximum.
+	  char c[3];
+	  assert (read (m_wakeup_fd[0], c, 3) > 0);
+	}
+      }
+
     }
   }
     
@@ -228,8 +353,9 @@ namespace ioa {
     
     thread sysq_thread (&simple_scheduler::process_sysq);
     thread execq_thread (&simple_scheduler::process_execq);
-    thread timerq_thread (&simple_scheduler::process_timerq);
-    
+    thread timerq_thread (&simple_scheduler::process_ioq);
+
+
     sysq_thread.join ();
     execq_thread.join ();
     timerq_thread.join ();

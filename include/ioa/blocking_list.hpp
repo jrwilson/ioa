@@ -26,13 +26,16 @@ namespace ioa {
       return retval;
     }
     
-    void push (const T& t) {
+    size_t push (const T& t) {
+      size_t retval;
       {
 	lock lock (list_mutex);
 	list.push_back (t);
+	retval = list.size ();
       }
       // Only one thread should be calling pop.
       m_condition.notify_one ();
+      return retval;
     }
     
   };
