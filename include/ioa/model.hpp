@@ -357,18 +357,17 @@ namespace ioa {
 
 	// Execute.
 	system_scheduler::set_current_aid (m_action.get_aid ());
-	bool t = m_action.precondition (*m_instance);
-	if (t) {
+	if (m_action.precondition (*m_instance)) {
 	  m_action (*m_instance);
-	}
-	system_scheduler::clear_current_aid ();
-
-	if (t) {
+	  system_scheduler::clear_current_aid ();
 	  for (typename std::map<aid_t, record*>::const_iterator pos = m_records.begin ();
 	       pos != m_records.end ();
 	       ++pos) {
 	    (*(pos->second->m_input)) ();
 	  }	  
+	}
+	else {
+	  system_scheduler::clear_current_aid ();
 	}
 
 	// Unlock.
@@ -598,20 +597,20 @@ namespace ioa {
 
 	// Execute.
 	system_scheduler::set_current_aid (m_action.get_aid ());
-	bool precondition = m_action.precondition (*m_instance);
-	VT value;
-	const VT& value_ref = value;
-	if (precondition) {
-	  value = m_action (*m_instance);
-	}
-	system_scheduler::clear_current_aid ();
+	if (m_action.precondition (*m_instance)) {
+	  VT value = m_action (*m_instance);
+	  system_scheduler::clear_current_aid ();
 
-	if (precondition) {
+	  const VT& value_ref = value;
+
 	  for (typename std::map<aid_t, record*>::const_iterator pos = m_records.begin ();
 	       pos != m_records.end ();
 	       ++pos) {
 	    (*(pos->second->m_input)) (value_ref);
 	  }	  
+	}
+	else {
+	  system_scheduler::clear_current_aid ();
 	}
 
 	// Unlock.
