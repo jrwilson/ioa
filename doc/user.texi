@@ -50,10 +50,10 @@ This chapter describes the motivation behind @acronym{UEIOA} and provides and in
 The thread model dominates modern computing.
 A @dfn{thread} consists of a sequence of instructions, state, and an instruction pointer indicating the location of the current instruction.
 Conventional processors are a direct implementation of the thread model, mainstream compilers are designed to produce code for these processors, and modern operating systems are designed to execute programs on these processors.
-Naturally, the programs developed for these systems are also based on the thread model.
+Naturally, the application developed for these systems are also based on the thread model.
 
 The dominance of the thread model makes it a practical choice for concurrency.
-A physical processor can be multiplexed to execute multiple threads by periodically switching from one thread to another.
+A physical processor can be multiplexed to execute multiple threads by repeatedly switching from one thread to another.
 Multiple processors allow concurrent threads to execute simultaneously.
 Concurrent threads communicate by sharing state and using synchronization primitives to control access to the state.
 A section of code that updates shared state is called a @dfn{critical section}.
@@ -63,7 +63,6 @@ The first is that reasoning about the correctness of a threaded program is notor
 System developers know that developing and debugging shared-state, lock-based programs is difficult.
 Threads are also not composable.
 One cannot combine the code for two threads into a single thread and reason about the behavior of the composition as the interactions of the two original threads.
-To make reasoning about concurrent programs easier, the formal method community has proposed different models of concurrency, e.g., UNITY, I/O automata.
 
 The second issue is a diversity of threading techniques, resulting in systems that cannot easily be integrated.
 Consider an application based on a reactive event loop that wishes to use a library that performs blocking I/O.
@@ -73,20 +72,32 @@ The overhead of integration is often not negligible and tends to be a source of 
 @c In addition to the problems just mentioned, the clock frequencies of processors have reached a ceiling and processor manufacturers are looking to multi-core to deliver increased performance.
 @c Gains in performance will only be realized through better data structures and algorithms, optimization, hardware acceleration, or concurrent computation.
 
-@section The Road to the Future
+@section The Search for Better Models
 
-One approach to dealing with ``the thread problem'' is to develop higher-level abstractions that make thread-based programming easier.
-This approach includes design patterns, e.g., active objects, and language extensions, 
+To ease the difficulties of developing systems with threads, practitioners and researchers have explored a number of options including new programming languages, language extensions, and libraries/frameworks/middleware/design patterns.
+New programming languages and their run-time systems tend to not be adopted unless they resemble the language used to implement the operating system.
+Consequently, C, C++, Java, and the like will dominate system programming languages for the foreseeable future.
+Language extensions by their very definition are non-standard and therefore cannot be used to develop portable software.
+Furthermore, concurrency is rather large and difficult piece to bolt on to an existing programming language.
+Libraries, frameworks, middleware, and design patterns have been successful because they can take advantage of existing compilers and operating systems.
+However, they tend to focus on domain-specific problems and lack generality in that sense.
 
+I agree with Chris Gill's argument that the reason we have not found a better solution for concurrency is because we've been looking the wrong places.
+Specifically, we've only considered domain-specific solutions that are all variations of the thread model.
+I argue that a better place to look is the formal methods community.
+The formal methods community has proposed a number of different models for concurrency, e.g., Petri nets, UNITY, I/O automata, all for the purpose of making reasoning about concurrency easier.
+It stands to reason that a model that makes formal reasoning about concurrency easier will also make informal reasoning about concurrency easier.
+What is lacking are implementations of these models that permit an honest evaluation.
 
-Many researchers and practitioners take the 
-
-Consensus is that threads will limit out ability to build the complex systems we desire.
-higher level abstractions
-
-language support
+Ideally, one would build a processor, programming language, operating system, and applications all based on Petri nets to evaluate the usefulness of Petri nets as a model of concurrency.
+Cost and effort prohibit such a bottom-up approach.
+Conversely, starting at the top and working down is a much better approach as many models can be tried with a smaller investment.
+A model that succeeds can gradually sink from the application layer to the operating system layer.
+Further subsuming is only necessary if a new programming language is need to make programming in the new model more efficient (for the machine or the programmer) or a new processor architecture based on the model provides significant advantages over existing processor architectures.
 
 @section Scope
+
+In pursuit of production grade implementations of different models of concurrency, @acronym{UEIOA} is an application level implementation of the I/O automata model.
 
 @section I/O Automata
 
