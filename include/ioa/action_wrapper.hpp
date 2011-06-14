@@ -2,6 +2,7 @@
 #define __action_wrapper_hpp__
 
 #include <ioa/observer.hpp>
+#include <ioa/action.hpp>
 
 // TODO:  Eliminate redundancy.
 

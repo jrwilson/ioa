@@ -51,7 +51,6 @@ namespace ioa {
     }
 
     void automaton_destroyed () {
-      m_handle = -1;
       delete this;
     }
   
