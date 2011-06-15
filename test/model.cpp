@@ -1,6 +1,6 @@
 #include "minunit.h"
 
-#include <ioa/model.hpp>
+#include "../lib/model.hpp"
 #include <ioa/generator.hpp>
 #include <ioa/action_executor.hpp>
 #include "automaton1.hpp"

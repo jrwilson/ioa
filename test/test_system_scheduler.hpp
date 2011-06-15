@@ -2,7 +2,8 @@
 #define __test_system_scheduler_hpp__
 
 #include <ioa/action.hpp>
-#include <ioa/model.hpp>
+#include <ioa/model_interface.hpp>
+#include <ioa/system_scheduler_interface.hpp>
 #include <set>
 
 struct unbound_record

@@ -1,11 +1,12 @@
-#include <ioa/model.hpp>
+#include "model.hpp"
 
 #include <ioa/shared_mutex.hpp>
-#include <ioa/unique_lock.hpp>
-#include <ioa/shared_lock.hpp>
+#include "unique_lock.hpp"
+#include "shared_lock.hpp"
 #include <algorithm>
 #include <ioa/generator_interface.hpp>
 #include <ioa/automaton_interface.hpp>
+#include <ioa/system_scheduler_interface.hpp>
 
 namespace ioa {
 
@@ -367,7 +368,7 @@ namespace ioa {
 
     action<automaton_interface, automaton_interface::sys_create_type> ac (automaton, &automaton_interface::sys_create);
 
-    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
@@ -396,7 +397,7 @@ namespace ioa {
 
     action<automaton_interface, automaton_interface::sys_bind_type> ac (automaton, &automaton_interface::sys_bind);
 
-    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
@@ -426,7 +427,7 @@ namespace ioa {
 
     action<automaton_interface, automaton_interface::sys_unbind_type> ac (automaton, &automaton_interface::sys_unbind);
 
-    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
@@ -455,7 +456,7 @@ namespace ioa {
 
     action<automaton_interface, automaton_interface::sys_destroy_type> ac (automaton, &automaton_interface::sys_destroy);
 
-    automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
+    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
@@ -520,6 +521,16 @@ namespace ioa {
 
     exec.unbound (*this, m_system_scheduler);
     return 0;
+  }
+
+  automaton_interface* model::get_instance (const aid_t aid) {
+    std::map<aid_t, automaton_record*>::const_iterator pos = m_records.find (aid);
+    if (pos != m_records.end ()) {
+      return pos->second->get_instance ();
+    }
+    else {
+      return 0;
+    }
   }
 
   void model::lock_automaton (const aid_t handle) {

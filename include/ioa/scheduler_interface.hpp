@@ -3,6 +3,7 @@
 
 #include <ioa/action_runnable_interface.hpp>
 #include <ioa/automaton_interface.hpp>
+#include <ioa/time.hpp>
 
 namespace ioa {
   

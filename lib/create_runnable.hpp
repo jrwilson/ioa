@@ -2,7 +2,6 @@
 #define __create_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/model.hpp>
 
 namespace ioa {
   
@@ -22,7 +21,7 @@ namespace ioa {
       m_key (key)
     { }
     
-    void operator() (model& model) {
+    void operator() (model_interface& model) {
       model.create (m_automaton, m_generator, m_key);
     }
   };

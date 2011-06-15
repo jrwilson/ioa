@@ -1,6 +1,11 @@
 #ifndef __action_executor_hpp__
 #define __action_executor_hpp__
 
+#include <ioa/model_interface.hpp>
+#include <ioa/system_scheduler_interface.hpp>
+#include <memory>
+#include <map>
+
 namespace ioa {
 
   template <class OVS, class OVT, class IVS, class IVT> struct bind_check;
@@ -34,8 +39,8 @@ namespace ioa {
       m_instance (other.m_instance)
     { }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = dynamic_cast<I*> (model.get_instance (m_action.automaton));
       return m_instance != 0;
     }
       
@@ -46,7 +51,7 @@ namespace ioa {
       system_scheduler.clear_current_aid ();
     }
     
-    void bound (model& model, system_scheduler_interface& system_scheduler) const {
+    void bound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -55,7 +60,7 @@ namespace ioa {
       model.unlock_automaton (m_action.get_aid ());
     }
 
-    void unbound (model& model, system_scheduler_interface& system_scheduler) const {
+    void unbound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -92,8 +97,8 @@ namespace ioa {
       m_instance (other.m_instance)
     { }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = dynamic_cast<I*> (model.get_instance (m_action.automaton));
       return m_instance != 0;
     }
       
@@ -104,7 +109,7 @@ namespace ioa {
       system_scheduler.clear_current_aid ();
     }
 
-    void bound (model& model, system_scheduler_interface& system_scheduler) const {
+    void bound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -113,7 +118,7 @@ namespace ioa {
       model.unlock_automaton (m_action.get_aid ());
     }
 
-    void unbound (model& model, system_scheduler_interface& system_scheduler) const {
+    void unbound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -191,12 +196,12 @@ namespace ioa {
       }
     }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = dynamic_cast<I*> (model.get_instance (m_action.automaton));
       return m_instance != 0;
     }
       
-    void operator() (model& model, system_scheduler_interface& system_scheduler) const {
+    void operator() (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
 
       // Lock the automata in order.
@@ -245,7 +250,7 @@ namespace ioa {
       }
     }
 
-    void bound (model& model, system_scheduler_interface& system_scheduler) const {
+    void bound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -254,7 +259,7 @@ namespace ioa {
       model.unlock_automaton (m_action.get_aid ());
     }
 
-    void unbound (model& model, system_scheduler_interface& system_scheduler) const {
+    void unbound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -437,12 +442,12 @@ namespace ioa {
       }
     }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = dynamic_cast<I*> (model.get_instance (m_action.automaton));
       return m_instance != 0;
     }
       
-    void operator() (model& model, system_scheduler_interface& system_scheduler) const {
+    void operator() (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
 
       // Lock the automata in order.
@@ -494,7 +499,7 @@ namespace ioa {
       }
     }
 
-    void bound (model& model, system_scheduler_interface& system_scheduler) const {
+    void bound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -503,7 +508,7 @@ namespace ioa {
       model.unlock_automaton (m_action.get_aid ());
     }
 
-    void unbound (model& model, system_scheduler_interface& system_scheduler) const {
+    void unbound (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
       model.lock_automaton (m_action.get_aid ());
       system_scheduler.set_current_aid (m_action.get_aid ());
@@ -638,12 +643,12 @@ namespace ioa {
       m_instance (0)
     { }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = dynamic_cast<I*> (model.get_instance (m_action.automaton));
       return m_instance != 0;
     }
       
-    void operator() (model& model, system_scheduler_interface& system_scheduler) const {
+    void operator() (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
 
       model.lock_automaton (m_action.get_aid ());
@@ -677,12 +682,12 @@ namespace ioa {
       m_instance (0)
     { }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = dynamic_cast<I*> (model.get_instance (m_action.automaton));
       return m_instance != 0;
     }
       
-    void operator() (model& model, system_scheduler_interface& system_scheduler) const {
+    void operator() (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
 
       model.lock_automaton (m_action.get_aid ());
@@ -712,12 +717,12 @@ namespace ioa {
       m_instance (0)
     { }
       
-    bool fetch_instance (model& model) {
-      m_instance = model.automaton_handle_to_instance (m_action.automaton);
+    bool fetch_instance (model_interface& model) {
+      m_instance = model.get_instance (m_action.automaton);
       return m_instance != 0;
     }
       
-    void operator() (model& model, system_scheduler_interface& system_scheduler) const {
+    void operator() (model_interface& model, system_scheduler_interface& system_scheduler) const {
       assert (m_instance != 0);
 	
       model.lock_automaton (m_action.get_aid ());

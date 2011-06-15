@@ -1,4 +1,4 @@
-#include <ioa/thread.hpp>
+#include "thread.hpp"
 
 #include <cassert>
 

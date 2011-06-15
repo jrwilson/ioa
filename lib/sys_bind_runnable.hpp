@@ -19,7 +19,7 @@ namespace ioa {
       m_action (automaton, &automaton_interface::sys_bind)
     { }
     
-    void operator() (model& model) {
+    void operator() (model_interface& model) {
       model.execute_sys_bind (m_automaton);
     }
 

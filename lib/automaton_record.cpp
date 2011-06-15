@@ -1,6 +1,6 @@
-#include <ioa/automaton_record.hpp>
-#include <ioa/model.hpp>
+#include "automaton_record.hpp"
 #include <ioa/automaton_interface.hpp>
+#include <ioa/system_scheduler_interface.hpp>
 
 #include <cassert>
 

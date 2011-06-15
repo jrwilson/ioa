@@ -1,11 +1,11 @@
 #ifndef __runnable_interface_hpp__
 #define __runnable_interface_hpp__
 
-#include <ioa/unique_lock.hpp>
-#include <ioa/shared_lock.hpp>
-#include <ioa/model.hpp>
+#include <ioa/shared_mutex.hpp>
 
 namespace ioa {
+
+  class model_interface;
 
   class runnable_interface
   {
@@ -19,7 +19,7 @@ namespace ioa {
     runnable_interface ();
     virtual ~runnable_interface ();
     static size_t count ();
-    virtual void operator() (model& model) = 0;
+    virtual void operator() (model_interface& model) = 0;
   };
 
 }

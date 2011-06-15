@@ -5,7 +5,6 @@
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
 #include <ioa/automaton_helper.hpp>
-#include <ioa/model.hpp>
 #include <ioa/simple_scheduler.hpp>
 
 #include <iostream>

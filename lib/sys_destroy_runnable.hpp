@@ -2,7 +2,6 @@
 #define __sys_destroy_runnable_hpp__
 
 #include <ioa/action_runnable.hpp>
-#include <ioa/model.hpp>
 #include <ioa/automaton_interface.hpp>
 
 namespace ioa {
@@ -20,7 +19,7 @@ namespace ioa {
       m_action (automaton, &automaton_interface::sys_destroy)
     { }
     
-    void operator() (model& model) {
+    void operator() (model_interface& model) {
       model.execute_sys_destroy (m_automaton);
     }
 

@@ -2,6 +2,7 @@
 #define __action_runnable_interface_hpp__
 
 #include <ioa/runnable_interface.hpp>
+#include <ioa/action.hpp>
 
 namespace ioa {
 

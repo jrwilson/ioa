@@ -1,9 +1,9 @@
 #ifndef __automaton_record_hpp__
 #define __automaton_record_hpp__
 
-#include <ioa/mutex.hpp>
 #include <ioa/aid.hpp>
-#include <ioa/sequential_set.hpp>
+#include "mutex.hpp"
+#include "sequential_set.hpp"
 
 #include <memory>
 #include <map>

@@ -18,7 +18,7 @@ namespace ioa {
       m_exec (action)
     { }
     
-    void operator() (model& model) {
+    void operator() (model_interface& model) {
       model.execute (m_exec);
     }
     
@@ -31,27 +31,6 @@ namespace ioa {
   action_runnable<I, M>* make_action_runnable (const action<I, M> action) {
     return new action_runnable<I, M> (action);
   }
-
-  class output_exec_runnable :
-    public action_runnable_interface
-  {
-  private:
-    std::auto_ptr<output_executor_interface> m_exec;
-    
-  public:
-    output_exec_runnable (const output_executor_interface& exec) :
-      m_exec (exec.clone ())
-    { }
-    
-    void operator() (model& model) {
-      model.execute (*m_exec);
-    }
-
-    const action_interface& get_action () const {
-      return m_exec->get_action ();
-    }
-
-  };
   
 }
 

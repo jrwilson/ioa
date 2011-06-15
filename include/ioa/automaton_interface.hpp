@@ -4,7 +4,8 @@
 #include <ioa/shared_ptr.hpp>
 #include <ioa/action.hpp>
 #include <set>
-#include <ioa/model.hpp>
+#include <ioa/generator_interface.hpp>
+#include <ioa/executor_interface.hpp>
 
 #define COMMA ,
 

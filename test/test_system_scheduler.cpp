@@ -1,5 +1,7 @@
 #include "test_system_scheduler.hpp"
 
+#include <ioa/executor_interface.hpp>
+
 test_system_scheduler::test_system_scheduler () {
   reset ();
 }
