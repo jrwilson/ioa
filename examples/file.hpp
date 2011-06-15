@@ -13,7 +13,7 @@
 #ifndef __file_hpp__
 #define __file_hpp__
 
-#define MD5_HASH_LENGTH 16U
+#define HASH_LENGTH 32U
 #define FRAGMENT_SIZE 512U
 
 #include <string>
@@ -26,6 +26,7 @@ private:
   uint32_t m_padded_size;
   uint32_t m_hashed_size;
   uint32_t m_fragment_count;
+  unsigned char m_fileid[HASH_LENGTH];
   unsigned char* m_data;
 
 public:
