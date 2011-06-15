@@ -13,32 +13,24 @@
 #ifndef __file_hpp__
 #define __file_hpp__
 
-#include <string>
+#define MD5_HASH_LENGTH 16U
+#define FRAGMENT_SIZE 512U
 
-#define MD5_HASH_LENGTH 16
-#define FRAGMENT_SIZE 512
+#include <string>
+#include <stdint.h>
 
 class File {
 private:
-  char* m_data;
-  int m_frag_index;
-  int m_fd;
-  long m_fsize;
   std::string m_fname;
-
-  long m_original_size;
-  long m_padded_size;
-  long m_hashed_size;
+  uint32_t m_original_size;
+  uint32_t m_padded_size;
+  uint32_t m_hashed_size;
+  uint32_t m_fragment_count;
+  unsigned char* m_data;
 
 public:
   File (const char*);
   ~File ();
-
-  long get_size () { return m_fsize; }
-  int get_fd () { return m_fd; }
-
-  void calc_file ();
-  void hash();
 };
 
 #endif
