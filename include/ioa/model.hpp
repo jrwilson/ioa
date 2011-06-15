@@ -140,6 +140,7 @@ namespace ioa {
   class system_scheduler_interface
   {
   public:
+    virtual ~system_scheduler_interface () { }
     virtual void set_current_aid (const aid_t aid) = 0;
     virtual void clear_current_aid () = 0;
     

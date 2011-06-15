@@ -9,6 +9,8 @@ namespace ioa {
   class scheduler_interface
   {
   public:
+    virtual ~scheduler_interface () { }
+
     virtual aid_t get_current_aid () = 0;
 
     virtual size_t bind_count (const action_interface&) = 0;

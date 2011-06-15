@@ -1,6 +1,6 @@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 
-LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_scheduler.la
+LDADD = $(top_builddir)/lib/libueioa.la
 
 noinst_PROGRAMS = \
 asynch_lcr \

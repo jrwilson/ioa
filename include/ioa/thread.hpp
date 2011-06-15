@@ -10,6 +10,7 @@ namespace ioa {
   class thread_arg_interface
   {
   public:
+    virtual ~thread_arg_interface () { }
     virtual void operator() () = 0;
   };
 
