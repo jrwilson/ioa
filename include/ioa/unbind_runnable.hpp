@@ -20,8 +20,8 @@ namespace ioa {
       m_key (key)
     { }
     
-    void operator() () {
-      model::unbind (m_automaton, m_key);
+    void operator() (model& model) {
+      model.unbind (m_automaton, m_key);
     }
   };
   

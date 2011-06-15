@@ -1,4 +1,6 @@
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
+
 #include <iostream>
 #include <fcntl.h>
 #include <errno.h>
@@ -7,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 class buffer {
 private:
@@ -134,7 +137,7 @@ private:
   }
   
   bool open_result_precondition () const {
-    return m_state == SEND_OPEN && ioa::scheduler::bind_count (&udp_broadcast_automaton::open_result) != 0;
+    return m_state == SEND_OPEN && ioa::bind_count (&udp_broadcast_automaton::open_result) != 0;
   }
 
   int open_result_action () {
@@ -151,7 +154,7 @@ private:
   void send_action (const buffer& buf) {
     if (m_state == OPENED && m_send_state == WAITING_FOR_SEND && buf.size () != 0) {
       m_send_buffer = buf;
-      ioa::scheduler::schedule_write_ready (&udp_broadcast_automaton::do_send, m_fd);
+      ioa::schedule_write_ready (&udp_broadcast_automaton::do_send, m_fd);
       m_send_state = WAITING_FOR_DO_SEND;
     }
   }
@@ -168,7 +171,7 @@ private:
   UP_INTERNAL (udp_broadcast_automaton, do_send);
 
   bool send_result_precondition () const {
-    return m_send_state == WAITING_FOR_SEND_RESULT && ioa::scheduler::bind_count (&udp_broadcast_automaton::send_result);
+    return m_send_state == WAITING_FOR_SEND_RESULT && ioa::bind_count (&udp_broadcast_automaton::send_result);
   }
 
   int send_result_action () {
@@ -179,10 +182,10 @@ private:
 
   void schedule () const {
     if (open_result_precondition ()) {
-      ioa::scheduler::schedule (&udp_broadcast_automaton::open_result);
+      ioa::schedule (&udp_broadcast_automaton::open_result);
     }
     if (send_result_precondition ()) {
-      ioa::scheduler::schedule (&udp_broadcast_automaton::send_result);
+      ioa::schedule (&udp_broadcast_automaton::send_result);
     }
   }
 
@@ -216,7 +219,7 @@ private:
   std::auto_ptr<ioa::self_helper<file_copy> > m_self;
 
   bool open_precondition () const {
-    return m_state == START && ioa::scheduler::bind_count (&file_copy::open) != 0;
+    return m_state == START && ioa::bind_count (&file_copy::open) != 0;
   }
 
   udp_broadcast_automaton::open_arg open_action () {
@@ -242,7 +245,7 @@ private:
   V_UP_INPUT (file_copy, open_result, int);
 
   bool send_precondition () const {
-    return m_state == OPEN_RECEIVED && ioa::scheduler::bind_count (&file_copy::send) != 0;
+    return m_state == OPEN_RECEIVED && ioa::bind_count (&file_copy::send) != 0;
   }
 
   buffer send_action () {
@@ -269,10 +272,10 @@ private:
 
   void schedule () const {
     if (open_precondition ()) {
-      ioa::scheduler::schedule (&file_copy::open);
+      ioa::schedule (&file_copy::open);
     }
     if (send_precondition ()) {
-      ioa::scheduler::schedule (&file_copy::send);
+      ioa::schedule (&file_copy::send);
     }
   }
 
@@ -295,6 +298,7 @@ public:
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_generator<file_copy> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<file_copy> ());
   return 0; 
 }

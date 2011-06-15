@@ -17,8 +17,8 @@ namespace ioa {
       m_exec (exec.clone ())
     { }
     
-    void operator() () {
-      model::execute_output_bound (*m_exec);
+    void operator() (model& model) {
+      model.execute_output_bound (*m_exec);
     }
   };
 
@@ -33,8 +33,8 @@ namespace ioa {
       m_exec (exec.clone ())
     { }
     
-    void operator() () {
-      model::execute_input_bound (*m_exec);
+    void operator() (model& model) {
+      model.execute_input_bound (*m_exec);
     }
   };
 
@@ -49,8 +49,8 @@ namespace ioa {
       m_exec (exec.clone ())
     { }
     
-    void operator() () {
-      model::execute_output_unbound (*m_exec);
+    void operator() (model& model) {
+      model.execute_output_unbound (*m_exec);
     }
   };
 
@@ -65,8 +65,8 @@ namespace ioa {
       m_exec (exec.clone ())
     { }
     
-    void operator() () {
-      model::execute_input_unbound (*m_exec);
+    void operator() (model& model) {
+      model.execute_input_unbound (*m_exec);
     }
   };
   

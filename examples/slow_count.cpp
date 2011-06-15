@@ -1,4 +1,5 @@
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
 
 #include <iostream>
 
@@ -24,7 +25,7 @@ private:
 
   void schedule () const {
     if (increment_precondition ()) {
-      ioa::scheduler::schedule_after (&count_to_ten::increment, ioa::time (1, 0));
+      ioa::schedule_after (&count_to_ten::increment, ioa::time (1, 0));
     }
   }
 
@@ -38,7 +39,8 @@ public:
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_generator<count_to_ten> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<count_to_ten> ());
   return 0; 
 }
 

@@ -11,11 +11,14 @@ model.cpp \
 mutex.cpp \
 observer.cpp \
 runnable_interface.cpp \
+scheduler.cpp \
 shared_lock.cpp \
 shared_mutex.cpp \
 thread.cpp \
 time.cpp \
 unique_lock.cpp
+
+
 
 libueioa_simple_scheduler_la_SOURCES = \
 simple_scheduler.cpp

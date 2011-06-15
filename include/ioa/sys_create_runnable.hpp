@@ -20,8 +20,8 @@ namespace ioa {
       m_action (automaton, &automaton_interface::sys_create)
     { }
     
-    void operator() () {
-      model::execute_sys_create (m_automaton);
+    void operator() (model& model) {
+      model.execute_sys_create (m_automaton);
     }
 
     const action_interface& get_action () const {

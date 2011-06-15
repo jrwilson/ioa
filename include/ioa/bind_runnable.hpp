@@ -23,8 +23,8 @@ namespace ioa {
       m_key (key)
     { }
     
-    void operator() () {
-      model::bind (m_automaton, m_exec, m_key);
+    void operator() (model& model) {
+      model.bind (m_automaton, m_exec, m_key);
     }
   };
   

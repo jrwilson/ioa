@@ -2,37 +2,24 @@
 #define __action_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/model.hpp>
+#include <ioa/action_executor.hpp>
 
 namespace ioa {
-
-  class action_runnable_interface :
-    public runnable_interface
-  {
-  public:
-    virtual ~action_runnable_interface () { }
-    
-    virtual const action_interface& get_action () const = 0;
-    
-    bool operator== (const action_runnable_interface& x) const {
-      return get_action () == x.get_action ();
-    }
-  };
 
   template <class I, class M>
   class action_runnable :
     public action_runnable_interface
   {
   private:
-    model::action_executor<I, M> m_exec;
+    action_executor<I, M> m_exec;
     
   public:
     action_runnable (const action<I, M> action) :
       m_exec (action)
     { }
     
-    void operator() () {
-      model::execute (m_exec);
+    void operator() (model& model) {
+      model.execute (m_exec);
     }
     
     const action_interface& get_action () const {
@@ -56,8 +43,8 @@ namespace ioa {
       m_exec (exec.clone ())
     { }
     
-    void operator() () {
-      model::execute (*m_exec);
+    void operator() (model& model) {
+      model.execute (*m_exec);
     }
 
     const action_interface& get_action () const {

@@ -3,6 +3,7 @@
 
 #include <ioa/automaton_interface.hpp>
 #include <ioa/observer.hpp>
+#include <ioa/model.hpp>
 
 #include <cassert>
 

@@ -27,7 +27,7 @@ private:
   size_t m_i0;
 
   bool parent_precondition () const {
-    return m_parent != size_t(-1) && !m_reported && ioa::scheduler::bind_count (&ast_automaton::parent) != 0;
+    return m_parent != size_t(-1) && !m_reported && ioa::bind_count (&ast_automaton::parent) != 0;
   }
 
   size_t parent_action () {
@@ -40,7 +40,7 @@ private:
 
   bool send_precondition (size_t j) const {
     //might be a different syntax than bind_count (j)
-    return m_send.find (j)->second == SEARCH && ioa::scheduler::bind_count (&ast_automaton::send, j) != 0;
+    return m_send.find (j)->second == SEARCH && ioa::bind_count (&ast_automaton::send, j) != 0;
   }
 
   search_t send_action (size_t j) {
@@ -69,13 +69,13 @@ private:
 
   void schedule () {
     if (parent_precondition ()) {
-      ioa::scheduler::schedule (&ast_automaton::parent);
+      ioa::schedule (&ast_automaton::parent);
     }
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin();
         pos != m_nbrs.end();
         ++pos) {
       if (send_precondition (*pos)) {
-        ioa::scheduler::schedule (&ast_automaton::send, *pos);
+        ioa::schedule (&ast_automaton::send, *pos);
       }
     }
   }

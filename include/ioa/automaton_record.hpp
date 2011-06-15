@@ -4,19 +4,20 @@
 #include <ioa/mutex.hpp>
 #include <ioa/aid.hpp>
 #include <ioa/sequential_set.hpp>
-#include <ioa/system_scheduler.hpp>
-#include <ioa/automaton_interface.hpp>
 
 #include <memory>
-#include <cassert>
 #include <map>
 
 namespace ioa {
+
+  class system_scheduler_interface;
+  class automaton_interface;
 
   class automaton_record :
     public mutex
   {
   private:
+    system_scheduler_interface& m_system_scheduler;
     std::auto_ptr<automaton_interface> m_instance;
     aid_t m_aid;
     std::map<void*, automaton_record*> m_children;
@@ -25,7 +26,8 @@ namespace ioa {
     std::set<void*> m_bind_keys;
     
   public:
-    automaton_record (automaton_interface* instance,
+    automaton_record (system_scheduler_interface&,
+		      automaton_interface* instance,
 		      aid_t const aid);
     ~automaton_record ();
     const aid_t get_aid () const;

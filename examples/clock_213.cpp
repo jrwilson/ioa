@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
 
 class trigger :
   public ioa::automaton_interface
@@ -17,7 +18,7 @@ private:
   
   void schedule () {
     if (request_precondition ()) {
-      ioa::scheduler::schedule (&trigger::request);
+      ioa::schedule (&trigger::request);
     }
   }
 
@@ -70,10 +71,10 @@ private:
 
   void schedule () {
     if (tick_precondition ()) {
-      ioa::scheduler::schedule (&clock_automaton::tick);
+      ioa::schedule (&clock_automaton::tick);
     }
     if (clock_precondition ()) {
-      ioa::scheduler::schedule (&clock_automaton::clock);
+      ioa::schedule (&clock_automaton::clock);
     }
   }
 
@@ -124,6 +125,7 @@ public:
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_generator<composer> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<composer> ());
   return 0; 
 }

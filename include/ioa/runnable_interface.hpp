@@ -3,6 +3,7 @@
 
 #include <ioa/unique_lock.hpp>
 #include <ioa/shared_lock.hpp>
+#include <ioa/model.hpp>
 
 namespace ioa {
 
@@ -18,7 +19,7 @@ namespace ioa {
     runnable_interface ();
     virtual ~runnable_interface ();
     static size_t count ();
-    virtual void operator() () = 0;
+    virtual void operator() (model& model) = 0;
   };
 
 }

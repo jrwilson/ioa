@@ -21,13 +21,9 @@
 
 namespace ioa {
 
-  blocking_list<std::pair<bool, runnable_interface*> > simple_scheduler::m_sysq;
-  blocking_list<std::pair<bool, action_runnable_interface*> > simple_scheduler::m_execq;
-  int simple_scheduler::m_wakeup_fd[2];
-  blocking_list<action_time> simple_scheduler::m_timerq;
-  blocking_list<action_fd> simple_scheduler::m_readq;
-  blocking_list<action_fd> simple_scheduler::m_writeq;
-  thread_key<aid_t> simple_scheduler::m_current_aid;
+  simple_scheduler::simple_scheduler () :
+    m_model (*this)
+  { }
 
   bool simple_scheduler::keep_going () {
     // The criteria for continuing is simple: a runnable exists.
@@ -64,7 +60,7 @@ namespace ioa {
     while (thread_keep_going ()) {
       std::pair<bool, runnable_interface*> r = m_sysq.pop ();
       if (r.first) {
-	(*r.second) ();
+	(*r.second) (m_model);
 	delete r.second;
       }
     }
@@ -109,7 +105,7 @@ namespace ioa {
     while (thread_keep_going ()) {
       std::pair<bool, runnable_interface*> r = m_execq.pop ();
       if (r.first) {
-	(*r.second) ();
+	(*r.second) (m_model);
 	delete r.second;
       }
     }
@@ -316,8 +312,13 @@ namespace ioa {
     assert (retval != -1);
     return retval;
   }
+
+  size_t simple_scheduler::bind_count (const action_interface& ac) {
+    return m_model.bind_count (ac);
+  }
   
   void simple_scheduler::schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr) {
+    // TODO:  Could these go on the execq?
     schedule_sysq (new sys_create_runnable (get_current_aid ()));
   }
   
@@ -332,6 +333,27 @@ namespace ioa {
   void simple_scheduler::schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr) {
     schedule_sysq (new sys_destroy_runnable (get_current_aid ()));
   }
+
+  void simple_scheduler::schedule (action_runnable_interface* r) {
+    schedule_execq (r);
+  }
+
+  void simple_scheduler::schedule_after (action_runnable_interface* r,
+					 const time& offset) {
+    schedule_timerq (r, offset);
+  }
+
+  void simple_scheduler::schedule_read_ready (action_runnable_interface* r,
+					      int fd) {
+    schedule_readq (r, fd);
+  }
+
+  void simple_scheduler::schedule_write_ready (action_runnable_interface* r,
+					       int fd) {
+    schedule_writeq (r, fd);
+  }
+  
+
 
   void simple_scheduler::run (shared_ptr<generator_interface> generator) {
     int r;
@@ -349,11 +371,11 @@ namespace ioa {
     assert (r == 0);
 
     // Comes pipe creation because we might want to schedule with delay.
-    model::create (generator);
+    m_model.create (generator);
     
-    thread sysq_thread (&simple_scheduler::process_sysq);
-    thread execq_thread (&simple_scheduler::process_execq);
-    thread timerq_thread (&simple_scheduler::process_ioq);
+    thread sysq_thread (*this, &simple_scheduler::process_sysq);
+    thread execq_thread (*this, &simple_scheduler::process_execq);
+    thread timerq_thread (*this, &simple_scheduler::process_ioq);
 
 
     sysq_thread.join ();
@@ -366,7 +388,7 @@ namespace ioa {
     // Consequently, we are going to reset.
 
     // We clear the system first because it might add something to a run queue.
-    model::clear ();
+    m_model.clear ();
     
     // Then, we clear the run queues.
     for (std::list<std::pair<bool, runnable_interface*> >::iterator pos = m_sysq.list.begin ();
@@ -526,139 +548,139 @@ namespace ioa {
 
   // Implement the system scheduler.
   // These don't belong in a *.cpp file because each scheduler defines them differently.
-  void system_scheduler::set_current_aid (const aid_t aid) {
-    simple_scheduler::set_current_aid (aid);
-  }
+  // void system_scheduler::set_current_aid (const aid_t aid) {
+  //   simple_scheduler::set_current_aid (aid);
+  // }
   
-  void system_scheduler::clear_current_aid () {
-    simple_scheduler::clear_current_aid ();
-  }
+  // void system_scheduler::clear_current_aid () {
+  //   simple_scheduler::clear_current_aid ();
+  // }
   
-  void system_scheduler::create (const aid_t automaton,
-				 shared_ptr<generator_interface> generator,
-				 void* const key) {
-    simple_scheduler::create (automaton, generator, key);
-  }
+  // void system_scheduler::create (const aid_t automaton,
+  // 				 shared_ptr<generator_interface> generator,
+  // 				 void* const key) {
+  //   simple_scheduler::create (automaton, generator, key);
+  // }
 
-  void system_scheduler::bind (const aid_t automaton,
-			       shared_ptr<bind_executor_interface> exec,
-			       void* const key) {
-    simple_scheduler::bind (automaton, exec, key);
-  }
+  // void system_scheduler::bind (const aid_t automaton,
+  // 			       shared_ptr<bind_executor_interface> exec,
+  // 			       void* const key) {
+  //   simple_scheduler::bind (automaton, exec, key);
+  // }
 
-  void system_scheduler::unbind (const aid_t automaton,
-				 void* const key) {
-    simple_scheduler::unbind (automaton, key);
-  }
+  // void system_scheduler::unbind (const aid_t automaton,
+  // 				 void* const key) {
+  //   simple_scheduler::unbind (automaton, key);
+  // }
   
-  void system_scheduler::destroy (const aid_t automaton,
-				  void* const key) {
-    simple_scheduler::destroy (automaton, key);
-  }
+  // void system_scheduler::destroy (const aid_t automaton,
+  // 				  void* const key) {
+  //   simple_scheduler::destroy (automaton, key);
+  // }
 
-  void system_scheduler::create_key_exists (const aid_t automaton,
-					    void* const key) {
-    simple_scheduler::create_key_exists (automaton, key);
-  }
+  // void system_scheduler::create_key_exists (const aid_t automaton,
+  // 					    void* const key) {
+  //   simple_scheduler::create_key_exists (automaton, key);
+  // }
   
-  void system_scheduler::instance_exists (const aid_t automaton,
-					  void* const key) {
-    simple_scheduler::instance_exists (automaton, key);
-  }
+  // void system_scheduler::instance_exists (const aid_t automaton,
+  // 					  void* const key) {
+  //   simple_scheduler::instance_exists (automaton, key);
+  // }
   
-  void system_scheduler::automaton_created (const aid_t automaton,
-					    void* const key,
-					    const aid_t child) {
-    simple_scheduler::automaton_created (automaton, key, child);
-  }
+  // void system_scheduler::automaton_created (const aid_t automaton,
+  // 					    void* const key,
+  // 					    const aid_t child) {
+  //   simple_scheduler::automaton_created (automaton, key, child);
+  // }
   
-  void system_scheduler::bind_key_exists (const aid_t automaton,
-					  void* const key) {
-    simple_scheduler::bind_key_exists (automaton, key);
-  }
+  // void system_scheduler::bind_key_exists (const aid_t automaton,
+  // 					  void* const key) {
+  //   simple_scheduler::bind_key_exists (automaton, key);
+  // }
   
-  void system_scheduler::output_automaton_dne (const aid_t automaton,
-					       void* const key) {
-    simple_scheduler::output_automaton_dne (automaton, key);
-  }
+  // void system_scheduler::output_automaton_dne (const aid_t automaton,
+  // 					       void* const key) {
+  //   simple_scheduler::output_automaton_dne (automaton, key);
+  // }
   
-  void system_scheduler::input_automaton_dne (const aid_t automaton,
-					      void* const key) {
-    simple_scheduler::input_automaton_dne (automaton, key);
-  }
+  // void system_scheduler::input_automaton_dne (const aid_t automaton,
+  // 					      void* const key) {
+  //   simple_scheduler::input_automaton_dne (automaton, key);
+  // }
   
-  void system_scheduler::binding_exists (const aid_t automaton,
-					 void* const key) {
-    simple_scheduler::binding_exists (automaton, key);
-  }
+  // void system_scheduler::binding_exists (const aid_t automaton,
+  // 					 void* const key) {
+  //   simple_scheduler::binding_exists (automaton, key);
+  // }
   
-  void system_scheduler::input_action_unavailable (const aid_t automaton,
-						   void* const key) {
-    simple_scheduler::input_action_unavailable (automaton, key);
-  }
+  // void system_scheduler::input_action_unavailable (const aid_t automaton,
+  // 						   void* const key) {
+  //   simple_scheduler::input_action_unavailable (automaton, key);
+  // }
   
-  void system_scheduler::output_action_unavailable (const aid_t automaton,
-						    void* const key) {
-    simple_scheduler::output_action_unavailable (automaton, key);
-  }
+  // void system_scheduler::output_action_unavailable (const aid_t automaton,
+  // 						    void* const key) {
+  //   simple_scheduler::output_action_unavailable (automaton, key);
+  // }
 
-  void system_scheduler::bound (const aid_t automaton,
-			      void* const key) {
-    simple_scheduler::bound (automaton, key);
-  }
+  // void system_scheduler::bound (const aid_t automaton,
+  // 			      void* const key) {
+  //   simple_scheduler::bound (automaton, key);
+  // }
 
-  void system_scheduler::output_bound (const output_executor_interface& exec) {
-    simple_scheduler::output_bound (exec);
-  }
+  // void system_scheduler::output_bound (const output_executor_interface& exec) {
+  //   simple_scheduler::output_bound (exec);
+  // }
 
-  void system_scheduler::input_bound (const input_executor_interface& exec) {
-    simple_scheduler::input_bound (exec);
-  }
+  // void system_scheduler::input_bound (const input_executor_interface& exec) {
+  //   simple_scheduler::input_bound (exec);
+  // }
   
-  void system_scheduler::bind_key_dne (const aid_t automaton,
-				       void* const key) {
-    simple_scheduler::bind_key_dne (automaton, key);
-  }
+  // void system_scheduler::bind_key_dne (const aid_t automaton,
+  // 				       void* const key) {
+  //   simple_scheduler::bind_key_dne (automaton, key);
+  // }
   
-  void system_scheduler::unbound (const aid_t automaton,
-				  void* const key) {
-    simple_scheduler::unbound (automaton, key);
-  }
+  // void system_scheduler::unbound (const aid_t automaton,
+  // 				  void* const key) {
+  //   simple_scheduler::unbound (automaton, key);
+  // }
 
-  void system_scheduler::output_unbound (const output_executor_interface& exec) {
-    simple_scheduler::output_unbound (exec);
-  }
+  // void system_scheduler::output_unbound (const output_executor_interface& exec) {
+  //   simple_scheduler::output_unbound (exec);
+  // }
 
-  void system_scheduler::input_unbound (const input_executor_interface& exec) {
-    simple_scheduler::input_unbound (exec);
-  }
+  // void system_scheduler::input_unbound (const input_executor_interface& exec) {
+  //   simple_scheduler::input_unbound (exec);
+  // }
   
-  void system_scheduler::create_key_dne (const aid_t automaton,
-					 void* const key) {
-    simple_scheduler::create_key_dne (automaton, key);
-  }
+  // void system_scheduler::create_key_dne (const aid_t automaton,
+  // 					 void* const key) {
+  //   simple_scheduler::create_key_dne (automaton, key);
+  // }
   
-  void system_scheduler::automaton_destroyed (const aid_t automaton,
-					      void* const key) {
-    simple_scheduler::automaton_destroyed (automaton, key);
-  }
+  // void system_scheduler::automaton_destroyed (const aid_t automaton,
+  // 					      void* const key) {
+  //   simple_scheduler::automaton_destroyed (automaton, key);
+  // }
   
-  void system_scheduler::recipient_dne (const aid_t automaton,
-					void* const key) {
-    simple_scheduler::recipient_dne (automaton, key);
-  }
+  // void system_scheduler::recipient_dne (const aid_t automaton,
+  // 					void* const key) {
+  //   simple_scheduler::recipient_dne (automaton, key);
+  // }
   
-  void system_scheduler::event_delivered (const aid_t automaton,
-					  void* const key) {
-    simple_scheduler::event_delivered (automaton, key);
-  }
+  // void system_scheduler::event_delivered (const aid_t automaton,
+  // 					  void* const key) {
+  //   simple_scheduler::event_delivered (automaton, key);
+  // }
   
-  aid_t scheduler::get_current_aid () {
-    return simple_scheduler::get_current_aid ();
-  }
+  // aid_t scheduler::get_current_aid () {
+  //   return simple_scheduler::get_current_aid ();
+  // }
   
-  void scheduler::run (shared_ptr<generator_interface> generator) {
-    simple_scheduler::run (generator);
-  }
+  // void scheduler::run (shared_ptr<generator_interface> generator) {
+  //   simple_scheduler::run (generator);
+  // }
   
 }

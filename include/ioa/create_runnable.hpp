@@ -22,8 +22,8 @@ namespace ioa {
       m_key (key)
     { }
     
-    void operator() () {
-      model::create (m_automaton, m_generator, m_key);
+    void operator() (model& model) {
+      model.create (m_automaton, m_generator, m_key);
     }
   };
   

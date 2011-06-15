@@ -9,11 +9,13 @@
 
 namespace ioa {
 
-  shared_mutex model::m_mutex;
-  sequential_set<aid_t> model::m_aids;
-  std::set<automaton_interface*> model::m_instances;
-  std::map<aid_t, automaton_record*> model::m_records;
-  std::list<output_executor_interface*> model::m_bindings;
+  model::model (system_scheduler_interface& system_scheduler) :
+    m_system_scheduler (system_scheduler)
+  { }
+
+  model::~model () {
+    clear ();
+  }
 
   void model::clear (void) {
    // Delete all root automata.
@@ -42,14 +44,14 @@ namespace ioa {
     aid_t aid = m_aids.take ();
     
     // Set the current aid.
-    system_scheduler::set_current_aid (aid);
+    m_system_scheduler.set_current_aid (aid);
     
     // Run the generator.
     automaton_interface* instance = (*generator) ();
     assert (instance != 0);
     
     // Clear the current aid.
-    system_scheduler::clear_current_aid ();
+    m_system_scheduler.clear_current_aid ();
     
     if (m_instances.count (instance) != 0) {
       // Root automaton instance exists.  Bad news.
@@ -58,7 +60,7 @@ namespace ioa {
     }
     
     m_instances.insert (instance);
-    automaton_record* record = new automaton_record (instance, aid);
+    automaton_record* record = new automaton_record (m_system_scheduler, instance, aid);
     m_records.insert (std::make_pair (aid, record));
         
     return aid;
@@ -77,7 +79,7 @@ namespace ioa {
 
     if (m_records[automaton]->create_key_exists (key)) {
       // Create key already in use.
-      system_scheduler::create_key_exists (automaton, key);
+      m_system_scheduler.create_key_exists (automaton, key);
       return -1;
     }
     
@@ -85,24 +87,24 @@ namespace ioa {
     aid_t aid = m_aids.take ();
     
     // Set the current aid.
-    system_scheduler::set_current_aid (aid);
+    m_system_scheduler.set_current_aid (aid);
     
     // Run the generator.
     automaton_interface* instance = (*generator) ();
     assert (instance != 0);
     
     // Clear the current aid.
-    system_scheduler::clear_current_aid ();
+    m_system_scheduler.clear_current_aid ();
     
     if (m_instances.count (instance) != 0) {
       // Return the aid and inform the automaton that the instance already exists.
       m_aids.replace (aid);
-      system_scheduler::instance_exists (automaton, key);
+      m_system_scheduler.instance_exists (automaton, key);
       return -1;
     }
     
     m_instances.insert (instance);      
-    automaton_record* record = new automaton_record (instance, aid);
+    automaton_record* record = new automaton_record (m_system_scheduler, instance, aid);
     m_records.insert (std::make_pair (aid, record));
     automaton_record* parent = m_records[automaton];
     record->set_parent (key, parent);
@@ -124,20 +126,20 @@ namespace ioa {
     
     if (m_records[binder]->bind_key_exists (key)) {
       // Bind key already in use.
-      system_scheduler::bind_key_exists (binder, key);
+      m_system_scheduler.bind_key_exists (binder, key);
       return -1;
     }
     
     output_executor_interface& output = bind_exec->get_output ();
     input_executor_interface& input = bind_exec->get_input ();
     
-    if (!output.fetch_instance ()) {
-      system_scheduler::output_automaton_dne (binder, key);
+    if (!output.fetch_instance (*this)) {
+      m_system_scheduler.output_automaton_dne (binder, key);
       return -1;
     }
     
-    if (!input.fetch_instance ()) {
-      system_scheduler::input_automaton_dne (binder, key);
+    if (!input.fetch_instance (*this)) {
+      m_system_scheduler.input_automaton_dne (binder, key);
       return -1;
     }
     
@@ -147,7 +149,7 @@ namespace ioa {
     
     if (pos != m_bindings.end ()) {
       // Bound.
-      system_scheduler::binding_exists (binder, key);
+      m_system_scheduler.binding_exists (binder, key);
       return -1;
     }
     
@@ -157,7 +159,7 @@ namespace ioa {
     
     if (in_pos != m_bindings.end ()) {
       // Input unavailable.
-      system_scheduler::input_action_unavailable (binder, key);
+      m_system_scheduler.input_action_unavailable (binder, key);
       return -1;
     }
     
@@ -168,7 +170,7 @@ namespace ioa {
     if (output.get_action ().get_aid () == input.get_action ().get_aid () ||
 	(out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_action ().get_aid ()))) {
       // Output unavailable.
-      system_scheduler::output_action_unavailable (binder, key);
+      m_system_scheduler.output_action_unavailable (binder, key);
       return -1;
     }
     
@@ -183,7 +185,7 @@ namespace ioa {
     }
     
     // Bind.
-    c->bind (input, binder, key);
+    c->bind (m_system_scheduler, input, binder, key);
     m_records[binder]->add_bind_key (key);
     
     return 0;
@@ -203,7 +205,7 @@ namespace ioa {
     
     if (pos == m_bindings.end ()) {
       // Not bound.
-      system_scheduler::bind_key_dne (binder, key);
+      m_system_scheduler.bind_key_dne (binder, key);
       return -1;
     }
     
@@ -244,7 +246,7 @@ namespace ioa {
     }
 
     if (!m_records[automaton]->create_key_exists (key)) {
-      system_scheduler::create_key_dne (automaton, key);
+      m_system_scheduler.create_key_dne (automaton, key);
       return -1;
     }
 
@@ -289,7 +291,7 @@ namespace ioa {
   int model::execute (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
@@ -300,10 +302,10 @@ namespace ioa {
     
     if (out_pos == m_bindings.end ()) {
       // Not bound.
-      exec ();
+      exec (*this, m_system_scheduler);
     }
     else {
-      (*(*out_pos)) ();
+      (*(*out_pos)) (*this, m_system_scheduler);
     }
     
     return 0;
@@ -312,12 +314,12 @@ namespace ioa {
   int model::execute (internal_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
     
-    exec ();
+    exec (*this, m_system_scheduler);
     return 0;
   }
   
@@ -331,27 +333,27 @@ namespace ioa {
       return -1;
     }
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Recipient does not exist.
-      system_scheduler::recipient_dne (from, key);
+      m_system_scheduler.recipient_dne (from, key);
       return -1;
     }
     
-    exec ();
+    exec (*this, m_system_scheduler);
     
-    system_scheduler::event_delivered (from, key);
+    m_system_scheduler.event_delivered (from, key);
     return 0;
   }
 
   int model::execute (system_input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
     
-    exec ();
+    exec (*this, m_system_scheduler);
     return 0;
   }
 
@@ -368,17 +370,17 @@ namespace ioa {
     automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
-    system_scheduler::set_current_aid (automaton);
+    m_system_scheduler.set_current_aid (automaton);
     bool t = ac.precondition (*instance);
     std::pair<shared_ptr<generator_interface>, void*> key;
     if (t) {
       key = ac (*instance);
     }
-    system_scheduler::clear_current_aid ();
+    m_system_scheduler.clear_current_aid ();
     unlock_automaton (automaton);
 
     if (t) {
-      system_scheduler::create (automaton, key.first, key.second);
+      m_system_scheduler.create (automaton, key.first, key.second);
     }
 
     return 0;
@@ -397,18 +399,18 @@ namespace ioa {
     automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
-    system_scheduler::set_current_aid (automaton);
+    m_system_scheduler.set_current_aid (automaton);
     bool t = ac.precondition (*instance);
     std::pair<shared_ptr<bind_executor_interface>, void*> key;
     if (t) {
       key = ac (*instance);
     }
 
-    system_scheduler::clear_current_aid ();
+    m_system_scheduler.clear_current_aid ();
     unlock_automaton (automaton);
 
     if (t) {
-      system_scheduler::bind (automaton, key.first, key.second);
+      m_system_scheduler.bind (automaton, key.first, key.second);
     }
 
     return 0;
@@ -427,17 +429,17 @@ namespace ioa {
     automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
-    system_scheduler::set_current_aid (automaton);
+    m_system_scheduler.set_current_aid (automaton);
     bool t = ac.precondition (*instance);
     void* key = 0;
     if (t) {
       key = ac (*instance);
     }
-    system_scheduler::clear_current_aid ();
+    m_system_scheduler.clear_current_aid ();
     unlock_automaton (automaton);
 
     if (t) {
-      system_scheduler::unbind (automaton, key);
+      m_system_scheduler.unbind (automaton, key);
     }
 
     return 0;
@@ -456,17 +458,17 @@ namespace ioa {
     automaton_interface* instance = automaton_handle_to_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
-    system_scheduler::set_current_aid (automaton);
+    m_system_scheduler.set_current_aid (automaton);
     bool t = ac.precondition (*instance);
     void* key = 0;
     if (t) {
       key = ac (*instance);
     }
-    system_scheduler::clear_current_aid ();
+    m_system_scheduler.clear_current_aid ();
     unlock_automaton (automaton);
 
     if (t) {
-      system_scheduler::destroy (automaton, key);
+      m_system_scheduler.destroy (automaton, key);
     }
 
     return 0;
@@ -475,48 +477,48 @@ namespace ioa {
   int model::execute_output_bound (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
     
-    exec.bound ();
+    exec.bound (*this, m_system_scheduler);
     return 0;
   }
 
   int model::execute_input_bound (input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
 
-    exec.bound ();
+    exec.bound (*this, m_system_scheduler);
     return 0;
   }
 
   int model::execute_output_unbound (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
     
-    exec.unbound ();
+    exec.unbound (*this, m_system_scheduler);
     return 0;
   }
 
   int model::execute_input_unbound (input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
-    if (!exec.fetch_instance ()) {
+    if (!exec.fetch_instance (*this)) {
       // Automaton does not exist.
       return -1;
     }
 
-    exec.unbound ();
+    exec.unbound (*this, m_system_scheduler);
     return 0;
   }
 
@@ -529,7 +531,7 @@ namespace ioa {
   }
 
   // This should only be called from user code because we don't get a lock.
-  size_t model::bind_count (const action_interface& action) {
+  size_t model::bind_count (const action_interface& action) const {
     std::list<output_executor_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
 										 m_bindings.end (),
 										 binding_input_equal (action));
