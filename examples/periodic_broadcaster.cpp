@@ -126,8 +126,17 @@ public:
 };
 
 int
-main () {
+main (int argc, char* argv[]) {
+  if (argc != 4) {
+    std::cerr << "Usage: " << argv[0] << " PORT PERIOD MESSAGE" << std::endl;
+    exit (EXIT_FAILURE);
+  }
+
+  unsigned short port = atoi (argv[1]);
+  ioa::time period (atoi (argv[2]), 0);
+  std::string message (argv[3]);
+
   ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<periodic_broadcaster> (64470, ioa::time (1, 0), std::string ("Hello, world!")));
+  ioa::run (ss, ioa::make_generator<periodic_broadcaster> (port, period, message));
   return 0; 
 }
