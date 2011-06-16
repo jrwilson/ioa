@@ -4,15 +4,17 @@ LDADD = $(top_builddir)/lib/libueioa.la $(top_builddir)/lib/libueioa_simple_sche
 
 noinst_PROGRAMS = \
 asynch_lcr \
+beast \
 clock_213 \
 count_to_ten \
 peterson_leader \
 slow_count \
-spanning_tree 
+spanning_tree
 
 # file_reader
 
 asynch_lcr_SOURCES = asynch_lcr.cpp
+beast_SOURCES = beast.cpp
 clock_213_SOURCES = clock_213.cpp
 count_to_ten_SOURCES = count_to_ten.cpp
 # file_reader_SOURCES = file_reader.cpp
