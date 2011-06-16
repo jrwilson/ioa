@@ -25,7 +25,8 @@ private:
 public:
   beast_tree():
     self (new ioa::self_helper<beast_tree> ()),
-    nbrhd(N){
+    nbrhd(N)
+  {
     srand ((unsigned)time(0));   //initializes RNG for later calls to rand
     size_t i0 = rand() %N;
     std::cout << "The root is " << i0 << std::endl;
