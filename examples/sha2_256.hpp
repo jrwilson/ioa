@@ -6,6 +6,10 @@
   Based on pseuedo-code found at http://en.wikipedia.org/wiki/SHA-2
  */
 
+#include <arpa/inet.h>
+#include <cassert>
+#include <string.h>
+
 class sha2_256 {
 private:
   static const unsigned int h_init[8];
@@ -48,7 +52,7 @@ private:
     unsigned int h0 = h[7];
 
     for (unsigned int idx = 0;
-	 idx < 64; 
+	 idx < 64;
 	 ++idx) {
       unsigned int s0 = right_rotate (a0, 2) ^ right_rotate (a0, 13) ^ right_rotate (a0, 22);
       unsigned int maj = (a0 & b0) ^ (a0 & c0) ^ (b0 & c0);
@@ -84,7 +88,7 @@ public:
   sha2_256 () :
     total_length (0),
     buf_length (0)
-  {  
+  {
     memcpy (h, h_init, sizeof (h));
     memset (buf, 0, sizeof (buf));
   }
@@ -158,7 +162,7 @@ public:
 };
 
 const unsigned int sha2_256::h_init[8] = {
-  0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 
+  0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 };
 
 const unsigned int sha2_256::k[64] = {

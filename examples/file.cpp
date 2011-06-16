@@ -1,7 +1,6 @@
 #include "file.hpp"
 #include "sha2_256.hpp"
 
-#include <arpa/inet.h>
 #include <string.h>
 #include <math.h>
 #include <cstdlib>
@@ -10,6 +9,7 @@
 #include <cassert>
 #include <unistd.h>
 #include <iostream>
+#include <stdio.h>
 
 File::File (const char* name) :
   m_fname (name)

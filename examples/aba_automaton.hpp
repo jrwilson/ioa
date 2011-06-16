@@ -1,8 +1,9 @@
 #ifndef __aba_automaton_hpp__
 #define __aba_automaton_hpp__
 
-#include <ioa.hpp>
 
+#include <ioa.hpp>
+#include <cstdlib>
 #include <iostream>
 #include <set>
 #include <map>
@@ -21,21 +22,21 @@ bool debug3 = false;
 
 class aba_automaton:
   public ioa::automaton_interface {
-  
+
 private:
-  
+
   typedef std::queue<message_t> msgq;
 
   size_t m_i;		//my ID
   size_t m_i0;	//the ID of the root
   std::set<size_t> m_nbrs;	//the set of (the IDS of) all my neighbors
-  
+
   size_t m_val;			//initially the value to be broadcast if i=i0, else 'null'
   size_t m_parent;		//the id of my parent
   bool m_reported;		// true if everyone (except my parent) has acknowledged me
   std::set<size_t> m_acked;	//the set of (the IDs of) all nodes that have acknowledged me
   std::map<size_t, msgq *> m_send;	//set of message queues; if i=i0 then each queue initially contains the single elt. ("bcast",w); otherwise each queue is empty
-  
+
   bool send_precondition (size_t j) const {
     if (debug3) std::cout << "Node " << m_i << " entering send_precondition" << std::endl;
     msgq* q = m_send.find(j)->second;
@@ -96,7 +97,7 @@ private:
 
     schedule();
   }
-  
+
   bool report_precondition () const {
     if (debug3) std::cout << "Node " << m_i << " entering report_precondition" << std::endl;
     if (m_i != m_i0){
@@ -140,10 +141,10 @@ private:
     }
 
     if (report_precondition()) ioa::schedule(&aba_automaton::report);
-  }	
-  
-  UP_INTERNAL (aba_automaton, report);  
-  
+  }
+
+  UP_INTERNAL (aba_automaton, report);
+
 public:
   aba_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
     m_i(i),
@@ -158,7 +159,7 @@ public:
       m_val = rand ();
     }
 
-    //If this is the root, broadcast to everyone; otherwise, do nothing.    
+    //If this is the root, broadcast to everyone; otherwise, do nothing.
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
       m_send.insert(make_pair(*pos, new msgq ()));
       //Add a BCAST message to each message queue.
@@ -166,9 +167,9 @@ public:
 	m_send[*pos]->push (message_t (BCAST, m_val));
       }
     }
-    
+
     if (debug) std::cout << "I am node " << m_i << std::endl;
-    
+
     schedule();
   }
 
@@ -181,8 +182,8 @@ public:
   V_P_OUTPUT (aba_automaton, send, message_t, size_t);             //MANUAL NEEDS TO SAY WHAT THESE ARE
   V_P_INPUT (aba_automaton, receive, message_t, size_t);
 
-  
-  
+
+
 };
 
 #endif
