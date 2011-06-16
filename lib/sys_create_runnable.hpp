@@ -2,7 +2,6 @@
 #define __sys_create_runnable_hpp__
 
 #include <ioa/action_runnable.hpp>
-#include <ioa/model.hpp>
 #include <ioa/automaton_interface.hpp>
 
 namespace ioa {
@@ -20,8 +19,8 @@ namespace ioa {
       m_action (automaton, &automaton_interface::sys_create)
     { }
     
-    void operator() () {
-      model::execute_sys_create (m_automaton);
+    void operator() (model_interface& model) {
+      model.execute_sys_create (m_automaton);
     }
 
     const action_interface& get_action () const {

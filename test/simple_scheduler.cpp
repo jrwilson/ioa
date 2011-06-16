@@ -5,6 +5,7 @@
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
 #include <ioa/automaton_helper.hpp>
+#include <ioa/simple_scheduler.hpp>
 
 #include <iostream>
 #include <fcntl.h>
@@ -60,7 +61,8 @@ instance_exists ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<create_instance_exists> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<create_instance_exists> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -103,7 +105,8 @@ automaton_created ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<create_automaton_created> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<create_automaton_created> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -199,7 +202,8 @@ output_automaton_dne ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_output_automaton_dne> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_output_automaton_dne> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -295,7 +299,8 @@ input_automaton_dne ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_input_automaton_dne> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_input_automaton_dne> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -407,7 +412,8 @@ binding_exists ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_binding_exists> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_binding_exists> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -520,7 +526,8 @@ input_action_unavailable ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_input_action_unavailable> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_input_action_unavailable> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -632,7 +639,8 @@ output_action_unavailable ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_output_action_unavailable> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_output_action_unavailable> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -742,7 +750,8 @@ bound ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_bound> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_bound> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -849,7 +858,7 @@ private:
   void poll_action () {
     // We poll until the automaton is created.  Then we destroy it.
     if (!m_helper->is_bound) {
-      ioa::scheduler::schedule (&bind_unbound::poll);
+      ioa::schedule (&bind_unbound::poll);
     }
     else {
       unbind (m_helper);
@@ -865,7 +874,7 @@ public:
     ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
     m_helper = new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
-    ioa::scheduler::schedule (&bind_unbound::poll);
+    ioa::schedule (&bind_unbound::poll);
   }
 };
 
@@ -874,7 +883,8 @@ unbound ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_unbound> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_unbound> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -987,7 +997,8 @@ unbound2 ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<bind_unbound2> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<bind_unbound2> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1034,7 +1045,7 @@ private:
   void poll_action () {
     // We poll until the automaton is created.  Then we destroy it.
     if (!m_helper->created) {
-      ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
+      ioa::schedule (&destroy_automaton_destroyed::poll);
     }
     else {
       destroy (m_helper);
@@ -1048,7 +1059,7 @@ public:
     m_helper (new helper ())
   {
     create (m_helper);
-    ioa::scheduler::schedule (&destroy_automaton_destroyed::poll);
+    ioa::schedule (&destroy_automaton_destroyed::poll);
   }
 };
 
@@ -1057,7 +1068,8 @@ automaton_destroyed ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<destroy_automaton_destroyed> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<destroy_automaton_destroyed> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1104,7 +1116,8 @@ automaton_destroyed2 ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<destroy_automaton_destroyed2> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<destroy_automaton_destroyed2> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1126,7 +1139,7 @@ private:
 public:
   schedule_automaton ()
   {
-    ioa::scheduler::schedule (&schedule_automaton::action);
+    ioa::schedule (&schedule_automaton::action);
   }
   
 };
@@ -1136,7 +1149,8 @@ schedule ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1160,7 +1174,7 @@ private:
 public:
   schedule_automatonp ()
   {
-    ioa::scheduler::schedule (&schedule_automatonp::action, 18887235);
+    ioa::schedule (&schedule_automatonp::action, 18887235);
   }
   
 };
@@ -1170,7 +1184,8 @@ schedulep ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_automatonp> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_automatonp> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1199,7 +1214,7 @@ public:
   schedule_after_automaton ()
   {
     m_schedule_time = time (0);
-    ioa::scheduler::schedule_after (&schedule_after_automaton::action, ioa::time (1, 0));
+    ioa::schedule_after (&schedule_after_automaton::action, ioa::time (1, 0));
   }
   
 };
@@ -1209,7 +1224,8 @@ schedule_after ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_after_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_after_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1240,7 +1256,7 @@ public:
   schedule_afterp_automaton ()
   {
     m_schedule_time = time (0);
-    ioa::scheduler::schedule_after (&schedule_afterp_automaton::action, 512, ioa::time (1, 0));
+    ioa::schedule_after (&schedule_afterp_automaton::action, 512, ioa::time (1, 0));
   }
   
 };
@@ -1250,7 +1266,8 @@ schedule_afterp ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_afterp_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_afterp_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1277,7 +1294,7 @@ public:
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
     assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::scheduler::schedule_read_ready (&schedule_read_ready_automaton::action, m_fd);
+    ioa::schedule_read_ready (&schedule_read_ready_automaton::action, m_fd);
   }
   
 };
@@ -1287,7 +1304,8 @@ schedule_read_ready ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_read_ready_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_read_ready_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1316,7 +1334,7 @@ public:
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
     assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::scheduler::schedule_read_ready (&schedule_read_readyp_automaton::action, m_fd, m_fd);
+    ioa::schedule_read_ready (&schedule_read_readyp_automaton::action, m_fd, m_fd);
   }
   
 };
@@ -1326,7 +1344,8 @@ schedule_read_readyp ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_read_readyp_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_read_readyp_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1353,7 +1372,7 @@ public:
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
     assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::scheduler::schedule_write_ready (&schedule_write_ready_automaton::action, m_fd);
+    ioa::schedule_write_ready (&schedule_write_ready_automaton::action, m_fd);
   }
   
 };
@@ -1363,7 +1382,8 @@ schedule_write_ready ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_write_ready_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_write_ready_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1392,7 +1412,7 @@ public:
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
     assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::scheduler::schedule_read_ready (&schedule_write_readyp_automaton::action, m_fd, m_fd);
+    ioa::schedule_read_ready (&schedule_write_readyp_automaton::action, m_fd, m_fd);
   }
   
 };
@@ -1402,7 +1422,8 @@ schedule_write_readyp ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<schedule_write_readyp_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<schedule_write_readyp_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }

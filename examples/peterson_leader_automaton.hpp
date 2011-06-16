@@ -39,7 +39,7 @@ private:
   }
 
   bool send_precondition () const {
-    return !m_send.empty () && ioa::scheduler::bind_count (&peterson_leader_automaton::send) != 0;
+    return !m_send.empty () && ioa::bind_count (&peterson_leader_automaton::send) != 0;
   }
 
   uuid send_action () {
@@ -50,7 +50,7 @@ private:
   }
 
   bool leader_precondition () const {
-    return m_status == CHOSEN && ioa::scheduler::bind_count (&peterson_leader_automaton::leader) != 0;
+    return m_status == CHOSEN && ioa::bind_count (&peterson_leader_automaton::leader) != 0;
   }
 
   void leader_action () {
@@ -125,31 +125,31 @@ private:
 
   void schedule () {
     if (send_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::send);
+      ioa::schedule (&peterson_leader_automaton::send);
     }
 
     if (leader_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::leader);
+      ioa::schedule (&peterson_leader_automaton::leader);
     }
 
     if (get_second_uid_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::get_second_uid);
+      ioa::schedule (&peterson_leader_automaton::get_second_uid);
     }
 
     if (get_third_uid_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::get_third_uid);
+      ioa::schedule (&peterson_leader_automaton::get_third_uid);
     }
 
     if (advance_phase_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::advance_phase);
+      ioa::schedule (&peterson_leader_automaton::advance_phase);
     }
 
     if (become_relay_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::become_relay);
+      ioa::schedule (&peterson_leader_automaton::become_relay);
     }
 
     if (relay_precondition ()) {
-      ioa::scheduler::schedule (&peterson_leader_automaton::relay);
+      ioa::schedule (&peterson_leader_automaton::relay);
     }
   }
 

@@ -1,7 +1,8 @@
 #ifndef __blocking_list_hpp__
 #define __blocking_list_hpp__
 
-#include <ioa/condition_variable.hpp>
+#include "mutex.hpp"
+#include "condition_variable.hpp"
 #include <list>
 
 namespace ioa {

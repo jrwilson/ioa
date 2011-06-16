@@ -1,5 +1,6 @@
 #include "minunit.h"
 
+#include "test_system_scheduler.hpp"
 #include "automaton1.hpp"
 
 static const char*

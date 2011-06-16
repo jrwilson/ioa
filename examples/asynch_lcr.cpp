@@ -5,6 +5,7 @@
 
 int
 main () {
-  ioa::scheduler::run (ioa::make_generator<unidirectional_ring_leader_election<asynch_lcr_automaton, 1000> > ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<unidirectional_ring_leader_election<asynch_lcr_automaton, 1000> > ());
   return 0; 
 }

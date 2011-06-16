@@ -3,6 +3,7 @@
 #include "automaton2.hpp"
 #include <ioa/ioa.hpp>
 #include <iostream>
+#include <ioa/simple_scheduler.hpp>
 
 static bool goal_reached;
 
@@ -34,7 +35,8 @@ bind_uv_up_uv_up ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<uv_up_uv_up_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<uv_up_uv_up_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -67,7 +69,8 @@ bind_uv_up_uv_p ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<uv_up_uv_p_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<uv_up_uv_p_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -100,7 +103,8 @@ bind_uv_p_uv_up ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<uv_p_uv_up_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<uv_p_uv_up_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -133,7 +137,8 @@ bind_uv_p_uv_p ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<uv_p_uv_p_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<uv_p_uv_p_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -166,7 +171,8 @@ bind_v_up_v_up ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<v_up_v_up_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<v_up_v_up_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -199,7 +205,8 @@ bind_v_up_v_p ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<v_up_v_p_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<v_up_v_p_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -232,7 +239,8 @@ bind_v_p_v_up ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<v_p_v_up_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<v_p_v_up_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -265,7 +273,8 @@ bind_v_p_v_p ()
 {
   std::cout << __func__ << std::endl;
   goal_reached = false;
-  ioa::scheduler::run (ioa::make_generator<v_p_v_p_automaton> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<v_p_v_p_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }

@@ -2,7 +2,6 @@
 #define __unbind_runnable_hpp__
 
 #include <ioa/runnable_interface.hpp>
-#include <ioa/model.hpp>
 
 namespace ioa {
   
@@ -20,8 +19,8 @@ namespace ioa {
       m_key (key)
     { }
     
-    void operator() () {
-      model::unbind (m_automaton, m_key);
+    void operator() (model_interface& model) {
+      model.unbind (m_automaton, m_key);
     }
   };
   

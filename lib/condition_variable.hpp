@@ -1,9 +1,11 @@
 #ifndef __condition_variable_hpp__
 #define __condition_varaible_hpp__
 
-#include <ioa/lock.hpp>
+#include <pthread.h>
 
 namespace ioa {
+
+  class lock;
   
   class condition_variable
   {

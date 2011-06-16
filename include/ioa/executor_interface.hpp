@@ -1,15 +1,16 @@
 #ifndef __executor_interface_hpp__
 #define __executor_interface_hpp__
 
-#include <ioa/action.hpp>
-
 namespace ioa {
+
+  class model_interface;
+  class system_scheduler_interface;
 
   class action_executor_interface
   {
   public:
     virtual ~action_executor_interface () { }
-    virtual bool fetch_instance () = 0;
+    virtual bool fetch_instance (model_interface&) = 0;
     virtual const action_interface& get_action () const = 0;
   };
 
@@ -19,8 +20,8 @@ namespace ioa {
   public:
     virtual ~input_executor_interface () { }
     virtual input_executor_interface* clone () const = 0;
-    virtual void bound () const = 0;
-    virtual void unbound () const = 0;
+    virtual void bound (model_interface&, system_scheduler_interface&) const = 0;
+    virtual void unbound (model_interface&, system_scheduler_interface&) const = 0;
   };
 
   class unvalued_input_executor_interface :
@@ -28,7 +29,7 @@ namespace ioa {
   {
   public:
     virtual ~unvalued_input_executor_interface () { }
-    virtual void operator() () const = 0;
+    virtual void operator() (system_scheduler_interface&) const = 0;
   };
 
   template <typename T>
@@ -37,7 +38,7 @@ namespace ioa {
   {
   public:
     virtual ~valued_input_executor_interface () { }
-    virtual void operator() (const T& t) const = 0;
+    virtual void operator() (system_scheduler_interface&, const T& t) const = 0;
   };
 
   class local_executor_interface :
@@ -45,7 +46,7 @@ namespace ioa {
   {
   public:
     virtual ~local_executor_interface () { }
-    virtual void operator() () const = 0;
+    virtual void operator() (model_interface&, system_scheduler_interface&) const = 0;
   };
   
   class output_executor_interface :
@@ -64,14 +65,17 @@ namespace ioa {
 				   void* const) const = 0;
     virtual bool empty () const = 0;
     virtual size_t size () const = 0;
-    virtual void bind (const input_executor_interface&,
+    virtual void bind (system_scheduler_interface&,
+		       const input_executor_interface&,
 		       const aid_t,
 		       void* const) = 0;
     virtual void unbind (const aid_t,
 			 void* const) = 0;
     virtual void unbind_automaton (const aid_t) = 0;
-    virtual void bound () const = 0;
-    virtual void unbound () const = 0;
+    virtual void bound (model_interface&,
+			system_scheduler_interface&) const = 0;
+    virtual void unbound (model_interface&,
+			  system_scheduler_interface&) const = 0;
   };
 
   class unvalued_output_executor_interface :

@@ -1,4 +1,5 @@
-#include <ioa/condition_variable.hpp>
+#include "condition_variable.hpp"
+#include "lock.hpp"
 #include <cassert>
 
 namespace ioa {

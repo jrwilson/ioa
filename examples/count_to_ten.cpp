@@ -4,6 +4,8 @@
 
 // Includes all of the classes needed to define I/O Automata.
 #include <ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
+
 // For printing (cout).
 #include <iostream>
 
@@ -34,7 +36,7 @@ private:
   // Tells the runtime scheduler that we would like it to execute the increment action.
   void schedule () const {
     if (increment_precondition ()) {
-      ioa::scheduler::schedule (&count_to_ten::increment);
+      ioa::schedule (&count_to_ten::increment);
     }
   }
 
@@ -55,7 +57,8 @@ main () {
   // To create an automaton the system requires a generator which returns a new automaton.
   // Make generator is a helper function which creates this generator.
   // Run starts the scheduler.
-  ioa::scheduler::run (ioa::make_generator<count_to_ten> ());
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<count_to_ten> ());
   return 0; 
 }
 

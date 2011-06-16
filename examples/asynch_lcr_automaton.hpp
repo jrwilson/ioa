@@ -38,7 +38,7 @@ private:
   }
 
   bool send_precondition () const {
-    return !m_send.empty () && ioa::scheduler::bind_count (&asynch_lcr_automaton::send) != 0;
+    return !m_send.empty () && ioa::bind_count (&asynch_lcr_automaton::send) != 0;
   }
 
   uuid send_action () {
@@ -49,7 +49,7 @@ private:
   }
 
   bool leader_precondition () const {
-    return m_status == CHOSEN && ioa::scheduler::bind_count (&asynch_lcr_automaton::leader) != 0;
+    return m_status == CHOSEN && ioa::bind_count (&asynch_lcr_automaton::leader) != 0;
   }
 
   void leader_action () {
@@ -59,11 +59,11 @@ private:
 
   void schedule () {
     if (send_precondition ()) {
-      ioa::scheduler::schedule (&asynch_lcr_automaton::send);
+      ioa::schedule (&asynch_lcr_automaton::send);
     }
 
     if (leader_precondition ()) {
-      ioa::scheduler::schedule (&asynch_lcr_automaton::leader);
+      ioa::schedule (&asynch_lcr_automaton::leader);
     }
   }
 

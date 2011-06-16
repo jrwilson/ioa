@@ -1,4 +1,6 @@
 #include <ioa/runnable_interface.hpp>
+#include "unique_lock.hpp"
+#include "shared_lock.hpp"
 
 namespace ioa {
 

@@ -2,7 +2,8 @@
 #define __test_system_scheduler_hpp__
 
 #include <ioa/action.hpp>
-
+#include <ioa/model_interface.hpp>
+#include <ioa/system_scheduler_interface.hpp>
 #include <set>
 
 struct unbound_record
@@ -28,7 +29,8 @@ struct unbound_record
   }
 };
 
-struct test_system_scheduler
+struct test_system_scheduler :
+  public ioa::system_scheduler_interface
 {
   ioa::aid_t m_create_key_exists_automaton;
   void* m_create_key_exists_key;
@@ -89,68 +91,83 @@ struct test_system_scheduler
   ioa::aid_t m_event_delivered_automaton;
   void* m_event_delivered_key;
 
-  void reset () {
-    m_create_key_exists_automaton = -1;
-    m_create_key_exists_key = 0;
+  test_system_scheduler ();
+  void reset ();
+  
+  void set_current_aid (const ioa::aid_t aid);
+  void clear_current_aid ();
     
-    m_instance_exists_automaton = -1;
-    m_instance_exists_key = 0;
+  void create (const ioa::aid_t automaton,
+	       ioa::shared_ptr<ioa::generator_interface> generator,
+	       void* const key);
     
-    m_automaton_created_automaton = -1;
-    m_automaton_created_key = 0;
-    m_automaton_created_child = -1;
+  void bind (const ioa::aid_t automaton,
+	     ioa::shared_ptr<ioa::bind_executor_interface> exec,
+	     void* const key);
     
-    m_bind_key_exists_automaton = -1;
-    m_bind_key_exists_key = 0;
+  void unbind (const ioa::aid_t automaton,
+	       void* const key);
     
-    m_output_automaton_dne_automaton = -1;
-    m_output_automaton_dne_key = 0;
+  void destroy (const ioa::aid_t automaton,
+		void* const key);
     
-    m_input_automaton_dne_automaton = -1;
-    m_input_automaton_dne_key = 0;
+  void create_key_exists (const ioa::aid_t automaton,
+			  void* const key);
     
-    m_binding_exists_automaton = -1;
-    m_binding_exists_key = 0;
+  void instance_exists (const ioa::aid_t automaton,
+			void* const key);
     
-    m_input_action_unavailable_automaton = -1;
-    m_input_action_unavailable_key = 0;
+  void automaton_created (const ioa::aid_t automaton,
+			  void* const key,
+			  const ioa::aid_t child);
     
-    m_output_action_unavailable_automaton = -1;
-    m_output_action_unavailable_key = 0;
+  void bind_key_exists (const ioa::aid_t automaton,
+			void* const key);
     
-    m_bound_automaton = -1;
-    m_bound_key = 0;
+  void output_automaton_dne (const ioa::aid_t automaton,
+			     void* const key);
+    
+  void input_automaton_dne (const ioa::aid_t automaton,
+			    void* const key);
+    
+  void binding_exists (const ioa::aid_t automaton,
+		       void* const key);
+    
+  void input_action_unavailable (const ioa::aid_t automaton,
+				 void* const key);
+    
+  void output_action_unavailable (const ioa::aid_t automaton,
+				  void* const key);
+    
+  void bound (const ioa::aid_t automaton,
+	      void* const key);
+    
+  void output_bound (const ioa::output_executor_interface&);
+    
+  void input_bound (const ioa::input_executor_interface&);
+    
+  void bind_key_dne (const ioa::aid_t automaton,
+		     void* const key);
+    
+  void unbound (const ioa::aid_t automaton,
+		void* const key);
+    
+  void output_unbound (const ioa::output_executor_interface&);
+    
+  void input_unbound (const ioa::input_executor_interface&);
+    
+  void create_key_dne (const ioa::aid_t automaton,
+		       void* const key);
+    
+  void automaton_destroyed (const ioa::aid_t automaton,
+			    void* const key);
+    
+  void recipient_dne (const ioa::aid_t automaton,
+		      void* const key);
+    
+  void event_delivered (const ioa::aid_t automaton,
+			void* const key);
 
-    m_output_bound_aid = -1;
-    m_output_bound_member_ptr = 0;
-    m_output_bound_pid = 0;
-
-    m_input_bound_aid = -1;
-    m_input_bound_member_ptr = 0;
-    m_input_bound_pid = 0;
-    
-    m_bind_key_dne_automaton = -1;
-    m_bind_key_dne_key = 0;
-    
-    m_unbound.clear ();
-
-    m_output_unbound.clear ();
-    
-    m_input_unbound.clear ();
-    
-    m_create_key_dne_automaton = -1;
-    m_create_key_dne_key = 0;
-    
-    m_automaton_destroyed.clear ();
-
-    m_recipient_dne_automaton = -1;
-    m_recipient_dne_key = 0;
-
-    m_event_delivered_automaton = -1;
-    m_event_delivered_key = 0;
-  }
 };
-
-extern test_system_scheduler tss;
 
 #endif
