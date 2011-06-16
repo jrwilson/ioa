@@ -22,7 +22,5 @@ peterson_leader_SOURCES = peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
 spanning_tree_SOURCES = spanning_tree.cpp
 file_tester_SOURCES = file_tester.cpp file.cpp
-file_tester_LDADD = -lcrypto
-
 
 #periodic_broadcaster_SOURCES = periodic_broadcaster.cpp
