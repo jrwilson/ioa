@@ -52,6 +52,30 @@ namespace ioa {
     }
   };
 
+  template <class C, void (C::*action_ptr) (aid_t)>
+  struct uv_ap_input_wrapper :
+    public input,
+    public no_value,
+    public auto_parameter,
+    public observable
+  {
+    aid_t recent_parameter;
+    
+    void operator() (C& c, aid_t p) {
+      (c.*action_ptr) (p);
+    }
+
+    void bound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+
+    void unbound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+  };
+
   template <class C, class T, void (C::*action_ptr) (const T&)>
   struct v_up_input_wrapper :
     public input,
@@ -91,6 +115,30 @@ namespace ioa {
     }
 
     void unbound (P p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+  };
+
+  template <class C, class T, void (C::*action_ptr)(const T&, aid_t) >
+  struct v_ap_input_wrapper :
+    public input,
+    public value<T>,
+    public auto_parameter,
+    public observable
+  {
+    aid_t recent_parameter;
+    
+    void operator() (C& c, const T& t, aid_t p) {
+      (c.*action_ptr) (t, p);
+    }
+
+    void bound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+
+    void unbound (aid_t p) {
       recent_parameter = p;
       notify_observers ();
     }
@@ -148,6 +196,34 @@ namespace ioa {
     }
   };
 
+  template <class C, bool (C::*precondition_ptr) (aid_t) const, void (C::*action_ptr)(aid_t)>
+  struct uv_ap_output_wrapper :
+    public output,
+    public no_value,
+    public auto_parameter,
+    public observable
+  {
+    aid_t recent_parameter;
+    
+    bool precondition (C& c, aid_t p) const {
+      return (c.*precondition_ptr) (p);
+    }
+
+    void operator() (C& c, aid_t p) {
+      (c.*action_ptr) (p);
+    }
+    
+    void bound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+
+    void unbound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+  };
+
   template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*action_ptr) (void)>
   struct v_up_output_wrapper :
     public output,
@@ -200,6 +276,34 @@ namespace ioa {
     }
   };
 
+  template <class C, class T, bool (C::*precondition_ptr) (aid_t) const, T (C::*action_ptr)(aid_t)>
+  struct v_ap_output_wrapper :
+    public output,
+    public value<T>,
+    public auto_parameter,
+    public observable
+  {
+    aid_t recent_parameter;
+    
+    bool precondition (C& c, aid_t p) const {
+      return (c.*precondition_ptr) (p);
+    }
+
+    T operator() (C& c, aid_t p) {
+      return (c.*action_ptr) (p);
+    }
+
+    void bound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+
+    void unbound (aid_t p) {
+      recent_parameter = p;
+      notify_observers ();
+    }
+  };
+
   template <class C, bool (C::*precondition_ptr) () const, void (C::*action_ptr) ()>
   struct up_internal_wrapper :
     public internal,
@@ -228,28 +332,6 @@ namespace ioa {
     }
   };
 
-  // template <class C>
-  // class uv_event_wrapper :
-  //   public event,
-  //   public no_value
-  // {
-  // private:
-  //   C& m_c;
-  //   void (C::*m_action_ptr)();
-    
-  // public:
-  //   uv_event_wrapper (C& c,
-  // 		      void (C::*action_ptr)(),
-  // 		      uv_event_wrapper C::*member_object_ptr) :
-  //     m_c (c),
-  //     m_action_ptr (action_ptr)
-  //   { }
-    
-  //   void operator() (C&) {
-  //     (m_c.*m_action_ptr) ();
-  //   }
-  // };
-
 }
 
 #define UV_UP_INPUT(c, name) \
@@ -260,12 +342,20 @@ namespace ioa {
   typedef ioa::uv_p_input_wrapper<c, param_type, &c::name##_action> name##_type; \
   name##_type name;
 
+#define UV_AP_INPUT(c, name)	\
+  typedef ioa::uv_ap_input_wrapper<c, &c::name##_action> name##_type; \
+  name##_type name;
+
 #define V_UP_INPUT(c, name, type)			\
   typedef ioa::v_up_input_wrapper<c, type, &c::name##_action> name##_type;	\
   name##_type name;
 
 #define V_P_INPUT(c, name, type, param_type)	\
   typedef ioa::v_p_input_wrapper<c, type, param_type, &c::name##_action> name##_type;	\
+  name##_type name;
+
+#define V_AP_INPUT(c, name, type)			\
+  typedef ioa::v_ap_input_wrapper<c, type, &c::name##_action> name##_type;	\
   name##_type name;
 
 #define UV_UP_OUTPUT(c, name) \
@@ -276,6 +366,10 @@ namespace ioa {
   typedef ioa::uv_p_output_wrapper<c, param_type, &c::name##_precondition, &c::name##_action> name##_type; \
   name##_type name;
 
+#define UV_AP_OUTPUT(c, name) \
+  typedef ioa::uv_ap_output_wrapper<c, &c::name##_precondition, &c::name##_action> name##_type; \
+  name##_type name;
+
 #define V_UP_OUTPUT(c, name, type)			\
   typedef ioa::v_up_output_wrapper<c, type, &c::name##_precondition, &c::name##_action> name##_type;	\
   name##_type name;
@@ -284,24 +378,14 @@ namespace ioa {
   typedef ioa::v_p_output_wrapper<c, type, param_type, &c::name##_precondition, &c::name##_action> name##_type;	\
   name##_type name;
 
+#define V_AP_OUTPUT(c, name, type)			\
+  typedef ioa::v_ap_output_wrapper<c, type, &c::name##_precondition, &c::name##_action> name##_type;	\
+  name##_type name;
+
 #define UP_INTERNAL(c, name) \
   ioa::up_internal_wrapper<c, &c::name##_precondition, &c::name##_action> name;
 
 #define P_INTERNAL(c, name, param_type)	\
   ioa::p_internal_wrapper<c, param_type, &c::name##_precondition, &c::name##_action> name;
-
-#define UV_EVENT(c, name)			\
-  public: \
-  typedef ioa::uv_event_wrapper<c> name##_type;	\
-  name##_type name; \
-  private: \
-  void _##name ()
-
-#define V_EVENT(c, name, type, var)			\
-  public: \
-  typedef ioa::v_event_wrapper<c, type> name##_type;	\
-  name##_type name; \
-  private: \
-  void _##name (const type & var)
 
 #endif

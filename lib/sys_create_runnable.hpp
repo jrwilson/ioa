@@ -11,8 +11,8 @@ namespace ioa {
   {
   private:
     const aid_t m_automaton;
-    const action<automaton_interface, automaton_interface::sys_create_type> m_action;
-
+    const action_executor<automaton_interface, automaton_interface::sys_create_type> m_action;
+    
   public:
     sys_create_runnable (const aid_t automaton) :
       m_automaton (automaton),
@@ -23,7 +23,7 @@ namespace ioa {
       model.execute_sys_create (m_automaton);
     }
 
-    const action_interface& get_action () const {
+    const action_executor_interface& get_action () const {
       return m_action;
     }
   };

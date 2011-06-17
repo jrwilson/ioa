@@ -18,7 +18,7 @@ private:
   
   state_t m_state;
   std::auto_ptr<ioa::self_helper<periodic_broadcaster> > m_self;
-  unsigned short m_port;
+  ioa::ipv4_address m_address;
   ioa::time m_period;
   ioa::buffer m_buffer;
 
@@ -26,13 +26,12 @@ private:
     return m_state == OPEN_READY && ioa::bind_count (&periodic_broadcaster::open) != 0;
   }
 
-  ioa::udp_broadcast_automaton::open_arg open_action () {
+  void open_action () {
     m_state = OPEN_WAIT;
     schedule ();
-    return ioa::udp_broadcast_automaton::open_arg ("255.255.255.255", m_port);
   }
 
-  V_UP_OUTPUT (periodic_broadcaster, open, ioa::udp_broadcast_automaton::open_arg);
+  UV_UP_OUTPUT (periodic_broadcaster, open);
 
   void open_result_action (const int& result) {
     assert (m_state == OPEN_WAIT);
@@ -55,12 +54,13 @@ private:
     return m_state == SEND_READY && ioa::bind_count (&periodic_broadcaster::send) != 0;
   }
 
-  ioa::buffer send_action () {
+  ioa::udp_broadcast_automaton::send_arg send_action () {
     m_state = SEND_WAIT;
     schedule ();
-    return m_buffer;
+    return ioa::udp_broadcast_automaton::send_arg (&m_address, m_buffer);
   }
-  V_UP_OUTPUT (periodic_broadcaster, send, ioa::buffer);
+
+  V_UP_OUTPUT (periodic_broadcaster, send, ioa::udp_broadcast_automaton::send_arg);
 
   void send_result_action (const int& result) {
     assert (m_state == SEND_WAIT);
@@ -108,7 +108,7 @@ public:
 			const std::string message) :
     m_state (OPEN_READY),
     m_self (new ioa::self_helper<periodic_broadcaster> ()),
-    m_port (port),
+    m_address ("255.255.255.255", port),
     m_period (period),
     m_buffer (message.size (), message.c_str ())
   {

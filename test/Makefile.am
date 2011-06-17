@@ -10,7 +10,7 @@ bind_helper
 
 check_PROGRAMS = $(TESTS)
 
-action_SOURCES = action.cpp test_main.cpp test_system_scheduler.cpp
+action_SOURCES = action.cpp test_main.cpp
 
 model_SOURCES = model.cpp test_main.cpp test_system_scheduler.cpp
 

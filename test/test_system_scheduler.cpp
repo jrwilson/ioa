@@ -155,17 +155,15 @@ void test_system_scheduler::bound (const ioa::aid_t automaton,
 }
 
 void test_system_scheduler::output_bound (const ioa::output_executor_interface& exec) {
-  const ioa::action_interface& ac = exec.get_action ();
-  m_output_bound_aid = ac.get_aid ();
-  m_output_bound_member_ptr = ac.get_member_ptr ();
-  m_output_bound_pid = ac.get_pid ();
+  m_output_bound_aid = exec.get_aid ();
+  m_output_bound_member_ptr = exec.get_member_ptr ();
+  m_output_bound_pid = exec.get_pid ();
 }
 
 void test_system_scheduler::input_bound (const ioa::input_executor_interface& exec) {
-  const ioa::action_interface& ac = exec.get_action ();
-  m_input_bound_aid = ac.get_aid ();
-  m_input_bound_member_ptr = ac.get_member_ptr ();
-  m_input_bound_pid = ac.get_pid ();
+  m_input_bound_aid = exec.get_aid ();
+  m_input_bound_member_ptr = exec.get_member_ptr ();
+  m_input_bound_pid = exec.get_pid ();
 }
 
 void test_system_scheduler::bind_key_dne (const ioa::aid_t automaton,
@@ -180,13 +178,11 @@ void test_system_scheduler::unbound (const ioa::aid_t automaton,
 }
 
 void test_system_scheduler::output_unbound (const ioa::output_executor_interface& exec) {
-  const ioa::action_interface& ac = exec.get_action ();
-  m_output_unbound.insert (unbound_record (ac));
+  m_output_unbound.insert (unbound_record (exec));
 }
 
 void test_system_scheduler::input_unbound (const ioa::input_executor_interface& exec) {
-  const ioa::action_interface& ac = exec.get_action ();
-  m_input_unbound.insert (unbound_record (ac));
+  m_input_unbound.insert (unbound_record (exec));
 }
   
 void test_system_scheduler::create_key_dne (const ioa::aid_t automaton,
