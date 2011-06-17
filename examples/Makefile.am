@@ -6,6 +6,7 @@ noinst_PROGRAMS = \
 asynch_bfs \
 asynch_lcr \
 beast \
+bellman_ford \
 clock_213 \
 count_to_ten \
 peterson_leader \
@@ -18,6 +19,7 @@ file_tester
 asynch_bfs_SOURCES = asynch_bfs.cpp
 asynch_lcr_SOURCES = asynch_lcr.cpp
 beast_SOURCES = beast.cpp
+bellman_ford_SOURCES = bellman_ford.cpp
 clock_213_SOURCES = clock_213.cpp
 count_to_ten_SOURCES = count_to_ten.cpp
 peterson_leader_SOURCES = peterson_leader.cpp

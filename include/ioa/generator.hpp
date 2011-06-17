@@ -96,6 +96,35 @@ namespace ioa {
     return shared_ptr<generator_interface> (new generator3<I, A0, A1, A2> (a0, a1, a2));
   }
 
+  template <class T, typename A0, typename A1, typename A2, typename A3>
+  struct generator4 :
+    public generator_interface
+  {
+    typedef T result_type;
+    A0 m_a0;
+    A1 m_a1;
+    A2 m_a2;
+    A3 m_a3;
+
+    generator4 (A0 a0, A1 a1, A2 a2, A3 a3) :
+      m_a0 (a0),
+      m_a1 (a1),
+      m_a2 (a2),
+      m_a3 (a3)
+    { }
+
+    T* operator() () {
+      return new T (m_a0, m_a1, m_a2, m_a3);
+    }
+  };
+
+  template <class I, typename A0, typename A1, typename A2, typename A3>
+  shared_ptr<generator_interface> make_generator (A0 a0, A1 a1, A2 a2, A3 a3) {
+    return shared_ptr<generator_interface> (new generator4<I, A0, A1, A2, A3> (a0, a1, a2, a3));
+  }
+
+
+
 }
 
 #endif
