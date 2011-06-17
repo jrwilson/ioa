@@ -492,13 +492,13 @@ namespace ioa {
     struct record
     {
       system_scheduler_interface& m_system_scheduler;
-      OE& m_output;
+      const OE& m_output;
       std::auto_ptr<IE> m_input;
       const aid_t m_binder;
       void* const m_key;
       
       record (system_scheduler_interface& system_scheduler,
-	      OE& output,
+	      const OE& output,
 	      const input_executor_interface& input,
 	      const aid_t binder,
 	      void* const key) :
@@ -521,19 +521,16 @@ namespace ioa {
       
     };
 
-    OE& m_output;
     std::map<aid_t, record*> m_records;
 
     output_core (const automaton_handle<I>& handle,
 		 M I::*member_ptr,
 		 OE& output) :
-      action_executor_core<I, M> (handle, member_ptr),
-      m_output (output)
+      action_executor_core<I, M> (handle, member_ptr)
     { }
 
     output_core (const output_core& other) :
-      action_executor_core<I, M> (other),
-      m_output (other.m_output)
+      action_executor_core<I, M> (other)
     {
       // Don't copy the records.
       assert (m_records.empty ());
@@ -573,8 +570,8 @@ namespace ioa {
       }
     }
 
-    bool involves_output (const action_executor_interface& output) const {
-      return m_output == output;
+    bool involves_output (const OE& this_output, const action_executor_interface& output) const {
+      return this_output == output;
     }
 
     bool involves_input (const action_executor_interface& input) const {
@@ -591,7 +588,8 @@ namespace ioa {
       return m_records.find (aid) != m_records.end ();
     }
 
-    bool involves_binding (const action_executor_interface& output,
+    bool involves_binding (const OE& this_output,
+			   const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t binder) const {
       typename std::map<aid_t, record*>::const_iterator pos = m_records.find (input.get_aid ());
@@ -599,7 +597,7 @@ namespace ioa {
 	return false;
       }
       else {
-	return m_output == output && *(pos->second->m_input) == input && pos->second->m_binder == binder;
+	return this_output == output && *(pos->second->m_input) == input && pos->second->m_binder == binder;
       }
     }
 
@@ -625,10 +623,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       const OE& output,
 	       const input_executor_interface& input,
 	       const aid_t binder,
 	       void* const key) {
-      m_records.insert (std::make_pair (input.get_aid (), new record (system_scheduler, m_output, input, binder, key)));
+      m_records.insert (std::make_pair (input.get_aid (), new record (system_scheduler, output, input, binder, key)));
     }
 
     void unbind (const aid_t binder,
@@ -766,7 +765,7 @@ namespace ioa {
     }
 
     bool involves_output (const action_executor_interface& exec) const {
-      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_output (exec);
+      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_output (*this, exec);
     }
 
     bool involves_input (const action_executor_interface& exec) const {
@@ -780,7 +779,7 @@ namespace ioa {
     bool involves_binding (const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t aid) const {
-      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_binding (output, input, aid);
+      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_binding (*this, output, input, aid);
     }
 
     bool involves_aid_key (const aid_t aid,
@@ -800,7 +799,7 @@ namespace ioa {
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, input, aid, key);
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -907,7 +906,7 @@ namespace ioa {
     }
 
     bool involves_output (const action_executor_interface& exec) const {
-      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_output (exec);
+      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_output (*this, exec);
     }
 
     bool involves_input (const action_executor_interface& exec) const {
@@ -921,7 +920,7 @@ namespace ioa {
     bool involves_binding (const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t aid) const {
-      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_binding (output, input, aid);
+      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_binding (*this, output, input, aid);
     }
 
     bool involves_aid_key (const aid_t aid,
@@ -941,7 +940,7 @@ namespace ioa {
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, input, aid, key);
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1050,7 +1049,7 @@ namespace ioa {
     }
 
     bool involves_output (const action_executor_interface& exec) const {
-      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_output (exec);
+      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_output (*this, exec);
     }
 
     bool involves_input (const action_executor_interface& exec) const {
@@ -1064,7 +1063,7 @@ namespace ioa {
     bool involves_binding (const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t aid) const {
-      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_binding (output, input, aid);
+      return output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::involves_binding (*this, output, input, aid);
     }
 
     bool involves_aid_key (const aid_t aid,
@@ -1084,7 +1083,7 @@ namespace ioa {
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, input, aid, key);
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1188,7 +1187,7 @@ namespace ioa {
     }
 
     bool involves_output (const action_executor_interface& exec) const {
-      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_output (exec);
+      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_output (*this, exec);
     }
 
     bool involves_input (const action_executor_interface& exec) const {
@@ -1202,7 +1201,7 @@ namespace ioa {
     bool involves_binding (const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t aid) const {
-      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_binding (output, input, aid);
+      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_binding (*this, output, input, aid);
     }
 
     bool involves_aid_key (const aid_t aid,
@@ -1222,7 +1221,7 @@ namespace ioa {
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, input, aid, key);
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1330,7 +1329,7 @@ namespace ioa {
     }
 
     bool involves_output (const action_executor_interface& exec) const {
-      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_output (exec);
+      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_output (*this, exec);
     }
 
     bool involves_input (const action_executor_interface& exec) const {
@@ -1344,7 +1343,7 @@ namespace ioa {
     bool involves_binding (const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t aid) const {
-      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_binding (output, input, aid);
+      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_binding (*this, output, input, aid);
     }
 
     bool involves_aid_key (const aid_t aid,
@@ -1364,7 +1363,7 @@ namespace ioa {
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, input, aid, key);
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1474,7 +1473,7 @@ namespace ioa {
     }
 
     bool involves_output (const action_executor_interface& exec) const {
-      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_output (exec);
+      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_output (*this, exec);
     }
 
     bool involves_input (const action_executor_interface& exec) const {
@@ -1488,7 +1487,7 @@ namespace ioa {
     bool involves_binding (const action_executor_interface& output,
 			   const action_executor_interface& input,
 			   const aid_t aid) const {
-      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_binding (output, input, aid);
+      return output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::involves_binding (*this, output, input, aid);
     }
 
     bool involves_aid_key (const aid_t aid,
@@ -1508,7 +1507,7 @@ namespace ioa {
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, input, aid, key);
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,

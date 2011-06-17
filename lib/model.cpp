@@ -118,7 +118,6 @@ namespace ioa {
   int model::bind (const aid_t binder,
 		    shared_ptr<bind_executor_interface> bind_exec,
 		    void* const key) {
-    
     unique_lock lock (m_mutex);
     
     if (!m_aids.contains (binder)) {

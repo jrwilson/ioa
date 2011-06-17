@@ -967,6 +967,7 @@ valued_auto_parameterized_output_action ()
 static const char*
 unparameterized_internal_action ()
 {
+  std::cout << __func__ << std::endl;
   ioa::automaton_handle<automaton1> h;
   ioa::action_executor<automaton1, automaton1::up_internal_action> action (h, &automaton1::up_internal);
   mu_assert (action.get_aid () == h);
@@ -987,6 +988,7 @@ unparameterized_internal_action ()
 static const char*
 parameterized_internal_action ()
 {
+  std::cout << __func__ << std::endl;
   int parameter = 345;
   ioa::automaton_handle<automaton1> h;
   ioa::action_executor<automaton1, automaton1::p_internal_action> action (h, &automaton1::p_internal, parameter);
