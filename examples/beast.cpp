@@ -1,5 +1,5 @@
 #include "aba_automaton.hpp"
-#include "beast_tree.hpp"
+#include "bidirectional_network.hpp"
 
 #include <ioa/simple_scheduler.hpp>
 
@@ -11,7 +11,7 @@
 
 int main () {
   ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<beast_tree<aba_automaton, 5, 100, 100> > ());
+  ioa::run (ss, ioa::make_generator<bidirectional_network<aba_automaton, message_t, 5, 100, 100> > ());
   return 0;
 }
 

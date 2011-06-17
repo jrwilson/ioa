@@ -20,8 +20,6 @@ private:
     m_queue.push (t);
     schedule ();
   }
-
-  V_UP_INPUT (channel_automaton, send, T);
   
   bool receive_precondition () const {
     return !m_queue.empty () && ioa::bind_count (&channel_automaton::receive) != 0;
@@ -33,8 +31,6 @@ private:
     schedule ();
     return retval;
   }
-
-  V_UP_OUTPUT (channel_automaton, receive, T);
 
   void schedule () {
     if (receive_precondition ()) {
@@ -48,6 +44,9 @@ public:
   {
     schedule ();
   }
+
+  V_UP_INPUT (channel_automaton, send, T);
+  V_UP_OUTPUT (channel_automaton, receive, T);
 
 };
 

@@ -16,10 +16,6 @@ enum message_type_t {
 
 typedef std::pair<message_type_t, size_t> message_t;
 
-bool debug = true;
-bool debug2 = false;
-bool debug3 = false;
-
 class aba_automaton:
   public ioa::automaton_interface {
 
@@ -38,18 +34,14 @@ private:
   std::map<size_t, msgq *> m_send;	//set of message queues; if i=i0 then each queue initially contains the single elt. ("bcast",w); otherwise each queue is empty
 
   bool send_precondition (size_t j) const {
-    if (debug3) std::cout << "Node " << m_i << " entering send_precondition" << std::endl;
     msgq* q = m_send.find(j)->second;
-    if (debug2) std::cout << "Found j's queue in m_send" << std::endl;
     bool b =  (ioa::bind_count (&aba_automaton::send, j) != 0) && !q->empty ();
-    if (debug3) std::cout << "i: " << m_i << " and j: " << j << ": " << b << std::endl;
     return b;
   }
 
   message_t send_action (size_t j) {
     message_t retm = m_send[j]->front();
     m_send[j]->pop();
-    if (debug) std::cout << "Node "<< m_i << " sending " << retm.first << " to node " << j << std::endl;
 
     schedule();
     return retm;
@@ -57,7 +49,6 @@ private:
 
   void receive_action (const message_t& m, size_t j) {
     if(m.first == BCAST){          //if receiving a broadcast:
-      if (debug) std::cout << "Node " << m_i << " receiving broadcast from node " << j << std::endl;
       if (m_val == static_cast<size_t> (-1)) {
 	m_val = m.second;
 	m_parent = j;
@@ -75,31 +66,10 @@ private:
       m_acked.insert (j);
     }
 
-    //   if(m_i != m_i0 && m_parent == static_cast<size_t>(-1)){   //if I am not the root and I have no parent yet:
-    // 	if (debug) std::cout << "Node " << m_i << "'s parent is node " << j << std::endl;
-    // 	m_parent = j;
-    // 	for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
-    // 	  //Add a BCAST message to each message queue except that of the parent.
-    // 	  if (*pos != j)
-    // 	    m_send[*pos]->push(message_t (BCAST, m_val));
-    // 	}
-    //   }
-    //   else{   //I have a parent:
-    // 	if (debug) std::cout << "Node "<< m_i << " will acknowledge node " << j << std::endl;
-    // 	m_send.find(j)->second->push(message_t (ACK, 0));    //Acknowledge the node that has broadcast to me.
-    //   }
-    // }
-
-    // else{      //if receiving an acknowledgment:
-    //   if (debug) std::cout << "Node " << m_i << " receiving acknowledgement from node " << j << std::endl;
-    //   m_acked.insert(j);
-    // }
-
     schedule();
   }
 
   bool report_precondition () const {
-    if (debug3) std::cout << "Node " << m_i << " entering report_precondition" << std::endl;
     if (m_i != m_i0){
       //ASSERTION: if m_nbrs.size() is 1 greater than m_acked.size(), then all my neighbors except my parent have acknowledged me
       return m_parent != static_cast<size_t>(-1) &&
@@ -115,7 +85,7 @@ private:
 
   void report_action ()  {
     if (m_i != m_i0) {
-      // We are not the root.
+      // I am not the root.
       m_send[m_parent]->push (message_t (ACK, 0));
       m_reported = true;
     }
@@ -123,18 +93,11 @@ private:
       m_reported = true;
       std::cout << "We are done" << std::endl;
     }
-
-    // if (debug3) std::cout << "Node " << m_i << " entering report_action" << std::endl;
-    // if (m_parent != static_cast<size_t>(-1)) m_send.find(m_parent)->second->push(message_t (ACK, 0));
-    // m_reported = true;
-    // if (m_i == m_i0) std::cout << "Root received all acknowledgements" << std::endl;
     schedule();
   }
 
   void schedule(){
-    if (debug3) std::cout <<"Node "<< m_i << " entering schedule" << std::endl;
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
-      if (debug2) std::cout << *pos << std::endl;
       if (send_precondition (*pos)) {
         ioa::schedule (&aba_automaton::send, *pos);
       }
@@ -167,8 +130,6 @@ public:
 	m_send[*pos]->push (message_t (BCAST, m_val));
       }
     }
-
-    if (debug) std::cout << "I am node " << m_i << std::endl;
 
     schedule();
   }

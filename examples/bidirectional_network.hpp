@@ -1,5 +1,5 @@
-#ifndef __beast_tree_hpp__
-#define __beast_tree_hpp__
+#ifndef __bidirectional_network_hpp__
+#define __bidirectional_network_hpp__
 
 #include "channel_automaton.hpp"
 
@@ -10,21 +10,20 @@
 #include <vector>
 
 
-template <class T, size_t N, unsigned long NUMERATOR, unsigned long DENOMINATOR>
-class beast_tree :
+template <class T, typename M, size_t N, unsigned long NUMERATOR, unsigned long DENOMINATOR>
+class bidirectional_network :
   public ioa::automaton_interface
 {
 private:
 
-  std::auto_ptr<ioa::self_helper<beast_tree> > self;
+  std::auto_ptr<ioa::self_helper<bidirectional_network> > self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd;
-  std::ofstream out;
 
 public:
-  beast_tree():
-    self (new ioa::self_helper<beast_tree> ()),
+  bidirectional_network():
+    self (new ioa::self_helper<bidirectional_network> ()),
     nbrhd(N)
   {
     srand ((unsigned)time(0));   //initializes RNG for later calls to rand
@@ -42,8 +41,6 @@ public:
 	  //Link between i and j:
 	  nbrhd[i].insert(j);
 	  nbrhd[j].insert(i);
-
-	  if (debug) std::cout << "Node " << i << " and node " << j << " have a link" << std::endl;
 	}
       }
     }
@@ -56,33 +53,33 @@ public:
       for(size_t j = i+1; j<N; j++){
 	if (nbrhd[i].count(j) != 0){
 	  //Create channel automata to link i and j.
-	  ioa::automaton_helper<channel_automaton<message_t> >* i_to_j_channel = new ioa::automaton_helper<channel_automaton<message_t> > (this, ioa::make_generator<channel_automaton<message_t> > ());
-	  ioa::automaton_helper<channel_automaton<message_t> >* j_to_i_channel = new ioa::automaton_helper<channel_automaton<message_t> > (this, ioa::make_generator<channel_automaton<message_t> > ());
+	  ioa::automaton_helper<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_helper<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
+	  ioa::automaton_helper<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_helper<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
 	  //Helper for send i,j:
 	  make_bind_helper(this,
 			   T_helpers[i],
 			   &T::send,
 			   j,
 			   i_to_j_channel,
-			   &channel_automaton<message_t>::send);
+			   &channel_automaton<M>::send);
 	  //Helper for send j,i:
 	  make_bind_helper(this,
 			   T_helpers[j],
 			   &T::send,
 			   i,
 			   j_to_i_channel,
-			   &channel_automaton<message_t>::send);
+			   &channel_automaton<M>::send);
 	  //Helper for receive i,j:
 	  make_bind_helper(this,
 			   i_to_j_channel,
-			   &channel_automaton<message_t>::receive,
+			   &channel_automaton<M>::receive,
 			   T_helpers[j],
 			   &T::receive,
 			   i);
 	  //Helper for receive j,i:
 	  make_bind_helper(this,
 			   j_to_i_channel,
-			   &channel_automaton<message_t>::receive,
+			   &channel_automaton<M>::receive,
 			   T_helpers[i],
 			   &T::receive,
 			   j);
