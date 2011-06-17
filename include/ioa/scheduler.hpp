@@ -75,20 +75,22 @@ namespace ioa {
 			     const typename M::parameter_type& param,
 			     int fd) {
     assert (scheduler != 0);
-    scheduler->schedule_write_ready (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), fd);
+    scheduler->schedule_write_ready (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr, param), fd);
   }
   
   template <class I, class M>
   size_t bind_count (M I::*member_ptr) {
     assert (scheduler != 0);
-    return scheduler->bind_count (make_action (automaton_handle<I> (get_current_aid ()), member_ptr));
+    action_executor<I, M> action (automaton_handle<I> (get_current_aid ()), member_ptr);
+    return scheduler->bind_count (action);
   }
   
   template <class I, class M>
   size_t bind_count (M I::*member_ptr,
 		     const typename M::parameter_type& param) {
     assert (scheduler != 0);
-    return scheduler->bind_count (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param));
+    action_executor<I, M> action (automaton_handle<I> (get_current_aid ()), member_ptr, param);
+    return scheduler->bind_count (action);
   }
   
   void run (scheduler_interface& s,

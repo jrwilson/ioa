@@ -1412,7 +1412,7 @@ public:
     m_fd = open ("test.txt", O_RDONLY);
     assert (m_fd != -1);
     assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::schedule_read_ready (&schedule_write_readyp_automaton::action, m_fd, m_fd);
+    ioa::schedule_write_ready (&schedule_write_readyp_automaton::action, m_fd, m_fd);
   }
   
 };
