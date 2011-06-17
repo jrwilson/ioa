@@ -40,14 +40,15 @@ private:
       m_dist = w + wght;
       m_parent = j;
       std::cout << "Node " << m_i << "'s new parent is " << j << " and new dist is " << m_dist << std::endl;
+      
+      for (std::set<size_t>::const_iterator pos = m_nbrs.begin (); pos != m_nbrs.end (); ++pos) {
+	if (*pos != j) {
+	  //std::cout << "Node " << m_i << " queue length " << m_send[*pos]->size() << std::endl;
+	  m_send[*pos]->push (m_dist);
+	}
+      }  
     }
-
-    for (std::set<size_t>::const_iterator pos = m_nbrs.begin (); pos != m_nbrs.end (); ++pos) {
-      if (*pos != j) {
-        m_send[*pos]->push (m_dist);
-      }
-    }
-
+    
     schedule();
   }
 
@@ -72,7 +73,7 @@ public:
       m_dist = 0;
     }
 
-    //we add a distq to each member of m_sent
+    //we add a distq to each member of m_send
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
       m_send.insert(std::make_pair(*pos, new distq ()));
       //If we are the root, add 0 to each message queue
@@ -80,7 +81,6 @@ public:
         m_send[*pos]->push (0);
       }
     }
-
     schedule();
   }
 
