@@ -191,7 +191,7 @@ namespace ioa {
 
   };
 
-  // No parameters.
+  // no no.
   template <class OI, class OM, class II, class IM>
   class bind_helper_impl<OI, OM, unparameterized, II, IM, unparameterized> :
     public bind_helper_core<OI, OM, II, IM>
@@ -214,34 +214,7 @@ namespace ioa {
 
   };
 
-  // Parameterized output.
-  template <class OI, class OM, class II, class IM>
-  class bind_helper_impl<OI, OM, parameterized, II, IM, unparameterized> :
-    public bind_helper_core<OI, OM, II, IM>
-  {
-  private:
-    typedef typename OM::parameter_type OP;
-
-    OP m_output_parameter;
-
-    shared_ptr<bind_executor_interface> get_executor () const {
-      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, this->m_output_parameter,
-				 this->m_input_handle, this->m_input_member_ptr);
-    }
-
-  public:
-    bind_helper_impl (automaton_interface* automaton,
-   		      automaton_handle_interface<OI>* output,
-   		      OM OI::*output_member_ptr,
-   		      const OP& output_parameter,
-   		      automaton_handle_interface<II>* input,
-   		      IM II::*input_member_ptr) :
-      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr),
-      m_output_parameter (output_parameter)
-    { }
-  };
-
-  // Parameterized input.
+  // no yes.
   template <class OI, class OM, class II, class IM>
   class bind_helper_impl<OI, OM, unparameterized, II, IM, parameterized> :
     public bind_helper_core<OI, OM, II, IM>
@@ -269,7 +242,56 @@ namespace ioa {
 
   };
 
-  // Parameterized output and input.
+  // no auto.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, unparameterized, II, IM, auto_parameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+  {
+  private:
+    shared_ptr<bind_executor_interface> get_executor () const {
+      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
+				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+  public:
+    bind_helper_impl (automaton_interface* automaton,
+  		      automaton_handle_interface<OI>* output,
+  		      OM OI::*output_member_ptr,
+  		      automaton_handle_interface<II>* input,
+  		      IM II::*input_member_ptr) :
+      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr)
+    { }
+
+  };
+
+  // yes no.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, parameterized, II, IM, unparameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+  {
+  private:
+    typedef typename OM::parameter_type OP;
+
+    OP m_output_parameter;
+
+    shared_ptr<bind_executor_interface> get_executor () const {
+      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, this->m_output_parameter,
+				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+  public:
+    bind_helper_impl (automaton_interface* automaton,
+   		      automaton_handle_interface<OI>* output,
+   		      OM OI::*output_member_ptr,
+   		      const OP& output_parameter,
+   		      automaton_handle_interface<II>* input,
+   		      IM II::*input_member_ptr) :
+      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr),
+      m_output_parameter (output_parameter)
+    { }
+  };
+
+  // yes yes.
   template <class OI, class OM, class II, class IM>
   class bind_helper_impl<OI, OM, parameterized, II, IM, parameterized> :
     public bind_helper_core<OI, OM, II, IM>
@@ -300,6 +322,107 @@ namespace ioa {
     { }
 
   };
+
+  // yes auto.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, parameterized, II, IM, auto_parameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+  {
+  private:
+    typedef typename OM::parameter_type OP;
+
+    OP m_output_parameter;
+
+    shared_ptr<bind_executor_interface> get_executor () const {
+      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, m_output_parameter,
+				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+  public:
+    bind_helper_impl (automaton_interface* automaton,
+  		      automaton_handle_interface<OI>* output,
+  		      OM OI::*output_member_ptr,
+  		      const OP& output_parameter,
+  		      automaton_handle_interface<II>* input,
+  		      IM II::*input_member_ptr) :
+      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr),
+      m_output_parameter (output_parameter)
+    { }
+
+  };
+
+  // auto no.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, auto_parameterized, II, IM, unparameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+  {
+  private:
+    shared_ptr<bind_executor_interface> get_executor () const {
+      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
+				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+  public:
+    bind_helper_impl (automaton_interface* automaton,
+  		      automaton_handle_interface<OI>* output,
+  		      OM OI::*output_member_ptr,
+  		      automaton_handle_interface<II>* input,
+  		      IM II::*input_member_ptr) :
+      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr)
+    { }
+
+  };
+
+  // auto yes.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, auto_parameterized, II, IM, parameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+  {
+  private:
+    typedef typename IM::parameter_type IP;
+
+    IP m_input_parameter;
+
+    shared_ptr<bind_executor_interface> get_executor () const {
+      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
+				 this->m_input_handle, this->m_input_member_ptr, this->m_input_parameter);
+    }
+
+  public:
+    bind_helper_impl (automaton_interface* automaton,
+  		      automaton_handle_interface<OI>* output,
+  		      OM OI::*output_member_ptr,
+  		      automaton_handle_interface<II>* input,
+  		      IM II::*input_member_ptr,
+  		      const IP& input_parameter) :
+      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr),
+      m_input_parameter (input_parameter)
+    { }
+
+  };
+
+  // auto auto.
+  template <class OI, class OM, class II, class IM>
+  class bind_helper_impl<OI, OM, auto_parameterized, II, IM, auto_parameterized> :
+    public bind_helper_core<OI, OM, II, IM>
+  {
+  private:
+    shared_ptr<bind_executor_interface> get_executor () const {
+      return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
+				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+  public:
+    bind_helper_impl (automaton_interface* automaton,
+  		      automaton_handle_interface<OI>* output,
+  		      OM OI::*output_member_ptr,
+  		      automaton_handle_interface<II>* input,
+  		      IM II::*input_member_ptr) :
+      bind_helper_core<OI, OM, II, IM> (automaton, output, output_member_ptr, input, input_member_ptr)
+    { }
+
+  };
+
 
   template <class OI, class OM, class II, class IM>
   class bind_helper :

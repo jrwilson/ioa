@@ -133,6 +133,10 @@ namespace ioa {
     
     output_executor_interface& output = bind_exec->get_output ();
     input_executor_interface& input = bind_exec->get_input ();
+
+    // Set the parameters in the event that they are auto_parameterized.
+    output.set_parameter (input.get_aid ());
+    input.set_parameter (output.get_aid ());
     
     if (!output.fetch_instance (*this)) {
       m_system_scheduler.output_automaton_dne (binder, key);
