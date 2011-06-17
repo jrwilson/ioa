@@ -26,13 +26,13 @@ namespace ioa {
     class binding_equal
     {
     private:
-      const action_interface& m_output;
-      const action_interface& m_input;
+      const action_executor_interface& m_output;
+      const action_executor_interface& m_input;
       const aid_t m_binder;
 
     public:
-      binding_equal (const action_interface& output,
-		     const action_interface& input,
+      binding_equal (const action_executor_interface& output,
+		     const action_executor_interface& input,
 		     const aid_t binder) :
   	m_output (output),
   	m_input (input),
@@ -47,10 +47,10 @@ namespace ioa {
     class binding_output_equal
     {
     private:
-      const action_interface& m_output;
+      const action_executor_interface& m_output;
       
     public:
-      binding_output_equal (const action_interface& output) :
+      binding_output_equal (const action_executor_interface& output) :
   	m_output (output)
       { }
       
@@ -62,10 +62,10 @@ namespace ioa {
     class binding_input_equal
     {
     private:
-      const action_interface& m_input;
+      const action_executor_interface& m_input;
       
     public:
-      binding_input_equal (const action_interface& input) :
+      binding_input_equal (const action_executor_interface& input) :
   	m_input (input)
       { }
       
@@ -120,9 +120,6 @@ namespace ioa {
 			void* const key);
     int execute (output_executor_interface& exec);
     int execute (internal_executor_interface& exec);
-    int execute (const aid_t from,
-		 event_executor_interface& exec,
-		 void* const key);
     int execute (system_input_executor_interface& exec);
     int execute_sys_create (const aid_t automaton);
     int execute_sys_bind (const aid_t automaton);
@@ -133,7 +130,7 @@ namespace ioa {
     int execute_output_unbound (output_executor_interface& exec);
     int execute_input_unbound (input_executor_interface& exec);
 
-    size_t bind_count (const action_interface& action) const;
+    size_t bind_count (const action_executor_interface& action) const;
 
     automaton_interface* get_instance (const aid_t aid);
     void lock_automaton (const aid_t handle);

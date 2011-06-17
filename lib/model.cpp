@@ -7,6 +7,7 @@
 #include <ioa/generator_interface.hpp>
 #include <ioa/automaton_interface.hpp>
 #include <ioa/system_scheduler_interface.hpp>
+#include <ioa/automaton_handle.hpp>
 
 namespace ioa {
 
@@ -146,7 +147,7 @@ namespace ioa {
     
     std::list<output_executor_interface*>::const_iterator pos = std::find_if (m_bindings.begin (),
 									      m_bindings.end (),
-									      binding_equal (output.get_action (), input.get_action (), binder));
+									      binding_equal (output, input, binder));
     
     if (pos != m_bindings.end ()) {
       // Bound.
@@ -156,7 +157,7 @@ namespace ioa {
     
     std::list<output_executor_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
 										 m_bindings.end (),
-										 binding_input_equal (input.get_action ()));
+										 binding_input_equal (input));
     
     if (in_pos != m_bindings.end ()) {
       // Input unavailable.
@@ -166,10 +167,10 @@ namespace ioa {
     
     std::list<output_executor_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
 										  m_bindings.end (),
-										  binding_output_equal (output.get_action ()));
+										  binding_output_equal (output));
     
-    if (output.get_action ().get_aid () == input.get_action ().get_aid () ||
-	(out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_action ().get_aid ()))) {
+    if (output.get_aid () == input.get_aid () ||
+	(out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_aid ()))) {
       // Output unavailable.
       m_system_scheduler.output_action_unavailable (binder, key);
       return -1;
@@ -299,7 +300,7 @@ namespace ioa {
     
     std::list<output_executor_interface*>::const_iterator out_pos = std::find_if (m_bindings.begin (),
 										  m_bindings.end (),
-										  binding_output_equal (exec.get_action ()));
+										  binding_output_equal (exec));
     
     if (out_pos == m_bindings.end ()) {
       // Not bound.
@@ -324,28 +325,6 @@ namespace ioa {
     return 0;
   }
   
-  int model::execute (const aid_t from,
-		       event_executor_interface& exec,
-		       void* const key) {
-    shared_lock lock (m_mutex);
-    
-    if (!m_aids.contains (from)) {
-      // Deliverer does not exists.
-      return -1;
-    }
-    
-    if (!exec.fetch_instance (*this)) {
-      // Recipient does not exist.
-      m_system_scheduler.recipient_dne (from, key);
-      return -1;
-    }
-    
-    exec (*this, m_system_scheduler);
-    
-    m_system_scheduler.event_delivered (from, key);
-    return 0;
-  }
-
   int model::execute (system_input_executor_interface& exec) {
     shared_lock lock (m_mutex);
     
@@ -366,22 +345,19 @@ namespace ioa {
       return -1;
     }
 
-    action<automaton_interface, automaton_interface::sys_create_type> ac (automaton, &automaton_interface::sys_create);
-
     automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
-    bool t = ac.precondition (*instance);
-    std::pair<shared_ptr<generator_interface>, void*> key;
-    if (t) {
-      key = ac (*instance);
-    }
-    m_system_scheduler.clear_current_aid ();
-    unlock_automaton (automaton);
-
-    if (t) {
+    if (instance->sys_create.precondition (*instance)) {
+      std::pair<shared_ptr<generator_interface>, void*> key = instance->sys_create (*instance);
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
       m_system_scheduler.create (automaton, key.first, key.second);
+    }
+    else {
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
     }
 
     return 0;
@@ -395,23 +371,19 @@ namespace ioa {
       return -1;
     }
 
-    action<automaton_interface, automaton_interface::sys_bind_type> ac (automaton, &automaton_interface::sys_bind);
-
     automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
-    bool t = ac.precondition (*instance);
-    std::pair<shared_ptr<bind_executor_interface>, void*> key;
-    if (t) {
-      key = ac (*instance);
-    }
-
-    m_system_scheduler.clear_current_aid ();
-    unlock_automaton (automaton);
-
-    if (t) {
+    if (instance->sys_bind.precondition (*instance)) {
+      std::pair<shared_ptr<bind_executor_interface>, void*> key = instance->sys_bind (*instance);
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
       m_system_scheduler.bind (automaton, key.first, key.second);
+    }
+    else {
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
     }
 
     return 0;
@@ -425,22 +397,19 @@ namespace ioa {
       return -1;
     }
 
-    action<automaton_interface, automaton_interface::sys_unbind_type> ac (automaton, &automaton_interface::sys_unbind);
-
     automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
-    bool t = ac.precondition (*instance);
-    void* key = 0;
-    if (t) {
-      key = ac (*instance);
-    }
-    m_system_scheduler.clear_current_aid ();
-    unlock_automaton (automaton);
-
-    if (t) {
+    if (instance->sys_unbind.precondition (*instance)) {
+      void* key = instance->sys_unbind (*instance);
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
       m_system_scheduler.unbind (automaton, key);
+    }
+    else {
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
     }
 
     return 0;
@@ -454,22 +423,19 @@ namespace ioa {
       return -1;
     }
 
-    action<automaton_interface, automaton_interface::sys_destroy_type> ac (automaton, &automaton_interface::sys_destroy);
-
     automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
 
     lock_automaton (automaton);
     m_system_scheduler.set_current_aid (automaton);
-    bool t = ac.precondition (*instance);
-    void* key = 0;
-    if (t) {
-      key = ac (*instance);
-    }
-    m_system_scheduler.clear_current_aid ();
-    unlock_automaton (automaton);
-
-    if (t) {
+    if (instance->sys_destroy.precondition (*instance)) {
+      void* key = instance->sys_destroy (*instance);
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
       m_system_scheduler.destroy (automaton, key);
+    }
+    else {
+      m_system_scheduler.clear_current_aid ();
+      unlock_automaton (automaton);
     }
 
     return 0;
@@ -542,7 +508,7 @@ namespace ioa {
   }
 
   // This should only be called from user code because we don't get a lock.
-  size_t model::bind_count (const action_interface& action) const {
+  size_t model::bind_count (const action_executor_interface& action) const {
     std::list<output_executor_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
 										 m_bindings.end (),
 										 binding_input_equal (action));

@@ -1,9 +1,9 @@
 #ifndef __test_system_scheduler_hpp__
 #define __test_system_scheduler_hpp__
 
-#include <ioa/action.hpp>
 #include <ioa/model_interface.hpp>
 #include <ioa/system_scheduler_interface.hpp>
+#include <ioa/executor_interface.hpp>
 #include <set>
 
 struct unbound_record
@@ -12,7 +12,7 @@ struct unbound_record
   const void* m_member_ptr;
   size_t m_pid;
 
-  unbound_record (const ioa::action_interface& ac) :
+  unbound_record (const ioa::action_executor_interface& ac) :
     m_aid (ac.get_aid ()),
     m_member_ptr (ac.get_member_ptr ()),
     m_pid (ac.get_pid ())

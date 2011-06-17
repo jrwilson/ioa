@@ -149,8 +149,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -246,8 +246,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -353,8 +353,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -466,8 +466,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -580,8 +580,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -693,8 +693,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -806,8 +806,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {
@@ -938,8 +938,8 @@ private:
     }
 
     ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
-      return ioa::make_bind_executor (ioa::make_action (m_output_handle, m_output_member_ptr),
-				      ioa::make_action (m_input_handle, m_input_member_ptr));
+      return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
+				      m_input_handle, m_input_member_ptr);
     }
 
     void output_automaton_dne () {

@@ -1,6 +1,8 @@
 #ifndef __automaton_helper_interface_hpp__
 #define __automaton_helper_interface_hpp__
 
+#include <ioa/automaton_handle.hpp>
+
 namespace ioa {
 
   class automaton_helper_interface :

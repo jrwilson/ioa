@@ -18,8 +18,8 @@ namespace ioa {
       model.execute (*m_exec);
     }
 
-    const action_interface& get_action () const {
-      return m_exec->get_action ();
+    const action_executor_interface& get_action () const {
+      return *m_exec;
     }
 
   };

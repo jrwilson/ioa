@@ -23,21 +23,21 @@ namespace ioa {
   template <class I, class M>
   void schedule (M I::*member_ptr) {
     assert (scheduler != 0);
-    scheduler->schedule (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)));
+    scheduler->schedule (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr));
   }
   
   template <class I, class M>
   void schedule (M I::*member_ptr,
 		 const typename M::parameter_type& param) {
     assert (scheduler != 0);
-    scheduler->schedule (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)));
+    scheduler->schedule (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr, param));
   }
   
   template <class I, class M>
   void schedule_after (M I::*member_ptr,
 		       const time& offset) {
     assert (scheduler != 0);
-    scheduler->schedule_after (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), offset);
+    scheduler->schedule_after (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr), offset);
   }
   
   template <class I, class M>
@@ -45,14 +45,14 @@ namespace ioa {
 		       const typename M::parameter_type& param,
 		       const time& offset) {
     assert (scheduler != 0);
-    scheduler->schedule_after (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), offset);
+    scheduler->schedule_after (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr, param), offset);
   }
   
   template <class I, class M>
   void schedule_read_ready (M I::*member_ptr,
 			    int fd) {
     assert (scheduler != 0);
-    scheduler->schedule_read_ready (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), fd);
+    scheduler->schedule_read_ready (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr), fd);
   }
   
   template <class I, class M>
@@ -60,14 +60,14 @@ namespace ioa {
 			    const typename M::parameter_type& param,
 			    int fd) {
     assert (scheduler != 0);
-    scheduler->schedule_read_ready (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr, param)), fd);
+    scheduler->schedule_read_ready (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr, param), fd);
   }
   
   template <class I, class M>
   void schedule_write_ready (M I::*member_ptr,
 			     int fd) {
     assert (scheduler != 0);
-    scheduler->schedule_write_ready (make_action_runnable (make_action (automaton_handle<I> (get_current_aid ()), member_ptr)), fd);
+    scheduler->schedule_write_ready (make_action_runnable (automaton_handle<I> (get_current_aid ()), member_ptr), fd);
   }
   
   template <class I, class M>

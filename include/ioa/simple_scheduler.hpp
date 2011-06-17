@@ -22,7 +22,7 @@ namespace ioa {
     
     aid_t get_current_aid ();
     
-    size_t bind_count (const action_interface&);
+    size_t bind_count (const action_executor_interface&);
     
     void schedule (automaton_interface::sys_create_type automaton_interface::*ptr);
     

@@ -1,6 +1,9 @@
 #ifndef __executor_interface_hpp__
 #define __executor_interface_hpp__
 
+#include <ioa/aid.hpp>
+#include <cstdlib>
+
 namespace ioa {
 
   class model_interface;
@@ -11,7 +14,21 @@ namespace ioa {
   public:
     virtual ~action_executor_interface () { }
     virtual bool fetch_instance (model_interface&) = 0;
-    virtual const action_interface& get_action () const = 0;
+    virtual aid_t get_aid () const = 0;
+    virtual void* get_member_ptr () const = 0;
+    virtual size_t get_pid () const = 0;
+
+    virtual bool operator== (const action_executor_interface& x) const {
+      return
+  	get_aid () == x.get_aid () &&
+  	get_member_ptr () == x.get_member_ptr () &&
+  	get_pid () == x.get_pid ();
+    }
+
+    bool operator!= (const action_executor_interface& x) const {
+      return !(*this == x);
+    }
+
   };
 
   class input_executor_interface :
@@ -20,6 +37,7 @@ namespace ioa {
   public:
     virtual ~input_executor_interface () { }
     virtual input_executor_interface* clone () const = 0;
+    virtual void set_parameter (const aid_t) = 0;
     virtual void bound (model_interface&, system_scheduler_interface&) const = 0;
     virtual void unbound (model_interface&, system_scheduler_interface&) const = 0;
   };
@@ -55,11 +73,11 @@ namespace ioa {
   public:
     virtual ~output_executor_interface () { }
     virtual output_executor_interface* clone () const = 0;
-    virtual bool involves_output (const action_interface&) const = 0;
-    virtual bool involves_input (const action_interface&) const = 0;
+    virtual bool involves_output (const action_executor_interface&) const = 0;
+    virtual bool involves_input (const action_executor_interface&) const = 0;
     virtual bool involves_input_automaton (const aid_t) const = 0;
-    virtual bool involves_binding (const action_interface&,
-				   const action_interface&,
+    virtual bool involves_binding (const action_executor_interface&,
+				   const action_executor_interface&,
 				   const aid_t) const = 0;
     virtual bool involves_aid_key (const aid_t,
 				   void* const) const = 0;
@@ -72,6 +90,7 @@ namespace ioa {
     virtual void unbind (const aid_t,
 			 void* const) = 0;
     virtual void unbind_automaton (const aid_t) = 0;
+    virtual void set_parameter (const aid_t) = 0;
     virtual void bound (model_interface&,
 			system_scheduler_interface&) const = 0;
     virtual void unbound (model_interface&,
@@ -100,13 +119,6 @@ namespace ioa {
     virtual ~internal_executor_interface () { }
   };
   
-  class event_executor_interface :
-    public local_executor_interface
-  {
-  public:
-    virtual ~event_executor_interface () { }
-  };
-
   class system_input_executor_interface :
     public local_executor_interface
   {

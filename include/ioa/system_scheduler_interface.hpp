@@ -80,11 +80,6 @@ namespace ioa {
     virtual void automaton_destroyed (const aid_t automaton,
 				      void* const key) = 0;
     
-    virtual void recipient_dne (const aid_t automaton,
-				void* const key) = 0;
-    
-    virtual void event_delivered (const aid_t automaton,
-				  void* const key) = 0;
   };
 
 }
