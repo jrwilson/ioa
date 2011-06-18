@@ -1,4 +1,4 @@
-include_HEADERS = \
+nobase_include_HEADERS = \
 ioa/action.hpp \
 ioa/action_executor.hpp \
 ioa/action_runnable.hpp \
@@ -11,7 +11,6 @@ ioa/automaton_helper.hpp \
 ioa/automaton_helper_interface.hpp \
 ioa/bind_helper.hpp \
 ioa/buffer.hpp \
-ioa/config.hpp \
 ioa/environment.hpp \
 ioa/executor_interface.hpp \
 ioa/generator.hpp \
