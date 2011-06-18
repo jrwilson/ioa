@@ -1275,14 +1275,13 @@ schedule_afterp ()
 class schedule_read_ready_automaton :
   public ioa::automaton {
 private:
-  int m_fd;
+  int m_fd[2];
 
   bool action_precondition () const {
     return true;
   }
 
   void action_action () {
-    close (m_fd);
     goal_reached = true;
   }
 
@@ -1291,12 +1290,22 @@ private:
 public:
   schedule_read_ready_automaton ()
   {
-    m_fd = open ("test.txt", O_RDONLY);
-    assert (m_fd != -1);
-    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::schedule_read_ready (&schedule_read_ready_automaton::action, m_fd);
+    int res = pipe (m_fd);
+    if (res == -1) {
+      perror ("pipe");
+      exit (EXIT_FAILURE);
+    }
+    assert (fcntl (m_fd[0], F_SETFL, O_NONBLOCK) == 0);
+    ioa::schedule_read_ready (&schedule_read_ready_automaton::action, m_fd[0]);
+    char c = 0;
+    write (m_fd[1], &c, 1);
   }
   
+  ~schedule_read_ready_automaton () {
+    close (m_fd[0]);
+    close (m_fd[1]);
+  }
+
 };
 
 static const char*
@@ -1313,16 +1322,15 @@ schedule_read_ready ()
 class schedule_read_readyp_automaton :
   public ioa::automaton {
 private:
-  int m_fd;
+  int m_fd[2];
 
   bool action_precondition (int fd) const {
-    assert (fd == m_fd);
+    assert (fd == m_fd[0]);
     return true;
   }
 
   void action_action (int fd) {
-    assert (fd == m_fd);
-    close (m_fd);
+    assert (fd == m_fd[0]);
     goal_reached = true;
   }
 
@@ -1331,10 +1339,21 @@ private:
 public:
   schedule_read_readyp_automaton ()
   {
-    m_fd = open ("test.txt", O_RDONLY);
-    assert (m_fd != -1);
-    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::schedule_read_ready (&schedule_read_readyp_automaton::action, m_fd, m_fd);
+    int res = pipe (m_fd);
+    if (res == -1) {
+      perror ("pipe");
+      exit (EXIT_FAILURE);
+    }
+    assert (fcntl (m_fd[0], F_SETFL, O_NONBLOCK) == 0);
+    assert (fcntl (m_fd[0], F_SETFL, O_NONBLOCK) == 0);
+    ioa::schedule_read_ready (&schedule_read_readyp_automaton::action, m_fd[0], m_fd[0]);
+    char c = 0;
+    write (m_fd[1], &c, 1);
+  }
+
+  ~schedule_read_readyp_automaton () {
+    close (m_fd[0]);
+    close (m_fd[1]);
   }
   
 };
@@ -1353,14 +1372,13 @@ schedule_read_readyp ()
 class schedule_write_ready_automaton :
   public ioa::automaton {
 private:
-  int m_fd;
+  int m_fd[2];
 
   bool action_precondition () const {
     return true;
   }
 
   void action_action () {
-    close (m_fd);
     goal_reached = true;
   }
 
@@ -1369,10 +1387,13 @@ private:
 public:
   schedule_write_ready_automaton ()
   {
-    m_fd = open ("test.txt", O_RDONLY);
-    assert (m_fd != -1);
-    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::schedule_write_ready (&schedule_write_ready_automaton::action, m_fd);
+    int res = pipe (m_fd);
+    if (res == -1) {
+      perror ("pipe");
+      exit (EXIT_FAILURE);
+    }
+    assert (fcntl (m_fd[1], F_SETFL, O_NONBLOCK) == 0);
+    ioa::schedule_write_ready (&schedule_write_ready_automaton::action, m_fd[1]);
   }
   
 };
@@ -1391,16 +1412,15 @@ schedule_write_ready ()
 class schedule_write_readyp_automaton :
   public ioa::automaton {
 private:
-  int m_fd;
+  int m_fd[2];
 
   bool action_precondition (int fd) const {
-    assert (fd == m_fd);
+    assert (fd == m_fd[1]);
     return true;
   }
 
   void action_action (int fd) {
-    assert (fd == m_fd);
-    close (m_fd);
+    assert (fd == m_fd[1]);
     goal_reached = true;
   }
 
@@ -1409,10 +1429,14 @@ private:
 public:
   schedule_write_readyp_automaton ()
   {
-    m_fd = open ("test.txt", O_RDONLY);
-    assert (m_fd != -1);
-    assert (fcntl (m_fd, F_SETFL, O_NONBLOCK) == 0);
-    ioa::schedule_write_ready (&schedule_write_readyp_automaton::action, m_fd, m_fd);
+    int res = pipe (m_fd);
+    if (res == -1) {
+      perror ("pipe");
+      exit (EXIT_FAILURE);
+    }
+    assert (fcntl (m_fd[1], F_SETFL, O_NONBLOCK) == 0);
+    assert (fcntl (m_fd[1], F_SETFL, O_NONBLOCK) == 0);
+    ioa::schedule_write_ready (&schedule_write_readyp_automaton::action, m_fd[1], m_fd[1]);
   }
   
 };
