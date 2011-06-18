@@ -11,7 +11,7 @@
 */
 
 class asynch_lcr_automaton :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   typedef enum {

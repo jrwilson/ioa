@@ -5,7 +5,7 @@
 #include "shared_lock.hpp"
 #include <algorithm>
 #include <ioa/generator_interface.hpp>
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 #include <ioa/system_scheduler_interface.hpp>
 #include <ioa/automaton_handle.hpp>
 
@@ -49,7 +49,7 @@ namespace ioa {
     m_system_scheduler.set_current_aid (aid);
     
     // Run the generator.
-    automaton_interface* instance = (*generator) ();
+    automaton* instance = (*generator) ();
     assert (instance != 0);
     
     // Clear the current aid.
@@ -68,20 +68,20 @@ namespace ioa {
     return aid;
   }
   
-  aid_t model::create (const aid_t automaton,
+  aid_t model::create (const aid_t creator_aid,
 			shared_ptr<generator_interface> generator,
 			void* const key)
   {
     unique_lock lock (m_mutex);
     
-    if (!m_aids.contains (automaton)) {
+    if (!m_aids.contains (creator_aid)) {
       // Creator does not exists.
       return -1;
     }
 
-    if (m_records[automaton]->create_key_exists (key)) {
+    if (m_records[creator_aid]->create_key_exists (key)) {
       // Create key already in use.
-      m_system_scheduler.create_key_exists (automaton, key);
+      m_system_scheduler.create_key_exists (creator_aid, key);
       return -1;
     }
     
@@ -92,7 +92,7 @@ namespace ioa {
     m_system_scheduler.set_current_aid (aid);
     
     // Run the generator.
-    automaton_interface* instance = (*generator) ();
+    automaton* instance = (*generator) ();
     assert (instance != 0);
     
     // Clear the current aid.
@@ -101,14 +101,14 @@ namespace ioa {
     if (m_instances.count (instance) != 0) {
       // Return the aid and inform the automaton that the instance already exists.
       m_aids.replace (aid);
-      m_system_scheduler.instance_exists (automaton, key);
+      m_system_scheduler.instance_exists (creator_aid, key);
       return -1;
     }
     
     m_instances.insert (instance);      
     automaton_record* record = new automaton_record (m_system_scheduler, instance, aid);
     m_records.insert (std::make_pair (aid, record));
-    automaton_record* parent = m_records[automaton];
+    automaton_record* parent = m_records[creator_aid];
     record->set_parent (key, parent);
     parent->add_child (key, record);
     
@@ -340,105 +340,105 @@ namespace ioa {
     return 0;
   }
 
-  int model::execute_sys_create (const aid_t automaton) {
+  int model::execute_sys_create (const aid_t aid) {
     shared_lock lock (m_mutex);
 
-    if (!m_aids.contains (automaton)) {
+    if (!m_aids.contains (aid)) {
       // Automaton does not exists.
       return -1;
     }
 
-    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
+    automaton* instance = get_instance (automaton_handle<automaton> (aid));
 
-    lock_automaton (automaton);
-    m_system_scheduler.set_current_aid (automaton);
+    lock_automaton (aid);
+    m_system_scheduler.set_current_aid (aid);
     if (instance->sys_create.precondition (*instance)) {
       std::pair<shared_ptr<generator_interface>, void*> key = instance->sys_create (*instance);
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
-      m_system_scheduler.create (automaton, key.first, key.second);
+      unlock_automaton (aid);
+      m_system_scheduler.create (aid, key.first, key.second);
     }
     else {
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
+      unlock_automaton (aid);
     }
 
     return 0;
   }
 
-  int model::execute_sys_bind (const aid_t automaton) {
+  int model::execute_sys_bind (const aid_t aid) {
     shared_lock lock (m_mutex);
 
-    if (!m_aids.contains (automaton)) {
+    if (!m_aids.contains (aid)) {
       // Automaton does not exists.
       return -1;
     }
 
-    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
+    automaton* instance = get_instance (automaton_handle<automaton> (aid));
 
-    lock_automaton (automaton);
-    m_system_scheduler.set_current_aid (automaton);
+    lock_automaton (aid);
+    m_system_scheduler.set_current_aid (aid);
     if (instance->sys_bind.precondition (*instance)) {
       std::pair<shared_ptr<bind_executor_interface>, void*> key = instance->sys_bind (*instance);
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
-      m_system_scheduler.bind (automaton, key.first, key.second);
+      unlock_automaton (aid);
+      m_system_scheduler.bind (aid, key.first, key.second);
     }
     else {
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
+      unlock_automaton (aid);
     }
 
     return 0;
   }
 
-  int model::execute_sys_unbind (const aid_t automaton) {
+  int model::execute_sys_unbind (const aid_t aid) {
     shared_lock lock (m_mutex);
 
-    if (!m_aids.contains (automaton)) {
+    if (!m_aids.contains (aid)) {
       // Automaton does not exists.
       return -1;
     }
 
-    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
+    automaton* instance = get_instance (automaton_handle<automaton> (aid));
 
-    lock_automaton (automaton);
-    m_system_scheduler.set_current_aid (automaton);
+    lock_automaton (aid);
+    m_system_scheduler.set_current_aid (aid);
     if (instance->sys_unbind.precondition (*instance)) {
       void* key = instance->sys_unbind (*instance);
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
-      m_system_scheduler.unbind (automaton, key);
+      unlock_automaton (aid);
+      m_system_scheduler.unbind (aid, key);
     }
     else {
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
+      unlock_automaton (aid);
     }
 
     return 0;
   }
 
-  int model::execute_sys_destroy (const aid_t automaton) {
+  int model::execute_sys_destroy (const aid_t aid) {
     shared_lock lock (m_mutex);
 
-    if (!m_aids.contains (automaton)) {
+    if (!m_aids.contains (aid)) {
       // Automaton does not exists.
       return -1;
     }
 
-    automaton_interface* instance = get_instance (automaton_handle<automaton_interface> (automaton));
+    automaton* instance = get_instance (automaton_handle<automaton> (aid));
 
-    lock_automaton (automaton);
-    m_system_scheduler.set_current_aid (automaton);
+    lock_automaton (aid);
+    m_system_scheduler.set_current_aid (aid);
     if (instance->sys_destroy.precondition (*instance)) {
       void* key = instance->sys_destroy (*instance);
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
-      m_system_scheduler.destroy (automaton, key);
+      unlock_automaton (aid);
+      m_system_scheduler.destroy (aid, key);
     }
     else {
       m_system_scheduler.clear_current_aid ();
-      unlock_automaton (automaton);
+      unlock_automaton (aid);
     }
 
     return 0;
@@ -492,7 +492,7 @@ namespace ioa {
     return 0;
   }
 
-  automaton_interface* model::get_instance (const aid_t aid) {
+  automaton* model::get_instance (const aid_t aid) {
     std::map<aid_t, automaton_record*>::const_iterator pos = m_records.find (aid);
     if (pos != m_records.end ()) {
       return pos->second->get_instance ();

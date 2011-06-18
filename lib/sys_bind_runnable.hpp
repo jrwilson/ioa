@@ -2,7 +2,7 @@
 #define __sys_bind_runnable_hpp__
 
 #include <ioa/action_runnable.hpp>
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 
 namespace ioa {
   
@@ -11,12 +11,12 @@ namespace ioa {
   {
   private:
     const aid_t m_automaton;
-    const action_executor<automaton_interface, automaton_interface::sys_bind_type> m_action;
+    const action_executor<automaton, automaton::sys_bind_type> m_action;
 
   public:
     sys_bind_runnable (const aid_t automaton) :
       m_automaton (automaton),
-      m_action (automaton, &automaton_interface::sys_bind)
+      m_action (automaton, &automaton::sys_bind)
     { }
     
     void operator() (model_interface& model) {

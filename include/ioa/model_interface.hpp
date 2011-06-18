@@ -6,7 +6,7 @@
 
 namespace ioa {
 
-  class automaton_interface;
+  class automaton;
   class output_executor_interface;
   class internal_executor_interface;
   class generator_interface;
@@ -20,7 +20,7 @@ namespace ioa {
     virtual ~model_interface () { }
 
     // Executing user actions.
-    virtual automaton_interface* get_instance (const aid_t aid) = 0;
+    virtual automaton* get_instance (const aid_t aid) = 0;
     virtual void lock_automaton (const aid_t aid) = 0;
     virtual void unlock_automaton (const aid_t aid) = 0;
     virtual int execute (output_executor_interface& exec) = 0;

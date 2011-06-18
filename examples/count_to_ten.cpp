@@ -13,7 +13,7 @@
 // ioa::dispatching_automaton is the standard implementation of ioa::automaton_interface.
 // You should always use ioa::dispatching_automaton!
 class count_to_ten :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   // The state of our automaton consists of an integer that holds the current count.

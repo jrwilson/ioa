@@ -365,20 +365,20 @@ namespace ioa {
       return m_model.bind_count (ac);
     }
   
-    void schedule (automaton_interface::sys_create_type automaton_interface::*member_ptr) {
+    void schedule (automaton::sys_create_type automaton::*member_ptr) {
       // TODO:  Could these go on the execq?
       schedule_sysq (new sys_create_runnable (get_current_aid ()));
     }
   
-    void schedule (automaton_interface::sys_bind_type automaton_interface::*member_ptr) {
+    void schedule (automaton::sys_bind_type automaton::*member_ptr) {
       schedule_sysq (new sys_bind_runnable (get_current_aid ()));
     }
 
-    void schedule (automaton_interface::sys_unbind_type automaton_interface::*member_ptr) {
+    void schedule (automaton::sys_unbind_type automaton::*member_ptr) {
       schedule_sysq (new sys_unbind_runnable (get_current_aid ()));
     }
   
-    void schedule (automaton_interface::sys_destroy_type automaton_interface::*member_ptr) {
+    void schedule (automaton::sys_destroy_type automaton::*member_ptr) {
       schedule_sysq (new sys_destroy_runnable (get_current_aid ()));
     }
 
@@ -493,55 +493,55 @@ namespace ioa {
       schedule_sysq (new destroy_runnable (automaton, key));
     }
 
-    void create_key_exists (const aid_t automaton,
+    void create_key_exists (const aid_t aid,
 			    void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_create_key_exists, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_create_key_exists, key, system_input_category ()));
     }
 
-    void instance_exists (const aid_t automaton,
+    void instance_exists (const aid_t aid,
 			  void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_instance_exists, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_instance_exists, key, system_input_category ()));
     }
   
-    void automaton_created (const aid_t automaton,
+    void automaton_created (const aid_t aid,
 			    void* const key,
 			    const aid_t child) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_automaton_created, std::make_pair (key, child), system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_automaton_created, std::make_pair (key, child), system_input_category ()));
     }
   
-    void bind_key_exists (const aid_t automaton,
+    void bind_key_exists (const aid_t aid,
 			  void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bind_key_exists, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_bind_key_exists, key, system_input_category ()));
     }
 
-    void output_automaton_dne (const aid_t automaton,
+    void output_automaton_dne (const aid_t aid,
 			       void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_output_automaton_dne, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_output_automaton_dne, key, system_input_category ()));
     }
 
-    void input_automaton_dne (const aid_t automaton,
+    void input_automaton_dne (const aid_t aid,
 			      void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_input_automaton_dne, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_input_automaton_dne, key, system_input_category ()));
     }
   
-    void binding_exists (const aid_t automaton,
+    void binding_exists (const aid_t aid,
 			 void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_binding_exists, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_binding_exists, key, system_input_category ()));
     }
   
-    void input_action_unavailable (const aid_t automaton,
+    void input_action_unavailable (const aid_t aid,
 				   void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_input_action_unavailable, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_input_action_unavailable, key, system_input_category ()));
     }
   
-    void output_action_unavailable (const aid_t automaton,
+    void output_action_unavailable (const aid_t aid,
 				    void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_output_action_unavailable, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_output_action_unavailable, key, system_input_category ()));
     }
     
-    void bound (const aid_t automaton,
+    void bound (const aid_t aid,
 		void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bound, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_bound, key, system_input_category ()));
     }
 
     void output_bound (const output_executor_interface& exec) {
@@ -554,14 +554,14 @@ namespace ioa {
       schedule_sysq (new input_bound_runnable (exec));
     }
 
-    void bind_key_dne (const aid_t automaton,
+    void bind_key_dne (const aid_t aid,
 		       void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_bind_key_dne, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_bind_key_dne, key, system_input_category ()));
     }
   
-    void unbound (const aid_t automaton,
+    void unbound (const aid_t aid,
 		  void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_unbound, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_unbound, key, system_input_category ()));
     }
 
     void output_unbound (const output_executor_interface& exec) {
@@ -572,14 +572,14 @@ namespace ioa {
       schedule_sysq (new input_unbound_runnable (exec));
     }
 
-    void create_key_dne (const aid_t automaton,
+    void create_key_dne (const aid_t aid,
 			 void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_create_key_dne, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_create_key_dne, key, system_input_category ()));
     }
   
-    void automaton_destroyed (const aid_t automaton,
+    void automaton_destroyed (const aid_t aid,
 			      void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton_interface> (automaton), &automaton_interface::sys_automaton_destroyed, key, system_input_category ()));
+      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_automaton_destroyed, key, system_input_category ()));
     }
     
   };
@@ -600,19 +600,19 @@ namespace ioa {
     return m_impl->bind_count (ac);
   }
   
-  void simple_scheduler::schedule (automaton_interface::sys_create_type automaton_interface::*ptr) {
+  void simple_scheduler::schedule (automaton::sys_create_type automaton::*ptr) {
     m_impl->schedule (ptr);
   }
     
-  void simple_scheduler::schedule (automaton_interface::sys_bind_type automaton_interface::*ptr) {
+  void simple_scheduler::schedule (automaton::sys_bind_type automaton::*ptr) {
     m_impl->schedule (ptr);
   }
   
-  void simple_scheduler::schedule (automaton_interface::sys_unbind_type automaton_interface::*ptr) {
+  void simple_scheduler::schedule (automaton::sys_unbind_type automaton::*ptr) {
     m_impl->schedule (ptr);
   }
   
-  void simple_scheduler::schedule (automaton_interface::sys_destroy_type automaton_interface::*ptr) {
+  void simple_scheduler::schedule (automaton::sys_destroy_type automaton::*ptr) {
     m_impl->schedule (ptr);
   }
   

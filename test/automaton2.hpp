@@ -1,11 +1,11 @@
 #ifndef __automaton2_hpp__
 #define __automaton2_hpp__
 
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 #include <ioa/action_wrapper.hpp>
 
 class automaton2 :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   int m_pole;

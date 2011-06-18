@@ -11,7 +11,7 @@
 */
 
 class peterson_leader_automaton :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   typedef enum {

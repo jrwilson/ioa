@@ -1,5 +1,5 @@
 #include "automaton_record.hpp"
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 #include <ioa/system_scheduler_interface.hpp>
 
 #include <cassert>
@@ -7,7 +7,7 @@
 namespace ioa {
 
   automaton_record::automaton_record (system_scheduler_interface& system_scheduler,
-				      automaton_interface* instance,
+				      automaton* instance,
 				      const aid_t aid) :
     m_system_scheduler (system_scheduler),
     m_instance (instance),
@@ -25,7 +25,7 @@ namespace ioa {
     return m_aid;
   }
 
-  automaton_interface* automaton_record::get_instance () const {
+  automaton* automaton_record::get_instance () const {
     return m_instance.get ();
   }
 

@@ -2,7 +2,7 @@
 #define __scheduler_interface_hpp__
 
 #include <ioa/action_runnable_interface.hpp>
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 #include <ioa/time.hpp>
 
 namespace ioa {
@@ -16,13 +16,13 @@ namespace ioa {
 
     virtual size_t bind_count (const action_executor_interface&) = 0;
 
-    virtual void schedule (automaton_interface::sys_create_type automaton_interface::*ptr) = 0;
+    virtual void schedule (automaton::sys_create_type automaton::*ptr) = 0;
 
-    virtual void schedule (automaton_interface::sys_bind_type automaton_interface::*ptr) = 0;
+    virtual void schedule (automaton::sys_bind_type automaton::*ptr) = 0;
 
-    virtual void schedule (automaton_interface::sys_unbind_type automaton_interface::*ptr) = 0;
+    virtual void schedule (automaton::sys_unbind_type automaton::*ptr) = 0;
 
-    virtual void schedule (automaton_interface::sys_destroy_type automaton_interface::*ptr) = 0;
+    virtual void schedule (automaton::sys_destroy_type automaton::*ptr) = 0;
 
     virtual void schedule (action_runnable_interface*) = 0;
 

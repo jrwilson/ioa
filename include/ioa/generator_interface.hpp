@@ -8,13 +8,13 @@ namespace ioa {
     The result should be delete'able.
   */
 
-  class automaton_interface;
+  class automaton;
 
   class generator_interface
   {
   public:
     virtual ~generator_interface () { }
-    virtual automaton_interface* operator() () = 0;
+    virtual automaton* operator() () = 0;
   };
 
 }

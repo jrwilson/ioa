@@ -10,7 +10,7 @@ struct test_model :
   automaton1 instance;
 
   // Executing user actions.
-  ioa::automaton_interface* get_instance (const ioa::aid_t aid) { return &instance; }
+  ioa::automaton* get_instance (const ioa::aid_t aid) { return &instance; }
   void lock_automaton (const ioa::aid_t aid) { }
   void unlock_automaton (const ioa::aid_t aid) { }
   int execute (ioa::output_executor_interface& exec) { return -1; }

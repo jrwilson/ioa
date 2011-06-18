@@ -11,14 +11,14 @@
 namespace ioa {
 
   class system_scheduler_interface;
-  class automaton_interface;
+  class automaton;
 
   class automaton_record :
     public mutex
   {
   private:
     system_scheduler_interface& m_system_scheduler;
-    std::auto_ptr<automaton_interface> m_instance;
+    std::auto_ptr<automaton> m_instance;
     aid_t m_aid;
     std::map<void*, automaton_record*> m_children;
     void* m_key;
@@ -27,11 +27,11 @@ namespace ioa {
     
   public:
     automaton_record (system_scheduler_interface&,
-		      automaton_interface* instance,
+		      automaton* instance,
 		      aid_t const aid);
     ~automaton_record ();
     const aid_t get_aid () const;
-    automaton_interface* get_instance () const;
+    automaton* get_instance () const;
     bool create_key_exists (void* const key) const;
     void add_child (void* const key,
 		    automaton_record* child);

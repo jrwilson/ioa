@@ -14,12 +14,12 @@ namespace ioa {
     typedef I instance;
 
   private:
-    automaton_interface* m_automaton;
+    automaton* m_automaton;
     shared_ptr<generator_interface> m_generator;
     automaton_handle<I> m_handle;
 
   public:
-    automaton_helper (automaton_interface* automaton,
+    automaton_helper (automaton* automaton,
 		      shared_ptr<generator_interface> generator) :
       m_automaton (automaton),
       m_generator (generator)

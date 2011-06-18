@@ -4,7 +4,7 @@
 #include <ioa/simple_scheduler.hpp>
 
 class trigger :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -37,7 +37,7 @@ public:
 */
 
 class clock_automaton :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   int m_counter;
@@ -93,7 +93,7 @@ public:
 
 
 class display :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -109,7 +109,7 @@ public:
 
 
 class composer :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 public:
   composer ()

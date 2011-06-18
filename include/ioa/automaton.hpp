@@ -1,5 +1,5 @@
-#ifndef __automaton_interface_hpp__
-#define __automaton_interface_hpp__
+#ifndef __automaton_hpp__
+#define __automaton_hpp__
 
 #include <ioa/shared_ptr.hpp>
 #include <ioa/action.hpp>
@@ -67,7 +67,7 @@ namespace ioa {
     virtual void unbound () = 0;
   };
 
-  class automaton_interface {
+  class automaton {
   private:
     // Invariant:  m_create_send INTERSECT m_create_recv INTERSECT m_destroy_send = empty set
     // Basically, a helper is in one place or another.
@@ -84,7 +84,7 @@ namespace ioa {
     std::set<system_bind_helper_interface*> m_unbind_recv;
 
   public:
-    virtual ~automaton_interface ();
+    virtual ~automaton ();
     void create (system_automaton_helper_interface* helper);
     void bind (system_bind_helper_interface* helper);
     void unbind (system_bind_helper_interface* helper);
@@ -123,27 +123,27 @@ namespace ioa {
     void sys_event_delivered_action (void* const &);
 
   public:
-    SYSTEM_OUTPUT (automaton_interface, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);
-    SYSTEM_OUTPUT (automaton_interface, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
-    SYSTEM_OUTPUT (automaton_interface, sys_unbind, void*);
-    SYSTEM_OUTPUT (automaton_interface, sys_destroy, void*);
+    SYSTEM_OUTPUT (automaton, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton, sys_unbind, void*);
+    SYSTEM_OUTPUT (automaton, sys_destroy, void*);
 
-    SYSTEM_INPUT (automaton_interface, sys_create_key_exists, void*);
-    SYSTEM_INPUT (automaton_interface, sys_instance_exists, void*);
-    SYSTEM_INPUT (automaton_interface, sys_automaton_created, std::pair<void* COMMA aid_t>);
-    SYSTEM_INPUT (automaton_interface, sys_bind_key_exists, void*);
-    SYSTEM_INPUT (automaton_interface, sys_output_automaton_dne, void*);
-    SYSTEM_INPUT (automaton_interface, sys_input_automaton_dne, void*);
-    SYSTEM_INPUT (automaton_interface, sys_binding_exists, void*);
-    SYSTEM_INPUT (automaton_interface, sys_output_action_unavailable, void*);
-    SYSTEM_INPUT (automaton_interface, sys_input_action_unavailable, void*);
-    SYSTEM_INPUT (automaton_interface, sys_bound, void*);
-    SYSTEM_INPUT (automaton_interface, sys_bind_key_dne, void*);
-    SYSTEM_INPUT (automaton_interface, sys_unbound, void*);
-    SYSTEM_INPUT (automaton_interface, sys_create_key_dne, void*);
-    SYSTEM_INPUT (automaton_interface, sys_automaton_destroyed, void*);
-    SYSTEM_INPUT (automaton_interface, sys_recipient_dne, void*);
-    SYSTEM_INPUT (automaton_interface, sys_event_delivered, void*);
+    SYSTEM_INPUT (automaton, sys_create_key_exists, void*);
+    SYSTEM_INPUT (automaton, sys_instance_exists, void*);
+    SYSTEM_INPUT (automaton, sys_automaton_created, std::pair<void* COMMA aid_t>);
+    SYSTEM_INPUT (automaton, sys_bind_key_exists, void*);
+    SYSTEM_INPUT (automaton, sys_output_automaton_dne, void*);
+    SYSTEM_INPUT (automaton, sys_input_automaton_dne, void*);
+    SYSTEM_INPUT (automaton, sys_binding_exists, void*);
+    SYSTEM_INPUT (automaton, sys_output_action_unavailable, void*);
+    SYSTEM_INPUT (automaton, sys_input_action_unavailable, void*);
+    SYSTEM_INPUT (automaton, sys_bound, void*);
+    SYSTEM_INPUT (automaton, sys_bind_key_dne, void*);
+    SYSTEM_INPUT (automaton, sys_unbound, void*);
+    SYSTEM_INPUT (automaton, sys_create_key_dne, void*);
+    SYSTEM_INPUT (automaton, sys_automaton_destroyed, void*);
+    SYSTEM_INPUT (automaton, sys_recipient_dne, void*);
+    SYSTEM_INPUT (automaton, sys_event_delivered, void*);
   };
 
 }

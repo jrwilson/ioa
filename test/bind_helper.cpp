@@ -8,7 +8,7 @@
 static bool goal_reached;
 
 class uv_up_uv_up_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -42,7 +42,7 @@ bind_uv_up_uv_up ()
 }
 
 class uv_up_uv_p_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -76,7 +76,7 @@ bind_uv_up_uv_p ()
 }
 
 class uv_up_uv_ap_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -110,7 +110,7 @@ bind_uv_up_uv_ap ()
 }
 
 class uv_p_uv_up_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -144,7 +144,7 @@ bind_uv_p_uv_up ()
 }
 
 class uv_p_uv_p_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -178,7 +178,7 @@ bind_uv_p_uv_p ()
 }
 
 class uv_p_uv_ap_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -212,7 +212,7 @@ bind_uv_p_uv_ap ()
 }
 
 class uv_ap_uv_up_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -246,7 +246,7 @@ bind_uv_ap_uv_up ()
 }
 
 class uv_ap_uv_p_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -280,7 +280,7 @@ bind_uv_ap_uv_p ()
 }
 
 class uv_ap_uv_ap_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -314,7 +314,7 @@ bind_uv_ap_uv_ap ()
 }
 
 class v_up_v_up_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -348,7 +348,7 @@ bind_v_up_v_up ()
 }
 
 class v_up_v_p_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -382,7 +382,7 @@ bind_v_up_v_p ()
 }
 
 class v_up_v_ap_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -416,7 +416,7 @@ bind_v_up_v_ap ()
 }
 
 class v_p_v_up_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -450,7 +450,7 @@ bind_v_p_v_up ()
 }
 
 class v_p_v_p_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -484,7 +484,7 @@ bind_v_p_v_p ()
 }
 
 class v_p_v_ap_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -518,7 +518,7 @@ bind_v_p_v_ap ()
 }
 
 class v_ap_v_up_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -552,7 +552,7 @@ bind_v_ap_v_up ()
 }
 
 class v_ap_v_p_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:
@@ -586,7 +586,7 @@ bind_v_ap_v_p ()
 }
 
 class v_ap_v_ap_automaton :
-  public ioa::automaton_interface,
+  public ioa::automaton,
   public ioa::observer
 {
 private:

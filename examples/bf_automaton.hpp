@@ -7,7 +7,7 @@
 #include <map>
 
 class bf_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
   typedef std::queue<size_t> distq;
 

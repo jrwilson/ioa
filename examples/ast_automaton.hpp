@@ -11,7 +11,7 @@ typedef enum {
 } search_t;
 
 class ast_automaton :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 
 private:

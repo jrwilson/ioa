@@ -2,7 +2,7 @@
 #define __automaton1_hpp__
 
 #include <ioa/action.hpp>
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 
 template <class T>
 struct bindable
@@ -38,7 +38,8 @@ struct bindable
 };
 
 struct automaton1 :
-  public ioa::automaton_interface
+  public ioa::automaton
+
 {
   struct uv_up_input_action :
     public ioa::input,

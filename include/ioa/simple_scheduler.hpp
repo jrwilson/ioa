@@ -24,13 +24,13 @@ namespace ioa {
     
     size_t bind_count (const action_executor_interface&);
     
-    void schedule (automaton_interface::sys_create_type automaton_interface::*ptr);
+    void schedule (automaton::sys_create_type automaton::*ptr);
     
-    void schedule (automaton_interface::sys_bind_type automaton_interface::*ptr);
+    void schedule (automaton::sys_bind_type automaton::*ptr);
     
-    void schedule (automaton_interface::sys_unbind_type automaton_interface::*ptr);
+    void schedule (automaton::sys_unbind_type automaton::*ptr);
     
-    void schedule (automaton_interface::sys_destroy_type automaton_interface::*ptr);
+    void schedule (automaton::sys_destroy_type automaton::*ptr);
     
     void schedule (action_runnable_interface*);
     

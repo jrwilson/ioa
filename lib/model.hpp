@@ -95,7 +95,7 @@ namespace ioa {
     system_scheduler_interface& m_system_scheduler;    
     shared_mutex m_mutex;
     sequential_set<aid_t> m_aids;
-    std::set<automaton_interface*> m_instances;
+    std::set<automaton*> m_instances;
     std::map<aid_t, automaton_record*> m_records;
     std::list<output_executor_interface*> m_bindings;
 
@@ -132,7 +132,7 @@ namespace ioa {
 
     size_t bind_count (const action_executor_interface& action) const;
 
-    automaton_interface* get_instance (const aid_t aid);
+    automaton* get_instance (const aid_t aid);
     void lock_automaton (const aid_t handle);
     void unlock_automaton (const aid_t handle);
   };

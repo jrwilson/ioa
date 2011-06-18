@@ -17,7 +17,7 @@ enum message_type_t {
 typedef std::pair<message_type_t, size_t> message_t;
 
 class aba_automaton:
-  public ioa::automaton_interface {
+  public ioa::automaton {
 
 private:
 

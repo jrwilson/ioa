@@ -4,7 +4,7 @@
 /*
   This file includes other files containing classes that are useful for writing automata.
  */
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 #include <ioa/action_wrapper.hpp>
 #include <ioa/generator.hpp>
 #include <ioa/self_helper.hpp>

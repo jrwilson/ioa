@@ -9,7 +9,7 @@
 #include <queue>
 
 class bfs_automaton:
-  public ioa::automaton_interface {
+  public ioa::automaton {
 
 private:
 

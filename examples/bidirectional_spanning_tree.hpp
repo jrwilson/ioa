@@ -11,7 +11,7 @@
 
 template <class T, size_t N, unsigned long NUMERATOR, unsigned long DENOMINATOR>
 class bidirectional_spanning_tree :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 

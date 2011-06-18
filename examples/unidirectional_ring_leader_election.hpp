@@ -6,7 +6,7 @@
 
 template <class T, size_t N>
 class unidirectional_ring_leader_election :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   

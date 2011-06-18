@@ -7,7 +7,7 @@
 #include <ioa/generator_interface.hpp>
 #include <ioa/scheduler_interface.hpp>
 #include <ioa/action_runnable.hpp>
-#include <ioa/automaton_interface.hpp>
+#include <ioa/automaton.hpp>
 
 namespace ioa {
 
@@ -15,10 +15,10 @@ namespace ioa {
 
   aid_t get_current_aid ();
 
-  void schedule (automaton_interface::sys_create_type automaton_interface::*ptr);
-  void schedule (automaton_interface::sys_bind_type automaton_interface::*ptr);
-  void schedule (automaton_interface::sys_unbind_type automaton_interface::*ptr);
-  void schedule (automaton_interface::sys_destroy_type automaton_interface::*ptr);
+  void schedule (automaton::sys_create_type automaton::*ptr);
+  void schedule (automaton::sys_bind_type automaton::*ptr);
+  void schedule (automaton::sys_unbind_type automaton::*ptr);
+  void schedule (automaton::sys_destroy_type automaton::*ptr);
   
   template <class I, class M>
   void schedule (M I::*member_ptr) {

@@ -13,7 +13,7 @@
 static bool goal_reached;
 
 class create_instance_exists :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
   automaton2* m_instance;
@@ -68,7 +68,7 @@ instance_exists ()
 }
 
 class create_automaton_created :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -112,7 +112,7 @@ automaton_created ()
 }
 
 class bind_output_automaton_dne :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -123,14 +123,14 @@ private:
   {
     typedef typename IH::instance II;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
     IH* m_input_helper;
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
 	    IM II::*input_member_ptr) :
@@ -209,7 +209,7 @@ output_automaton_dne ()
 }
 
 class bind_input_automaton_dne :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -220,14 +220,14 @@ private:
   {
     typedef typename OH::instance OI;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IM II::*input_member_ptr) :
@@ -306,7 +306,7 @@ input_automaton_dne ()
 }
 
 class bind_binding_exists :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -318,7 +318,7 @@ private:
     typedef typename OH::instance OI;
     typedef typename IH::instance II;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -326,7 +326,7 @@ private:
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
@@ -419,7 +419,7 @@ binding_exists ()
 }
 
 class bind_input_action_unavailable :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -431,7 +431,7 @@ private:
     typedef typename OH::instance OI;
     typedef typename IH::instance II;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -439,7 +439,7 @@ private:
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
@@ -533,7 +533,7 @@ input_action_unavailable ()
 }
 
 class bind_output_action_unavailable :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -545,7 +545,7 @@ private:
     typedef typename OH::instance OI;
     typedef typename IH::instance II;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -553,7 +553,7 @@ private:
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
@@ -646,7 +646,7 @@ output_action_unavailable ()
 }
 
 class bind_bound :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -658,7 +658,7 @@ private:
     typedef typename OH::instance OI;
     typedef typename IH::instance II;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -666,7 +666,7 @@ private:
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
@@ -757,7 +757,7 @@ bound ()
 }
 
 class bind_unbound :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -770,7 +770,7 @@ private:
     typedef typename IH::instance II;
 
     bool is_bound;
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -778,7 +778,7 @@ private:
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
@@ -890,7 +890,7 @@ unbound ()
 }
 
 class bind_unbound2 :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -903,7 +903,7 @@ private:
     typedef typename OH::instance OI;
     typedef typename IH::instance II;
 
-    automaton_interface& m_automaton;
+    automaton& m_automaton;
     OH* m_output_helper;
     ioa::automaton_handle<OI> m_output_handle;
     OM OI::*m_output_member_ptr;
@@ -911,7 +911,7 @@ private:
     ioa::automaton_handle<II> m_input_handle;
     IM II::*m_input_member_ptr;
     
-    helper (automaton_interface& automaton,
+    helper (automaton& automaton,
 	    OH* output_helper,
 	    OM OI::*output_member_ptr,
 	    IH* input_helper,
@@ -1004,7 +1004,7 @@ unbound2 ()
 }
 
 class destroy_automaton_destroyed :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -1075,7 +1075,7 @@ automaton_destroyed ()
 }
 
 class destroy_automaton_destroyed2 :
-  public ioa::automaton_interface
+  public ioa::automaton
 {
 private:
 
@@ -1123,7 +1123,7 @@ automaton_destroyed2 ()
 }
 
 class schedule_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
 
   bool action_precondition () const {
@@ -1156,7 +1156,7 @@ schedule ()
 }
 
 class schedule_automatonp :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
 
   bool action_precondition (int param) const {
@@ -1191,7 +1191,7 @@ schedulep ()
 }
 
 class schedule_after_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
 
   time_t m_schedule_time;
@@ -1231,7 +1231,7 @@ schedule_after ()
 }
 
 class schedule_afterp_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
 
   time_t m_schedule_time;
@@ -1273,7 +1273,7 @@ schedule_afterp ()
 }
 
 class schedule_read_ready_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
   int m_fd;
 
@@ -1311,7 +1311,7 @@ schedule_read_ready ()
 }
 
 class schedule_read_readyp_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
   int m_fd;
 
@@ -1351,7 +1351,7 @@ schedule_read_readyp ()
 }
 
 class schedule_write_ready_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
   int m_fd;
 
@@ -1389,7 +1389,7 @@ schedule_write_ready ()
 }
 
 class schedule_write_readyp_automaton :
-  public ioa::automaton_interface {
+  public ioa::automaton {
 private:
   int m_fd;
 
