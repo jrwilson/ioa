@@ -102,7 +102,13 @@ All of the examples in this document use the middle approach.
 
 @chapter Tutorials
 
-@subsection The Null Automaton
+@section The Null Automaton
+
+The purpose of this tutorial is to introduce
+
+@example
+@verbatiminclude ../examples/null_automaton.cpp
+@end example
 
 inheriting from automata
 pick a scheduler
@@ -110,27 +116,27 @@ run
 generator
 get current id
 
-@subsection Internal Actions: The Count-to-Ten Automaton
+@section Internal Actions: The Count-to-Ten Automaton
 
 Internal actions
 Scheduling
 Basic structure
 
-@subsection Automaton Helpers: Count-to-Ten Automata
+@section Automaton Helpers: Count-to-Ten Automata
 
 Hiearchies
 Automata helpers
 
-@subsection External Actions: Cooperative Count-to-Ten
+@section External Actions: Cooperative Count-to-Ten
 
 Input and output actions
 Bind helpers
 
-@subsection Advanced Topic: Parameters
+@section Advanced Topic: Parameters
 
 Parameters
 
-@subsection Advanced Topic: Automatic Parameters
+@section Advanced Topic: Automatic Parameters
 
 automatic parameters
 

@@ -1,0 +1,31 @@
+include_HEADERS = \
+ioa/action.hpp \
+ioa/action_executor.hpp \
+ioa/action_runnable.hpp \
+ioa/action_runnable_interface.hpp \
+ioa/action_wrapper.hpp \
+ioa/aid.hpp \
+ioa/automaton.hpp \
+ioa/automaton_handle.hpp \
+ioa/automaton_helper.hpp \
+ioa/automaton_helper_interface.hpp \
+ioa/bind_helper.hpp \
+ioa/buffer.hpp \
+ioa/config.hpp \
+ioa/environment.hpp \
+ioa/executor_interface.hpp \
+ioa/generator.hpp \
+ioa/generator_interface.hpp \
+ioa/ioa.hpp \
+ioa/model_interface.hpp \
+ioa/observer.hpp \
+ioa/runnable_interface.hpp \
+ioa/scheduler.hpp \
+ioa/scheduler_interface.hpp \
+ioa/self_helper.hpp \
+ioa/shared_mutex.hpp \
+ioa/shared_ptr.hpp \
+ioa/simple_scheduler.hpp \
+ioa/system_scheduler_interface.hpp \
+ioa/time.hpp \
+ioa/udp_broadcast_automaton.hpp

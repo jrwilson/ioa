@@ -1,8 +1,13 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
-lib \
-. \
-test
+include \
+lib
+
+
+
+#doc \
+#. \
+#test
 #testueioa
 #libueioa testueioa
 #libautoman testautoman

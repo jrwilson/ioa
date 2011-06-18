@@ -147,7 +147,7 @@ This becomes inefficient for large values that might need to be copied many time
 The straightforward solution is to put the data in a @dfn{buffer} and pass a pointer to the buffer.
 The pointer must be a smart pointer that is both reference-counting and thread-safe.
 Additionally, the buffer should be owned by the system and not the output automaton.
-@xref{Thoughts on Garbage Collection} for an explanation.
+See @ref{Thoughts on Garbage Collection} for an explanation.
 Finally, the data should become read-only when the output automaton returns.
 
 If a buffer contains pointers to other buffers, then the buffers can form directed acyclic graph.
