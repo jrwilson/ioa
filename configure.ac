@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([ueioa], [0.01], [jrwilson@go.wustl.edu])
+AC_INIT([ioa], [0.01], [jrwilson@go.wustl.edu])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/model.cpp])
 AC_CONFIG_HEADERS([include/ioa/config.hpp])

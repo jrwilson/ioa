@@ -1,8 +1,8 @@
 AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 
-lib_LTLIBRARIES = libueioa.la
+lib_LTLIBRARIES = libioa.la
 
-libueioa_la_SOURCES = \
+libioa_la_SOURCES = \
 automaton.cpp \
 automaton_record.hpp \
 automaton_record.cpp \
