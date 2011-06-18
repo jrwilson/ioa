@@ -6,8 +6,300 @@
 #include "automaton1.hpp"
 
 #include "instance_holder.hpp"
-#include "test_system_scheduler.hpp"
 #include <iostream>
+
+struct unbound_record
+{
+  ioa::aid_t m_aid;
+  const void* m_member_ptr;
+  size_t m_pid;
+
+  unbound_record (const ioa::action_executor_interface& ac) :
+    m_aid (ac.get_aid ()),
+    m_member_ptr (ac.get_member_ptr ()),
+    m_pid (ac.get_pid ())
+  { }
+
+  bool operator< (const unbound_record& other) const {
+    if (m_aid != other.m_aid) {
+      return m_aid < other.m_aid;
+    }
+    if (m_member_ptr != other.m_member_ptr) {
+      return m_member_ptr < other.m_member_ptr;
+    }
+    return m_pid < other.m_pid;
+  }
+};
+
+struct test_system_scheduler :
+  public ioa::system_scheduler_interface
+{
+  ioa::aid_t m_create_key_exists_automaton;
+  void* m_create_key_exists_key;
+
+  ioa::aid_t m_instance_exists_automaton;
+  void* m_instance_exists_key;
+
+  ioa::aid_t m_automaton_created_automaton;
+  void* m_automaton_created_key;
+  ioa::aid_t m_automaton_created_child;
+
+  ioa::aid_t m_bind_key_exists_automaton;
+  void* m_bind_key_exists_key;
+
+  ioa::aid_t m_output_automaton_dne_automaton;
+  void* m_output_automaton_dne_key;
+
+  ioa::aid_t m_input_automaton_dne_automaton;
+  void* m_input_automaton_dne_key;
+
+  ioa::aid_t m_binding_exists_automaton;
+  void* m_binding_exists_key;
+
+  ioa::aid_t m_input_action_unavailable_automaton;
+  void* m_input_action_unavailable_key;
+
+  ioa::aid_t m_output_action_unavailable_automaton;
+  void* m_output_action_unavailable_key;
+
+  ioa::aid_t m_bound_automaton;
+  void* m_bound_key;
+
+  ioa::aid_t m_output_bound_aid;
+  const void* m_output_bound_member_ptr;
+  size_t m_output_bound_pid;
+
+  ioa::aid_t m_input_bound_aid;
+  const void* m_input_bound_member_ptr;
+  size_t m_input_bound_pid;
+
+  ioa::aid_t m_bind_key_dne_automaton;
+  void* m_bind_key_dne_key;
+
+  std::set<std::pair<ioa::aid_t, void*> > m_unbound;
+
+  std::set<unbound_record> m_output_unbound;
+
+  std::set<unbound_record> m_input_unbound;
+
+  ioa::aid_t m_create_key_dne_automaton;
+  void* m_create_key_dne_key;
+
+  std::set<std::pair<ioa::aid_t, void*> > m_automaton_destroyed;
+
+  ioa::aid_t m_recipient_dne_automaton;
+  void* m_recipient_dne_key;
+
+  ioa::aid_t m_event_delivered_automaton;
+  void* m_event_delivered_key;
+
+  test_system_scheduler () {
+    reset ();
+  }
+
+  void reset () {
+    m_create_key_exists_automaton = -1;
+    m_create_key_exists_key = 0;
+    
+    m_instance_exists_automaton = -1;
+    m_instance_exists_key = 0;
+    
+    m_automaton_created_automaton = -1;
+    m_automaton_created_key = 0;
+    m_automaton_created_child = -1;
+    
+    m_bind_key_exists_automaton = -1;
+    m_bind_key_exists_key = 0;
+    
+    m_output_automaton_dne_automaton = -1;
+    m_output_automaton_dne_key = 0;
+    
+    m_input_automaton_dne_automaton = -1;
+    m_input_automaton_dne_key = 0;
+    
+    m_binding_exists_automaton = -1;
+    m_binding_exists_key = 0;
+    
+    m_input_action_unavailable_automaton = -1;
+    m_input_action_unavailable_key = 0;
+    
+    m_output_action_unavailable_automaton = -1;
+    m_output_action_unavailable_key = 0;
+    
+    m_bound_automaton = -1;
+    m_bound_key = 0;
+
+    m_output_bound_aid = -1;
+    m_output_bound_member_ptr = 0;
+    m_output_bound_pid = 0;
+
+    m_input_bound_aid = -1;
+    m_input_bound_member_ptr = 0;
+    m_input_bound_pid = 0;
+    
+    m_bind_key_dne_automaton = -1;
+    m_bind_key_dne_key = 0;
+    
+    m_unbound.clear ();
+
+    m_output_unbound.clear ();
+    
+    m_input_unbound.clear ();
+    
+    m_create_key_dne_automaton = -1;
+    m_create_key_dne_key = 0;
+    
+    m_automaton_destroyed.clear ();
+
+    m_recipient_dne_automaton = -1;
+    m_recipient_dne_key = 0;
+
+    m_event_delivered_automaton = -1;
+    m_event_delivered_key = 0;
+  }
+
+  void set_current_aid (ioa::aid_t) { }
+  void clear_current_aid () { }
+
+  void create (const ioa::aid_t automaton,
+	       ioa::shared_ptr<ioa::generator_interface> generator,
+	       void* const key) {
+    assert (false);
+  }
+
+  void bind (const ioa::aid_t automaton,
+	     ioa::shared_ptr<ioa::bind_executor_interface> exec,
+	     void* const key) {
+    assert (false);
+  }
+
+  void unbind (const ioa::aid_t automaton,
+	       void* const key) {
+    assert (false);
+  }
+
+  void destroy (const ioa::aid_t automaton,
+		void* const key) {
+    assert (false);
+  }
+  
+  void create_key_exists (const ioa::aid_t automaton,
+			  void* const key) {
+    m_create_key_exists_automaton = automaton;
+    m_create_key_exists_key = key;
+  }
+
+  void instance_exists (const ioa::aid_t automaton,
+			void* const key) {
+    m_instance_exists_automaton = automaton;
+    m_instance_exists_key = key;
+  }
+  
+  void automaton_created (const ioa::aid_t automaton,
+			  void* const key,
+			  const ioa::aid_t child) {
+    m_automaton_created_automaton = automaton;
+    m_automaton_created_key = key;
+    m_automaton_created_child = child;
+  }
+
+  void bind_key_exists (const ioa::aid_t automaton,
+			void* const key) {
+    m_bind_key_exists_automaton = automaton;
+    m_bind_key_exists_key = key;
+  }
+  
+  void output_automaton_dne (const ioa::aid_t automaton,
+			     void* const key) {
+    m_output_automaton_dne_automaton = automaton;
+    m_output_automaton_dne_key = key;
+  }
+  
+  void input_automaton_dne (const ioa::aid_t automaton,
+			    void* const key) {
+    m_input_automaton_dne_automaton = automaton;
+    m_input_automaton_dne_key = key;
+  }
+  
+  void binding_exists (const ioa::aid_t automaton,
+		       void* const key) {
+    m_binding_exists_automaton = automaton;
+    m_binding_exists_key = key;
+  }
+  
+  void input_action_unavailable (const ioa::aid_t automaton,
+				 void* const key) {
+    m_input_action_unavailable_automaton = automaton;
+    m_input_action_unavailable_key = key;
+  }
+  
+  void output_action_unavailable (const ioa::aid_t automaton,
+				  void* const key) {
+    m_output_action_unavailable_automaton = automaton;
+    m_output_action_unavailable_key = key;
+  }
+  
+  void bound (const ioa::aid_t automaton,
+	      void* const key) {
+    m_bound_automaton = automaton;
+    m_bound_key = key;
+  }
+
+  void output_bound (const ioa::output_executor_interface& exec) {
+    m_output_bound_aid = exec.get_aid ();
+    m_output_bound_member_ptr = exec.get_member_ptr ();
+    m_output_bound_pid = exec.get_pid ();
+  }
+
+  void input_bound (const ioa::input_executor_interface& exec) {
+    m_input_bound_aid = exec.get_aid ();
+    m_input_bound_member_ptr = exec.get_member_ptr ();
+    m_input_bound_pid = exec.get_pid ();
+  }
+
+  void bind_key_dne (const ioa::aid_t automaton,
+		     void* const key) {
+    m_bind_key_dne_automaton = automaton;
+    m_bind_key_dne_key = key;
+  }
+  
+  void unbound (const ioa::aid_t automaton,
+		void* const key) {
+    m_unbound.insert (std::make_pair (automaton, key));
+  }
+
+  void output_unbound (const ioa::output_executor_interface& exec) {
+    m_output_unbound.insert (unbound_record (exec));
+  }
+
+  void input_unbound (const ioa::input_executor_interface& exec) {
+    m_input_unbound.insert (unbound_record (exec));
+  }
+  
+  void create_key_dne (const ioa::aid_t automaton,
+		       void* const key) {
+    m_create_key_dne_automaton = automaton;
+    m_create_key_dne_key = key;
+  }
+
+  void automaton_destroyed (const ioa::aid_t automaton,
+			    void* const key) {
+    m_automaton_destroyed.insert (std::make_pair (automaton, key));
+  }
+  
+  void recipient_dne (const ioa::aid_t automaton,
+		      void* const key) {
+    m_recipient_dne_automaton = automaton;
+    m_recipient_dne_key = key;
+  }
+
+  void event_delivered (const ioa::aid_t automaton,
+			void* const key) {
+    m_event_delivered_automaton = automaton;
+    m_event_delivered_key = key;
+  }
+
+};
 
 ioa::aid_t create (ioa::model& model,
 		   test_system_scheduler& tss,
