@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-class periodic_broadcaster :
+class broadcast_sender :
   public ioa::automaton
 {
 private:
@@ -15,13 +15,12 @@ private:
   };
   
   state_t m_state;
-  std::auto_ptr<ioa::self_helper<periodic_broadcaster> > m_self;
+  std::auto_ptr<ioa::self_helper<broadcast_sender> > m_self;
   ioa::ipv4_address m_address;
-  ioa::time m_period;
   ioa::buffer m_buffer;
 
   bool send_precondition () const {
-    return m_state == SEND_READY && ioa::bind_count (&periodic_broadcaster::send) != 0;
+    return m_state == SEND_READY && ioa::bind_count (&broadcast_sender::send) != 0;
   }
 
   ioa::udp_broadcast_sender_automaton::send_arg send_action () {
@@ -31,7 +30,7 @@ private:
     return ioa::udp_broadcast_sender_automaton::send_arg (&m_address, m_buffer);
   }
 
-  V_UP_OUTPUT (periodic_broadcaster, send, ioa::udp_broadcast_sender_automaton::send_arg);
+  V_UP_OUTPUT (broadcast_sender, send, ioa::udp_broadcast_sender_automaton::send_arg);
 
   void send_complete_action (const int& result) {
     assert (m_state == SEND_COMPLETE_WAIT);
@@ -48,28 +47,26 @@ private:
     schedule ();
   }
 
-  V_UP_INPUT (periodic_broadcaster, send_complete, int);
+  V_UP_INPUT (broadcast_sender, send_complete, int);
 
   void schedule () const {
     if (send_precondition ()) {
-      ioa::schedule (&periodic_broadcaster::send);
+      ioa::schedule (&broadcast_sender::send);
     }
   }
 
 public:
-  periodic_broadcaster (const unsigned short port,
-			const ioa::time period,
+  broadcast_sender (const unsigned short port,
 			const std::string message) :
     m_state (SEND_READY),
-    m_self (new ioa::self_helper<periodic_broadcaster> ()),
+    m_self (new ioa::self_helper<broadcast_sender> ()),
     m_address ("255.255.255.255", port),
-    m_period (period),
     m_buffer (message.size (), message.c_str ())
   {
     ioa::automaton_helper<ioa::udp_broadcast_sender_automaton>* sender = new ioa::automaton_helper<ioa::udp_broadcast_sender_automaton> (this, ioa::make_generator<ioa::udp_broadcast_sender_automaton> ());
 
-    ioa::make_bind_helper (this, m_self.get (), &periodic_broadcaster::send, sender, &ioa::udp_broadcast_sender_automaton::send);
-    ioa::make_bind_helper (this, sender, &ioa::udp_broadcast_sender_automaton::send_complete, m_self.get (), &periodic_broadcaster::send_complete);
+    ioa::make_bind_helper (this, m_self.get (), &broadcast_sender::send, sender, &ioa::udp_broadcast_sender_automaton::send);
+    ioa::make_bind_helper (this, sender, &ioa::udp_broadcast_sender_automaton::send_complete, m_self.get (), &broadcast_sender::send_complete);
 
     schedule ();
   }
@@ -78,16 +75,15 @@ public:
 
 int
 main (int argc, char* argv[]) {
-  if (argc != 4) {
-    std::cerr << "Usage: " << argv[0] << " PORT PERIOD MESSAGE" << std::endl;
+  if (argc != 3) {
+    std::cerr << "Usage: " << argv[0] << " PORT MESSAGE" << std::endl;
     exit (EXIT_FAILURE);
   }
 
   unsigned short port = atoi (argv[1]);
-  ioa::time period (atoi (argv[2]), 0);
-  std::string message (argv[3]);
+  std::string message (argv[2]);
 
   ioa::global_fifo_scheduler ss;
-  ioa::run (ss, ioa::make_generator<periodic_broadcaster> (port, period, message));
+  ioa::run (ss, ioa::make_generator<broadcast_sender> (port, message));
   return 0; 
 }
