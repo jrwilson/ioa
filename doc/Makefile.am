@@ -1,1 +1,4 @@
-info_TEXINFOS = user.texi design.texi
+AM_MAKEINFOFLAGS = -I $(top_srcdir)
+info_TEXINFOS = ioa.texi
+
+TEXI2DVI = texi2dvi $(AM_MAKEINFOFLAGS)

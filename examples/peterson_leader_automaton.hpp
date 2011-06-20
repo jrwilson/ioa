@@ -1,7 +1,7 @@
 #ifndef __peterson_leader_automaton_hpp__
 #define __peterson_leader_automaton_hpp__
 
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 #include "uuid.hpp"
 #include <queue>
 

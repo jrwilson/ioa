@@ -50,9 +50,7 @@ AC_CHECK_FUNCS([getpagesize gettimeofday memset select socket strerror])
 AC_CONFIG_FILES([Makefile
 		 include/Makefile
 		 lib/Makefile
-		 test/Makefile])
-
-#		 doc/Makefile
-#		 examples/Makefile
-#		 test/Makefile])
+		 test/Makefile
+		 doc/Makefile
+		 examples/Makefile])
 AC_OUTPUT

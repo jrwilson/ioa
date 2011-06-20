@@ -2,7 +2,7 @@
 #define __channel_automaton_hpp__
 
 #include <queue>
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 
 /*
   Channel I/O Automaton

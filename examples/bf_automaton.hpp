@@ -1,7 +1,7 @@
 #ifndef __bf_automaton_hpp__
 #define __bf_automaton_hpp__
 
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 
 #include <queue>
 #include <map>

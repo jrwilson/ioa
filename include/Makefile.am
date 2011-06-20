@@ -15,6 +15,7 @@ ioa/environment.hpp \
 ioa/executor_interface.hpp \
 ioa/generator.hpp \
 ioa/generator_interface.hpp \
+ioa/global_fifo_scheduler.hpp \
 ioa/ioa.hpp \
 ioa/model_interface.hpp \
 ioa/observer.hpp \

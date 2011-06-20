@@ -1,4 +1,4 @@
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 #include <ioa/simple_scheduler.hpp>
 
 #include <iostream>

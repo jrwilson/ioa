@@ -1,7 +1,7 @@
 #ifndef __asynch_lcr_automaton_hpp__
 #define __asynch_lcr_automaton_hpp__
 
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 #include "uuid.hpp"
 #include <queue>
 

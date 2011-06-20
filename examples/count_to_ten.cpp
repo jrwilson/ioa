@@ -3,7 +3,7 @@
 */
 
 // Includes all of the classes needed to define I/O Automata.
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 #include <ioa/simple_scheduler.hpp>
 
 // For printing (cout).

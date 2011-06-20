@@ -1,7 +1,7 @@
 #ifndef __bfs_automaton_hpp__
 #define __bfs_automaton_hpp__
 
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 
 #include <iostream>
 #include <set>

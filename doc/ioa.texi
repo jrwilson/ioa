@@ -1,25 +1,21 @@
 \input texinfo  @c -*-texinfo-*-
 @c %** Start of header
-@setfilename user.info
-@settitle The Universal Environment for I/O Automata
+@setfilename ioa.info
+@settitle The I/O Automata Library
 @setchapternewpage odd
 @c %** End of header
 
+@include version.texi
+
 @copying
-This manual is for ueioa, version 0.1.
-
 Copyright @copyright{} 2011 Justin R. Wilson.
-
 @quotation
-Permission is granted to ...
+This work is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nd/3.0/ or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
 @end quotation
 @end copying
 
 @titlepage
-@titlefont{The Universal Environment}
-@sp 1
-@title for I/O Automata
-@subtitle User Manual
+@title The I/O Automata Library
 @author Justin R. Wilson
 
 @c The following two commands start the copyright page.
@@ -27,7 +23,6 @@ Permission is granted to ...
 @vskip 0pt plus 1filll
 @insertcopying
 
-Published by ...
 @end titlepage
 
 @c So the TOC is printed in the right place.
@@ -35,25 +30,36 @@ Published by ...
 
 @ifnottex
 @node Top
-@top The Universal Environment for I/O Automata
+@top The I/O Automata Library
+
+This manual describes version @value{VERSION} of the I/O Automata Library.
 
 @insertcopying
+
 @end ifnottex
 
+@menu
+* Introduction::	Motivation and the I/O automata formal model.
+* Tutorials::		Tutorials introduction the framework.
+* Index::		The complete index.
+@end menu
+
+@node Introduction
 @chapter Introduction
 
 A number of formal models have been developed that make reasoning about concurrent and distributed computation easier than reasoning about the same systems using the thread model.
 In practice, however, threads dominate due to processor architectures, programming languages, operating system support, and the widespread availability of thread libraries.
 Other approaches to concurrency focus on domain specific problems and tend to be ad hoc.
-The Universal Environment for I/O Automata (@acronym{UEIOA}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
-The goal of @acronym{UEIOA} is to bring the reasoning power of the I/O automata model to the programmer.
-@acronym{UEIOA} seeks to be an eventual replacement for threads--starting at the application layer and working down to the operating system or beyond.
+The I/O Automata Library (@acronym{libioa}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
+The goal of @acronym{libioa} is to bring the reasoning power of the I/O automata model to the programmer.
+@acronym{Libioa} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
 
-The first chapter contains a brief description of the I/O automata model and describes some considerations for implementation.
-Those familiar with the I/O automata model will recognize the implementation considerations as the ``extra stuff'' that one needs when compared to the formal model.
-The second chapter contains a series of tutorials that introduce the concepts and features of the framework.
-@c The third chapter contains a series of how-to's for situations where one knows what one wishes to do but doesn't know how to express it using the framework.
+@menu
+* I/O Automata::	The I/O automata formal model.
+* Considerations::	Implementation requisites.
+@end menu
 
+@node I/O Automata
 @section I/O Automata
 
 The I/O automata model was developed by Nancy Lynch and is described in Chapter 8 of @cite{Distributed Algorithms}.
@@ -67,9 +73,10 @@ Input and output actions are known as @dfn{external actions}.
 Whereas output and internal actions can selectively be enabled or disabled using a precondition, input actions are executed whenever their corresponding output is executed.
 This property is known as being @dfn{input enabled}.
 
+@node Considerations
 @section Implementation Considerations
 
-@subsection Configuration
+@subsection Dynamics
 
 The I/O automata model assumes that the automata in a system are @emph{static}.
 By static I mean that all automata exist in their initial states and before the first action is executed.
@@ -91,7 +98,7 @@ While implementing an omniscient scheduler is possible, it hinders the developme
 Consequently, the decision was made that the user is responsible for telling the scheduler which actions to consider.
 The scheduler can implement different scheduling policies that influence the order in which actions are selected.
 Again, the only requirement is that the scheduler is fair.
-Currently, @acronym{UEIOA} contains a simple FIFO scheduler.
+Currently, @acronym{libioa} contains a simple FIFO scheduler.
 
 The act of telling the scheduler to consider an action for selection and execution is called @dfn{scheduling}.
 If a user decides to schedule all actions all the time, then the scheduler degenerates into a brute-force omniscient scheduler.
@@ -100,27 +107,68 @@ The best approach has the user perform a dependency analysis to determine which 
 Notice that this optimization is not possible unless users schedule the actions.
 All of the examples in this document use the middle approach.
 
+@node Tutorials
 @chapter Tutorials
 
+@menu
+* Tutorial 1::	The Null Automaton.
+@end menu
+
+@node Tutorial 1
 @section The Null Automaton
 
-The purpose of this tutorial is to introduce
+The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{libioa}.
+The following program contains the null automaton---an automaton with no actions.
+The source can be found in @file{examples/null_automaton}.
 
 @example
-@verbatiminclude ../examples/null_automaton.cpp
+@verbatiminclude examples/null_automaton.cpp
 @end example
 
-inheriting from automata
-pick a scheduler
-run
-generator
-get current id
+Let's go through it section by section.
+
+The lines
+@example
+@verbatim
+#include <ioa/ioa.hpp>
+#include <ioa/simple_scheduler.hpp>
+@end verbatim
+@end example
+include eall of the headers necessary for writing I/O automata and the header needed to declare a simple FIFO based scheduler.
+
+The lines
+@example
+@verbatim
+class null_automaton :
+  public ioa::automaton
+{ };
+@end verbatim
+@end example
+declares a new automaton type called @code{null_automaton}.
+All automata must inherit from @code{ioa::automaton}.
+Also note that all @acronym{libioa} types and functions are in the @code{ioa} namespace.
+
+The definition of the main function
+@example
+@verbatim
+int main () {
+  ioa::simple_scheduler ss;
+  ioa::run (ss, ioa::make_generator<null_automaton> ());
+  return 0;
+}
+@end verbatim
+@end example
+declares a new scheduler @code{ss} and starts the scheduler with a new root automaton of type @code{null_automaton}.
+The @code{run} function takes two arguments: a scheduler and a generator.
+A generator is a @dfn{promise} or an object that can later be invoked to produce a value.
+In this case, the value of the generator is a dynamically created instance of @code{null_automaton}.
 
 @section Internal Actions: The Count-to-Ten Automaton
 
 Internal actions
 Scheduling
 Basic structure
+get current id
 
 @section Automaton Helpers: Count-to-Ten Automata
 
@@ -144,6 +192,19 @@ automatic parameters
 
 
 self helper
+
+
+@node Index
+@unnumbered Index
+
+@printindex cp
+
+
+
+
+
+
+
 
 @c @chapter Using the Formalism
 
@@ -339,6 +400,5 @@ self helper
 @c - scheduling actions
 @c - creation caveats = type safety
 @c - Why is "this" everywhere?
-
 
 @bye

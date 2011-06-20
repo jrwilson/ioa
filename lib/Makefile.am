@@ -12,6 +12,7 @@ condition_variable.hpp \
 condition_variable.cpp \
 create_runnable.hpp \
 destroy_runnable.hpp \
+global_fifo_scheduler.cpp \
 input_bound_runnable.hpp \
 input_unbound_runnable.hpp \
 lock.hpp \

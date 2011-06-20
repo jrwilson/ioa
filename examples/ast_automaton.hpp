@@ -1,7 +1,7 @@
 #ifndef __ast_automaton_hpp__
 #define __ast_automaton_hpp__
 
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 
 #include <set>
 #include <map>

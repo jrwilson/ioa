@@ -1,8 +1,7 @@
 #ifndef __aba_automaton_hpp__
 #define __aba_automaton_hpp__
 
-
-#include <ioa.hpp>
+#include <ioa/ioa.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <set>
