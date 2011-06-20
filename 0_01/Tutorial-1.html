@@ -1,0 +1,258 @@
+<html lang="en">
+<head>
+<title>Tutorial 1 - The I/O Automata Library</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The I/O Automata Library">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tutorials.html#Tutorials" title="Tutorials">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2011 Justin R. Wilson.
+
+     This work is licensed under the Creative Commons
+     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
+     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
+     send a letter to Creative Commons, 444 Castro Street, Suite 900,
+     Mountain View, California, 94041, USA.
+   -->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Tutorial-1"></a>
+<p>
+Up:&nbsp;<a rel="up" accesskey="u" href="Tutorials.html#Tutorials">Tutorials</a>
+<hr>
+</div>
+
+<h3 class="section">2.1 The Null Automaton</h3>
+
+<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with <acronym>ioa</acronym>. 
+The following program contains the null automaton&mdash;an automaton with no actions. 
+The source can be found in <samp><span class="file">tutorial/null_automaton</span></samp>.
+
+<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+     #include &lt;ioa/global_fifo_scheduler.hpp>
+     
+     class null_automaton :
+       public ioa::automaton
+     { };
+     
+     int main () {
+       ioa::global_fifo_scheduler sched;
+       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
+       return 0;
+     }
+</pre></pre>
+   <p>Let's go through it section by section. 
+The lines
+<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+     #include &lt;ioa/global_fifo_scheduler.hpp>
+</pre>
+</pre>
+   <p>include eall of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler. 
+The lines
+<pre class="example"><pre class="verbatim">     class null_automaton :
+       public ioa::automaton
+     { };
+</pre>
+</pre>
+   <p>declares a new automaton type called <code>null_automaton</code>. 
+All automata must inherit from <code>ioa::automaton</code>. 
+Also note that all <acronym>ioa</acronym> types and functions are in the <code>ioa</code> namespace. 
+The definition of the main function
+<pre class="example"><pre class="verbatim">     int main () {
+       ioa::global_fifo_scheduler sched;
+       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
+       return 0;
+     }
+</pre>
+</pre>
+   <p>declares a new scheduler <code>sched</code> and starts the scheduler with a new root automaton of type <code>null_automaton</code>. 
+The <code>run</code> function takes two arguments: a scheduler and a generator. 
+A generator is a <dfn>promise</dfn> or an object that can later be invoked to produce a value. 
+In this case, the value of the generator is a dynamically created instance of <code>null_automaton</code>.
+
+   <p>Assuming that a copy of <samp><span class="file">null_automaton.cpp</span></samp> exists in the current directory and that <samp><span class="command">g++</span></samp> is your C++ compiler, one can compile and run the null automaton with
+<pre class="example"><pre class="verbatim">     $ g++ null_automaton.cpp -o null_automaton -lioa -lpthread
+     $ ./null_automaton
+</pre>
+</pre>
+   <p>Notice that we needed to link against the I/O automata library (<samp><span class="option">-lioa</span></samp>) and pthreads library (<samp><span class="option">-lpthread</span></samp>). 
+Some environments, e.g., Mac OSX, include pthreads in the standard C libary. 
+If you have such an environment, omit the <samp><span class="option">-lpthread</span></samp> part of the commmand.
+
+<!-- @section Internal Actions: The Count-to-Ten Automaton -->
+<!-- Internal actions -->
+<!-- Scheduling -->
+<!-- Basic structure -->
+<!-- get current id -->
+<!-- @section Automaton Helpers: Count-to-Ten Automata -->
+<!-- Hiearchies -->
+<!-- Automata helpers -->
+<!-- @section External Actions: Cooperative Count-to-Ten -->
+<!-- Input and output actions -->
+<!-- Bind helpers -->
+<!-- @section Advanced Topic: Parameters -->
+<!-- Parameters -->
+<!-- @section Advanced Topic: Automatic Parameters -->
+<!-- automatic parameters -->
+<!-- self helper -->
+<!-- @node Index -->
+<!-- @unnumbered Index -->
+<!-- @printindex cp -->
+<!-- @chapter Using the Formalism -->
+<!-- @chapter Gotchas -->
+<!-- @chapter Tips and Tricks -->
+<!-- @section The Problem with Threads -->
+<!-- The thread model dominates modern computing. -->
+<!-- A @dfn{thread} consists of a sequence of instructions, state, and an instruction pointer indicating the location of the current instruction. -->
+<!-- Conventional processors are a direct implementation of the thread model, mainstream compilers are designed to produce code for these processors, and modern operating systems are designed to execute programs on these processors. -->
+<!-- Naturally, the application developed for these systems are also based on the thread model. -->
+<!-- The dominance of the thread model makes it a practical choice for concurrency. -->
+<!-- A physical processor can be multiplexed to execute multiple threads by repeatedly switching from one thread to another. -->
+<!-- Multiple processors allow concurrent threads to execute simultaneously. -->
+<!-- Concurrent threads communicate by sharing state and using synchronization primitives to control access to the state. -->
+<!-- A section of code that updates shared state is called a @dfn{critical section}. -->
+<!-- There are two main issues with using threads as a basis for concurrency. -->
+<!-- The first is that reasoning about the correctness of a threaded program is notoriously difficult because one must consider all possible interleavings of critical sections. -->
+<!-- System developers know that developing and debugging shared-state, lock-based programs is difficult. -->
+<!-- Threads are also not composable. -->
+<!-- One cannot combine the code for two threads into a single thread and reason about the behavior of the composition as the interactions of the two original threads. -->
+<!-- The second issue is a diversity of threading techniques, resulting in systems that cannot easily be integrated. -->
+<!-- Consider an application based on a reactive event loop that wishes to use a library that performs blocking I/O. -->
+<!-- If the goal is to be responsive, the programmer must wrap all calls to the library as events and pass them to another thread to perform the blocking I/O. -->
+<!-- The overhead of integration is often not negligible and tends to be a source of concurrency bugs. -->
+<!-- @c In addition to the problems just mentioned, the clock frequencies of processors have reached a ceiling and processor manufacturers are looking to multi-core to deliver increased performance. -->
+<!-- @c Gains in performance will only be realized through better data structures and algorithms, optimization, hardware acceleration, or concurrent computation. -->
+<!-- @section The Search for Better Models -->
+<!-- To ease the difficulties of developing systems with threads, practitioners and researchers have explored a number of options including new programming languages, language extensions, and libraries/frameworks/middleware/design patterns. -->
+<!-- New programming languages and their run-time systems tend to not be adopted unless they resemble the language used to implement the operating system. -->
+<!-- Consequently, C, C++, Java, and the like will dominate system programming languages for the foreseeable future. -->
+<!-- Language extensions by their very definition are non-standard and therefore cannot be used to develop portable software. -->
+<!-- Furthermore, concurrency is rather large and difficult piece to bolt on to an existing programming language. -->
+<!-- Libraries, frameworks, middleware, and design patterns have been successful because they can take advantage of existing compilers and operating systems. -->
+<!-- However, they tend to focus on domain-specific problems and lack generality in that sense. -->
+<!-- I agree with Chris Gill's argument that the reason we have not found a better solution for concurrency is because we've been looking the wrong places. -->
+<!-- Specifically, we've only considered domain-specific solutions that are all variations of the thread model. -->
+<!-- I argue that a better place to look is the formal methods community. -->
+<!-- The formal methods community has proposed a number of different models for concurrency, e.g., Petri nets, UNITY, I/O automata, all for the purpose of making reasoning about concurrency easier. -->
+<!-- It stands to reason that a model that makes formal reasoning about concurrency easier will also make informal reasoning about concurrency easier. -->
+<!-- What is lacking are implementations of these models that permit an honest evaluation. -->
+<!-- Ideally, one would build a processor, programming language, operating system, and applications all based on Petri nets to evaluate the usefulness of Petri nets as a model of concurrency. -->
+<!-- Cost and effort prohibit such a bottom-up approach. -->
+<!-- Conversely, starting at the top and working down is a much better approach as many models can be tried with a smaller investment. -->
+<!-- A model that succeeds can gradually sink from the application layer to the operating system layer. -->
+<!-- Further subsuming is only necessary if a new programming language is need to make programming in the new model more efficient (for the machine or the programmer) or a new processor architecture based on the model provides significant advantages over existing processor architectures. -->
+<!-- @section Scope -->
+<!-- In pursuit of production grade implementations of different models of concurrency, @acronym{UEIOA} is an application level implementation of the I/O automata model. -->
+<!-- @chapter Tutorial -->
+<!-- @chapter Cookbook -->
+<!-- @chapter Reference -->
+<!-- @chapter Examples -->
+<!-- @chapter FAQ -->
+<!-- * Action Wrappers -->
+<!-- Sensing when an action changes binding status is useful. -->
+<!-- Consider a pair of automata, A and B, that are bound. -->
+<!-- If either one of them dies, the other should die. -->
+<!-- The automata can detect the death of the other by detecting when their respective actions are unbound. -->
+<!-- The Observer Pattern to the rescue again. -->
+<!-- We can make all input and output wrappers be observable so the automaton can know when something changes status. -->
+<!-- The thread model is at the heart of modern computing as indicated by modern processors, programming languages, and operating systems. -->
+<!-- A thread consists of 1) a sequence of instructions, 2) an instruction pointer indicating the current instruction, and 3) state that is manipulated by the instructions. -->
+<!-- The current instruction and thread state including the instruction pointer determines the subsequent instruction pointer with the default being to advance to the next instruction. -->
+<!-- All major processors are a direct realization of the thread model. -->
+<!-- All major programming languages are based on the structured sequential programming paradigm which is defined using the thread abstraction. -->
+<!-- All major operating systems are written using sequential languages and multiplex processors among different threads by periodically interrupting the current thread,  saving its instruction pointer and other processor state, and then loading and starting another thread. -->
+<!-- Most modern applications are thread-based due to the strong agreement between the processor, programming language, and operating system. -->
+<!-- # File System -->
+<!-- The file system is a critical part of traditional operating systems. -->
+<!-- If we use communication sequential processes, then we can model the virtual file system (or kernel) as a process that rendezvous with user processes at open, read, write, etc. -->
+<!-- In an I/O Automata-based operating system, the file system is just another coordination mechanism. -->
+<!-- From the bottom up, we can model physical disks as (physical) automata. -->
+<!-- On top of the disks are file system drivers, e.g., ext, FAT, xfs, that are also automata. -->
+<!-- On top of the disk drivers is the virtual file system automaton. -->
+<!-- The virtual file system automaton creates file and directory automata with which users can interact. -->
+<!-- Using I/O Automata to build a virtual file system has the potential to simplify certain features such as change notification and database triggers. -->
+<!-- Inputs -->
+<!-- read -->
+<!-- write -->
+<!-- Ouputs -->
+<!-- read_complete -->
+<!-- write_complete -->
+<!-- (We are asynchronous.  Consequently, we could take advantage of ASIO if it is available.  The complete calls allow us to have good back pressure (or flow control).) -->
+<!-- Closing can be accomplished with an input or upon the first action unbind. -->
+<!-- * Memory allocation -->
+<!-- The scheduler knows what automaton is running at any given time. -->
+<!-- Thus, we can associated allocated memory with an automaton and free it when the automaton is destroyed. -->
+<!-- * Helpers -->
+<!-- System calls cannot be made while in the constructor of an automaton because the "this" pointer is not known to the scheduler and can't be used for certian sanity checks. -->
+<!-- So, the helpers have methods, create and bind respectively, that that get the helpers started. -->
+<!-- A starting point is to move all of the parameters required at construction to the appropriate start-up method. -->
+<!-- We desire (and have) the ability to create helpers dynamically, either directly (calling "new helper") or indirectly (calling "new object" where object contains one or more helpers). -->
+<!-- This gives us the power to create dynamic constellations of automata. -->
+<!-- However, they must be stopped before they are destroyed. -->
+<!-- To illustrate, consider the following sequence -->
+<!-- new automaton_helper -->
+<!-- create -> -->
+<!-- created <-              automaton -->
+<!-- |                        | -->
+<!-- delete automaton_helper       | -->
+<!-- | -->
+<!-- delete automaton -->
+<!-- <-destroyed  [The system will call a non-existent callback.] -->
+<!-- Instead of calling delete, the sequence should contain a destroy/unbind call. -->
+<!-- The handler in the helper can then call delete to clean up. -->
+<!-- The new sequence looks like. -->
+<!-- new automaton_helper -->
+<!-- create -> -->
+<!-- created <-              automaton -->
+<!-- |                        | -->
+<!-- automaton_helper->destroy ()  | -->
+<!-- |                        | -->
+<!-- |                 delete automaton -->
+<!-- <-destroyed  [The helper will call "delete this" to clean the helper.] -->
+<!-- If the helper always calls delete, then we cannot have statically allocated helpers. -->
+<!-- This seems acceptable to me at this time. -->
+<!-- If we only allow dynamically allocated helpers, we can move all of the create/bind parameters back to the constructor and stipulate that the helpers are dynamically allocated at or after the init methods of the automaton. -->
+<!-- The helpers then have a very simple interface: a constructor and a destroy/unbind method. -->
+<!-- Suppose that an automaton has allocated some helpers is in its destructor. -->
+<!-- Also, suppose that the memory accounting framework does not exists (because it doesn't). -->
+<!-- The automaton designer, wishing to not introduce memory leaks, wishes to delete the helpers. -->
+<!-- However, the helper might have already been destroyed due to a callback resulting in a double-free. -->
+<!-- If we could guarantee that the helpers receive the appropriate destroyed/unbound signals before the destructor for the automaton, then the destructor doesn't need to delete the helpers. -->
+<!-- The system can (and does) enforce this. -->
+<!-- Otherwise, helpers become too complex and their utility is greatly diminished. -->
+<!-- We can group helpers into other objects to make the creation and maintenance of constellations easier. -->
+<!-- Initially, this looks difficult as it appears that we have the same problem as before, i.e., an automaton has no way of knowing when a grouping object is safe to delete. -->
+<!-- The Observer Pattern to the rescue. -->
+<!-- The helpers are observable, thus, the grouping object can observe them and know when they are all destroyed. -->
+<!-- If the group object itself is observable, then the automaton can know when the grouping object is defunct. -->
+<!-- The pattern can be repeated ad infinitum and resembles a tree structure with the automaton at the root, group objects at the branches, and helpers at the roots. -->
+<!-- In the tree, parents observe their children. -->
+<!-- * Round-robin scheduler -->
+<!-- I would like to make a round-robin scheduler. -->
+<!-- Other scheduler's are also possible. -->
+<!-- To write: -->
+<!--  Explain dispatching_automaton. -->
+<!--  UP_INTERNAL macros and underlying wrappers -->
+<!--  Why can't you do stuff in constructors? -->
+<!--  init () -->
+<!--  helpers instead of the Big 4 -->
+<!--  scheduling actions -->
+<!--  creation caveats = type safety -->
+<!--  Why is "this" everywhere? -->
+</body></html>
+
