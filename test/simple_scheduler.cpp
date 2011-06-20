@@ -4,4 +4,4 @@
 
 #define SCHEDULER_TYPE ioa::simple_scheduler
 
-#include "scheduler_test.cpp"
+#include "scheduler_test.hpp"

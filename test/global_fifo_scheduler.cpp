@@ -4,4 +4,4 @@
 
 #define SCHEDULER_TYPE ioa::global_fifo_scheduler
 
-#include "scheduler_test.cpp"
+#include "scheduler_test.hpp"
