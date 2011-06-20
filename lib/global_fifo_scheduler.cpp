@@ -80,23 +80,6 @@ namespace ioa {
       }
     }
 
-    // void process_execq () {
-    //   clear_current_aid ();
-    //   while (thread_keep_going ()) {
-    // 	std::pair<bool, runnable_interface*> r = m_userq.pop ();
-    // 	if (r.first) {
-    // 	  (*r.second) (m_model);
-    // 	  delete r.second;
-    // 	}
-    //   }
-    // }
-
-    // void wakeup_io_thread () {
-    //   char c;
-    //   ssize_t bytes_written = write (m_wakeup_fd[1], &c, 1);
-    //   assert (bytes_written == 1);
-    // }
-
     void schedule_timerq (action_runnable_interface* r, const time& offset) {
       struct timeval now;
       int s = gettimeofday (&now, 0);
@@ -321,19 +304,14 @@ namespace ioa {
 	  delete r;
 	}
 
+	if (!m_userq.empty ()) {
+	  runnable_interface* r = m_userq.front ();
+	  m_userq.pop_front ();
+	  (*r) (m_model);
+	  delete r;
+	}
 
       }
-
-
-
-
-      // thread execq_thread (*this, &global_fifo_scheduler_impl::process_execq);
-      // thread timerq_thread (*this, &global_fifo_scheduler_impl::process_ioq);
-
-
-      // sysq_thread.join ();
-      // execq_thread.join ();
-      // timerq_thread.join ();
 
       // There are no runnables left in the system, thus, there is no more work to do.
       // If all of the automata have been coded correctly, then we have reached "fixed point".
@@ -343,13 +321,12 @@ namespace ioa {
       // We clear the system first because it might add something to a run queue.
       m_model.clear ();
     
-      // // Then, we clear the run queues.
-      // for (std::list<std::pair<bool, runnable_interface*> >::iterator pos = m_configq.list.begin ();
-      // 	   pos != m_configq.list.end ();
-      // 	   ++pos) {
-      // 	delete pos->second;
-      // }
-      // m_configq.list.clear ();
+      // Then, we clear the run queues.
+      while (m_configq.empty ()) {
+	runnable_interface* r = m_configq.front ();
+	m_configq.pop ();
+	delete r;
+      }
     
       // for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_userq.list.begin ();
       // 	   pos != m_userq.list.end ();
