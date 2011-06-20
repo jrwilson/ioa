@@ -5,6 +5,7 @@ LDADD = $(top_builddir)/lib/libioa.la
 TESTS = \
 action_executor \
 model \
+global_fifo_scheduler \
 simple_scheduler \
 bind_helper
 
@@ -13,6 +14,8 @@ check_PROGRAMS = $(TESTS)
 action_executor_SOURCES = minunit.h automaton1.hpp action_executor.cpp test_main.cpp
 
 model_SOURCES = minunit.h instance_holder.hpp automaton1.hpp model.cpp test_main.cpp
+
+global_fifo_scheduler_SOURCES = minunit.h automaton2.hpp global_fifo_scheduler.cpp test_main.cpp
 
 simple_scheduler_SOURCES = minunit.h automaton2.hpp simple_scheduler.cpp test_main.cpp
 

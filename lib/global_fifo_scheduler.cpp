@@ -201,14 +201,15 @@ namespace ioa {
 	}
 
     	// Determine timeout for select.
-    	// Default is to wait forever.
     	struct timeval* test_timeout;
     	struct timeval timeout;
-      
-    	if (timer_queue.empty ()) {
-    	  test_timeout = 0;
-    	}
-    	else {
+
+
+	// Start by assuming we need to wait forever.
+	test_timeout = 0;
+
+	// If the timer queue is empty, set a timeout.
+	if (!timer_queue.empty ()) {
     	  struct timeval n;
     	  int r = gettimeofday (&n, 0);
     	  assert (r == 0);
@@ -226,75 +227,86 @@ namespace ioa {
     	  test_timeout = &timeout;
     	}
 
-    	// Determine the read set.
-    	for (std::map<int, action_runnable_interface*>::const_iterator pos = read_actions.begin ();
-    	     pos != read_actions.end ();
-    	     ++pos) {
-    	  FD_SET (pos->first, &read_set);
-    	}
+	// If we have work to do, go immediately.
+	if (!m_configq.empty () || !m_userq.empty ()) {
+	  timeout = time (0, 0);
+	  test_timeout = &timeout;
+	}
 
-    	// Determine the write set.
-    	for (std::map<int, action_runnable_interface*>::const_iterator pos = write_actions.begin ();
-    	     pos != write_actions.end ();
-    	     ++pos) {
-    	  FD_SET (pos->first, &write_set);
-    	}
-      
-    	// TODO: Do better than FD_SETSIZE.
-    	int max_fd = 0;
-    	if (!read_actions.empty ()) {
-    	  max_fd = std::max ((--read_actions.end ())->first, max_fd);
-    	}
-    	if (!write_actions.empty ()) {
-    	  max_fd = std::max ((--write_actions.end ())->first, max_fd);
-    	}
-    	int select_result = select (max_fd + 1, &read_set, &write_set, 0, test_timeout);
-    	assert (select_result >= 0);
-      
-    	// Process timers.
-    	{
-    	  struct timeval n;
-    	  int r = gettimeofday (&n, 0);
-    	  assert (r == 0);
-    	  time now (n);
-	
-    	  while (!timer_queue.empty () && timer_queue.top ().second < now) {
-    	    schedule_userq (timer_queue.top ().first);
-    	    timer_queue.pop ();
-    	  }
-    	}
+	// We only need to select if we have fds or timers.
+	if (!read_actions.empty () || !write_actions.empty () || !timer_queue.empty ()) {
+	  
+	  // Determine the read set.
+	  for (std::map<int, action_runnable_interface*>::const_iterator pos = read_actions.begin ();
+	       pos != read_actions.end ();
+	       ++pos) {
+	    FD_SET (pos->first, &read_set);
+	  }
+	  
+	  // Determine the write set.
+	  for (std::map<int, action_runnable_interface*>::const_iterator pos = write_actions.begin ();
+	       pos != write_actions.end ();
+	       ++pos) {
+	    FD_SET (pos->first, &write_set);
+	  }
+	  
+	  // TODO: Do better than FD_SETSIZE.
+	  int max_fd = 0;
+	  if (!read_actions.empty ()) {
+	    max_fd = std::max ((--read_actions.end ())->first, max_fd);
+	  }
+	  if (!write_actions.empty ()) {
+	    max_fd = std::max ((--write_actions.end ())->first, max_fd);
+	  }
+	  int select_result = select (max_fd + 1, &read_set, &write_set, 0, test_timeout);
+	  assert (select_result >= 0);
+	  
+	  // Process timers.
+	  {
+	    struct timeval n;
+	    int r = gettimeofday (&n, 0);
+	    assert (r == 0);
+	    time now (n);
+	    
+	    while (!timer_queue.empty () && timer_queue.top ().second < now) {
+	      schedule_userq (timer_queue.top ().first);
+	      timer_queue.pop ();
+	    }
+	  }
+	  
+	  // Process reads.
+	  if (select_result > 0) {
+	    for (std::map<int, action_runnable_interface*>::iterator pos = read_actions.begin ();
+		 pos != read_actions.end ();
+		 ) {
+	      if (FD_ISSET (pos->first, &read_set)) {
+		FD_CLR (pos->first, &read_set);
+		schedule_userq (pos->second);
+		read_actions.erase (pos++);
+	      }
+	      else {
+		++pos;
+	      }
+	    }
+	  }
+	  
+	  // Process writes.
+	  if (select_result > 0) {
+	    for (std::map<int, action_runnable_interface*>::iterator pos = write_actions.begin ();
+		 pos != write_actions.end ();
+		 ) {
+	      if (FD_ISSET (pos->first, &write_set)) {
+		FD_CLR (pos->first, &write_set);
+		schedule_userq (pos->second);
+		write_actions.erase (pos++);
+	      }
+	      else {
+		++pos;
+	      }
+	    }
+	  }
 
-    	// Process reads.
-    	if (select_result > 0) {
-    	  for (std::map<int, action_runnable_interface*>::iterator pos = read_actions.begin ();
-    	       pos != read_actions.end ();
-    	       ) {
-    	    if (FD_ISSET (pos->first, &read_set)) {
-    	      FD_CLR (pos->first, &read_set);
-    	      schedule_userq (pos->second);
-    	      read_actions.erase (pos++);
-    	    }
-    	    else {
-    	      ++pos;
-    	    }
-    	  }
-    	}
-
-    	// Process writes.
-    	if (select_result > 0) {
-    	  for (std::map<int, action_runnable_interface*>::iterator pos = write_actions.begin ();
-    	       pos != write_actions.end ();
-    	       ) {
-    	    if (FD_ISSET (pos->first, &write_set)) {
-    	      FD_CLR (pos->first, &write_set);
-    	      schedule_userq (pos->second);
-    	      write_actions.erase (pos++);
-    	    }
-    	    else {
-    	      ++pos;
-    	    }
-    	  }
-    	}
+	}
 
 	// Process configuration actions.
 	if (!m_configq.empty ()) {
@@ -322,27 +334,23 @@ namespace ioa {
       m_model.clear ();
     
       // Then, we clear the run queues.
-      while (m_configq.empty ()) {
+      while (!m_configq.empty ()) {
 	runnable_interface* r = m_configq.front ();
 	m_configq.pop ();
 	delete r;
       }
     
-      // for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_userq.list.begin ();
-      // 	   pos != m_userq.list.end ();
-      // 	   ++pos) {
-      // 	delete pos->second;
-      // }
-      // m_userq.list.clear ();
+      for (std::list<action_runnable_interface*>::iterator pos = m_userq.begin ();
+      	   pos != m_userq.end ();
+      	   ++pos) {
+      	delete (*pos);
+      }
+      m_userq.clear ();
     
-      // // TODO:  Do I need to close both ends?
-      // close (m_wakeup_fd[0]);
-      // close (m_wakeup_fd[1]);
-
-      // // Notice that the post-conditions match the preconditions.
-      // assert (m_configq.list.size () == 0);
-      // assert (m_userq.list.size () == 0);
-      // assert (!keep_going ());
+      // Notice that the post-conditions match the preconditions.
+      assert (m_configq.empty ());
+      assert (m_userq.empty ());
+      assert (runnable_interface::count () == 0);
     }
   
     void set_current_aid (const aid_t aid) {
