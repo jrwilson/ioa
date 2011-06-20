@@ -41,7 +41,6 @@ This manual describes version @value{VERSION} of the I/O Automata Library.
 @menu
 * Introduction::	Motivation and the I/O automata formal model.
 * Tutorials::		Tutorials introduction the framework.
-* Index::		The complete index.
 @end menu
 
 @node Introduction
@@ -98,7 +97,6 @@ While implementing an omniscient scheduler is possible, it hinders the developme
 Consequently, the decision was made that the user is responsible for telling the scheduler which actions to consider.
 The scheduler can implement different scheduling policies that influence the order in which actions are selected.
 Again, the only requirement is that the scheduler is fair.
-Currently, @acronym{libioa} contains a simple FIFO scheduler.
 
 The act of telling the scheduler to consider an action for selection and execution is called @dfn{scheduling}.
 If a user decides to schedule all actions all the time, then the scheduler degenerates into a brute-force omniscient scheduler.
@@ -119,23 +117,21 @@ All of the examples in this document use the middle approach.
 
 The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{libioa}.
 The following program contains the null automaton---an automaton with no actions.
-The source can be found in @file{examples/null_automaton}.
+The source can be found in @file{tutorial/null_automaton}.
 
 @example
-@verbatiminclude examples/null_automaton.cpp
+@verbatiminclude tutorial/null_automaton.cpp
 @end example
 
 Let's go through it section by section.
-
 The lines
 @example
 @verbatim
 #include <ioa/ioa.hpp>
-#include <ioa/simple_scheduler.hpp>
+#include <ioa/global_fifo_scheduler.hpp>
 @end verbatim
 @end example
-include eall of the headers necessary for writing I/O automata and the header needed to declare a simple FIFO based scheduler.
-
+include eall of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler.
 The lines
 @example
 @verbatim
@@ -147,57 +143,67 @@ class null_automaton :
 declares a new automaton type called @code{null_automaton}.
 All automata must inherit from @code{ioa::automaton}.
 Also note that all @acronym{libioa} types and functions are in the @code{ioa} namespace.
-
 The definition of the main function
 @example
 @verbatim
 int main () {
-  ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<null_automaton> ());
+  ioa::global_fifo_scheduler sched;
+  ioa::run (sched, ioa::make_generator<null_automaton> ());
   return 0;
 }
 @end verbatim
 @end example
-declares a new scheduler @code{ss} and starts the scheduler with a new root automaton of type @code{null_automaton}.
+declares a new scheduler @code{sched} and starts the scheduler with a new root automaton of type @code{null_automaton}.
 The @code{run} function takes two arguments: a scheduler and a generator.
 A generator is a @dfn{promise} or an object that can later be invoked to produce a value.
 In this case, the value of the generator is a dynamically created instance of @code{null_automaton}.
 
-@section Internal Actions: The Count-to-Ten Automaton
+Assuming that a copy of @file{null_automaton.cpp} exists in the current directory and that @command{g++} is your C++ compiler, one can compile and run the null automaton with
+@example
+@verbatim
+$ g++ null_automaton.cpp -o null_automaton -lioa -lpthread
+$ ./null_automaton
+@end verbatim
+@end example
+Notice that we needed to link against the I/O automata library (@option{-lioa}) and pthreads library (@option{-lpthread}).
+Some environments, e.g., Mac OSX, include pthreads in the standard C libary.
+If you have such an environment, omit the @option{-lpthread} part of the commmand.
 
-Internal actions
-Scheduling
-Basic structure
-get current id
+@c @section Internal Actions: The Count-to-Ten Automaton
 
-@section Automaton Helpers: Count-to-Ten Automata
+@c Internal actions
+@c Scheduling
+@c Basic structure
+@c get current id
 
-Hiearchies
-Automata helpers
+@c @section Automaton Helpers: Count-to-Ten Automata
 
-@section External Actions: Cooperative Count-to-Ten
+@c Hiearchies
+@c Automata helpers
 
-Input and output actions
-Bind helpers
+@c @section External Actions: Cooperative Count-to-Ten
 
-@section Advanced Topic: Parameters
+@c Input and output actions
+@c Bind helpers
 
-Parameters
+@c @section Advanced Topic: Parameters
 
-@section Advanced Topic: Automatic Parameters
+@c Parameters
 
-automatic parameters
+@c @section Advanced Topic: Automatic Parameters
 
-
-
-
-self helper
+@c automatic parameters
 
 
-@node Index
-@unnumbered Index
 
-@printindex cp
+
+@c self helper
+
+
+@c @node Index
+@c @unnumbered Index
+
+@c @printindex cp
 
 
 

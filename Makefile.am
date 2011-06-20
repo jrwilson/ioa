@@ -5,4 +5,5 @@ lib \
 doc \
 . \
 test \
+tutorial \
 examples
