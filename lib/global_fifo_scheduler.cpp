@@ -114,7 +114,7 @@ namespace ioa {
     }
   
     void schedule (automaton::sys_create_type automaton::*member_ptr) {
-      // TODO:  Could these go on the execq?
+      // TODO:  Could these go on the userq?
       schedule_configq (new sys_create_runnable (get_current_aid ()));
     }
   
