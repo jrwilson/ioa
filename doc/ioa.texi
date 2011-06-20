@@ -49,9 +49,9 @@ This manual describes version @value{VERSION} of the I/O Automata Library.
 A number of formal models have been developed that make reasoning about concurrent and distributed computation easier than reasoning about the same systems using the thread model.
 In practice, however, threads dominate due to processor architectures, programming languages, operating system support, and the widespread availability of thread libraries.
 Other approaches to concurrency focus on domain specific problems and tend to be ad hoc.
-The I/O Automata Library (@acronym{libioa}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
-The goal of @acronym{libioa} is to bring the reasoning power of the I/O automata model to the programmer.
-@acronym{Libioa} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
+The I/O Automata Library (@acronym{ioa}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
+The goal of @acronym{ioa} is to bring the reasoning power of the I/O automata model to the programmer.
+@acronym{Ioa} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
 
 @menu
 * I/O Automata::	The I/O automata formal model.
@@ -115,7 +115,7 @@ All of the examples in this document use the middle approach.
 @node Tutorial 1
 @section The Null Automaton
 
-The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{libioa}.
+The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{ioa}.
 The following program contains the null automaton---an automaton with no actions.
 The source can be found in @file{tutorial/null_automaton}.
 
@@ -142,7 +142,7 @@ class null_automaton :
 @end example
 declares a new automaton type called @code{null_automaton}.
 All automata must inherit from @code{ioa::automaton}.
-Also note that all @acronym{libioa} types and functions are in the @code{ioa} namespace.
+Also note that all @acronym{ioa} types and functions are in the @code{ioa} namespace.
 The definition of the main function
 @example
 @verbatim
