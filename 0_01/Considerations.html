@@ -1,0 +1,75 @@
+<html lang="en">
+<head>
+<title>Considerations - The I/O Automata Library</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The I/O Automata Library">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Introduction.html#Introduction" title="Introduction">
+<link rel="prev" href="I_002fO-Automata.html#I_002fO-Automata" title="I/O Automata">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2011 Justin R. Wilson.
+
+     This work is licensed under the Creative Commons
+     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
+     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
+     send a letter to Creative Commons, 444 Castro Street, Suite 900,
+     Mountain View, California, 94041, USA.
+   -->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Considerations"></a>
+<p>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="I_002fO-Automata.html#I_002fO-Automata">I/O Automata</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Introduction.html#Introduction">Introduction</a>
+<hr>
+</div>
+
+<h3 class="section">1.2 Implementation Considerations</h3>
+
+<h4 class="subsection">1.2.1 Dynamics</h4>
+
+<p>The I/O automata model assumes that the automata in a system are <em>static</em>. 
+By static I mean that all automata exist in their initial states and before the first action is executed. 
+This also means that outputs and inputs that are composed can be consolidated and treated as one action.
+
+   <p>Real systems, on the other hand, are <em>dynamic</em>. 
+Consider an operating system where processes are created, run, and then possibly exit. 
+Processes can interact with one another but the exact nature of the interaction is dependent on time since the set of existing processes in dependent on time. 
+For I/O automata, this means that we require the ability to create new automata, destroy existing automata, and change which outputs and inputs are composed. 
+We use the term <dfn>binding</dfn> to refer to the act of dynamically associating an output with an input. 
+We use the term <dfn>configuration</dfn> to refer to the actions of creating and destroying automata and binding and unbinding external actions.
+
+<h4 class="subsection">1.2.2 Scheduling</h4>
+
+<p>The only requirement that the I/O automata model places on the scheduler is fairness. 
+This is intentional as it reduces the number of assumptions that one needs to make about the environment. 
+The scheduler is assumed to be omniscient, i.e., it knows all of the actions and can find an action with a true precondition. 
+While implementing an omniscient scheduler is possible, it hinders the development of an efficient scheduler, i.e., one that avoids selecting actions whose precondition are false. 
+Consequently, the decision was made that the user is responsible for telling the scheduler which actions to consider. 
+The scheduler can implement different scheduling policies that influence the order in which actions are selected. 
+Again, the only requirement is that the scheduler is fair.
+
+   <p>The act of telling the scheduler to consider an action for selection and execution is called <dfn>scheduling</dfn>. 
+If a user decides to schedule all actions all the time, then the scheduler degenerates into a brute-force omniscient scheduler. 
+A better approach has the user test the precondition of all actions and schedules those that are true. 
+The best approach has the user perform a dependency analysis to determine which actions could possibly enable other actions and then schedule the enabled actions. 
+Notice that this optimization is not possible unless users schedule the actions. 
+All of the examples in this document use the middle approach.
+
+   </body></html>
+
