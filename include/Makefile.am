@@ -28,4 +28,4 @@ ioa/shared_ptr.hpp \
 ioa/simple_scheduler.hpp \
 ioa/system_scheduler_interface.hpp \
 ioa/time.hpp \
-ioa/udp_broadcast_automaton.hpp
+ioa/udp_broadcast_sender_automaton.hpp

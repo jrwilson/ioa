@@ -8,6 +8,12 @@
 
 namespace ioa {
 
+  enum recent_op_t {
+    NOOP,
+    BOUND,
+    UNBOUND
+  };
+    
   template <class C, void (C::*action_ptr) ()>
   struct uv_up_input_wrapper :
     public input,
@@ -15,15 +21,23 @@ namespace ioa {
     public no_parameter,
     public observable
   {
+    recent_op_t recent_op;
+
+    uv_up_input_wrapper () :
+      recent_op (NOOP)
+    { }
+
     void operator() (C& c) {
       (c.*action_ptr) ();
     }
     
     void bound () {
+      recent_op = BOUND;
       notify_observers ();
     }
     
     void unbound () {
+      recent_op = UNBOUND;
       notify_observers ();
     }
   };
@@ -35,18 +49,25 @@ namespace ioa {
     public parameter<P>,
     public observable
   {
+    recent_op_t recent_op;
     P recent_parameter;
+
+    uv_p_input_wrapper () :
+      recent_op (NOOP)
+    { }
     
     void operator() (C& c, P p) {
       (c.*action_ptr) (p);
     }
 
     void bound (P p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -59,18 +80,25 @@ namespace ioa {
     public auto_parameter,
     public observable
   {
+    recent_op_t recent_op;
     aid_t recent_parameter;
+
+    uv_ap_input_wrapper () :
+      recent_op (NOOP)
+    { }
     
     void operator() (C& c, aid_t p) {
       (c.*action_ptr) (p);
     }
 
     void bound (aid_t p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (aid_t p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -83,15 +111,23 @@ namespace ioa {
     public no_parameter,
     public observable
   {
+    recent_op_t recent_op;
+
+    v_up_input_wrapper () :
+      recent_op (NOOP)
+    { }
+
     void operator() (C& c, const T& t) {
       (c.*action_ptr) (t);
     }
     
     void bound () {
+      recent_op = BOUND;
       notify_observers ();
     }
 
     void unbound () {
+      recent_op = UNBOUND;
       notify_observers ();
     }
   };
@@ -103,18 +139,25 @@ namespace ioa {
     public parameter<P>,
     public observable
   {
+    recent_op_t recent_op;
     P recent_parameter;
+
+    v_p_input_wrapper () :
+      recent_op (NOOP)
+    { }
     
     void operator() (C& c, const T& t, P p) {
       (c.*action_ptr) (t, p);
     }
 
     void bound (P p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -127,18 +170,25 @@ namespace ioa {
     public auto_parameter,
     public observable
   {
+    recent_op_t recent_op;
     aid_t recent_parameter;
+
+    v_ap_input_wrapper () :
+      recent_op (NOOP)
+    { }
     
     void operator() (C& c, const T& t, aid_t p) {
       (c.*action_ptr) (t, p);
     }
 
     void bound (aid_t p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (aid_t p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -151,6 +201,12 @@ namespace ioa {
     public no_parameter,
     public observable
   {
+    recent_op_t recent_op;
+
+    uv_up_output_wrapper () :
+      recent_op (NOOP)
+    { }
+
     bool precondition (C& c) const {
       return (c.*precondition_ptr) ();
     }
@@ -160,10 +216,12 @@ namespace ioa {
     }
 
     void bound () {
+      recent_op = BOUND;
       notify_observers ();
     }
 
     void unbound () {
+      recent_op = UNBOUND;
       notify_observers ();
     }
   };
@@ -175,7 +233,12 @@ namespace ioa {
     public parameter<P>,
     public observable
   {
+    recent_op_t recent_op;
     P recent_parameter;
+
+    uv_p_output_wrapper () :
+      recent_op (NOOP)
+    { }
     
     bool precondition (C& c, P p) const {
       return (c.*precondition_ptr) (p);
@@ -186,11 +249,13 @@ namespace ioa {
     }
     
     void bound (P p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -203,7 +268,12 @@ namespace ioa {
     public auto_parameter,
     public observable
   {
+    recent_op_t recent_op;
     aid_t recent_parameter;
+
+    uv_ap_output_wrapper () :
+      recent_op (NOOP)
+    { }
     
     bool precondition (C& c, aid_t p) const {
       return (c.*precondition_ptr) (p);
@@ -214,11 +284,13 @@ namespace ioa {
     }
     
     void bound (aid_t p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (aid_t p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -231,6 +303,12 @@ namespace ioa {
     public no_parameter,
     public observable
   {
+    recent_op_t recent_op;
+
+    v_up_output_wrapper () :
+      recent_op (NOOP)
+    { }
+
     bool precondition (C& c) const {
       return (c.*precondition_ptr) ();
     }
@@ -240,10 +318,12 @@ namespace ioa {
     }
 
     void bound () {
+      recent_op = BOUND;
       notify_observers ();
     }
 
     void unbound () {
+      recent_op = UNBOUND;
       notify_observers ();
     }
   };
@@ -255,7 +335,12 @@ namespace ioa {
     public parameter<P>,
     public observable
   {
+    recent_op_t recent_op;
     P recent_parameter;
+
+    v_p_output_wrapper () :
+      recent_op (NOOP)
+    { }
     
     bool precondition (C& c, P p) const {
       return (c.*precondition_ptr) (p);
@@ -266,11 +351,13 @@ namespace ioa {
     }
 
     void bound (P p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (P p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }
@@ -283,7 +370,12 @@ namespace ioa {
     public auto_parameter,
     public observable
   {
+    recent_op_t recent_op;
     aid_t recent_parameter;
+
+    v_ap_output_wrapper () :
+      recent_op (NOOP)
+    { }
     
     bool precondition (C& c, aid_t p) const {
       return (c.*precondition_ptr) (p);
@@ -294,11 +386,13 @@ namespace ioa {
     }
 
     void bound (aid_t p) {
+      recent_op = BOUND;
       recent_parameter = p;
       notify_observers ();
     }
 
     void unbound (aid_t p) {
+      recent_op = UNBOUND;
       recent_parameter = p;
       notify_observers ();
     }

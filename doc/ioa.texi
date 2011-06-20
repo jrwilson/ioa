@@ -131,7 +131,7 @@ The lines
 #include <ioa/global_fifo_scheduler.hpp>
 @end verbatim
 @end example
-include eall of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler.
+include all of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler.
 The lines
 @example
 @verbatim

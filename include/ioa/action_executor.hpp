@@ -975,6 +975,13 @@ namespace ioa {
       m_parameter (-1)
     { }
 
+    action_executor_impl (const automaton_handle<I>& handle,
+			  M I::*member_ptr,
+			  const aid_t aid) :
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface> (handle, member_ptr, *this),
+      m_parameter (aid)
+    { }
+
     void set_parameter (const aid_t aid) {
       m_parameter = aid;
     }
@@ -1396,6 +1403,13 @@ namespace ioa {
 			  M I::*member_ptr) :
       output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> > (handle, member_ptr, *this),
       m_parameter (-1)
+    { }
+
+    action_executor_impl (const automaton_handle<I>& handle,
+			  M I::*member_ptr,
+			  const aid_t aid) :
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> > (handle, member_ptr, *this),
+      m_parameter (aid)
     { }
 
     void set_parameter (const aid_t aid) {
