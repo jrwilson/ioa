@@ -12,7 +12,7 @@ private:
     return true;
   }
   
-  void request_action () {
+  void request_effect () {
     schedule ();
   }
   
@@ -43,7 +43,7 @@ private:
   int m_counter;
   int m_flag;
 
-  void request_action () {
+  void request_effect () {
     m_flag = true;
     schedule ();
   }
@@ -52,7 +52,7 @@ private:
     return true;
   }
   
-  void tick_action () {
+  void tick_effect () {
     m_counter = m_counter + 1;
     schedule ();
   }
@@ -63,7 +63,7 @@ private:
     return m_flag;
   }
 
-  int clock_action () {
+  int clock_effect () {
     m_flag = false;
     schedule ();
     return m_counter;
@@ -97,7 +97,7 @@ class display :
 {
 private:
 
-  void clock_action (int const & t) {
+  void clock_effect (int const & t) {
     std::cout << "t = " << t << std::endl;
   }
 

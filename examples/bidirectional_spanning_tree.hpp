@@ -15,7 +15,7 @@ class bidirectional_spanning_tree :
 {
 private:
 
-  void parent_action(const size_t& j, size_t i) {
+  void parent_effect(const size_t& j, size_t i) {
     parents.insert(std::make_pair(i,j));
     std::cout << "The parent of " << i << " is " << j << std::endl;
   }

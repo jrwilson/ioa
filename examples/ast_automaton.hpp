@@ -30,7 +30,7 @@ private:
     return m_parent != size_t(-1) && !m_reported && ioa::bind_count (&ast_automaton::parent) != 0;
   }
 
-  size_t parent_action () {
+  size_t parent_effect () {
     m_reported = true;
     size_t retval = m_parent;
 
@@ -43,7 +43,7 @@ private:
     return m_send.find (j)->second == SEARCH && ioa::bind_count (&ast_automaton::send, j) != 0;
   }
 
-  search_t send_action (size_t j) {
+  search_t send_effect (size_t j) {
     m_send[j] = NOSEARCH;
     search_t retval = SEARCH_MESSAGE;
 
@@ -51,7 +51,7 @@ private:
     return retval;
   }
 
-  void receive_action (const search_t& ignored, size_t j) {
+  void receive_effect (const search_t& ignored, size_t j) {
     if(m_i != m_i0 && m_parent == size_t(-1)) {
       m_parent = j;
 

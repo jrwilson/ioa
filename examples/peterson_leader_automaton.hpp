@@ -33,7 +33,7 @@ private:
   std::queue<uuid> m_send;
   std::queue<uuid> m_receive;
 
-  void receive_action (const uuid& v) {
+  void receive_effect (const uuid& v) {
     m_receive.push (v);
     schedule ();
   }
@@ -42,7 +42,7 @@ private:
     return !m_send.empty () && ioa::bind_count (&peterson_leader_automaton::send) != 0;
   }
 
-  uuid send_action () {
+  uuid send_effect () {
     uuid retval = m_send.front ();
     m_send.pop ();
     schedule ();
@@ -53,7 +53,7 @@ private:
     return m_status == CHOSEN && ioa::bind_count (&peterson_leader_automaton::leader) != 0;
   }
 
-  void leader_action () {
+  void leader_effect () {
     m_status = REPORTED;
     schedule ();
   }
@@ -62,7 +62,7 @@ private:
     return m_mode == ACTIVE && !m_receive.empty () && m_uid[1].is_null ();
   }
 
-  void get_second_uid_action () {
+  void get_second_uid_effect () {
     m_uid[1] = m_receive.front ();
     m_receive.pop ();
     m_send.push (m_uid[1]);
@@ -78,7 +78,7 @@ private:
     return m_mode == ACTIVE && !m_receive.empty () && !m_uid[1].is_null () && m_uid[2].is_null ();
   }
 
-  void get_third_uid_action () {
+  void get_third_uid_effect () {
     m_uid[2] = m_receive.front ();
     m_receive.pop ();
     schedule ();
@@ -90,7 +90,7 @@ private:
     return m_mode == ACTIVE && !m_uid[2].is_null () && m_uid[1] > std::max (m_uid[0], m_uid[2]);
   }
 
-  void advance_phase_action () {
+  void advance_phase_effect () {
     m_uid[0] = m_uid[1];
     m_uid[1].clear ();
     m_uid[2].clear ();
@@ -104,7 +104,7 @@ private:
     return m_mode == ACTIVE && !m_uid[2].is_null () && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
   }
 
-  void become_relay_action () {
+  void become_relay_effect () {
     m_mode = RELAY;
     schedule ();
   }
@@ -115,7 +115,7 @@ private:
     return m_mode == RELAY && !m_receive.empty ();
   }
 
-  void relay_action () {
+  void relay_effect () {
     m_send.push (m_receive.front ());
     m_receive.pop ();
     schedule ();

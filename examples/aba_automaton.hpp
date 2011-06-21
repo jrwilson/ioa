@@ -38,7 +38,7 @@ private:
     return b;
   }
 
-  message_t send_action (size_t j) {
+  message_t send_effect (size_t j) {
     message_t retm = m_send[j]->front();
     m_send[j]->pop();
 
@@ -46,7 +46,7 @@ private:
     return retm;
   }
 
-  void receive_action (const message_t& m, size_t j) {
+  void receive_effect (const message_t& m, size_t j) {
     if(m.first == BCAST){          //if receiving a broadcast:
       if (m_val == static_cast<size_t> (-1)) {
 	m_val = m.second;
@@ -82,7 +82,7 @@ private:
     }
   }
 
-  void report_action ()  {
+  void report_effect ()  {
     if (m_i != m_i0) {
       // I am not the root.
       m_send[m_parent]->push (message_t (ACK, 0));

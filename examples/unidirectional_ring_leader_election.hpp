@@ -10,7 +10,7 @@ class unidirectional_ring_leader_election :
 {
 private:
   
-  void leader_action (size_t i) {
+  void leader_effect (size_t i) {
     std::cout << i << " is the leader." << std::endl;
   }
 

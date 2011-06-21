@@ -41,7 +41,6 @@ This manual describes version @value{VERSION} of the I/O Automata Library.
 @menu
 * Introduction::	Motivation and the I/O automata formal model.
 * Tutorials::		Tutorials introduction the framework.
-* Index::		The complete index.
 @end menu
 
 @node Introduction
@@ -50,9 +49,9 @@ This manual describes version @value{VERSION} of the I/O Automata Library.
 A number of formal models have been developed that make reasoning about concurrent and distributed computation easier than reasoning about the same systems using the thread model.
 In practice, however, threads dominate due to processor architectures, programming languages, operating system support, and the widespread availability of thread libraries.
 Other approaches to concurrency focus on domain specific problems and tend to be ad hoc.
-The I/O Automata Library (@acronym{libioa}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
-The goal of @acronym{libioa} is to bring the reasoning power of the I/O automata model to the programmer.
-@acronym{Libioa} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
+The I/O Automata Library (@acronym{ioa}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
+The goal of @acronym{ioa} is to bring the reasoning power of the I/O automata model to the programmer.
+@acronym{Ioa} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
 
 @menu
 * I/O Automata::	The I/O automata formal model.
@@ -98,7 +97,6 @@ While implementing an omniscient scheduler is possible, it hinders the developme
 Consequently, the decision was made that the user is responsible for telling the scheduler which actions to consider.
 The scheduler can implement different scheduling policies that influence the order in which actions are selected.
 Again, the only requirement is that the scheduler is fair.
-Currently, @acronym{libioa} contains a simple FIFO scheduler.
 
 The act of telling the scheduler to consider an action for selection and execution is called @dfn{scheduling}.
 If a user decides to schedule all actions all the time, then the scheduler degenerates into a brute-force omniscient scheduler.
@@ -111,31 +109,30 @@ All of the examples in this document use the middle approach.
 @chapter Tutorials
 
 @menu
-* Tutorial 1::	The Null Automaton.
+* Compiling and Linking::
+* Internal Actions::
 @end menu
 
-@node Tutorial 1
-@section The Null Automaton
+@node Compiling and Linking
+@section Compiling and Linking
 
-The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{libioa}.
+The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{ioa}.
 The following program contains the null automaton---an automaton with no actions.
-The source can be found in @file{examples/null_automaton}.
+The source can be found in @file{tutorial/null_automaton.cpp}.
 
 @example
-@verbatiminclude examples/null_automaton.cpp
+@verbatiminclude tutorial/null_automaton.cpp
 @end example
 
 Let's go through it section by section.
-
 The lines
 @example
 @verbatim
 #include <ioa/ioa.hpp>
-#include <ioa/simple_scheduler.hpp>
+#include <ioa/global_fifo_scheduler.hpp>
 @end verbatim
 @end example
-include eall of the headers necessary for writing I/O automata and the header needed to declare a simple FIFO based scheduler.
-
+include all of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler.
 The lines
 @example
 @verbatim
@@ -146,58 +143,186 @@ class null_automaton :
 @end example
 declares a new automaton type called @code{null_automaton}.
 All automata must inherit from @code{ioa::automaton}.
-Also note that all @acronym{libioa} types and functions are in the @code{ioa} namespace.
-
+Also note that all @acronym{ioa} types and functions are in the @code{ioa} namespace.
 The definition of the main function
 @example
 @verbatim
 int main () {
-  ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<null_automaton> ());
+  ioa::global_fifo_scheduler sched;
+  ioa::run (sched, ioa::make_generator<null_automaton> ());
   return 0;
 }
 @end verbatim
 @end example
-declares a new scheduler @code{ss} and starts the scheduler with a new root automaton of type @code{null_automaton}.
+declares a new scheduler @code{sched} and starts the scheduler with a new root automaton of type @code{null_automaton}.
 The @code{run} function takes two arguments: a scheduler and a generator.
 A generator is a @dfn{promise} or an object that can later be invoked to produce a value.
 In this case, the value of the generator is a dynamically created instance of @code{null_automaton}.
 
-@section Internal Actions: The Count-to-Ten Automaton
+Assuming that a copy of @file{null_automaton.cpp} exists in the current directory and that @command{g++} is your C++ compiler, one can compile and run the null automaton with
+@example
+@verbatim
+$ g++ null_automaton.cpp -o null_automaton -lioa -lpthread
+$ ./null_automaton
+@end verbatim
+@end example
+Notice that we needed to link against the I/O automata library (@option{-lioa}) and pthreads library (@option{-lpthread}).
+Some environments, e.g., Mac OSX, include pthreads in the standard C library.
+If you have such an environment, omit the @option{-lpthread} part of the command.
 
-Internal actions
-Scheduling
-Basic structure
-get current id
+@node Internal Actions
+@section Internal Actions
 
-@section Automaton Helpers: Count-to-Ten Automata
+In this tutorial we develop an automaton that counts to ten using an internal action.
+The source is given below and can be found in @file{tutorial/count_to_ten_automaton.cpp}.
 
-Hiearchies
-Automata helpers
+@example
+@verbatiminclude tutorial/count_to_ten_automaton.cpp
+@end example
 
-@section External Actions: Cooperative Count-to-Ten
+The automata in this tutorial are listed in a way that attempts to mimic the style in @cite{Distributed Algorithms}.
+In general, an automaton will have the following structure:
+@itemize
 
-Input and output actions
-Bind helpers
+@item Type definitions --- Declare types that are used internally by the automaton (private) and types that are used by external actions (public).
 
-@section Advanced Topic: Parameters
+@item State declarations --- Declare the state variables of the automaton (private).
 
-Parameters
+@item Constructors/Destructors --- Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up (public).
 
-@section Advanced Topic: Automatic Parameters
+@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.  Preconditions and actions bodies are declared private while the member variables can be declared public or private depending on their intended use.
 
-automatic parameters
+@item Schedule and other member functions --- Declare/define one or more functions for scheduling actions and useful functions for manipulating the state (private).
+
+@end itemize
+
+Let's examine the automaton section by section.
+The state of the automaton is declared with
+@example
+@verbatim
+private:
+  int m_count;
+@end verbatim
+@end example
+In this case, the state of the automaton consists of a single integer @code{m_count}.
+
+The count is initialized to 1 in the constructor:
+@example
+@verbatim
+public:
+  count_to_ten_automaton () :
+    m_count (1)
+  {
+    schedule ();
+  }
+@end verbatim
+@end example
+The call to @code{schedule ()} will be explained later in the tutorial.
+
+The automaton defines the precondition and effect for an unparameterized internal action named @code{increment} with
+@example
+@verbatim
+private:
+  bool increment_precondition () const {
+    return m_count <= 10;
+  }
+
+  void increment_effect () {
+    std::cout << m_count << std::endl;
+    ++m_count;
+    schedule ();
+  }
+@end verbatim
+@end example
+Parameters are discussed in (TODO).
+Following the style in @cite{Distributed Algorithms}, internal actions are divided into a @dfn{precondition} and @dfn{effect}.
+The precondition returns a Boolean indicating if the action can be executed.
+In this example, the precondition returns true so long as the count is less than or equal to ten.
+The pattern for declaring the precondition for an unparameterized internal actions is @code{bool @var{action-name}_precondition () const;}.
+Note that preconditions have the @code{const} modifier as they should not change the state of the automaton.
+The effect changes the state of the automaton.
+In this example, the effect prints the current value of the count, increments the count, and calles @code{schedule ()}.
+The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ();}.
+
+The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler.
+The is tedious so a set of a macros is defined to simplify declaring the members.
+The code
+@example
+@verbatim
+  UP_INTERNAL (count_to_ten_automaton, increment);
+@end verbatim
+@end example
+uses the @code{UP_INTERNAL} macro to declare an action member variable @code{increment}.
+The macros rely on the @code{*_precondition} and @code{*_action} naming convention described earlier.
+
+The final part of the automaton is a function that informs the scheduler what local actions to consider.
+@example
+@verbatim
+  void schedule () const {
+    if (increment_precondition ()) {
+      ioa::schedule (&count_to_ten_automaton::increment);
+    }
+  }
+@end verbatim
+@end example
+The action of @code{schedule ()} is straightforward:  it evaluates the precondition for increment and then schedules the increment action.
+It is good style to write one or more @code{schedule ()} functions and call them in the constructor and at the end of every action effect.
+A common source of errors is to either omit a local action from the @code{schedule ()} function or forget to call @code{schedule ()} in an action effect.
+As an exercise, comment out one or both of the calls to @code{schedule} and see what happens.
+It is important that none of the state variables change after the call to @code{schedule ()} so that the preconditions will be evaluated correctly.
+
+
+To summarize, consider the uses of the automaton name and action names.
+To declare an automaton:
+@example
+@code{class @var{automaton-name} : public ioa::automaton @enddots{}}
+@end example
+To declare a precondition for an unparameterized internal action:
+@example
+@code{bool @var{action-name}_precondition () const;}
+@end example
+To declare a effect for an unparameterized internal action:
+@example
+@code{void @var{action-name}_effect ();}
+@end example
+To declare an unparameterized internal action:
+@example
+@code{UP_INTERNAL (@var{automaton-name}, @var{action-name});}
+@end example
+To schedule an unparameterized local action:
+@example
+@code{ioa::schedule (&@var{automaton-name}::@var{action-name});}
+@end example
+
+@c @section Automaton Helpers: Count-to-Ten Automata
+
+@c Hiearchies
+@c Automata helpers
+@c get current id
+
+@c @section External Actions: Cooperative Count-to-Ten
+
+@c Input and output actions
+@c Bind helpers
+
+@c @section Advanced Topic: Parameters
+
+@c Parameters
+
+@c @section Advanced Topic: Automatic Parameters
+
+@c automatic parameters
 
 
 
 
-self helper
+@c self helper
 
 
-@node Index
-@unnumbered Index
+@c @node Index
+@c @unnumbered Index
 
-@printindex cp
+@c @printindex cp
 
 
 
