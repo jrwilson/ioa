@@ -87,12 +87,22 @@ namespace ioa {
 	goto the_end;
       }
 
+#ifdef SO_REUSEADDR
+      // Set reuse.
+      if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val)) == -1) {
+	m_errno = errno;
+	goto the_end;
+      }
+#endif
+
+#ifdef SO_REUSEPORT
       // Set reuse.
       if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
 	m_errno = errno;
 	goto the_end;
       }
-
+#endif
+      
       // Bind.
       if (::bind (m_fd, local_addr.get_sockaddr (), local_addr.get_socklen ()) == -1) {
 	m_errno = errno;

@@ -2,7 +2,7 @@
 #define	__simple_network_hpp__
 
 
-#include "channel_automaton.hpp"
+#include "checking_channel_automaton.hpp"
 
 #include <cassert>
 #include <map>
@@ -27,30 +27,30 @@ public:
     
     T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> ()));
     T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> ()));
-    ioa::automaton_helper<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_helper<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
-    ioa::automaton_helper<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_helper<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
+    ioa::automaton_helper<checking_channel_automaton<M> >* i_to_j_channel = new ioa::automaton_helper<checking_channel_automaton<M> > (this, ioa::make_generator<checking_channel_automaton<M> > ());
+    ioa::automaton_helper<checking_channel_automaton<M> >* j_to_i_channel = new ioa::automaton_helper<checking_channel_automaton<M> > (this, ioa::make_generator<checking_channel_automaton<M> > ());
     //Helper for send i,j:
     ioa::make_bind_helper(this,
                T_helpers[0],
                &T::send,
                i_to_j_channel,
-               &channel_automaton<M>::send);
+               &checking_channel_automaton<M>::send);
     //Helper for send j,i:
     ioa::make_bind_helper(this,
                T_helpers[1],
                &T::send,
                j_to_i_channel,
-               &channel_automaton<M>::send);
+               &checking_channel_automaton<M>::send);
     //Helper for receive i,j:
     ioa::make_bind_helper(this,
                i_to_j_channel,
-               &channel_automaton<M>::receive,
+               &checking_channel_automaton<M>::receive,
                T_helpers[1],
                &T::receive);
     //Helper for receive j,i:
     ioa::make_bind_helper(this,
                j_to_i_channel,
-               &channel_automaton<M>::receive,
+               &checking_channel_automaton<M>::receive,
                T_helpers[0],
                &T::receive);
   }

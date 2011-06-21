@@ -7,11 +7,7 @@
 #include <queue>
 #include <vector>
 #include <string.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <math.h>
 
 #define REQUEST 0u
 #define FRAGMENT 1u
@@ -50,31 +46,56 @@ private:
     std::vector<bool> valid;
     std::queue<message> sendq;
     File m_file;
+    bool can_send;
 
     bool send_precondition () const {
-        return (ioa::bind_count (&mftp_automaton::send) != 0) && !sendq.empty();
+        return (ioa::bind_count (&mftp_automaton::send) != 0) && !sendq.empty() && can_send;
     }
 
-    message send_action () {
+    message send_effect () {
         message m = sendq.front();
         sendq.pop();
+        can_send = false;
         return m;
     }
 
-    void receive_action (const message& m) {
+    void receive_effect (const message& m) {
         if (m.header.message_type == FRAGMENT) {
-
+            uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
+            if (!have[idx]) {
+                if((m.frag.fid.original_length - m.frag.offset) % FRAGMENT_SIZE == 0) {
+                    memcpy(m_file.get_data_ptr() + m.frag.offset, m.frag.data, FRAGMENT_SIZE);
+                }
+                else {
+                    memcpy(m_file.get_data_ptr() + m.frag.offset, m.frag.data, (m.frag.fid.original_length - m.frag.offset));
+                }
+                have[idx] = true;
+                //validate
+            }
+            their_req[idx] = false;
         }
         else {
-            
+            uint32_t idy = (m.req.offset / FRAGMENT_SIZE);
+            uint32_t num_frags = ceil (static_cast<double> (m.req.offset) / static_cast<double> (FRAGMENT_SIZE));
+            for(int i = idy; i < num_frags; i++) {
+                if(have[idy]) {
+                    their_req[i] = true;
+                }
+            }
         }
     }
+
+    void send_complete_effect () {
+        can_send = true;
+    }
+
+
 
     bool process_request_precondition () {
         return true;
     }
 
-    void process_request_action () {
+    void process_request_effect () {
         uint32_t randy = get_random_index ();
         //req.flip (randy);
         fragment retfrag = get_fragment(randy);
@@ -82,13 +103,15 @@ private:
         retm.header.message_type = FRAGMENT;
         retm.frag = retfrag;
         sendq.push (retm);
+
+        schedule();
     }
 
     bool generate_request_precondition () {
         return true;
     }
 
-    message generate_request_action () {
+    message generate_request_effect () {
         message m;
         return m;
     }
@@ -106,10 +129,10 @@ private:
         f.fid = m_file.m_fileid;
 
         if (f.fid.original_length % FRAGMENT_SIZE == 0) {
-            memcpy(f.data, m_file.get_data_ptr() + f.offset, FRAGMENT_SIZE);
+            memcpy (f.data, m_file.get_data_ptr() + f.offset, FRAGMENT_SIZE);
         }
         else {
-            memcpy(f.data, m_file.get_data_ptr() + f.offset, f.fid.original_length % FRAGMENT_SIZE);
+            memcpy (f.data, m_file.get_data_ptr() + f.offset, f.fid.original_length % FRAGMENT_SIZE);
         }
 
         return f;
@@ -122,7 +145,8 @@ public:
         m_file(file_name, type),
         have (m_file.m_fileid.hashed_length / FRAGMENT_SIZE),
         their_req (m_file.m_fileid.hashed_length / FRAGMENT_SIZE),
-        valid (m_file.m_fileid.hashed_length / FRAGMENT_SIZE)
+        valid (m_file.m_fileid.hashed_length / FRAGMENT_SIZE),
+        can_send (true)
     {
         for(int i = 0; i < have.size(); i++) {
             have[i] = true;
@@ -134,7 +158,8 @@ public:
     mftp_automaton (fileID f) :
         have (f.hashed_length / FRAGMENT_SIZE),
         their_req (f.hashed_length / FRAGMENT_SIZE),
-        valid (f.hashed_length / FRAGMENT_SIZE)
+        valid (f.hashed_length / FRAGMENT_SIZE),
+        can_send (true)
     {
         for(int i = 0; i < have.size(); i++) {
             have[i] = false;
@@ -145,7 +170,7 @@ public:
 
     V_UP_OUTPUT (mftp_automaton, send, message);
     V_UP_INPUT (mftp_automaton, receive, message);
-
+    UV_UP_INPUT (mftp_automaton, send_complete);
 };
 
 
