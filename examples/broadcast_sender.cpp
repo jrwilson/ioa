@@ -16,7 +16,7 @@ private:
   
   state_t m_state;
   std::auto_ptr<ioa::self_helper<broadcast_sender> > m_self;
-  ioa::ipv4_address m_address;
+  ioa::inet_address m_address;
   ioa::buffer m_buffer;
 
   bool send_precondition () const {
@@ -27,7 +27,7 @@ private:
     assert (m_state == SEND_READY);
     m_state = SEND_COMPLETE_WAIT;
     schedule ();
-    return ioa::udp_broadcast_sender_automaton::send_arg (&m_address, m_buffer);
+    return ioa::udp_broadcast_sender_automaton::send_arg (m_address, m_buffer);
   }
 
   V_UP_OUTPUT (broadcast_sender, send, ioa::udp_broadcast_sender_automaton::send_arg);
@@ -61,7 +61,7 @@ public:
     m_state (SEND_READY),
     m_self (new ioa::self_helper<broadcast_sender> ()),
     m_address ("255.255.255.255", port),
-    m_buffer (message.size (), message.c_str ())
+    m_buffer (message.c_str (), message.size ())
   {
     ioa::automaton_helper<ioa::udp_broadcast_sender_automaton>* sender = new ioa::automaton_helper<ioa::udp_broadcast_sender_automaton> (this, ioa::make_generator<ioa::udp_broadcast_sender_automaton> ());
 

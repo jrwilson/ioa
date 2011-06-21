@@ -3,120 +3,41 @@
 
 #include <ioa/ioa.hpp>
 #include <ioa/buffer.hpp>
+#include <ioa/inet_address.hpp>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <string.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
 
-#include <string>
 #include <list>
+#include <algorithm>
 
 namespace ioa {
 
-  class inet_address
-  {
-  public:
-    virtual ~inet_address () { }
-    virtual inet_address* clone () const = 0;
-    virtual int get_errno () const = 0;
-    virtual const sockaddr* get_sockaddr () const = 0;
-    virtual socklen_t get_socklen () const = 0;
-  };
-
-  class ipv4_address :
-    public inet_address
-  {
-  private:
-    struct sockaddr_in m_address;
-    int m_errno;
-
-  public:
-    ipv4_address (const std::string& address,
-		  const unsigned short port) :
-      m_errno (0)
-    {
-      memset (&m_address, 0, sizeof (m_address));
-      m_address.sin_family = AF_INET;
-      int res = inet_pton (AF_INET, address.c_str (), &m_address.sin_addr.s_addr);
-      if (res < 0) {
-      	m_errno = errno;
-      }
-      else if (res == 0) {
-      	m_errno = EINVAL;
-      }
-      m_address.sin_port = htons (port);
-    }    
-
-    ipv4_address* clone () const {
-      return new ipv4_address (*this);
-    }
-
-    int get_errno () const {
-      return m_errno;
-    }
-
-    const sockaddr* get_sockaddr () const {
-      return reinterpret_cast<const sockaddr*> (&m_address);
-    }
-
-    socklen_t get_socklen () const {
-      return sizeof (m_address);
-    }
-  };
-
   class udp_broadcast_sender_automaton :
-    public ioa::automaton,
-    private ioa::observer
+    public automaton,
+    private observer
   {
   public:
     struct send_arg {
-      inet_address* address;
+      inet_address address;
       ioa::buffer buffer;
 
-      send_arg () :
-	address (0)
+      send_arg (const inet_address& a,
+		const ioa::buffer& b) :
+	address (a),
+	buffer (b)
       { }
 
-      send_arg (const inet_address* a,
-		const ioa::buffer& b) :
-	address (0),
-	buffer (b)
-      {
-	if (a != 0) {
-	  address = a->clone ();
-	}
-      }
-
-      send_arg (const send_arg& other) {
-	if (other.address != 0) {
-	  address = other.address->clone ();
-	}
-	else {
-	  address = 0;
-	}
-	buffer = other.buffer;
-      }
+      send_arg (const send_arg& other) :
+	address (other.address),
+	buffer (other.buffer)
+      { }
 
       send_arg& operator= (const send_arg& other) {
 	if (this != &other) {
-	  delete address;
-	  if (other.address != 0) {
-	    address = other.address->clone ();
-	  }
-	  else {
-	    address = 0;
-	  }
+	  address = other.address;
 	  buffer = other.buffer;
 	}
 	return *this;
-      }
-
-      ~send_arg () {
-	delete address;
       }
     };
 
@@ -136,6 +57,8 @@ namespace ioa {
       m_fd (-1)
     {
       const int val = 1;
+      int res;
+      int flags;
 
       // Open a socket.
       m_fd = socket (AF_INET, SOCK_DGRAM, 0);
@@ -145,7 +68,7 @@ namespace ioa {
       }
       
       // Get the flags.
-      int flags = fcntl (m_fd, F_GETFL, 0);
+      flags = fcntl (m_fd, F_GETFL, 0);
       if (flags < 0) {
 	m_errno = errno;
 	goto the_end;
@@ -153,7 +76,7 @@ namespace ioa {
 
       // Set non-blocking.
       flags |= O_NONBLOCK;
-      int res = fcntl (m_fd, F_SETFL, flags);
+      res = fcntl (m_fd, F_SETFL, flags);
       if (res < 0) {
 	m_errno = errno;
 	goto the_end;
@@ -171,6 +94,7 @@ namespace ioa {
       
       // Success.
       m_errno = 0;
+      schedule ();
 
     the_end:	
       if (m_errno != 0) {
@@ -228,14 +152,14 @@ namespace ioa {
       m_send_queue.pop_front ();
       m_send_set.erase (item.first);
       
-      if (item.second->address != 0) {
-	sendto (m_fd, item.second->buffer.data (), item.second->buffer.size (), 0, item.second->address->get_sockaddr (), item.second->address->get_socklen ());
+      if (item.second->address.get_errno () == 0) {
+	sendto (m_fd, item.second->buffer.data (), item.second->buffer.size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ());
 	// We don't check a return value because we always return errno.
 	m_complete_queue.push_back (std::make_pair (item.first, errno));
 	m_complete_set.insert (item.first);
       }
       else {
-	// No address.
+	// Bad address.
 	m_complete_queue.push_back (std::make_pair (item.first, EINVAL));
 	m_complete_set.insert (item.first);
       }
@@ -249,7 +173,7 @@ namespace ioa {
     bool send_complete_precondition (aid_t aid) const {
       return !m_complete_queue.empty () &&
 	m_complete_queue.front ().first == aid &&
-	ioa::bind_count (&udp_broadcast_sender_automaton::send_complete, aid) != 0;
+	bind_count (&udp_broadcast_sender_automaton::send_complete, aid) != 0;
     }
 
     int send_complete_action (aid_t aid) {
@@ -268,7 +192,7 @@ namespace ioa {
 
     void schedule () const {
       if (do_sendto_precondition ()) {
-	ioa::schedule_write_ready (&udp_broadcast_sender_automaton::do_sendto, m_fd);
+	schedule_write_ready (&udp_broadcast_sender_automaton::do_sendto, m_fd);
       }
       if (!m_send_queue.empty ()) {
 	ioa::schedule (&udp_broadcast_sender_automaton::send_complete, m_send_queue.front ().first);

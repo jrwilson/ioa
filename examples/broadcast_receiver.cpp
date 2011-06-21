@@ -9,55 +9,31 @@ class broadcast_receiver :
 {
 private:
   std::auto_ptr<ioa::self_helper<broadcast_receiver> > m_self;
-  ioa::ipv4_address m_address;
+  ioa::inet_address m_address;
 
 public:
 
   broadcast_receiver (const unsigned short port) :
     m_self (new ioa::self_helper<broadcast_receiver> ()),
-    m_address ("255.255.255.255", port)
+    m_address ("0.0.0.0", port)
   {
-    // ioa::automaton_helper<ioa::udp_broadcast_receiver_automaton>* sender = new ioa::automaton_helper<ioa::udp_broadcast_receiver_automaton> (this, ioa::make_generator<ioa::udp_broadcast_receiver_automaton> ());
+    ioa::automaton_helper<ioa::udp_broadcast_receiver_automaton>* receiver = new ioa::automaton_helper<ioa::udp_broadcast_receiver_automaton> (this, ioa::make_generator<ioa::udp_broadcast_receiver_automaton> (m_address));
 
-    // ioa::make_bind_helper (this, m_self.get (), &broadcast_receiver::send, sender, &ioa::udp_broadcast_receiver_automaton::send);
-    // ioa::make_bind_helper (this, sender, &ioa::udp_broadcast_receiver_automaton::send_complete, m_self.get (), &broadcast_receiver::send_complete);
+    ioa::make_bind_helper (this, receiver, &ioa::udp_broadcast_receiver_automaton::receive, m_self.get (), &broadcast_receiver::receive);
   }
 
-//   bool send_precondition () const {
-//     return m_state == SEND_READY && ioa::bind_count (&broadcast_receiver::send) != 0;
-//   }
-
-//   ioa::udp_broadcast_receiver_automaton::send_arg send_action () {
-//     assert (m_state == SEND_READY);
-//     m_state = SEND_COMPLETE_WAIT;
-//     schedule ();
-//     return ioa::udp_broadcast_receiver_automaton::send_arg (&m_address, m_buffer);
-//   }
-
-//   V_UP_OUTPUT (broadcast_receiver, send, ioa::udp_broadcast_receiver_automaton::send_arg);
-
-//   void send_complete_action (const int& result) {
-//     assert (m_state == SEND_COMPLETE_WAIT);
-
-//     if (result != 0) {
-//       char buf[256];
-//       strerror_r (result, buf, 256);
-//       std::cerr << "Couldn't send udp_broadcast_receiver_automaton: " << buf << std::endl;
-//       m_state = ERROR;
-//     }
-//     else {
-//       m_state = SEND_COMPLETE;
-//     }
-//     schedule ();
-//   }
-
-//   V_UP_INPUT (broadcast_receiver, send_complete, int);
-
-//   void schedule () const {
-//     if (send_precondition ()) {
-//       ioa::schedule (&broadcast_receiver::send);
-//     }
-//   }
+  void receive_action (const ioa::udp_broadcast_receiver_automaton::receive_val& v) {
+    if (v.err_no != 0) {
+      char buf[256];
+      strerror_r (v.err_no, buf, 256);
+      std::cerr << "Couldn't receive udp_broadcast_receiver_automaton: " << buf << std::endl;
+    }
+    else {
+      std::cout << v.address.address_str () << ":" << v.address.port () << " " << std::string (v.buffer.c_str (), v.buffer.size ()) << std::endl;
+    }
+  }
+  
+  V_UP_INPUT (broadcast_receiver, receive, ioa::udp_broadcast_receiver_automaton::receive_val);
 
 };
 
