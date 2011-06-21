@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>Compiling and Linking - The I/O Automata Library</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The I/O Automata Library">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tutorials.html#Tutorials" title="Tutorials">
+<link rel="next" href="Internal-Actions.html#Internal-Actions" title="Internal Actions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2011 Justin R. Wilson.
+
+     This work is licensed under the Creative Commons
+     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
+     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
+     send a letter to Creative Commons, 444 Castro Street, Suite 900,
+     Mountain View, California, 94041, USA.
+   -->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Compiling-and-Linking"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Internal-Actions.html#Internal-Actions">Internal Actions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tutorials.html#Tutorials">Tutorials</a>
+<hr>
+</div>
+
+<h3 class="section">2.1 Compiling and Linking</h3>
+
+<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with <acronym>ioa</acronym>. 
+The following program contains the null automaton&mdash;an automaton with no actions. 
+The source can be found in <samp><span class="file">tutorial/null_automaton.cpp</span></samp>.
+
+<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+     #include &lt;ioa/global_fifo_scheduler.hpp>
+     
+     class null_automaton :
+       public ioa::automaton
+     { };
+     
+     int main () {
+       ioa::global_fifo_scheduler sched;
+       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
+       return 0;
+     }
+</pre></pre>
+   <p>Let's go through it section by section. 
+The lines
+<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+     #include &lt;ioa/global_fifo_scheduler.hpp>
+</pre>
+</pre>
+   <p>include all of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler. 
+The lines
+<pre class="example"><pre class="verbatim">     class null_automaton :
+       public ioa::automaton
+     { };
+</pre>
+</pre>
+   <p>declares a new automaton type called <code>null_automaton</code>. 
+All automata must inherit from <code>ioa::automaton</code>. 
+Also note that all <acronym>ioa</acronym> types and functions are in the <code>ioa</code> namespace. 
+The definition of the main function
+<pre class="example"><pre class="verbatim">     int main () {
+       ioa::global_fifo_scheduler sched;
+       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
+       return 0;
+     }
+</pre>
+</pre>
+   <p>declares a new scheduler <code>sched</code> and starts the scheduler with a new root automaton of type <code>null_automaton</code>. 
+The <code>run</code> function takes two arguments: a scheduler and a generator. 
+A generator is a <dfn>promise</dfn> or an object that can later be invoked to produce a value. 
+In this case, the value of the generator is a dynamically created instance of <code>null_automaton</code>.
+
+   <p>Assuming that a copy of <samp><span class="file">null_automaton.cpp</span></samp> exists in the current directory and that <samp><span class="command">g++</span></samp> is your C++ compiler, one can compile and run the null automaton with
+<pre class="example"><pre class="verbatim">     $ g++ null_automaton.cpp -o null_automaton -lioa -lpthread
+     $ ./null_automaton
+</pre>
+</pre>
+   <p>Notice that we needed to link against the I/O automata library (<samp><span class="option">-lioa</span></samp>) and pthreads library (<samp><span class="option">-lpthread</span></samp>). 
+Some environments, e.g., Mac OSX, include pthreads in the standard C library. 
+If you have such an environment, omit the <samp><span class="option">-lpthread</span></samp> part of the command.
+
+   </body></html>
+

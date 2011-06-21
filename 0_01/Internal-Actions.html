@@ -1,11 +1,12 @@
 <html lang="en">
 <head>
-<title>Tutorial 1 - The I/O Automata Library</title>
+<title>Internal Actions - The I/O Automata Library</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="The I/O Automata Library">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
 <link rel="up" href="Tutorials.html#Tutorials" title="Tutorials">
+<link rel="prev" href="Compiling-and-Linking.html#Compiling-and-Linking" title="Compiling and Linking">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
 Copyright (C) 2011 Justin R. Wilson.
@@ -31,77 +32,164 @@ Copyright (C) 2011 Justin R. Wilson.
 </head>
 <body>
 <div class="node">
-<a name="Tutorial-1"></a>
+<a name="Internal-Actions"></a>
 <p>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Compiling-and-Linking.html#Compiling-and-Linking">Compiling and Linking</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="Tutorials.html#Tutorials">Tutorials</a>
 <hr>
 </div>
 
-<h3 class="section">2.1 The Null Automaton</h3>
+<h3 class="section">2.2 Internal Actions</h3>
 
-<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with <acronym>ioa</acronym>. 
-The following program contains the null automaton&mdash;an automaton with no actions. 
-The source can be found in <samp><span class="file">tutorial/null_automaton</span></samp>.
+<p>In this tutorial we develop an automaton that counts to ten using an internal action. 
+The source is given below and can be found in <samp><span class="file">tutorial/count_to_ten_automaton.cpp</span></samp>.
 
 <pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
      #include &lt;ioa/global_fifo_scheduler.hpp>
      
-     class null_automaton :
+     // For std::cout.
+     #include &lt;iostream>
+     
+     class count_to_ten_automaton :
        public ioa::automaton
-     { };
+     {
+     private:
+       int m_count;
+     
+     public:
+       count_to_ten_automaton () :
+         m_count (1)
+       {
+         schedule ();
+       }
+       
+     private:
+       bool increment_precondition () const {
+         return m_count &lt;= 10;
+       }
+     
+       void increment_effect () {
+         std::cout &lt;&lt; m_count &lt;&lt; std::endl;
+         ++m_count;
+         schedule ();
+       }
+     
+       UP_INTERNAL (count_to_ten_automaton, increment);
+     
+       void schedule () const {
+         if (increment_precondition ()) {
+           ioa::schedule (&amp;count_to_ten_automaton::increment);
+         }
+       }
+     };
      
      int main () {
        ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
-       return 0;
+       ioa::run (sched, ioa::make_generator&lt;count_to_ten_automaton> ());
+       return 0; 
      }
+     
 </pre></pre>
-   <p>Let's go through it section by section. 
-The lines
-<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
-     #include &lt;ioa/global_fifo_scheduler.hpp>
-</pre>
-</pre>
-   <p>include eall of the headers necessary for writing I/O automata and the header needed to declare a global FIFO scheduler. 
-The lines
-<pre class="example"><pre class="verbatim">     class null_automaton :
-       public ioa::automaton
-     { };
-</pre>
-</pre>
-   <p>declares a new automaton type called <code>null_automaton</code>. 
-All automata must inherit from <code>ioa::automaton</code>. 
-Also note that all <acronym>ioa</acronym> types and functions are in the <code>ioa</code> namespace. 
-The definition of the main function
-<pre class="example"><pre class="verbatim">     int main () {
-       ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
-       return 0;
-     }
-</pre>
-</pre>
-   <p>declares a new scheduler <code>sched</code> and starts the scheduler with a new root automaton of type <code>null_automaton</code>. 
-The <code>run</code> function takes two arguments: a scheduler and a generator. 
-A generator is a <dfn>promise</dfn> or an object that can later be invoked to produce a value. 
-In this case, the value of the generator is a dynamically created instance of <code>null_automaton</code>.
+   <p>The automata in this tutorial are listed in a way that attempts to mimic the style in <cite>Distributed Algorithms</cite>. 
+In general, an automaton will have the following structure:
+     <ul>
+<li>Type definitions &mdash; Declare types that are used internally by the automaton (private) and types that are used by external actions (public).
 
-   <p>Assuming that a copy of <samp><span class="file">null_automaton.cpp</span></samp> exists in the current directory and that <samp><span class="command">g++</span></samp> is your C++ compiler, one can compile and run the null automaton with
-<pre class="example"><pre class="verbatim">     $ g++ null_automaton.cpp -o null_automaton -lioa -lpthread
-     $ ./null_automaton
-</pre>
-</pre>
-   <p>Notice that we needed to link against the I/O automata library (<samp><span class="option">-lioa</span></samp>) and pthreads library (<samp><span class="option">-lpthread</span></samp>). 
-Some environments, e.g., Mac OSX, include pthreads in the standard C libary. 
-If you have such an environment, omit the <samp><span class="option">-lpthread</span></samp> part of the commmand.
+     <li>State declarations &mdash; Declare the state variables of the automaton (private).
 
-<!-- @section Internal Actions: The Count-to-Ten Automaton -->
-<!-- Internal actions -->
-<!-- Scheduling -->
-<!-- Basic structure -->
-<!-- get current id -->
-<!-- @section Automaton Helpers: Count-to-Ten Automata -->
+     <li>Constructors/Destructors &mdash; Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up (public).
+
+     <li>Actions &mdash; Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.  Preconditions and actions bodies are declared private while the member variables can be declared public or private depending on their intended use.
+
+     <li>Schedule and other member functions &mdash; Declare/define one or more functions for scheduling actions and useful functions for manipulating the state (private).
+
+   </ul>
+
+   <p>Let's examine the automaton section by section. 
+The state of the automaton is declared with
+<pre class="example"><pre class="verbatim">     private:
+       int m_count;
+</pre>
+</pre>
+   <p>In this case, the state of the automaton consists of a single integer <code>m_count</code>.
+
+   <p>The count is initialized to 1 in the constructor:
+<pre class="example"><pre class="verbatim">     public:
+       count_to_ten_automaton () :
+         m_count (1)
+       {
+         schedule ();
+       }
+</pre>
+</pre>
+   <p>The call to <code>schedule ()</code> will be explained later in the tutorial.
+
+   <p>The automaton defines the precondition and effect for an unparameterized internal action named <code>increment</code> with
+<pre class="example"><pre class="verbatim">     private:
+       bool increment_precondition () const {
+         return m_count &lt;= 10;
+       }
+     
+       void increment_effect () {
+         std::cout &lt;&lt; m_count &lt;&lt; std::endl;
+         ++m_count;
+         schedule ();
+       }
+</pre>
+</pre>
+   <p>Parameters are discussed in (TODO). 
+Following the style in <cite>Distributed Algorithms</cite>, internal actions are divided into a <dfn>precondition</dfn> and <dfn>effect</dfn>. 
+The precondition returns a Boolean indicating if the action can be executed. 
+In this example, the precondition returns true so long as the count is less than or equal to ten. 
+The pattern for declaring the precondition for an unparameterized internal actions is <code>bool </code><var>action-name</var><code>_precondition () const;</code>. 
+Note that preconditions have the <code>const</code> modifier as they should not change the state of the automaton. 
+The effect changes the state of the automaton. 
+In this example, the effect prints the current value of the count, increments the count, and calles <code>schedule ()</code>. 
+The pattern for declaring the effect of an unparameterized internal action is <code>void </code><var>action-name</var><code>_effect ();</code>.
+
+   <p>The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler. 
+The is tedious so a set of a macros is defined to simplify declaring the members. 
+The code
+<pre class="example"><pre class="verbatim">       UP_INTERNAL (count_to_ten_automaton, increment);
+</pre>
+</pre>
+   <p>uses the <code>UP_INTERNAL</code> macro to declare an action member variable <code>increment</code>. 
+The macros rely on the <code>*_precondition</code> and <code>*_action</code> naming convention described earlier.
+
+   <p>The final part of the automaton is a function that informs the scheduler what local actions to consider.
+<pre class="example"><pre class="verbatim">       void schedule () const {
+         if (increment_precondition ()) {
+           ioa::schedule (&amp;count_to_ten_automaton::increment);
+         }
+       }
+</pre>
+</pre>
+   <p>The action of <code>schedule ()</code> is straightforward:  it evaluates the precondition for increment and then schedules the increment action. 
+It is good style to write one or more <code>schedule ()</code> functions and call them in the constructor and at the end of every action effect. 
+A common source of errors is to either omit a local action from the <code>schedule ()</code> function or forget to call <code>schedule ()</code> in an action effect. 
+As an exercise, comment out one or both of the calls to <code>schedule</code> and see what happens. 
+It is important that none of the state variables change after the call to <code>schedule ()</code> so that the preconditions will be evaluated correctly.
+
+   <p>To summarize, consider the uses of the automaton name and action names. 
+To declare an automaton:
+<pre class="example">     <code>class </code><var>automaton-name</var><code> : public ioa::automaton ...</code>
+</pre>
+   <p>To declare a precondition for an unparameterized internal action:
+<pre class="example">     <code>bool </code><var>action-name</var><code>_precondition () const;</code>
+</pre>
+   <p>To declare a effect for an unparameterized internal action:
+<pre class="example">     <code>void </code><var>action-name</var><code>_effect ();</code>
+</pre>
+   <p>To declare an unparameterized internal action:
+<pre class="example">     <code>UP_INTERNAL (</code><var>automaton-name</var><code>, </code><var>action-name</var><code>);</code>
+</pre>
+   <p>To schedule an unparameterized local action:
+<pre class="example">     <code>ioa::schedule (&amp;</code><var>automaton-name</var><code>::</code><var>action-name</var><code>);</code>
+</pre>
+   <!-- @section Automaton Helpers: Count-to-Ten Automata -->
 <!-- Hiearchies -->
 <!-- Automata helpers -->
+<!-- get current id -->
 <!-- @section External Actions: Cooperative Count-to-Ten -->
 <!-- Input and output actions -->
 <!-- Bind helpers -->
