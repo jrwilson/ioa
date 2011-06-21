@@ -19,6 +19,13 @@
 #include <string>
 #include <stdint.h>
 
+struct fileID {
+    unsigned char hash[HASH_LENGTH];
+    uint32_t type;
+    uint32_t original_length;
+    uint32_t hashed_length;
+};
+
 class File {
 private:
   std::string m_fname;
@@ -26,12 +33,17 @@ private:
   uint32_t m_padded_size;
   uint32_t m_hashed_size;
   uint32_t m_fragment_count;
-  unsigned char m_fileid[HASH_LENGTH];
   unsigned char* m_data;
 
 public:
-  File (const char*);
+  File (const char*, uint32_t);
   ~File ();
+
+  fileID m_fileid;
+
+  unsigned char* get_data_ptr () {
+      return m_data;
+  }
 };
 
 #endif

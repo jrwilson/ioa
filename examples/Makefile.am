@@ -9,6 +9,7 @@ beast \
 bellman_ford \
 clock_213 \
 count_to_ten \
+mftp \
 null_automaton \
 peterson_leader \
 slow_count \
@@ -23,6 +24,7 @@ beast_SOURCES = aba_automaton.hpp beast.cpp
 bellman_ford_SOURCES = weighted_bidirectional_network.hpp bf_automaton.hpp bellman_ford.cpp
 clock_213_SOURCES = clock_213.cpp
 count_to_ten_SOURCES = count_to_ten.cpp
+mftp_SOURCES = mftp.cpp
 null_automaton_SOURCES = null_automaton.cpp
 peterson_leader_SOURCES = peterson_leader_automaton.hpp peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
