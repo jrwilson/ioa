@@ -30,4 +30,6 @@ ioa/simple_scheduler.hpp \
 ioa/system_scheduler_interface.hpp \
 ioa/time.hpp \
 ioa/udp_broadcast_receiver_automaton.hpp \
-ioa/udp_broadcast_sender_automaton.hpp
+ioa/udp_broadcast_sender_automaton.hpp \
+ioa/udp_multicast_receiver_automaton.hpp \
+ioa/udp_multicast_sender_automaton.hpp

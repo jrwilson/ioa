@@ -1,5 +1,5 @@
-#ifndef __udp_broadcast_receiver_automaton_hpp__
-#define __udp_broadcast_receiver_automaton_hpp__
+#ifndef __udp_multicast_receiver_automaton_hpp__
+#define __udp_multicast_receiver_automaton_hpp__
 
 #include <ioa/ioa.hpp>
 #include <ioa/buffer.hpp>
@@ -13,7 +13,7 @@
 
 namespace ioa {
 
-  class udp_broadcast_receiver_automaton :
+  class udp_multicast_receiver_automaton :
     public automaton,
     private observer
   {
@@ -56,13 +56,15 @@ namespace ioa {
 
   public:
 
-    udp_broadcast_receiver_automaton (const inet_address& address) :
+    udp_multicast_receiver_automaton (const inet_address& group_addr,
+				      const inet_address& local_addr) :
       m_fd (-1),
       m_buffer (0),
       m_buffer_size (0)
     {
       int flags;
       const int val = 1;
+      inet_mreq req (group_addr, local_addr);
 
       // Open a socket.
       m_fd = socket (AF_INET, SOCK_DGRAM, 0);
@@ -92,11 +94,17 @@ namespace ioa {
       }
 
       // Bind.
-      if (::bind (m_fd, address.get_sockaddr (), address.get_socklen ()) == -1) {
+      if (::bind (m_fd, local_addr.get_sockaddr (), local_addr.get_socklen ()) == -1) {
 	m_errno = errno;
 	goto the_end;
       }
-      
+
+      // Join the multicast group.
+      if (setsockopt (m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, req.get_mreq (), req.get_length ()) == -1) {
+	m_errno = errno;
+	goto the_end;
+      }
+
       add_observable (&receive);
 
       // Success.
@@ -112,7 +120,7 @@ namespace ioa {
       }
     }
 
-    ~udp_broadcast_receiver_automaton () {
+    ~udp_multicast_receiver_automaton () {
       if (m_fd != -1) {
 	close (m_fd);
       }
@@ -166,7 +174,7 @@ namespace ioa {
       schedule ();
     }
     
-    UP_INTERNAL (udp_broadcast_receiver_automaton, do_recvfrom);
+    UP_INTERNAL (udp_multicast_receiver_automaton, do_recvfrom);
 
   private:
 
@@ -183,16 +191,16 @@ namespace ioa {
 
   public:
     
-    V_UP_OUTPUT (udp_broadcast_receiver_automaton, receive, receive_val);
+    V_UP_OUTPUT (udp_multicast_receiver_automaton, receive, receive_val);
 
   private:
 
     void schedule () const {
       if (do_recvfrom_precondition ()) {
-	schedule_read_ready (&udp_broadcast_receiver_automaton::do_recvfrom, m_fd);
+	schedule_read_ready (&udp_multicast_receiver_automaton::do_recvfrom, m_fd);
       }
       if (receive_precondition ()) {
-	ioa::schedule (&udp_broadcast_receiver_automaton::receive);
+	ioa::schedule (&udp_multicast_receiver_automaton::receive);
       }
     }
 

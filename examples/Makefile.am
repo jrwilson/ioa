@@ -10,6 +10,8 @@ bellman_ford \
 broadcast_receiver \
 broadcast_sender \
 clock_213 \
+multicast_receiver \
+multicast_sender \
 peterson_leader \
 slow_count \
 spanning_tree
@@ -24,6 +26,8 @@ bellman_ford_SOURCES = weighted_bidirectional_network.hpp bf_automaton.hpp bellm
 broadcast_receiver_SOURCES = broadcast_receiver.cpp
 broadcast_sender_SOURCES = broadcast_sender.cpp
 clock_213_SOURCES = clock_213.cpp
+multicast_receiver_SOURCES = multicast_receiver.cpp
+multicast_sender_SOURCES = multicast_sender.cpp
 peterson_leader_SOURCES = peterson_leader_automaton.hpp peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
 spanning_tree_SOURCES = bidirectional_spanning_tree.hpp ast_automaton.hpp spanning_tree.cpp

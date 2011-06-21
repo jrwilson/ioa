@@ -56,11 +56,12 @@ private:
   }
 
 public:
-  broadcast_sender (const unsigned short port,
-			const std::string message) :
+  broadcast_sender (const std::string& address,
+		    const unsigned short port,
+		    const std::string& message) :
     m_state (SEND_READY),
     m_self (new ioa::self_helper<broadcast_sender> ()),
-    m_address ("255.255.255.255", port),
+    m_address (address, port),
     m_buffer (message.c_str (), message.size ())
   {
     ioa::automaton_helper<ioa::udp_broadcast_sender_automaton>* sender = new ioa::automaton_helper<ioa::udp_broadcast_sender_automaton> (this, ioa::make_generator<ioa::udp_broadcast_sender_automaton> ());
@@ -75,15 +76,16 @@ public:
 
 int
 main (int argc, char* argv[]) {
-  if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " PORT MESSAGE" << std::endl;
+  if (argc != 4) {
+    std::cerr << "Usage: " << argv[0] << " ADDRESS PORT MESSAGE" << std::endl;
     exit (EXIT_FAILURE);
   }
 
-  unsigned short port = atoi (argv[1]);
-  std::string message (argv[2]);
+  std::string address (argv[1]);
+  unsigned short port = atoi (argv[2]);
+  std::string message (argv[3]);
 
   ioa::global_fifo_scheduler ss;
-  ioa::run (ss, ioa::make_generator<broadcast_sender> (port, message));
+  ioa::run (ss, ioa::make_generator<broadcast_sender> (address, port, message));
   return 0; 
 }

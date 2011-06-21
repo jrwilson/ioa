@@ -1,5 +1,5 @@
-#ifndef __udp_broadcast_sender_automaton_hpp__
-#define __udp_broadcast_sender_automaton_hpp__
+#ifndef __udp_multicast_sender_automaton_hpp__
+#define __udp_multicast_sender_automaton_hpp__
 
 #include <ioa/ioa.hpp>
 #include <ioa/buffer.hpp>
@@ -12,7 +12,7 @@
 
 namespace ioa {
 
-  class udp_broadcast_sender_automaton :
+  class udp_multicast_sender_automaton :
     public automaton,
     private observer
   {
@@ -53,10 +53,9 @@ namespace ioa {
 
   public:
 
-    udp_broadcast_sender_automaton () :
+    udp_multicast_sender_automaton () :
       m_fd (-1)
     {
-      const int val = 1;
       int res;
       int flags;
 
@@ -81,13 +80,6 @@ namespace ioa {
 	m_errno = errno;
 	goto the_end;
       }
-      
-      // Set broadcasting.
-      res = setsockopt (m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof (val));
-      if (res == -1) {
-	m_errno = errno;
-	goto the_end;
-      }
 
       add_observable (&send);
       add_observable (&send_complete);
@@ -105,7 +97,7 @@ namespace ioa {
       }
     }
 
-    ~udp_broadcast_sender_automaton () {
+    ~udp_multicast_sender_automaton () {
       if (m_fd != -1) {
 	close (m_fd);
       }
@@ -139,7 +131,7 @@ namespace ioa {
 
   public:
 
-    V_AP_INPUT (udp_broadcast_sender_automaton, send, send_arg);
+    V_AP_INPUT (udp_multicast_sender_automaton, send, send_arg);
 
   private:
 
@@ -168,12 +160,12 @@ namespace ioa {
       schedule ();
     }
     
-    UP_INTERNAL (udp_broadcast_sender_automaton, do_sendto);
+    UP_INTERNAL (udp_multicast_sender_automaton, do_sendto);
 
     bool send_complete_precondition (aid_t aid) const {
       return !m_complete_queue.empty () &&
 	m_complete_queue.front ().first == aid &&
-	bind_count (&udp_broadcast_sender_automaton::send_complete, aid) != 0;
+	bind_count (&udp_multicast_sender_automaton::send_complete, aid) != 0;
     }
 
     int send_complete_effect (aid_t aid) {
@@ -186,16 +178,16 @@ namespace ioa {
 
   public:
     
-    V_AP_OUTPUT (udp_broadcast_sender_automaton, send_complete, int);
+    V_AP_OUTPUT (udp_multicast_sender_automaton, send_complete, int);
 
   private:
 
     void schedule () const {
       if (do_sendto_precondition ()) {
-	schedule_write_ready (&udp_broadcast_sender_automaton::do_sendto, m_fd);
+	schedule_write_ready (&udp_multicast_sender_automaton::do_sendto, m_fd);
       }
       if (!m_complete_queue.empty ()) {
-	ioa::schedule (&udp_broadcast_sender_automaton::send_complete, m_send_queue.front ().first);
+	ioa::schedule (&udp_multicast_sender_automaton::send_complete, m_send_queue.front ().first);
       }
     }
 

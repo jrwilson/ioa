@@ -26,7 +26,7 @@ namespace ioa {
     { }
 
     inet_address (const std::string& address,
-  		  const unsigned short port) :
+  		  const unsigned short port = 0) :
       m_errno (0)
     {
       // Try IPV4
@@ -122,6 +122,54 @@ namespace ioa {
 
       return 0;
     }
+  };
+
+  class inet_mreq
+  {
+  private:
+    socklen_t m_length;
+    union {
+      ip_mreq m_req4;
+      ipv6_mreq m_req6;
+    };
+
+  public:
+    inet_mreq (const inet_address& group_addr,
+	       const inet_address& local_addr) {
+      assert (group_addr.get_socklen () == local_addr.get_socklen ());
+      switch (group_addr.get_socklen ()) {
+      case sizeof (sockaddr_in):
+	{
+	  const sockaddr_in* a = reinterpret_cast<const sockaddr_in*> (group_addr.get_sockaddr ());
+	  memcpy (&m_req4.imr_multiaddr, &a->sin_addr, sizeof (in_addr));
+	  const sockaddr_in* b = reinterpret_cast<const sockaddr_in*> (local_addr.get_sockaddr ());
+	  memcpy (&m_req4.imr_interface, &b->sin_addr, sizeof (in_addr));
+	  m_length = sizeof (ip_mreq);
+	}
+	break;
+      case sizeof (sockaddr_in6):
+	// IPv6 Multicast not supported.
+	m_length = 0;
+	break;
+      default:
+	m_length = 0;
+	break;
+      }
+    }
+
+    const void* get_mreq () const {
+      switch (m_length) {
+      case sizeof (ip_mreq):
+	return &m_req4;
+      default:
+	return 0;
+      }
+    }
+
+    socklen_t get_length () const {
+      return m_length;
+    }
+    
   };
 
 }
