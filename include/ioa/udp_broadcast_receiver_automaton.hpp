@@ -128,7 +128,7 @@ namespace ioa {
       return m_fd != -1;
     }
 
-    void do_recvfrom_action () {
+    void do_recvfrom_effect () {
 
       int expect_bytes;
       int res = ioctl (m_fd, FIONREAD, &expect_bytes);
@@ -170,7 +170,7 @@ namespace ioa {
       return !m_receive.empty ();  // We don't care about being bound because udp is lossy.
     }
 
-    receive_val receive_action () {
+    receive_val receive_effect () {
       std::auto_ptr<receive_val> retval (m_receive.front ());
       m_receive.pop ();
       schedule ();

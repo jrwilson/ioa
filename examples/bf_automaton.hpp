@@ -26,14 +26,14 @@ private:
     return b;
   }
 
-  size_t send_action (size_t j) {
+  size_t send_effect (size_t j) {
     size_t retval = m_send[j]->front();
     m_send[j]->pop();
     schedule();
     return retval;
   }
 
-  void receive_action (const size_t& w, size_t j) {
+  void receive_effect (const size_t& w, size_t j) {
     size_t wght = m_weight.find(j)->second;
     if (w + wght < m_dist) {
       std::cout << "Node " << m_i << "'s old parent is " << m_parent << " and old dist is " << m_dist << std::endl;

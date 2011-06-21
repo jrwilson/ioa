@@ -119,7 +119,7 @@ namespace ioa {
 
   private:
 
-    void send_action (const send_arg& arg, aid_t aid) {
+    void send_effect (const send_arg& arg, aid_t aid) {
       // Ignore if aid has an outstanding send or complete.
       if (m_send_set.count (aid) == 0 && m_complete_set.count (aid) == 0) {
 	if (m_fd != -1) {
@@ -147,7 +147,7 @@ namespace ioa {
       return m_fd != -1 && !m_send_queue.empty ();
     }
 
-    void do_sendto_action () {
+    void do_sendto_effect () {
       std::pair<aid_t, send_arg*> item = m_send_queue.front ();
       m_send_queue.pop_front ();
       m_send_set.erase (item.first);
@@ -176,7 +176,7 @@ namespace ioa {
 	bind_count (&udp_broadcast_sender_automaton::send_complete, aid) != 0;
     }
 
-    int send_complete_action (aid_t aid) {
+    int send_complete_effect (aid_t aid) {
       std::pair<aid_t, int> item = m_complete_queue.front ();
       m_send_queue.pop_front ();
       assert (item.first == aid);

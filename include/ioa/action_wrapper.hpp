@@ -429,57 +429,57 @@ namespace ioa {
 }
 
 #define UV_UP_INPUT(c, name) \
-  typedef ioa::uv_up_input_wrapper<c, &c::name##_action> name##_type; \
+  typedef ioa::uv_up_input_wrapper<c, &c::name##_effect> name##_type; \
   name##_type name;
 
 #define UV_P_INPUT(c, name, param_type)	\
-  typedef ioa::uv_p_input_wrapper<c, param_type, &c::name##_action> name##_type; \
+  typedef ioa::uv_p_input_wrapper<c, param_type, &c::name##_effect> name##_type; \
   name##_type name;
 
 #define UV_AP_INPUT(c, name)	\
-  typedef ioa::uv_ap_input_wrapper<c, &c::name##_action> name##_type; \
+  typedef ioa::uv_ap_input_wrapper<c, &c::name##_effect> name##_type; \
   name##_type name;
 
 #define V_UP_INPUT(c, name, type)			\
-  typedef ioa::v_up_input_wrapper<c, type, &c::name##_action> name##_type;	\
+  typedef ioa::v_up_input_wrapper<c, type, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define V_P_INPUT(c, name, type, param_type)	\
-  typedef ioa::v_p_input_wrapper<c, type, param_type, &c::name##_action> name##_type;	\
+  typedef ioa::v_p_input_wrapper<c, type, param_type, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define V_AP_INPUT(c, name, type)			\
-  typedef ioa::v_ap_input_wrapper<c, type, &c::name##_action> name##_type;	\
+  typedef ioa::v_ap_input_wrapper<c, type, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define UV_UP_OUTPUT(c, name) \
-  typedef ioa::uv_up_output_wrapper<c, &c::name##_precondition, &c::name##_action> name##_type; \
+  typedef ioa::uv_up_output_wrapper<c, &c::name##_precondition, &c::name##_effect> name##_type; \
   name##_type name;
 
 #define UV_P_OUTPUT(c, name, param_type)	\
-  typedef ioa::uv_p_output_wrapper<c, param_type, &c::name##_precondition, &c::name##_action> name##_type; \
+  typedef ioa::uv_p_output_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect> name##_type; \
   name##_type name;
 
 #define UV_AP_OUTPUT(c, name) \
-  typedef ioa::uv_ap_output_wrapper<c, &c::name##_precondition, &c::name##_action> name##_type; \
+  typedef ioa::uv_ap_output_wrapper<c, &c::name##_precondition, &c::name##_effect> name##_type; \
   name##_type name;
 
 #define V_UP_OUTPUT(c, name, type)			\
-  typedef ioa::v_up_output_wrapper<c, type, &c::name##_precondition, &c::name##_action> name##_type;	\
+  typedef ioa::v_up_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define V_P_OUTPUT(c, name, type, param_type)	\
-  typedef ioa::v_p_output_wrapper<c, type, param_type, &c::name##_precondition, &c::name##_action> name##_type;	\
+  typedef ioa::v_p_output_wrapper<c, type, param_type, &c::name##_precondition, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define V_AP_OUTPUT(c, name, type)			\
-  typedef ioa::v_ap_output_wrapper<c, type, &c::name##_precondition, &c::name##_action> name##_type;	\
+  typedef ioa::v_ap_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define UP_INTERNAL(c, name) \
-  ioa::up_internal_wrapper<c, &c::name##_precondition, &c::name##_action> name;
+  ioa::up_internal_wrapper<c, &c::name##_precondition, &c::name##_effect> name;
 
 #define P_INTERNAL(c, name, param_type)	\
-  ioa::p_internal_wrapper<c, param_type, &c::name##_precondition, &c::name##_action> name;
+  ioa::p_internal_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect> name;
 
 #endif

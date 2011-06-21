@@ -16,6 +16,7 @@ ioa/executor_interface.hpp \
 ioa/generator.hpp \
 ioa/generator_interface.hpp \
 ioa/global_fifo_scheduler.hpp \
+ioa/inet_address.hpp \
 ioa/ioa.hpp \
 ioa/model_interface.hpp \
 ioa/observer.hpp \
@@ -28,4 +29,5 @@ ioa/shared_ptr.hpp \
 ioa/simple_scheduler.hpp \
 ioa/system_scheduler_interface.hpp \
 ioa/time.hpp \
+ioa/udp_broadcast_receiver_automaton.hpp \
 ioa/udp_broadcast_sender_automaton.hpp

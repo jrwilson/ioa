@@ -24,7 +24,7 @@ private:
   std::queue<uuid> m_send;
   status_t m_status;
 
-  void receive_action (const uuid& v) {
+  void receive_effect (const uuid& v) {
     if (v > m_u) {
       m_send.push (v);
     }
@@ -41,7 +41,7 @@ private:
     return !m_send.empty () && ioa::bind_count (&asynch_lcr_automaton::send) != 0;
   }
 
-  uuid send_action () {
+  uuid send_effect () {
     uuid retval = m_send.front ();
     m_send.pop ();
     schedule ();
@@ -52,7 +52,7 @@ private:
     return m_status == CHOSEN && ioa::bind_count (&asynch_lcr_automaton::leader) != 0;
   }
 
-  void leader_action () {
+  void leader_effect () {
     m_status = REPORTED;
     schedule ();
   }

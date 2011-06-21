@@ -28,7 +28,7 @@ private:
     return (ioa::bind_count (&bfs_automaton::send, j) != 0) && !q->empty();
   }
 
-  size_t send_action (size_t j) {
+  size_t send_effect (size_t j) {
     size_t retval = m_send[j]->front();
     m_send[j]->pop();
 
@@ -36,7 +36,7 @@ private:
     return retval;
   }
 
-  void receive_action (const size_t& m, size_t j){
+  void receive_effect (const size_t& m, size_t j){
     if (m+1 < m_dist){
       std::cerr << "Node " << m_i << "'s old dist: " << m_dist << " and new dist: " << (m+1) << std::endl;
       m_dist = m+1;

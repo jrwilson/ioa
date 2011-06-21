@@ -13,7 +13,7 @@ private:
     return m_count <= 10;
   }
 
-  void increment_action () {
+  void increment_effect () {
     std::cout << m_count << std::endl;
     if (increment_precondition ()) {
       ++m_count;

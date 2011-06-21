@@ -23,7 +23,7 @@ private:
     return m_state == SEND_READY && ioa::bind_count (&broadcast_sender::send) != 0;
   }
 
-  ioa::udp_broadcast_sender_automaton::send_arg send_action () {
+  ioa::udp_broadcast_sender_automaton::send_arg send_effect () {
     assert (m_state == SEND_READY);
     m_state = SEND_COMPLETE_WAIT;
     schedule ();
@@ -32,7 +32,7 @@ private:
 
   V_UP_OUTPUT (broadcast_sender, send, ioa::udp_broadcast_sender_automaton::send_arg);
 
-  void send_complete_action (const int& result) {
+  void send_complete_effect (const int& result) {
     assert (m_state == SEND_COMPLETE_WAIT);
 
     if (result != 0) {

@@ -36,11 +36,11 @@ namespace ioa {
   };
 
 #define SYSTEM_INPUT(c, name, type)		\
-  typedef ioa::system_input_wrapper<c, type, &c::name##_action> name##_type;	\
+  typedef ioa::system_input_wrapper<c, type, &c::name##_effect> name##_type;	\
   name##_type name;
 
 #define SYSTEM_OUTPUT(c, name, type)		\
-  typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_action> name##_type; \
+  typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type; \
   name##_type name;
 
   class system_automaton_helper_interface
@@ -94,33 +94,33 @@ namespace ioa {
     void schedule ();
 
     bool sys_create_precondition () const;
-    std::pair<shared_ptr<generator_interface>, void*> sys_create_action ();
+    std::pair<shared_ptr<generator_interface>, void*> sys_create_effect ();
 
     bool sys_bind_precondition () const;
-    std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_action ();
+    std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_effect ();
 
     bool sys_unbind_precondition () const;
-    void* sys_unbind_action ();
+    void* sys_unbind_effect ();
 
     bool sys_destroy_precondition () const;
-    void* sys_destroy_action ();
+    void* sys_destroy_effect ();
 
-    void sys_create_key_exists_action (void* const &);
-    void sys_instance_exists_action (void* const &);
-    void sys_automaton_created_action (std::pair<void* COMMA aid_t> const &);
-    void sys_bind_key_exists_action (void* const &);
-    void sys_output_automaton_dne_action (void* const &);
-    void sys_input_automaton_dne_action (void* const &);
-    void sys_binding_exists_action (void* const &);
-    void sys_output_action_unavailable_action (void* const &);
-    void sys_input_action_unavailable_action (void* const &);
-    void sys_bound_action (void* const &);
-    void sys_bind_key_dne_action (void* const &);
-    void sys_unbound_action (void* const &);
-    void sys_create_key_dne_action (void* const &);
-    void sys_automaton_destroyed_action (void* const &);
-    void sys_recipient_dne_action (void* const &);
-    void sys_event_delivered_action (void* const &);
+    void sys_create_key_exists_effect (void* const &);
+    void sys_instance_exists_effect (void* const &);
+    void sys_automaton_created_effect (std::pair<void* COMMA aid_t> const &);
+    void sys_bind_key_exists_effect (void* const &);
+    void sys_output_automaton_dne_effect (void* const &);
+    void sys_input_automaton_dne_effect (void* const &);
+    void sys_binding_exists_effect (void* const &);
+    void sys_output_action_unavailable_effect (void* const &);
+    void sys_input_action_unavailable_effect (void* const &);
+    void sys_bound_effect (void* const &);
+    void sys_bind_key_dne_effect (void* const &);
+    void sys_unbound_effect (void* const &);
+    void sys_create_key_dne_effect (void* const &);
+    void sys_automaton_destroyed_effect (void* const &);
+    void sys_recipient_dne_effect (void* const &);
+    void sys_event_delivered_effect (void* const &);
 
   public:
     SYSTEM_OUTPUT (automaton, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);

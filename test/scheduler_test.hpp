@@ -854,7 +854,7 @@ private:
     return true;
   }
 
-  void poll_action () {
+  void poll_effect () {
     // We poll until the automaton is created.  Then we destroy it.
     if (!m_helper->is_bound) {
       ioa::schedule (&bind_unbound::poll);
@@ -1041,7 +1041,7 @@ private:
     return true;
   }
 
-  void poll_action () {
+  void poll_effect () {
     // We poll until the automaton is created.  Then we destroy it.
     if (!m_helper->created) {
       ioa::schedule (&destroy_automaton_destroyed::poll);
@@ -1129,7 +1129,7 @@ private:
     return true;
   }
 
-  void action_action () {
+  void action_effect () {
     goal_reached = true;
   }
 
@@ -1163,7 +1163,7 @@ private:
     return true;
   }
 
-  void action_action (int param) {
+  void action_effect (int param) {
     assert (param == 18887235);
     goal_reached = true;
   }
@@ -1199,7 +1199,7 @@ private:
     return true;
   }
 
-  int action_action () {
+  int action_effect () {
     time_t execute_time = time (0);
     // Should be within three seconds of each other.
     assert (execute_time - m_schedule_time <= 3);
@@ -1240,7 +1240,7 @@ private:
     return true;
   }
 
-  int action_action (int param) {
+  int action_effect (int param) {
     assert (param == 512);
     time_t execute_time = time (0);
     // Should be within three seconds of each other.
@@ -1280,7 +1280,7 @@ private:
     return true;
   }
 
-  void action_action () {
+  void action_effect () {
     goal_reached = true;
   }
 
@@ -1328,7 +1328,7 @@ private:
     return true;
   }
 
-  void action_action (int fd) {
+  void action_effect (int fd) {
     assert (fd == m_fd[0]);
     goal_reached = true;
   }
@@ -1377,7 +1377,7 @@ private:
     return true;
   }
 
-  void action_action () {
+  void action_effect () {
     goal_reached = true;
   }
 
@@ -1418,7 +1418,7 @@ private:
     return true;
   }
 
-  void action_action (int fd) {
+  void action_effect (int fd) {
     assert (fd == m_fd[1]);
     goal_reached = true;
   }

@@ -16,7 +16,7 @@ class channel_automaton :
 private:
   std::queue<T> m_queue;
 
-  void send_action (const T& t) {
+  void send_effect (const T& t) {
     m_queue.push (t);
     schedule ();
   }
@@ -25,7 +25,7 @@ private:
     return !m_queue.empty () && ioa::bind_count (&channel_automaton::receive) != 0;
   }
 
-  T receive_action () {
+  T receive_effect () {
     T retval =  m_queue.front ();
     m_queue.pop ();
     schedule ();

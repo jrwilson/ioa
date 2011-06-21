@@ -22,7 +22,7 @@ public:
     ioa::make_bind_helper (this, receiver, &ioa::udp_broadcast_receiver_automaton::receive, m_self.get (), &broadcast_receiver::receive);
   }
 
-  void receive_action (const ioa::udp_broadcast_receiver_automaton::receive_val& v) {
+  void receive_effect (const ioa::udp_broadcast_receiver_automaton::receive_val& v) {
     if (v.err_no != 0) {
       char buf[256];
       strerror_r (v.err_no, buf, 256);

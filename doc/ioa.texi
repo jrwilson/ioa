@@ -109,15 +109,16 @@ All of the examples in this document use the middle approach.
 @chapter Tutorials
 
 @menu
-* Tutorial 1::	The Null Automaton.
+* Compiling and Linking::
+* Internal Actions::
 @end menu
 
-@node Tutorial 1
-@section The Null Automaton
+@node Compiling and Linking
+@section Compiling and Linking
 
 The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{ioa}.
 The following program contains the null automaton---an automaton with no actions.
-The source can be found in @file{tutorial/null_automaton}.
+The source can be found in @file{tutorial/null_automaton.cpp}.
 
 @example
 @verbatiminclude tutorial/null_automaton.cpp
@@ -166,20 +167,138 @@ $ ./null_automaton
 @end verbatim
 @end example
 Notice that we needed to link against the I/O automata library (@option{-lioa}) and pthreads library (@option{-lpthread}).
-Some environments, e.g., Mac OSX, include pthreads in the standard C libary.
-If you have such an environment, omit the @option{-lpthread} part of the commmand.
+Some environments, e.g., Mac OSX, include pthreads in the standard C library.
+If you have such an environment, omit the @option{-lpthread} part of the command.
 
-@c @section Internal Actions: The Count-to-Ten Automaton
+@node Internal Actions
+@section Internal Actions
 
-@c Internal actions
-@c Scheduling
-@c Basic structure
-@c get current id
+In this tutorial we develop an automaton that counts to ten using an internal action.
+The source is given below and can be found in @file{tutorial/count_to_ten_automaton.cpp}.
+
+@example
+@verbatiminclude tutorial/count_to_ten_automaton.cpp
+@end example
+
+The automata in this tutorial are listed in a way that attempts to mimic the style in @cite{Distributed Algorithms}.
+In general, an automaton will have the following structure:
+@itemize
+
+@item Type definitions --- Declare types that are used internally by the automaton (private) and types that are used by external actions (public).
+
+@item State declarations --- Declare the state variables of the automaton (private).
+
+@item Constructors/Destructors --- Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up (public).
+
+@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.  Preconditions and actions bodies are declared private while the member variables can be declared public or private depending on their intended use.
+
+@item Schedule and other member functions --- Declare/define one or more functions for scheduling actions and useful functions for manipulating the state (private).
+
+@end itemize
+
+Let's examine the automaton section by section.
+The state of the automaton is declared with
+@example
+@verbatim
+private:
+  int m_count;
+@end verbatim
+@end example
+In this case, the state of the automaton consists of a single integer @code{m_count}.
+
+The count is initialized to 1 in the constructor:
+@example
+@verbatim
+public:
+  count_to_ten_automaton () :
+    m_count (1)
+  {
+    schedule ();
+  }
+@end verbatim
+@end example
+The call to @code{schedule ()} will be explained later in the tutorial.
+
+The automaton defines the precondition and effect for an unparameterized internal action named @code{increment} with
+@example
+@verbatim
+private:
+  bool increment_precondition () const {
+    return m_count <= 10;
+  }
+
+  void increment_effect () {
+    std::cout << m_count << std::endl;
+    ++m_count;
+    schedule ();
+  }
+@end verbatim
+@end example
+Parameters are discussed in (TODO).
+Following the style in @cite{Distributed Algorithms}, internal actions are divided into a @dfn{precondition} and @dfn{effect}.
+The precondition returns a Boolean indicating if the action can be executed.
+In this example, the precondition returns true so long as the count is less than or equal to ten.
+The pattern for declaring the precondition for an unparameterized internal actions is @code{bool @var{action-name}_precondition () const;}.
+Note that preconditions have the @code{const} modifier as they should not change the state of the automaton.
+The effect changes the state of the automaton.
+In this example, the effect prints the current value of the count, increments the count, and calles @code{schedule ()}.
+The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ();}.
+
+The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler.
+The is tedious so a set of a macros is defined to simplify declaring the members.
+The code
+@example
+@verbatim
+  UP_INTERNAL (count_to_ten_automaton, increment);
+@end verbatim
+@end example
+uses the @code{UP_INTERNAL} macro to declare an action member variable @code{increment}.
+The macros rely on the @code{*_precondition} and @code{*_action} naming convention described earlier.
+
+The final part of the automaton is a function that informs the scheduler what local actions to consider.
+@example
+@verbatim
+  void schedule () const {
+    if (increment_precondition ()) {
+      ioa::schedule (&count_to_ten_automaton::increment);
+    }
+  }
+@end verbatim
+@end example
+The action of @code{schedule ()} is straightforward:  it evaluates the precondition for increment and then schedules the increment action.
+It is good style to write one or more @code{schedule ()} functions and call them in the constructor and at the end of every action effect.
+A common source of errors is to either omit a local action from the @code{schedule ()} function or forget to call @code{schedule ()} in an action effect.
+As an exercise, comment out one or both of the calls to @code{schedule} and see what happens.
+It is important that none of the state variables change after the call to @code{schedule ()} so that the preconditions will be evaluated correctly.
+
+
+To summarize, consider the uses of the automaton name and action names.
+To declare an automaton:
+@example
+@code{class @var{automaton-name} : public ioa::automaton @enddots{}}
+@end example
+To declare a precondition for an unparameterized internal action:
+@example
+@code{bool @var{action-name}_precondition () const;}
+@end example
+To declare a effect for an unparameterized internal action:
+@example
+@code{void @var{action-name}_effect ();}
+@end example
+To declare an unparameterized internal action:
+@example
+@code{UP_INTERNAL (@var{automaton-name}, @var{action-name});}
+@end example
+To schedule an unparameterized local action:
+@example
+@code{ioa::schedule (&@var{automaton-name}::@var{action-name});}
+@end example
 
 @c @section Automaton Helpers: Count-to-Ten Automata
 
 @c Hiearchies
 @c Automata helpers
+@c get current id
 
 @c @section External Actions: Cooperative Count-to-Ten
 
