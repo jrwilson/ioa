@@ -11,7 +11,7 @@
 #include <iostream>
 #include <stdio.h>
 
-File::File (const char* name) :
+File::File (const char* name, uint32_t type) :
   m_fname (name)
 {
   int fd = open (m_fname.c_str (), O_RDONLY);
@@ -56,6 +56,10 @@ File::File (const char* name) :
   m_hashed_size = m_padded_size + HASH_LENGTH * (m_fragment_count - 1);
   assert ((m_hashed_size % HASH_LENGTH) == 0);
 
+  m_fileid.original_length = m_original_size;
+  m_fileid.hashed_length = m_hashed_size;
+  m_fileid.type = type;
+
   std::cout << "The original length of the file is " << m_original_size << " bytes."<< std::endl;
   std::cout << "The padded length of the file is " << m_padded_size << " bytes."<< std::endl;
   std::cout << "The hashed length of the file is " << m_hashed_size << std::endl;
@@ -96,12 +100,12 @@ File::File (const char* name) :
       digester.finalize ();
       unsigned char samp[HASH_LENGTH];
       digester.get (samp);
-      memcpy (m_fileid, samp, HASH_LENGTH);
+      memcpy (m_fileid.hash, samp, HASH_LENGTH);
     }
   }
 
   for (unsigned int idx = 0; idx < HASH_LENGTH; ++idx) {
-    printf ("%02x", m_fileid[idx]);
+    printf ("%02x", m_fileid.hash[idx]);
   }
 
   printf ("\n");
