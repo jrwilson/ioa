@@ -67,6 +67,7 @@ namespace ioa {
     {
       int res;
       int flags;
+      const int val = 1;
 
       // Open a socket.
       m_fd = socket (AF_INET, SOCK_DGRAM, 0);
@@ -86,6 +87,12 @@ namespace ioa {
       flags |= O_NONBLOCK;
       res = fcntl (m_fd, F_SETFL, flags);
       if (res < 0) {
+	m_errno = errno;
+	goto the_end;
+      }
+
+      // Set reuse.
+      if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
 	m_errno = errno;
 	goto the_end;
       }
