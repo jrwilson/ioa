@@ -111,6 +111,16 @@ File::File (const char* name, uint32_t type) :
   printf ("\n");
 }
 
+File::File (const fileID& f) :
+  m_fileid (f),
+  m_original_size (f.original_length),
+  m_padded_size (m_original_size + (HASH_LENGTH - (m_original_size % HASH_LENGTH))),
+  m_hashed_size (f.hashed_length),
+  m_fragment_count ((f.hashed_length + FRAGMENT_SIZE - 1) / FRAGMENT_SIZE),
+  m_data (new unsigned char[m_hashed_size])
+{ }
+
+
 File::~File () {
   delete [] m_data;
 }

@@ -1,6 +1,9 @@
 #ifndef __checking_channel_automaton_hpp__
 #define	__checking_channel_automaton_hpp__
 
+#include <ioa/ioa.hpp>
+#include <queue>
+
 template <class T>
 class checking_channel_automaton :
   public ioa::automaton
@@ -12,6 +15,7 @@ private:
       SEND_COMPLETE_READY
   };
 
+  channel_state m_state;
   std::queue<T> m_queue;
 
   void send_effect (const T& t) {
@@ -20,7 +24,7 @@ private:
   }
 
   bool receive_precondition () const {
-    return channel_state == RECV_READY && ioa::bind_count (&checking_channel_automaton::receive) != 0;
+    return m_state == RECV_READY && ioa::bind_count (&checking_channel_automaton::receive) != 0;
   }
 
   T receive_effect () {
@@ -31,11 +35,11 @@ private:
   }
 
   bool send_complete_precondition () const {
-      return (channel_state == SEND_COMPLETE_READY && ioa::bind_count (&checking_channel_automaton::send_complete) != 0);
+      return (m_state == SEND_COMPLETE_READY && ioa::bind_count (&checking_channel_automaton::send_complete) != 0);
   }
 
   void send_complete_effect () {
-    channel_state = SEND_WAIT;
+    m_state = SEND_WAIT;
     schedule ();
   }
 
@@ -51,7 +55,7 @@ private:
 public:
 
   checking_channel_automaton () :
-    channel_state(SEND_WAIT)
+    m_state (SEND_WAIT)
   {
     schedule ();
   }
