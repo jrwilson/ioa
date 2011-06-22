@@ -9,7 +9,7 @@ namespace ioa {
   }
   
   void time::normalize () {
-    if (usec < -1000000 || usec > 1000000) {
+    if (usec <= -1000000 || usec >= 1000000) {
       sec += usec / 1000000;
       usec = usec % 1000000;
     }
@@ -35,13 +35,12 @@ namespace ioa {
     sec (sec),
     usec (usec)
   {
-    check ();
+    normalize ();
   }
   
   time::time (const time& o) {
     sec = o.sec;
     usec = o.usec;
-    check ();
   }
   
   time::time (const struct timeval& t) :
@@ -51,6 +50,15 @@ namespace ioa {
     check ();
   }
   
+  long time::get_sec () const {
+    return sec;
+  }
+
+  
+  long time::get_usec () const {
+    return usec;
+  }
+
   time& time::operator= (const time& o) {
     if (this != &o) {
       sec = o.sec;
@@ -94,6 +102,7 @@ namespace ioa {
   }
   
   time::operator struct timeval () const {
+    assert (sec >= 0 && usec >= 0);
     struct timeval retval;
     retval.tv_sec = sec;
     retval.tv_usec = usec;

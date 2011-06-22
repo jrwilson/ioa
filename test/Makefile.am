@@ -3,6 +3,7 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/libioa.la
 
 TESTS = \
+time \
 action_executor \
 model \
 global_fifo_scheduler \
@@ -10,6 +11,8 @@ simple_scheduler \
 bind_helper
 
 check_PROGRAMS = $(TESTS)
+
+time_SOURCES = minunit.h time.cpp test_main.cpp
 
 action_executor_SOURCES = minunit.h automaton1.hpp action_executor.cpp test_main.cpp
 

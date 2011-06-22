@@ -23,6 +23,8 @@ namespace ioa {
 	  long usec);
     time (const time& o);
     time (const struct timeval& t);
+    long get_sec () const;
+    long get_usec () const;
     time& operator= (const time& o);
     bool operator== (const time& o) const;
     time& operator+= (const time& o);
