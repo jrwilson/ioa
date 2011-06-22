@@ -27,8 +27,8 @@
 
 namespace ioa {
 
-  typedef std::pair<action_runnable_interface*, time> action_time;
-  typedef std::pair<action_runnable_interface*, int> action_fd;
+  typedef std::pair<time, action_runnable_interface*> time_action;
+  typedef std::pair<int, action_runnable_interface*> fd_action;
 
   class global_fifo_scheduler_impl :
     public system_scheduler_interface
@@ -38,9 +38,9 @@ namespace ioa {
     model m_model;
     std::queue<runnable_interface*> m_configq;
     std::list<action_runnable_interface*> m_userq;
-    std::queue<action_time> m_timerq;
-    std::queue<action_fd> m_readq;
-    std::queue<action_fd> m_writeq;
+    std::queue<time_action> m_timerq;
+    std::queue<fd_action> m_readq;
+    std::queue<fd_action> m_writeq;
     aid_t m_current_aid;
 
     struct action_runnable_equal
@@ -87,15 +87,15 @@ namespace ioa {
       time release_time (now);
       release_time += offset;
       
-      m_timerq.push (std::make_pair (r, release_time));
+      m_timerq.push (std::make_pair (release_time, r));
     }
   
     void schedule_readq (action_runnable_interface* r, int fd) {
-      m_readq.push (std::make_pair (r, fd));
+      m_readq.push (std::make_pair (fd, r));
     }
 
     void schedule_writeq (action_runnable_interface* r, int fd) {
-      m_writeq.push (std::make_pair (r, fd));
+      m_writeq.push (std::make_pair (fd, r));
     }
 
   public:
@@ -154,7 +154,7 @@ namespace ioa {
       assert (m_userq.empty ());
       assert (runnable_interface::count () == 0);
 
-      std::priority_queue<action_time, std::vector<action_time>, std::greater<action_time> > timer_queue;
+      std::priority_queue<time_action, std::vector<time_action>, std::greater<time_action> > timer_queue;
       std::map<int, action_runnable_interface*> read_actions;
       std::map<int, action_runnable_interface*> write_actions;
       
@@ -179,24 +179,24 @@ namespace ioa {
 	}
 
 	while (!m_readq.empty ()) {
-	  std::map<int, action_runnable_interface*>::iterator pos = read_actions.find (m_readq.front ().second);
+	  std::map<int, action_runnable_interface*>::iterator pos = read_actions.find (m_readq.front ().first);
 	  if (pos != read_actions.end ()) {
 	    // Action already registered using this fd.
 	    delete pos->second;
 	    read_actions.erase (pos);
 	  }
-	  read_actions.insert (std::make_pair (m_readq.front ().second, m_readq.front ().first));
+	  read_actions.insert (m_readq.front ());
 	  m_readq.pop ();
 	}
 	
 	while (!m_writeq.empty ()) {
-	  std::map<int, action_runnable_interface*>::iterator pos = write_actions.find (m_writeq.front ().second);
+	  std::map<int, action_runnable_interface*>::iterator pos = write_actions.find (m_writeq.front ().first);
 	  if (pos != write_actions.end ()) {
 	    // Action already registered using this fd.
 	    delete pos->second;
 	    write_actions.erase (pos);
 	  }
-	  write_actions.insert (std::make_pair (m_writeq.front ().second, m_writeq.front ().first));
+	  write_actions.insert (m_writeq.front ());
 	  m_writeq.pop ();
 	}
 
@@ -215,9 +215,9 @@ namespace ioa {
     	  assert (r == 0);
     	  time now (n);
 
-    	  if (timer_queue.top ().second > now) {
+    	  if (timer_queue.top ().first > now) {
     	    // Timer is some time in future.
-    	    timeout = timer_queue.top ().second - now;
+    	    timeout = timer_queue.top ().first - now;
     	  }
     	  else {
     	    // Timer is in the past.  Return immediately.
@@ -268,8 +268,8 @@ namespace ioa {
 	    assert (r == 0);
 	    time now (n);
 	    
-	    while (!timer_queue.empty () && timer_queue.top ().second < now) {
-	      schedule_userq (timer_queue.top ().first);
+	    while (!timer_queue.empty () && timer_queue.top ().first < now) {
+	      schedule_userq (timer_queue.top ().second);
 	      timer_queue.pop ();
 	    }
 	  }

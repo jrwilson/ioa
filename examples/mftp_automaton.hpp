@@ -168,9 +168,9 @@ public:
 private:
 
   void fragment_interrupt_effect () {
-    std::cout << __func__ << std::endl;
     // Purpose is to produce a randomly selected requested fragment.
     if (their_req_count != 0) {
+      std::cout << __func__ << std::endl;
       // Get a random index.
       uint32_t randy = get_random_index ();
       their_req[randy] = false;
@@ -187,9 +187,9 @@ private:
   UV_UP_INPUT (mftp_automaton, fragment_interrupt);
 
   void request_interrupt_effect () {
-    std::cout << __func__ << std::endl;
     // Purpose is to move from my_req to send queue.
     if (!my_req.empty ()) {
+      std::cout << __func__ << std::endl;
       sendq.push (my_req.front ());
       my_req.pop ();
     }
@@ -206,6 +206,7 @@ private:
   }
 
   void replenish_request_queue_effect () {
+    std::cout << __func__ << std::endl;
     uint32_t start_idx = 0;
     uint32_t end_idx;
 
