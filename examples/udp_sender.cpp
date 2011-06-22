@@ -63,8 +63,12 @@ private:
 
     if (result != 0) {
       char buf[256];
+#ifdef _GNU_SOURCE
+      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (result, buf, 256) << std::endl;
+#else
       strerror_r (result, buf, 256);
       std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+#endif
       m_state = ERROR;
     }
     else {
