@@ -4,15 +4,14 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/libioa.la
 
 noinst_PROGRAMS = \
+udp_sender \
 asynch_bfs \
 asynch_lcr \
 beast \
 bellman_ford \
 broadcast_receiver \
-broadcast_sender \
 clock_213 \
 multicast_receiver \
-multicast_sender \
 mftp \
 peterson_leader \
 slow_count \
@@ -26,14 +25,13 @@ asynch_lcr_SOURCES = uuid.hpp unidirectional_ring_leader_election.hpp asynch_lcr
 beast_SOURCES = aba_automaton.hpp beast.cpp
 bellman_ford_SOURCES = weighted_bidirectional_network.hpp bf_automaton.hpp bellman_ford.cpp
 broadcast_receiver_SOURCES = broadcast_receiver.cpp
-broadcast_sender_SOURCES = broadcast_sender.cpp
 clock_213_SOURCES = clock_213.cpp
 multicast_receiver_SOURCES = multicast_receiver.cpp
-multicast_sender_SOURCES = multicast_sender.cpp
 mftp_SOURCES = mftp.cpp
 peterson_leader_SOURCES = peterson_leader_automaton.hpp peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp
 spanning_tree_SOURCES = bidirectional_spanning_tree.hpp ast_automaton.hpp spanning_tree.cpp
+udp_sender_SOURCES = udp_sender.cpp
 
 #file_tester_SOURCES = file_tester.cpp file.cpp
 
