@@ -27,6 +27,7 @@ private:
 public:
   File (const char*, uint32_t);
   File (const fileID& f);
+  File (const File& other);
   ~File ();
 
   unsigned char* get_data_ptr () {

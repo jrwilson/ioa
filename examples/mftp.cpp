@@ -1,14 +1,9 @@
 #include "simple_network.hpp"
-#include "mftp_automaton.hpp"
-#include "file.hpp"
-
-#include <ioa/simple_scheduler.hpp>
-
-using namespace std;
+#include <ioa/global_fifo_scheduler.hpp>
 
 int main() {
-  ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<simple_network<mftp_automaton, message> > ());
+  ioa::global_fifo_scheduler sched;
+  ioa::run (sched, ioa::make_generator<simple_network> ());
   return 0;
 }
 

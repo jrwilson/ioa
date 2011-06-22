@@ -18,10 +18,27 @@ private:
   channel_state m_state;
   std::queue<T> m_queue;
 
-  void send_effect (const T& t) {
-    m_queue.push (t);
+public:
+  checking_channel_automaton () :
+    m_state (SEND_WAIT)
+  {
     schedule ();
   }
+
+private:
+  void send_effect (const T& t) {
+    if (m_state == SEND_WAIT) {
+      m_queue.push (t);
+      m_state = RECV_READY;
+    }
+    schedule ();
+  }
+
+public:
+
+  V_UP_INPUT (checking_channel_automaton, send, T);
+
+private:
 
   bool receive_precondition () const {
     return m_state == RECV_READY && ioa::bind_count (&checking_channel_automaton::receive) != 0;
@@ -30,9 +47,16 @@ private:
   T receive_effect () {
     T retval =  m_queue.front ();
     m_queue.pop ();
+    m_state = SEND_COMPLETE_READY;
     schedule ();
     return retval;
   }
+
+public:
+
+  V_UP_OUTPUT (checking_channel_automaton, receive, T);
+
+private:
 
   bool send_complete_precondition () const {
       return (m_state == SEND_COMPLETE_READY && ioa::bind_count (&checking_channel_automaton::send_complete) != 0);
@@ -43,6 +67,12 @@ private:
     schedule ();
   }
 
+public:
+
+  UV_UP_OUTPUT (checking_channel_automaton, send_complete);
+
+private:
+
   void schedule () {
     if (receive_precondition ()) {
       ioa::schedule (&checking_channel_automaton::receive);
@@ -52,17 +82,6 @@ private:
     }
   }
 
-public:
-
-  checking_channel_automaton () :
-    m_state (SEND_WAIT)
-  {
-    schedule ();
-  }
-
-  V_UP_INPUT (checking_channel_automaton, send, T);
-  V_UP_OUTPUT (checking_channel_automaton, receive, T);
-  UV_UP_OUTPUT (checking_channel_automaton, send_complete);
 };
 
 #endif

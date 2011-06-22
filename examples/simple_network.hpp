@@ -1,8 +1,8 @@
 #ifndef __simple_network_hpp__
 #define	__simple_network_hpp__
 
-
 #include "checking_channel_automaton.hpp"
+#include "mftp_automaton.hpp"
 
 #include <cassert>
 #include <map>
@@ -11,48 +11,52 @@
 #include <fstream>
 #include <vector>
 
-template <class T, typename M>
 class simple_network :
-    public ioa::automaton
+  public ioa::automaton
 {
-private:
-
-  std::auto_ptr<ioa::self_helper<simple_network> > self;
-  std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
-
 public:
-  simple_network() :
-    self (new ioa::self_helper<simple_network> ())
+  simple_network()
   {
-    const char* file = "ftest.txt";
-    T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> (file, 0)));
-    T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> (file, 0)));
-    ioa::automaton_helper<checking_channel_automaton<M> >* i_to_j_channel = new ioa::automaton_helper<checking_channel_automaton<M> > (this, ioa::make_generator<checking_channel_automaton<M> > ());
-    ioa::automaton_helper<checking_channel_automaton<M> >* j_to_i_channel = new ioa::automaton_helper<checking_channel_automaton<M> > (this, ioa::make_generator<checking_channel_automaton<M> > ());
+    File complete_file ("ftest.txt", 0);
+    File empty_file (complete_file.m_fileid);
+
+    ioa::automaton_helper<mftp_automaton>* a = new ioa::automaton_helper<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (complete_file, true));
+    ioa::automaton_helper<mftp_automaton>* b = new ioa::automaton_helper<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (empty_file, false));
+
+    ioa::automaton_helper<checking_channel_automaton<message> >* a_to_b_channel = new ioa::automaton_helper<checking_channel_automaton<message> > (this, ioa::make_generator<checking_channel_automaton<message> > ());
+    ioa::automaton_helper<checking_channel_automaton<message> >* b_to_a_channel = new ioa::automaton_helper<checking_channel_automaton<message> > (this, ioa::make_generator<checking_channel_automaton<message> > ());
+
     //Helper for send i,j:
     ioa::make_bind_helper(this,
-               T_helpers[0],
-               &T::send,
-               i_to_j_channel,
-               &checking_channel_automaton<M>::send);
-    //Helper for send j,i:
+			  a,
+			  &mftp_automaton::send,
+			  a_to_b_channel,
+			  &checking_channel_automaton<message>::send);
     ioa::make_bind_helper(this,
-               T_helpers[1],
-               &T::send,
-               j_to_i_channel,
-               &checking_channel_automaton<M>::send);
-    //Helper for receive i,j:
+			  a_to_b_channel,
+			  &checking_channel_automaton<message>::send_complete,
+			  a,
+			  &mftp_automaton::send_complete);
     ioa::make_bind_helper(this,
-               i_to_j_channel,
-               &checking_channel_automaton<M>::receive,
-               T_helpers[1],
-               &T::receive);
-    //Helper for receive j,i:
+			  a_to_b_channel,
+			  &checking_channel_automaton<message>::receive,
+			  b,
+			  &mftp_automaton::receive);
     ioa::make_bind_helper(this,
-               j_to_i_channel,
-               &checking_channel_automaton<M>::receive,
-               T_helpers[0],
-               &T::receive);
+			  b,
+			  &mftp_automaton::send,
+			  b_to_a_channel,
+			  &checking_channel_automaton<message>::send);
+    ioa::make_bind_helper(this,
+			  b_to_a_channel,
+			  &checking_channel_automaton<message>::send_complete,
+			  b,
+			  &mftp_automaton::send_complete);
+    ioa::make_bind_helper(this,
+			  b_to_a_channel,
+			  &checking_channel_automaton<message>::receive,
+			  a,
+			  &mftp_automaton::receive);
   }
 
 };

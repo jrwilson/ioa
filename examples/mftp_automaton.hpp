@@ -1,6 +1,7 @@
 #ifndef __mftp_automaton_hpp__
 #define	__mftp_automaton_hpp__
 
+#include "periodic_timer.hpp"
 #include "file.hpp"
 
 #include <cstdlib>
@@ -8,6 +9,8 @@
 #include <vector>
 #include <string.h>
 #include <math.h>
+
+#include <iostream>
 
 class mftp_automaton :
   public ioa::automaton
@@ -18,6 +21,7 @@ private:
     SEND_COMPLETE_WAIT
   };
 
+  std::auto_ptr<ioa::self_helper<mftp_automaton> > m_self;
   File m_file;
   std::queue<message> my_req;
   std::vector<bool> their_req;
@@ -29,37 +33,37 @@ private:
   send_state m_send_state;
 
 public:
-  mftp_automaton (const char* file_name,
-		  uint32_t type) :
-    m_file (file_name, type),
+  mftp_automaton (const File& file,
+		  const bool have_it) :
+    m_self (new ioa::self_helper<mftp_automaton> ()),
+    m_file (file),
     their_req (m_file.m_fragment_count),
     their_req_count (0),
     have (m_file.m_fragment_count),
-    have_count (m_file.m_fragment_count),
+    have_count (have_it ? m_file.m_fragment_count : 0),
     valid (m_file.m_fragment_count),
     m_send_state (SEND_READY)
   {
     for(size_t i = 0; i < have.size(); i++) {
-      have[i] = true;
-      valid[i] = true;
+      have[i] = have_it;
+      valid[i] = have_it;
     }
-    // TODO:  Hook up announce interrupts.
-  }
 
-  mftp_automaton (fileID f) :
-    m_file (f),
-    their_req (m_file.m_fragment_count),
-    their_req_count (0),
-    have (m_file.m_fragment_count),
-    have_count (0),
-    valid (m_file.m_fragment_count),
-    m_send_state (SEND_READY)
-  {
-    for(size_t i = 0; i < have.size(); i++) {
-      have[i] = false;
-      valid[i] = false;
-    }
-    // TODO:  Hook up announce interrupts.
+    ioa::automaton_helper<periodic_timer>* fragment_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> ());
+    ioa::make_bind_helper (this,
+			   fragment_timer,
+			   &periodic_timer::interrupt,
+			   m_self.get (),
+			   &mftp_automaton::fragment_interrupt);
+
+    ioa::automaton_helper<periodic_timer>* request_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> ());
+    ioa::make_bind_helper (this,
+			   request_timer,
+			   &periodic_timer::interrupt,
+			   m_self.get (),
+			   &mftp_automaton::request_interrupt);
+
+    schedule ();
   }
 
 private:
@@ -123,6 +127,7 @@ private:
 	      // Have it.
 	      have[idx] = true;
 	      ++have_count;
+	      std::cout << "Now I have " << have_count << "/" << m_file.m_fragment_count << std::endl;
 	      // TODO:  Validate it.
 	    }
 	  }
@@ -204,25 +209,27 @@ private:
     while (start_idx < m_file.m_fragment_count) {
       
       // Move start until we don't have one.
-      for (start_idx = 0;
-	   have[start_idx] == true;
+      for (;
+	   start_idx < m_file.m_fragment_count && have[start_idx] == true;
 	   ++start_idx)
 	;;
-      
-      for (end_idx = start_idx + 1;
-	   end_idx < m_file.m_fragment_count && have[end_idx] == false;
-	   ++end_idx)
-	;;
 
-      // Range is [start_idx, end_idx).
-      uint32_t expected_length = (end_idx - start_idx) * FRAGMENT_SIZE;
-      if (end_idx == m_file.m_fragment_count) {
-	expected_length = m_file.m_fileid.hashed_length - start_idx * FRAGMENT_SIZE;
+      if (start_idx < m_file.m_fragment_count) {
+	for (end_idx = start_idx + 1;
+	     end_idx < m_file.m_fragment_count && have[end_idx] == false;
+	     ++end_idx)
+	  ;;
+	
+	// Range is [start_idx, end_idx).
+	uint32_t expected_length = (end_idx - start_idx) * FRAGMENT_SIZE;
+	if (end_idx == m_file.m_fragment_count) {
+	  expected_length = m_file.m_fileid.hashed_length - start_idx * FRAGMENT_SIZE;
+	}
+	
+	my_req.push (message (request_type (), m_file.m_fileid, start_idx * FRAGMENT_SIZE, expected_length));
+	
+	start_idx = end_idx;
       }
-
-      my_req.push (message (request_type (), m_file.m_fileid, start_idx * FRAGMENT_SIZE, expected_length));
-
-      start_idx = end_idx;
     }
 
     schedule ();
@@ -248,7 +255,12 @@ private:
   }
 
   void schedule () const {
-    // TODO:  Write this.
+    if (replenish_request_queue_precondition ()) {
+      ioa::schedule (&mftp_automaton::replenish_request_queue);
+    }
+    if (send_precondition ()) {
+      ioa::schedule (&mftp_automaton::send);
+    }
   }
 
 };

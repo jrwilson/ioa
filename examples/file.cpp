@@ -118,6 +118,16 @@ File::File (const fileID& f) :
   m_data (new unsigned char[m_hashed_size])
 { }
 
+File::File (const File& other) :
+  m_fileid (other.m_fileid),
+  m_fragment_count (other.m_fragment_count),
+  m_original_size (other.m_original_size),
+  m_padded_size (other.m_padded_size),
+  m_hashed_size (other.m_hashed_size)
+{
+  m_data = new unsigned char[m_hashed_size];
+  memcpy (m_data, other.m_data, m_hashed_size);
+}
 
 File::~File () {
   delete [] m_data;
