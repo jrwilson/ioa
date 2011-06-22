@@ -49,14 +49,14 @@ public:
       valid[i] = have_it;
     }
 
-    ioa::automaton_helper<periodic_timer>* fragment_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> ());
+    ioa::automaton_helper<periodic_timer>* fragment_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0,1)));
     ioa::make_bind_helper (this,
 			   fragment_timer,
 			   &periodic_timer::interrupt,
 			   m_self.get (),
 			   &mftp_automaton::fragment_interrupt);
 
-    ioa::automaton_helper<periodic_timer>* request_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> ());
+    ioa::automaton_helper<periodic_timer>* request_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (1,0)));
     ioa::make_bind_helper (this,
 			   request_timer,
 			   &periodic_timer::interrupt,
@@ -168,6 +168,7 @@ public:
 private:
 
   void fragment_interrupt_effect () {
+    std::cout << __func__ << std::endl;
     // Purpose is to produce a randomly selected requested fragment.
     if (their_req_count != 0) {
       // Get a random index.
@@ -177,6 +178,7 @@ private:
 
       // Get the fragment for that index.
       sendq.push (get_fragment (randy));
+      std::cout << their_req_count << " " << sendq.size() << std::endl;
     }
 
     schedule();
@@ -185,6 +187,7 @@ private:
   UV_UP_INPUT (mftp_automaton, fragment_interrupt);
 
   void request_interrupt_effect () {
+    std::cout << __func__ << std::endl;
     // Purpose is to move from my_req to send queue.
     if (!my_req.empty ()) {
       sendq.push (my_req.front ());

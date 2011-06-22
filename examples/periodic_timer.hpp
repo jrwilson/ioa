@@ -5,8 +5,12 @@ class periodic_timer :
   public ioa::automaton
 {
 
+private:
+  const ioa::time m_interval;
+
 public:
-  periodic_timer ()
+  periodic_timer (const ioa::time& t) :
+    m_interval (t)
   {
     schedule ();
   }
@@ -23,7 +27,7 @@ private:
 
   void schedule () const {
     if (interrupt_precondition ()) {
-      ioa::schedule_after (&periodic_timer::interrupt, ioa::time (1, 0));
+      ioa::schedule_after (&periodic_timer::interrupt, m_interval);
     }
   }
 
