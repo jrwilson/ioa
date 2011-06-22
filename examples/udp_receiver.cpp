@@ -2,6 +2,8 @@
 #include <ioa/udp_receiver_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 
+#include <ioa/config.hpp>
+
 #include <iostream>
 
 class udp_receiver :
@@ -39,8 +41,12 @@ public:
   void receive_effect (const ioa::udp_receiver_automaton::receive_val& v) {
     if (v.err_no != 0) {
       char buf[256];
+#ifdef STRERROR_R_CHAR_P
+      std::cerr << "Couldn't receive udp_receiver_automaton: " << strerror_r (v.err_no, buf, 256) << std::endl;
+#else
       strerror_r (v.err_no, buf, 256);
       std::cerr << "Couldn't receive udp_receiver_automaton: " << buf << std::endl;
+#endif
     }
     else {
       std::cout << v.address.address_str () << ":" << v.address.port () << " " << std::string (v.buffer.c_str (), v.buffer.size ()) << std::endl;

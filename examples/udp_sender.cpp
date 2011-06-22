@@ -1,6 +1,8 @@
 #include <ioa/udp_sender_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 
+#include <ioa/config.hpp>
+
 #include <iostream>
 
 class broadcast_sender :
@@ -63,7 +65,7 @@ private:
 
     if (result != 0) {
       char buf[256];
-#ifdef _GNU_SOURCE
+#ifdef STRERROR_R_CHAR_P
       std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (result, buf, 256) << std::endl;
 #else
       strerror_r (result, buf, 256);
