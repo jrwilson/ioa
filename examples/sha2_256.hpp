@@ -6,6 +6,7 @@
   Based on pseuedo-code found at http://en.wikipedia.org/wiki/SHA-2
  */
 
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cassert>
 #include <string.h>

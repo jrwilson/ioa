@@ -1,7 +1,6 @@
 #include "file.hpp"
 #include "sha2_256.hpp"
 
-#include <string.h>
 #include <math.h>
 #include <cstdlib>
 #include <fcntl.h>
@@ -11,10 +10,9 @@
 #include <iostream>
 #include <stdio.h>
 
-File::File (const char* name, uint32_t type) :
-  m_fname (name)
+File::File (const char* name, uint32_t type)
 {
-  int fd = open (m_fname.c_str (), O_RDONLY);
+  int fd = open (name, O_RDONLY);
   assert (fd != -1);
 
   struct stat stats;
@@ -113,10 +111,10 @@ File::File (const char* name, uint32_t type) :
 
 File::File (const fileID& f) :
   m_fileid (f),
+  m_fragment_count ((f.hashed_length + FRAGMENT_SIZE - 1) / FRAGMENT_SIZE),
   m_original_size (f.original_length),
   m_padded_size (m_original_size + (HASH_LENGTH - (m_original_size % HASH_LENGTH))),
   m_hashed_size (f.hashed_length),
-  m_fragment_count ((f.hashed_length + FRAGMENT_SIZE - 1) / FRAGMENT_SIZE),
   m_data (new unsigned char[m_hashed_size])
 { }
 

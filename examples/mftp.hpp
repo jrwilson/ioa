@@ -2,6 +2,7 @@
 #define __mftp_hpp__
 
 #include <stdint.h>
+#include <string.h>
 
 #define HASH_LENGTH 32U
 #define FRAGMENT_SIZE 512U

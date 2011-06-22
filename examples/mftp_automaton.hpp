@@ -15,7 +15,7 @@ class mftp_automaton :
 private:
   enum send_state {
     SEND_READY,
-    SEND_COMPLETE_WAIT,
+    SEND_COMPLETE_WAIT
   };
 
   File m_file;
@@ -29,7 +29,7 @@ private:
   send_state m_send_state;
 
 public:
-  mftp_automaton (char* file_name, 
+  mftp_automaton (const char* file_name,
 		  uint32_t type) :
     m_file (file_name, type),
     their_req (m_file.m_fragment_count),

@@ -15,8 +15,6 @@
 
 #include "mftp.hpp"
 
-#include <string>
-
 class File {
 public:
   fileID m_fileid;

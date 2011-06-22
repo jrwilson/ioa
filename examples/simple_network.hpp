@@ -21,12 +21,12 @@ private:
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
 public:
-  simple_network():
+  simple_network() :
     self (new ioa::self_helper<simple_network> ())
   {
-    
-    T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> ()));
-    T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> ()));
+    const char* file = "ftest.txt";
+    T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> (file, 0)));
+    T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> (file, 0)));
     ioa::automaton_helper<checking_channel_automaton<M> >* i_to_j_channel = new ioa::automaton_helper<checking_channel_automaton<M> > (this, ioa::make_generator<checking_channel_automaton<M> > ());
     ioa::automaton_helper<checking_channel_automaton<M> >* j_to_i_channel = new ioa::automaton_helper<checking_channel_automaton<M> > (this, ioa::make_generator<checking_channel_automaton<M> > ());
     //Helper for send i,j:
