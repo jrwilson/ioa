@@ -18,7 +18,7 @@ namespace ioa {
     
     self_helper ()
     {
-      m_handle = ioa::get_current_aid ();
+      m_handle = ioa::get_aid ();
     }
     
     automaton_handle<T> get_handle () const {
