@@ -68,6 +68,14 @@ namespace ioa {
       }
     };
 
+    struct compare_action_runnable
+    {
+      bool operator() (const action_runnable_interface* x,
+		       const action_runnable_interface* y) const {
+	return (*x) < (*y);
+      }
+    };
+
     bool keep_going () {
       // The criteria for continuing is simple: a runnable exists.
       return runnable_interface::count () != 0;
@@ -188,6 +196,7 @@ namespace ioa {
       clear_current_aid ();
     
       std::priority_queue<time_action, std::vector<time_action>, std::greater<time_action> > timer_queue;
+      std::set<action_runnable_interface*, compare_action_runnable> timer_set;
       std::map<int, action_runnable_interface*> read_actions;
       std::map<int, action_runnable_interface*> write_actions;
     
@@ -203,9 +212,17 @@ namespace ioa {
 	{
 	  lock lock (m_timerq.list_mutex);
 	  while (!m_timerq.list.empty ()) {
-	    // TODO:  What about duplicates?
-	    timer_queue.push (m_timerq.list.front ());
+	    time_action a = m_timerq.list.front ();
 	    m_timerq.list.pop_front ();
+
+	    if (timer_set.find (a.second) == timer_set.end ()) {
+	      timer_queue.push (a);
+	      timer_set.insert (a.second);
+	    }
+	    else {
+	      // Duplicate.
+	      delete a.second;
+	    }
 	  }
 	}
 
