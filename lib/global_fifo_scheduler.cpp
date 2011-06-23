@@ -98,6 +98,14 @@ namespace ioa {
       m_writeq.push (std::make_pair (fd, r));
     }
 
+    struct compare_action_runnable
+    {
+      bool operator() (const action_runnable_interface* x,
+		       const action_runnable_interface* y) const {
+	return (*x) < (*y);
+      }
+    };
+
   public:
     global_fifo_scheduler_impl () :
       m_model (*this),
@@ -155,6 +163,7 @@ namespace ioa {
       assert (runnable_interface::count () == 0);
 
       std::priority_queue<time_action, std::vector<time_action>, std::greater<time_action> > timer_queue;
+      std::set<action_runnable_interface*, compare_action_runnable> timer_set;
       std::map<int, action_runnable_interface*> read_actions;
       std::map<int, action_runnable_interface*> write_actions;
       
@@ -174,9 +183,17 @@ namespace ioa {
     
     	// Process registrations.
 	while (!m_timerq.empty ()) {
-	  // TODO:  What about duplicates?
-	  timer_queue.push (m_timerq.front ());
+	  time_action a = m_timerq.front ();
 	  m_timerq.pop ();
+
+	  if (timer_set.find (a.second) == timer_set.end ()) {
+	    timer_queue.push (a);
+	    timer_set.insert (a.second);
+	  }
+	  else {
+	    // Action already has a time.
+	    delete a.second;
+	  }
 	}
 
 	while (!m_readq.empty ()) {
@@ -187,6 +204,7 @@ namespace ioa {
 	    read_actions.insert (a);
 	  }
 	  else {
+	    // File descriptor already has an action.
 	    delete a.second;
 	  }
 	}
@@ -199,6 +217,7 @@ namespace ioa {
 	    write_actions.insert (a);
 	  }
 	  else {
+	    // File descriptor already has an action.
 	    delete a.second;
 	  }
 	}
@@ -271,8 +290,10 @@ namespace ioa {
 	    time now (n);
 	    
 	    while (!timer_queue.empty () && timer_queue.top ().first < now) {
-	      schedule_userq (timer_queue.top ().second);
+	      time_action a= timer_queue.top ();
 	      timer_queue.pop ();
+	      timer_set.erase (a.second);
+	      schedule_userq (a.second);
 	    }
 	  }
 	  
