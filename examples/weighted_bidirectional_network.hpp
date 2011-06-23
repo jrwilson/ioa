@@ -17,7 +17,6 @@ class weighted_bidirectional_network :
 {
 private:
 
-  std::auto_ptr<ioa::self_manager<weighted_bidirectional_network> > self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd;
@@ -25,7 +24,6 @@ private:
 
 public:
   weighted_bidirectional_network():
-    self (new ioa::self_manager<weighted_bidirectional_network> ()),
     nbrhd(N),
     wghts(N)
   {

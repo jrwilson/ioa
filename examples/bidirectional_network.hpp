@@ -16,15 +16,12 @@ class bidirectional_network :
 
 {
 private:
-
-  std::auto_ptr<ioa::self_manager<bidirectional_network> > self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd;
 
 public:
   bidirectional_network():
-    self (new ioa::self_manager<bidirectional_network> ()),
     nbrhd(N)
   {
     srand ((unsigned)time(0));   //initializes RNG for later calls to rand

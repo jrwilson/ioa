@@ -16,14 +16,13 @@ private:
 
   UV_P_INPUT (unidirectional_ring_leader_election, leader, size_t);
 
-  std::auto_ptr<ioa::self_manager<unidirectional_ring_leader_election> > self;
+  ioa::self_manager<unidirectional_ring_leader_election> self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
   std::vector<ioa::automaton_handle_interface<channel_automaton<uuid> >*> channel_automaton_managers;
 
 public:
 
-  unidirectional_ring_leader_election () :
-    self (new ioa::self_manager<unidirectional_ring_leader_election> ())
+  unidirectional_ring_leader_election ()
   { 
     for (size_t i = 0; i < N; ++i) {
       T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> ()));
@@ -33,7 +32,7 @@ public:
     for (size_t i = 0; i < N; ++i) {
       make_bind_helper (this, T_helpers[i], &T::send, channel_automaton_managers[i], &channel_automaton<uuid>::send);
       make_bind_helper (this, channel_automaton_managers[i], &channel_automaton<uuid>::receive, T_helpers[(i + 1) % N], &T::receive);
-      make_bind_helper (this, T_helpers[i], &T::leader, self.get (), &unidirectional_ring_leader_election::leader, i);
+      make_bind_helper (this, T_helpers[i], &T::leader, &self, &unidirectional_ring_leader_election::leader, i);
     }
 
   }

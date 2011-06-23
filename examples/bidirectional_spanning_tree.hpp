@@ -22,7 +22,7 @@ private:
 
   V_P_INPUT (bidirectional_spanning_tree, parent, size_t, size_t);
 
-  std::auto_ptr<ioa::self_manager<bidirectional_spanning_tree> > self;
+  ioa::self_manager<bidirectional_spanning_tree> self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd; //nbrhd = neighborhood.  Collection of neighboring automata
@@ -31,7 +31,6 @@ private:
 
 public:
   bidirectional_spanning_tree () :
-    self (new ioa::self_manager<bidirectional_spanning_tree> ()),
     nbrhd(N)
   {
     srand ((unsigned)time(0));
@@ -54,11 +53,11 @@ public:
     for (size_t i = 0; i < N; ++i) {
       T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i])));
       make_bind_helper (this,
-                         T_helpers[i],
-                         &T::parent,
-                         self.get(),
-                         &bidirectional_spanning_tree::parent,
-                         i);
+			T_helpers[i],
+			&T::parent,
+			&self,
+			&bidirectional_spanning_tree::parent,
+			i);
     }
 
     //Generate random network structure for the automata and bind channel automata to them

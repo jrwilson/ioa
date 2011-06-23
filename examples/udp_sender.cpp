@@ -17,7 +17,7 @@ private:
   };
   
   state_t m_state;
-  std::auto_ptr<ioa::self_manager<broadcast_sender> > m_self;
+  ioa::self_manager<broadcast_sender> m_self;
   ioa::inet_address m_address;
   ioa::buffer m_buffer;
 
@@ -27,14 +27,13 @@ public:
 		    const unsigned short port,
 		    const std::string& message) :
     m_state (SEND_READY),
-    m_self (new ioa::self_manager<broadcast_sender> ()),
     m_address (address, port),
     m_buffer (message.c_str (), message.size ())
   {
     ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_generator<ioa::udp_sender_automaton> ());
 
-    ioa::make_bind_helper (this, m_self.get (), &broadcast_sender::send, sender, &ioa::udp_sender_automaton::send);
-    ioa::make_bind_helper (this, sender, &ioa::udp_sender_automaton::send_complete, m_self.get (), &broadcast_sender::send_complete);
+    ioa::make_bind_helper (this, &m_self, &broadcast_sender::send, sender, &ioa::udp_sender_automaton::send);
+    ioa::make_bind_helper (this, sender, &ioa::udp_sender_automaton::send_complete, &m_self, &broadcast_sender::send_complete);
 
     schedule ();
   }
