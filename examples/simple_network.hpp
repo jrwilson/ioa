@@ -20,11 +20,11 @@ public:
     File complete_file ("ftest.txt", 0);
     File empty_file (complete_file.m_fileid);
 
-    ioa::automaton_helper<mftp_automaton>* a = new ioa::automaton_helper<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (complete_file, true));
-    ioa::automaton_helper<mftp_automaton>* b = new ioa::automaton_helper<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (empty_file, false));
+    ioa::automaton_manager<mftp_automaton>* a = new ioa::automaton_manager<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (complete_file, true));
+    ioa::automaton_manager<mftp_automaton>* b = new ioa::automaton_manager<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (empty_file, false));
 
-    ioa::automaton_helper<checking_channel_automaton<message> >* a_to_b_channel = new ioa::automaton_helper<checking_channel_automaton<message> > (this, ioa::make_generator<checking_channel_automaton<message> > ());
-    ioa::automaton_helper<checking_channel_automaton<message> >* b_to_a_channel = new ioa::automaton_helper<checking_channel_automaton<message> > (this, ioa::make_generator<checking_channel_automaton<message> > ());
+    ioa::automaton_manager<checking_channel_automaton<message> >* a_to_b_channel = new ioa::automaton_manager<checking_channel_automaton<message> > (this, ioa::make_generator<checking_channel_automaton<message> > ());
+    ioa::automaton_manager<checking_channel_automaton<message> >* b_to_a_channel = new ioa::automaton_manager<checking_channel_automaton<message> > (this, ioa::make_generator<checking_channel_automaton<message> > ());
 
     //Helper for send i,j:
     ioa::make_bind_helper(this,

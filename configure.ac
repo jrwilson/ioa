@@ -5,7 +5,8 @@ AC_PREREQ([2.65])
 AC_INIT([ioa], [0.01], [jrwilson@go.wustl.edu])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/model.cpp])
-AC_CONFIG_HEADERS([include/ioa/config.hpp])
+AC_CONFIG_HEADERS([config.hpp])
+#AX_PREFIX_CONFIG_H([include/ioa/conf.hpp], [ioa], [config.hpp])
 AM_INIT_AUTOMAKE
 
 #AC_ARG_ENABLE(camera, [AS_HELP_STRING([--enable-camera], [enable the camera])])

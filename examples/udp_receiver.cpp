@@ -2,7 +2,7 @@
 #include <ioa/udp_receiver_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 
-#include <ioa/config.hpp>
+#include <config.hpp>
 
 #include <iostream>
 
@@ -10,7 +10,7 @@ class udp_receiver :
   public ioa::automaton
 {
 private:
-  std::auto_ptr<ioa::self_helper<udp_receiver> > m_self;
+  std::auto_ptr<ioa::self_manager<udp_receiver> > m_self;
   ioa::inet_address m_group;
   ioa::inet_address m_address;
 
@@ -18,10 +18,10 @@ public:
 
   udp_receiver (const std::string& address,
 		      const unsigned short port) :
-    m_self (new ioa::self_helper<udp_receiver> ()),
+    m_self (new ioa::self_manager<udp_receiver> ()),
     m_address (address, port)
   {
-    ioa::automaton_helper<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_helper<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
+    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
 
     ioa::make_bind_helper (this, receiver, &ioa::udp_receiver_automaton::receive, m_self.get (), &udp_receiver::receive);
   }
@@ -29,11 +29,11 @@ public:
   udp_receiver (const std::string& group,
 		const std::string& address,
 		const unsigned short port) :
-    m_self (new ioa::self_helper<udp_receiver> ()),
+    m_self (new ioa::self_manager<udp_receiver> ()),
     m_group (group),
     m_address (address, port)
   {
-    ioa::automaton_helper<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_helper<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_group, m_address));
+    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_group, m_address));
 
     ioa::make_bind_helper (this, receiver, &ioa::udp_receiver_automaton::receive, m_self.get (), &udp_receiver::receive);
   }

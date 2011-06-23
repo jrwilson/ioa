@@ -21,7 +21,7 @@ private:
     SEND_COMPLETE_WAIT
   };
 
-  std::auto_ptr<ioa::self_helper<mftp_automaton> > m_self;
+  std::auto_ptr<ioa::self_manager<mftp_automaton> > m_self;
   File m_file;
   std::queue<message> my_req;
   std::vector<bool> their_req;
@@ -35,7 +35,7 @@ private:
 public:
   mftp_automaton (const File& file,
 		  const bool have_it) :
-    m_self (new ioa::self_helper<mftp_automaton> ()),
+    m_self (new ioa::self_manager<mftp_automaton> ()),
     m_file (file),
     their_req (m_file.m_fragment_count),
     their_req_count (0),
@@ -49,14 +49,14 @@ public:
       valid[i] = have_it;
     }
 
-    ioa::automaton_helper<periodic_timer>* fragment_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0,1)));
+    ioa::automaton_manager<periodic_timer>* fragment_timer = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0,1)));
     ioa::make_bind_helper (this,
 			   fragment_timer,
 			   &periodic_timer::interrupt,
 			   m_self.get (),
 			   &mftp_automaton::fragment_interrupt);
 
-    ioa::automaton_helper<periodic_timer>* request_timer = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (1,0)));
+    ioa::automaton_manager<periodic_timer>* request_timer = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (1,0)));
     ioa::make_bind_helper (this,
 			   request_timer,
 			   &periodic_timer::interrupt,

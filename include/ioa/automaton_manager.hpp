@@ -1,13 +1,13 @@
-#ifndef __automaton_helper_hpp__
-#define __automaton_helper_hpp__
+#ifndef __automaton_manager_hpp__
+#define __automaton_manager_hpp__
 
-#include <ioa/automaton_helper_interface.hpp>
+#include <ioa/automaton_manager_interface.hpp>
 
 namespace ioa {
   
   template <class I>
-  class automaton_helper :
-    public system_automaton_helper_interface,
+  class automaton_manager :
+    public system_automaton_manager_interface,
     public automaton_handle_interface<I>
   {
   public:
@@ -19,7 +19,7 @@ namespace ioa {
     automaton_handle<I> m_handle;
 
   public:
-    automaton_helper (automaton* automaton,
+    automaton_manager (automaton* automaton,
 		      shared_ptr<generator_interface> generator) :
       m_automaton (automaton),
       m_generator (generator)
@@ -29,7 +29,7 @@ namespace ioa {
 
   private:
     // Must use new/destroy.
-    ~automaton_helper () { }
+    ~automaton_manager () { }
 
   public:
 

@@ -22,7 +22,7 @@ private:
 
   V_P_INPUT (bidirectional_spanning_tree, parent, size_t, size_t);
 
-  std::auto_ptr<ioa::self_helper<bidirectional_spanning_tree> > self;
+  std::auto_ptr<ioa::self_manager<bidirectional_spanning_tree> > self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd; //nbrhd = neighborhood.  Collection of neighboring automata
@@ -31,7 +31,7 @@ private:
 
 public:
   bidirectional_spanning_tree () :
-    self (new ioa::self_helper<bidirectional_spanning_tree> ()),
+    self (new ioa::self_manager<bidirectional_spanning_tree> ()),
     nbrhd(N)
   {
     srand ((unsigned)time(0));
@@ -52,7 +52,7 @@ public:
     }
 
     for (size_t i = 0; i < N; ++i) {
-      T_helpers.push_back (new ioa::automaton_helper<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i])));
+      T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i])));
       make_bind_helper (this,
                          T_helpers[i],
                          &T::parent,
@@ -67,8 +67,8 @@ public:
 
         if (nbrhd[i].count (j) != 0) {
           // Link between i and j.
-          ioa::automaton_helper<channel_automaton<search_t> >* i_to_j_channel = new ioa::automaton_helper<channel_automaton<search_t> > (this, ioa::make_generator<channel_automaton<search_t> > ());
-          ioa::automaton_helper<channel_automaton<search_t> >* j_to_i_channel = new ioa::automaton_helper<channel_automaton<search_t> > (this, ioa::make_generator<channel_automaton<search_t> > ());
+          ioa::automaton_manager<channel_automaton<search_t> >* i_to_j_channel = new ioa::automaton_manager<channel_automaton<search_t> > (this, ioa::make_generator<channel_automaton<search_t> > ());
+          ioa::automaton_manager<channel_automaton<search_t> >* j_to_i_channel = new ioa::automaton_manager<channel_automaton<search_t> > (this, ioa::make_generator<channel_automaton<search_t> > ());
 
           make_bind_helper (this,
                             T_helpers[i],

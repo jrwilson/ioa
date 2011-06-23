@@ -43,10 +43,10 @@ namespace ioa {
   typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type; \
   name##_type name;
 
-  class system_automaton_helper_interface
+  class system_automaton_manager_interface
   {
   public:
-    virtual ~system_automaton_helper_interface () { }
+    virtual ~system_automaton_manager_interface () { }
     virtual shared_ptr<generator_interface> get_generator () const = 0;
     virtual void instance_exists () = 0;
     virtual void automaton_created (const aid_t aid) = 0;
@@ -73,10 +73,10 @@ namespace ioa {
     // Basically, a helper is in one place or another.
     // The send sets are waiting to send the command.
     // The receive set is waiting for a response.
-    std::set<system_automaton_helper_interface*> m_create_send;
-    std::set<system_automaton_helper_interface*> m_create_recv;
-    std::set<system_automaton_helper_interface*> m_destroy_send;
-    std::set<system_automaton_helper_interface*> m_destroy_recv;
+    std::set<system_automaton_manager_interface*> m_create_send;
+    std::set<system_automaton_manager_interface*> m_create_recv;
+    std::set<system_automaton_manager_interface*> m_destroy_send;
+    std::set<system_automaton_manager_interface*> m_destroy_recv;
     // Same thing for binding.
     std::set<system_bind_helper_interface*> m_bind_send;
     std::set<system_bind_helper_interface*> m_bind_recv;
@@ -85,10 +85,10 @@ namespace ioa {
 
   public:
     virtual ~automaton ();
-    void create (system_automaton_helper_interface* helper);
+    void create (system_automaton_manager_interface* helper);
     void bind (system_bind_helper_interface* helper);
     void unbind (system_bind_helper_interface* helper);
-    void destroy (system_automaton_helper_interface* helper);
+    void destroy (system_automaton_manager_interface* helper);
 
   private:
     void schedule ();

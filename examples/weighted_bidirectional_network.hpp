@@ -17,7 +17,7 @@ class weighted_bidirectional_network :
 {
 private:
 
-  std::auto_ptr<ioa::self_helper<weighted_bidirectional_network> > self;
+  std::auto_ptr<ioa::self_manager<weighted_bidirectional_network> > self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd;
@@ -25,7 +25,7 @@ private:
 
 public:
   weighted_bidirectional_network():
-    self (new ioa::self_helper<weighted_bidirectional_network> ()),
+    self (new ioa::self_manager<weighted_bidirectional_network> ()),
     nbrhd(N),
     wghts(N)
   {
@@ -55,15 +55,15 @@ public:
     }
 
     for (size_t i=0; i<N; i++){
-      T_helpers.push_back(new ioa::automaton_helper<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i], wghts[i])));
+      T_helpers.push_back(new ioa::automaton_manager<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i], wghts[i])));
     }
 
     for(size_t i=0; i<N; i++){
       for(size_t j = i+1; j<N; j++){
 	if (nbrhd[i].count(j) != 0){
 	  //Create channel automata to link i and j.
-	  ioa::automaton_helper<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_helper<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
-	  ioa::automaton_helper<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_helper<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
+	  ioa::automaton_manager<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
+	  ioa::automaton_manager<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
 	  //Helper for send i,j:
 	  make_bind_helper(this,
 			   T_helpers[i],
