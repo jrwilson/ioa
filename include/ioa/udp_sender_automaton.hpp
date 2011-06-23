@@ -48,8 +48,7 @@ namespace ioa {
     std::list<std::pair<aid_t, send_arg*> > m_send_queue;
     std::set<aid_t> m_send_set; // Set of aids in send_queue.
     
-    std::list<std::pair<aid_t, int> > m_complete_queue;
-    std::set<aid_t> m_complete_set; // Set of aids in complete_queue.
+    std::map<aid_t, int> m_complete_map;
 
   public:
 
@@ -93,7 +92,9 @@ namespace ioa {
       
       // Success.
       m_errno = 0;
-      schedule ();
+
+      // Calling schedule is useless because there is nothing on the send queue.
+      //schedule ();
 
     the_end:	
       if (m_errno != 0) {
@@ -118,18 +119,28 @@ namespace ioa {
 
   private:
 
+    void add_to_send_queue (const aid_t aid,
+			    const send_arg& arg) {
+      m_send_queue.push_back (std::make_pair (aid, new send_arg (arg)));
+      m_send_set.insert (aid);
+    }
+
+    void add_to_complete_map (const aid_t aid,
+			      const int err_no) {
+      m_complete_map.insert (std::make_pair (aid, m_errno));
+      ioa::schedule (&udp_sender_automaton::send_complete, aid);
+    }
+
     void send_effect (const send_arg& arg, aid_t aid) {
       // Ignore if aid has an outstanding send or complete.
-      if (m_send_set.count (aid) == 0 && m_complete_set.count (aid) == 0) {
+      if (m_send_set.count (aid) == 0 && m_complete_map.count (aid) == 0) {
 	if (m_fd != -1) {
 	  // No error.  Add to the send queue and set.
-	  m_send_queue.push_back (std::make_pair (aid, new send_arg (arg)));
-	  m_send_set.insert (aid);
+	  add_to_send_queue (aid, arg);
 	}
 	else {
 	  // Error.  Add to the complete queue.
-	  m_complete_queue.push_back (std::make_pair (aid, m_errno));
-	  m_complete_set.insert (aid);
+	  add_to_complete_map (aid, m_errno);
 	}
       }
 
@@ -154,13 +165,11 @@ namespace ioa {
       if (item.second->address.get_errno () == 0) {
 	sendto (m_fd, item.second->buffer.data (), item.second->buffer.size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ());
 	// We don't check a return value because we always return errno.
-	m_complete_queue.push_back (std::make_pair (item.first, errno));
-	m_complete_set.insert (item.first);
+	add_to_complete_map (item.first, errno);
       }
       else {
 	// Bad address.
-	m_complete_queue.push_back (std::make_pair (item.first, EINVAL));
-	m_complete_set.insert (item.first);
+	add_to_complete_map (item.first, EINVAL);
       }
       
       delete item.second;
@@ -170,17 +179,16 @@ namespace ioa {
     UP_INTERNAL (udp_sender_automaton, do_sendto);
 
     bool send_complete_precondition (aid_t aid) const {
-      return !m_complete_queue.empty () &&
-	m_complete_queue.front ().first == aid &&
+      return m_complete_map.count (aid) != 0 && 
 	bind_count (&udp_sender_automaton::send_complete, aid) != 0;
     }
 
     int send_complete_effect (aid_t aid) {
-      std::pair<aid_t, int> item = m_complete_queue.front ();
-      m_complete_queue.pop_front ();
-      assert (item.first == aid);
-      schedule ();
-      return item.second;
+      int retval = m_complete_map[aid];
+      m_complete_map.erase (aid);
+      // Calling schedule is useless because we haven't changed the send queue.
+      // schedule ();
+      return retval;
     }
 
   public:
@@ -192,9 +200,6 @@ namespace ioa {
     void schedule () const {
       if (do_sendto_precondition ()) {
 	schedule_write_ready (&udp_sender_automaton::do_sendto, m_fd);
-      }
-      if (!m_complete_queue.empty ()) {
-	ioa::schedule (&udp_sender_automaton::send_complete, m_complete_queue.front ().first);
       }
     }
 
@@ -225,12 +230,10 @@ namespace ioa {
 	m_send_set.erase (aid);
       }
 
-      if (m_complete_set.count (aid) != 0) {
-	m_complete_set.erase (aid);
-	m_complete_queue.remove_if (first_aid_equal (aid));
-      }
+      m_complete_map.erase (aid);
 
-      schedule ();
+      // Calling schedule is useless.
+      // schedule ();
     }
 
     void observe (observable* o) {
