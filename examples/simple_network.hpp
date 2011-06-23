@@ -18,7 +18,7 @@ public:
   simple_network()
   {
     File complete_file ("ftest.txt", 0);
-    File empty_file (complete_file.m_fileid);
+    File empty_file (complete_file.get_fileid ());
 
     ioa::automaton_manager<mftp_automaton>* a = new ioa::automaton_manager<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (complete_file, true));
     ioa::automaton_manager<mftp_automaton>* b = new ioa::automaton_manager<mftp_automaton> (this, ioa::make_generator<mftp_automaton> (empty_file, false));

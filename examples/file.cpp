@@ -10,70 +10,47 @@
 #include <iostream>
 #include <stdio.h>
 
-File::File (const char* name, uint32_t type)
+File::File (const char* name,
+	    const uint32_t type)
 {
   int fd = open (name, O_RDONLY);
   assert (fd != -1);
 
+  uint32_t original_length = 0;
   struct stat stats;
 
   if (fstat (fd, &stats) >= 0) {
-    m_original_size = stats.st_size;
+    original_length = stats.st_size;
   }
   else {
     perror ("fstat");
     exit (EXIT_FAILURE);
   }
 
-  // Calculate the size after we pad with 0s to fall on a HASH_LENGTH boundary.
-  m_padded_size = m_original_size + HASH_LENGTH - (m_original_size % HASH_LENGTH);
-  assert ((m_padded_size % HASH_LENGTH) == 0);
-
-  /*
-    Calculate the size after hashing.
-
-    Read pointer is named r.
-    Write pointer is named w.
-    The fragment index is i.
-    The MD5 hash length is M.
-    The fragment size is F.
-    The padded length is L.
-
-    r = 0 + F * i
-    w = L + M * i
-
-    Looking for first i such that r >= w
-    F * i >= L + M * i
-    F * i - M * i >= L
-    i ( F - M) >= L
-    i >= L / (F - M)
-    i = ceil (L / (F - M) )
-  */
-
-  m_fragment_count = static_cast<uint32_t> (ceil (static_cast<double> (m_padded_size) / static_cast<double> (FRAGMENT_SIZE - HASH_LENGTH)));
-  m_hashed_size = m_padded_size + HASH_LENGTH * (m_fragment_count - 1);
-  assert ((m_hashed_size % HASH_LENGTH) == 0);
-
-  m_fileid.original_length = m_original_size;
-  m_fileid.hashed_length = m_hashed_size;
+  m_fileid.length = original_length;
   m_fileid.type = type;
 
-  std::cout << "The original length of the file is " << m_original_size << " bytes."<< std::endl;
-  std::cout << "The padded length of the file is " << m_padded_size << " bytes."<< std::endl;
-  std::cout << "The hashed length of the file is " << m_hashed_size << std::endl;
-  std::cout << "The number of fragments is " << m_fragment_count << std::endl;
+  const uint32_t final_length = m_fileid.final_length ();
+  const uint32_t padding = m_fileid.padding ();
+
+  /*
+    Layout of the file will be
+    +-------------------------+-------------+---------------------------------+
+    |  DATA (original_length) | 0 (padding) | DIGEST (final_length - padding) |
+    +-------------------------+-------------+---------------------------------+
+  */
 
   // Allocate storage for the data and read it.
-  m_data = new unsigned char[m_hashed_size];
-  if (read (fd, m_data, m_original_size) != static_cast<ssize_t> (m_original_size)) {
+  m_data = new unsigned char[final_length];
+  if (read (fd, m_data, original_length) != static_cast<ssize_t> (original_length)) {
     perror ("read");
     exit (EXIT_FAILURE);
   }
   close (fd);
 
   // Clear the padding.
-  for (uint32_t idx = m_original_size; idx < m_padded_size; ++idx) {
-    m_data[idx] = 0;
+  for (uint32_t idx = 0; idx < padding; ++idx) {
+    m_data[original_length + idx] = 0;
   }
 
   sha2_256 digester;
@@ -81,28 +58,28 @@ File::File (const char* name, uint32_t type)
   uint32_t read_idx;
   uint32_t write_idx;
 
-  for (read_idx = 0, write_idx = m_padded_size; read_idx < m_hashed_size; read_idx += FRAGMENT_SIZE, write_idx += HASH_LENGTH) {
-    // How many bytes should we read?
-    uint32_t read_size = std::min (FRAGMENT_SIZE, m_hashed_size - read_idx);
+  for (read_idx = 0, write_idx = original_length + padding;
+       read_idx < final_length;
+       read_idx += FRAGMENT_SIZE, write_idx += HASH_SIZE) {
     // Update the digest.
-    digester.update (m_data + read_idx, read_size);
+    digester.update (m_data + read_idx, FRAGMENT_SIZE);
 
-    if (write_idx < m_hashed_size) {
+    if (write_idx < final_length) {
       // Sample it without finalizing.
-      unsigned char samp[HASH_LENGTH];
+      unsigned char samp[HASH_SIZE];
       digester.get (samp);
-      memcpy (m_data + write_idx, samp, HASH_LENGTH);
+      memcpy (m_data + write_idx, samp, HASH_SIZE);
     }
     else {
       // Finalize it then sample.
       digester.finalize ();
-      unsigned char samp[HASH_LENGTH];
+      unsigned char samp[HASH_SIZE];
       digester.get (samp);
-      memcpy (m_fileid.hash, samp, HASH_LENGTH);
+      memcpy (m_fileid.hash, samp, HASH_SIZE);
     }
   }
 
-  for (unsigned int idx = 0; idx < HASH_LENGTH; ++idx) {
+  for (unsigned int idx = 0; idx < HASH_SIZE; ++idx) {
     printf ("%02x", m_fileid.hash[idx]);
   }
 
@@ -111,22 +88,15 @@ File::File (const char* name, uint32_t type)
 
 File::File (const fileID& f) :
   m_fileid (f),
-  m_fragment_count ((f.hashed_length + FRAGMENT_SIZE - 1) / FRAGMENT_SIZE),
-  m_original_size (f.original_length),
-  m_padded_size (m_original_size + (HASH_LENGTH - (m_original_size % HASH_LENGTH))),
-  m_hashed_size (f.hashed_length),
-  m_data (new unsigned char[m_hashed_size])
+  m_data (new unsigned char[m_fileid.final_length ()])
 { }
 
 File::File (const File& other) :
-  m_fileid (other.m_fileid),
-  m_fragment_count (other.m_fragment_count),
-  m_original_size (other.m_original_size),
-  m_padded_size (other.m_padded_size),
-  m_hashed_size (other.m_hashed_size)
+  m_fileid (other.m_fileid)
 {
-  m_data = new unsigned char[m_hashed_size];
-  memcpy (m_data, other.m_data, m_hashed_size);
+  const uint32_t final_length = m_fileid.final_length ();
+  m_data = new unsigned char[final_length];
+  memcpy (m_data, other.m_data, final_length);
 }
 
 File::~File () {

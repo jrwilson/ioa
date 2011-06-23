@@ -16,19 +16,19 @@
 #include "mftp.hpp"
 
 class File {
-public:
-  fileID m_fileid;
-  uint32_t m_fragment_count;
 private:
-  uint32_t m_original_size;
-  uint32_t m_padded_size;
-  uint32_t m_hashed_size;
+  fileID m_fileid;
   unsigned char* m_data;
 public:
-  File (const char*, uint32_t);
+  File (const char*,
+	const uint32_t);
   File (const fileID& f);
   File (const File& other);
   ~File ();
+
+  const fileID& get_fileid () const {
+    return m_fileid;
+  }
 
   unsigned char* get_data_ptr () {
       return m_data;
