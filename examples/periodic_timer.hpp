@@ -18,7 +18,7 @@ public:
 private:
     
   bool interrupt_precondition () const {
-    return true;
+    return ioa::bind_count (&periodic_timer::interrupt) != 0;
   }
 
   void interrupt_effect () {
