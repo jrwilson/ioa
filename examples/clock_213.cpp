@@ -114,9 +114,9 @@ class composer :
 public:
   composer ()
   {
-    ioa::automaton_helper<trigger>* t = new ioa::automaton_helper<trigger> (this, ioa::make_generator<trigger> ());
-    ioa::automaton_helper<clock_automaton>* c = new ioa::automaton_helper<clock_automaton> (this, ioa::make_generator<clock_automaton> ());
-    ioa::automaton_helper<display>* d = new ioa::automaton_helper<display> (this, ioa::make_generator<display> ());
+    ioa::automaton_manager<trigger>* t = new ioa::automaton_manager<trigger> (this, ioa::make_generator<trigger> ());
+    ioa::automaton_manager<clock_automaton>* c = new ioa::automaton_manager<clock_automaton> (this, ioa::make_generator<clock_automaton> ());
+    ioa::automaton_manager<display>* d = new ioa::automaton_manager<display> (this, ioa::make_generator<display> ());
     ioa::make_bind_helper (this, t, &trigger::request, c, &clock_automaton::request);
     ioa::make_bind_helper (this, c, &clock_automaton::clock, d, &display::clock);
   }

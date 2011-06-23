@@ -7,8 +7,8 @@ ioa/action_wrapper.hpp \
 ioa/aid.hpp \
 ioa/automaton.hpp \
 ioa/automaton_handle.hpp \
-ioa/automaton_helper.hpp \
-ioa/automaton_helper_interface.hpp \
+ioa/automaton_manager.hpp \
+ioa/automaton_manager_interface.hpp \
 ioa/bind_helper.hpp \
 ioa/buffer.hpp \
 ioa/environment.hpp \
@@ -23,7 +23,7 @@ ioa/observer.hpp \
 ioa/runnable_interface.hpp \
 ioa/scheduler.hpp \
 ioa/scheduler_interface.hpp \
-ioa/self_helper.hpp \
+ioa/self_manager.hpp \
 ioa/shared_mutex.hpp \
 ioa/shared_ptr.hpp \
 ioa/simple_scheduler.hpp \

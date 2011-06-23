@@ -29,6 +29,16 @@ namespace ioa {
       return !(*this == x);
     }
 
+    bool operator< (const action_executor_interface& x) const {
+      if (get_aid () != x.get_aid ()) {
+	return get_aid () < x.get_aid ();
+      }
+      if (get_member_ptr () != x.get_member_ptr ()) {
+	return get_member_ptr () < x.get_member_ptr ();
+      }
+      return get_pid () < x.get_pid ();
+    }
+
   };
 
   class input_executor_interface :

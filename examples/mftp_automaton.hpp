@@ -25,7 +25,7 @@ private:
     SEND_COMPLETE_WAIT
   };
 
-  std::auto_ptr<ioa::self_helper<mftp_automaton> > m_self;
+  ioa::self_manager<mftp_automaton> m_self;
   File m_file;
   std::vector<bool> their_req;
   uint32_t their_req_count;
@@ -42,7 +42,6 @@ private:
 public:
   mftp_automaton (const File& file,
 		  const bool have_it) :
-    m_self (new ioa::self_helper<mftp_automaton> ()),
     m_file (file),
     their_req (m_file.m_fragment_count),
     their_req_count (0),
@@ -60,41 +59,41 @@ public:
       valid[i] = have_it;
     }
 
-    ioa::automaton_helper<periodic_timer>* fragment_clock = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0, FRAGMENT_TIME_MICROSECONDS)));
+    ioa::automaton_manager<periodic_timer>* fragment_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0, FRAGMENT_TIME_MICROSECONDS)));
     ioa::make_bind_helper (this,
 			   fragment_clock,
 			   &periodic_timer::interrupt,
-			   m_self.get (),
+			   &m_self,
 			   &mftp_automaton::fragment_interrupt);
 
     ioa::make_bind_helper (this,
-			   m_self.get (),
+			   &m_self,
 			   &mftp_automaton::fragment_timer,
 			   fragment_clock,
 			   &periodic_timer::set);
-
-    ioa::automaton_helper<periodic_timer>* request_clock = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (REQUEST_TIME_SECONDS, 0)));
+    
+    ioa::automaton_manager<periodic_timer>* request_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (REQUEST_TIME_SECONDS, 0)));
     ioa::make_bind_helper (this,
 			   request_clock,
 			   &periodic_timer::interrupt,
-			   m_self.get (),
+			   &m_self,
 			   &mftp_automaton::request_interrupt);
 
     ioa::make_bind_helper (this,
-			   m_self.get (),
+			   &m_self,
 			   &mftp_automaton::request_timer,
 			   request_clock,
 			   &periodic_timer::set);
-
-    ioa::automaton_helper<periodic_timer>* announcement_clock = new ioa::automaton_helper<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (ANNOUNCEMENT_TIME_SECONDS, 0)));
+    
+    ioa::automaton_manager<periodic_timer>* announcement_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (ANNOUNCEMENT_TIME_SECONDS, 0)));
     ioa::make_bind_helper (this,
 			   announcement_clock,
 			   &periodic_timer::interrupt,
-			   m_self.get (),
+			   &m_self,
 			   &mftp_automaton::announcement_interrupt);
 
     ioa::make_bind_helper (this,
-			   m_self.get (),
+			   &m_self,
 			   &mftp_automaton::announcement_timer,
 			   announcement_clock,
 			   &periodic_timer::set);

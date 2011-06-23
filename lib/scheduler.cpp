@@ -4,7 +4,7 @@ namespace ioa {
 
   scheduler_interface* scheduler = 0;
 
-  aid_t get_current_aid () {
+  aid_t get_aid () {
     assert (scheduler != 0);
     return scheduler->get_current_aid ();
   }

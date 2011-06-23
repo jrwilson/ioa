@@ -4,7 +4,7 @@
 #include <ioa/generator.hpp>
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
-#include <ioa/automaton_helper.hpp>
+#include <ioa/automaton_manager.hpp>
 
 #include <iostream>
 #include <fcntl.h>
@@ -18,7 +18,7 @@ private:
   automaton2* m_instance;
 
    struct helper :
-    public ioa::system_automaton_helper_interface
+    public ioa::system_automaton_manager_interface
   {
     automaton2* m_instance;
 
@@ -72,7 +72,7 @@ class create_automaton_created :
 private:
 
   struct helper :
-    public ioa::system_automaton_helper_interface
+    public ioa::system_automaton_manager_interface
   {
     ioa::shared_ptr<ioa::generator_interface> get_generator () const {
       return ioa::make_generator<automaton2> ();
@@ -191,8 +191,8 @@ public:
   
   bind_output_automaton_dne ()
   {
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<automaton2, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<automaton2, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
 
@@ -288,8 +288,8 @@ public:
   
   bind_input_automaton_dne ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, automaton2, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, automaton2, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, &automaton2::uv_up_input);
   }
 };
 
@@ -399,10 +399,10 @@ public:
   
   bind_binding_exists ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
 
@@ -512,11 +512,11 @@ public:
   
   bind_input_action_unavailable ()
   {
-    ioa::automaton_helper<automaton2>* m_output1 = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_output2 = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output1, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output2, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_output1 = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output2 = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output1, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output2, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
 
@@ -626,10 +626,10 @@ public:
   
   bind_output_action_unavailable ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input2_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input2);
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input2_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input2);
   }
 };
 
@@ -738,9 +738,9 @@ public:
   
   bind_bound ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
 
@@ -848,7 +848,7 @@ private:
     }
   };
 
-  helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type>* m_helper;
+  helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type>* m_helper;
 
   bool poll_precondition () const {
     return true;
@@ -870,9 +870,9 @@ public:
   
   bind_unbound ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    m_helper = new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     ioa::schedule (&bind_unbound::poll);
   }
 };
@@ -985,9 +985,9 @@ public:
   
   bind_unbound2 ()
   {
-    ioa::automaton_helper<automaton2>* m_output = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_helper<automaton2>* m_input = new ioa::automaton_helper<automaton2> (this, ioa::make_generator<automaton2> ());
-    new helper<ioa::automaton_helper<automaton2>, automaton2::uv_up_output_type, ioa::automaton_helper<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
 
@@ -1008,7 +1008,7 @@ class destroy_automaton_destroyed :
 private:
 
   struct helper :
-    public ioa::system_automaton_helper_interface
+    public ioa::system_automaton_manager_interface
   {
     bool created;
 
@@ -1079,7 +1079,7 @@ class destroy_automaton_destroyed2 :
 private:
 
   struct helper :
-    public ioa::system_automaton_helper_interface
+    public ioa::system_automaton_manager_interface
   {
     ioa::shared_ptr<ioa::generator_interface> get_generator () const {
       return ioa::make_generator<automaton2> ();

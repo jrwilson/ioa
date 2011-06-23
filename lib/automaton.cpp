@@ -5,22 +5,22 @@ namespace ioa {
 
   automaton::~automaton () {
     // Send the helpers a destroyed signal.
-    for (std::set<system_automaton_helper_interface*>::const_iterator pos = m_create_send.begin ();
+    for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_send.begin ();
 	 pos != m_create_send.end ();
 	 ++pos) {
       (*pos)->automaton_destroyed ();
     }
-    for (std::set<system_automaton_helper_interface*>::const_iterator pos = m_create_recv.begin ();
+    for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.begin ();
 	 pos != m_create_recv.end ();
 	 ++pos) {
       (*pos)->automaton_destroyed ();
     }
-    for (std::set<system_automaton_helper_interface*>::const_iterator pos = m_destroy_send.begin ();
+    for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_destroy_send.begin ();
 	 pos != m_destroy_send.end ();
 	 ++pos) {
       (*pos)->automaton_destroyed ();
     }
-    for (std::set<system_automaton_helper_interface*>::const_iterator pos = m_destroy_recv.begin ();
+    for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_destroy_recv.begin ();
 	 pos != m_destroy_recv.end ();
 	 ++pos) {
       (*pos)->automaton_destroyed ();
@@ -47,7 +47,7 @@ namespace ioa {
     }
   }
 
-  void automaton::create (system_automaton_helper_interface* helper) {
+  void automaton::create (system_automaton_manager_interface* helper) {
     assert (helper != 0);
     // We should not have seen this helper before.  Otherwise, we will get a create_key_exists error.
     assert (m_create_send.count (helper) == 0 &&
@@ -103,15 +103,15 @@ namespace ioa {
     schedule ();
   }
   
-  void automaton::destroy (system_automaton_helper_interface* helper) {
+  void automaton::destroy (system_automaton_manager_interface* helper) {
     assert (helper != 0);
     
     // Error to destroy again.
     assert (m_destroy_send.count (helper) == 0 &&
 	    m_destroy_recv.count (helper) == 0);
     
-    std::set<system_automaton_helper_interface*>::const_iterator send_iter = m_create_send.find (helper);
-    std::set<system_automaton_helper_interface*>::const_iterator recv_iter = m_create_recv.find (helper);
+    std::set<system_automaton_manager_interface*>::const_iterator send_iter = m_create_send.find (helper);
+    std::set<system_automaton_manager_interface*>::const_iterator recv_iter = m_create_recv.find (helper);
     
     if (send_iter != m_create_send.end () && recv_iter != m_create_recv.end ()) {
       // Invariant is violated.
@@ -140,8 +140,8 @@ namespace ioa {
   }
 
   std::pair<shared_ptr<generator_interface>, void*> automaton::sys_create_effect () {
-    std::set<system_automaton_helper_interface*>::iterator pos = m_create_send.begin ();
-    system_automaton_helper_interface* helper = *pos;
+    std::set<system_automaton_manager_interface*>::iterator pos = m_create_send.begin ();
+    system_automaton_manager_interface* helper = *pos;
     m_create_send.erase (pos);
     m_create_recv.insert (helper);
     schedule ();
@@ -179,8 +179,8 @@ namespace ioa {
   }
   
   void* automaton::sys_destroy_effect () {
-    std::set<system_automaton_helper_interface*>::iterator pos = m_destroy_send.begin ();
-    system_automaton_helper_interface* helper = *pos;
+    std::set<system_automaton_manager_interface*>::iterator pos = m_destroy_send.begin ();
+    system_automaton_manager_interface* helper = *pos;
     m_destroy_send.erase (pos);
     m_destroy_recv.insert (helper);
     schedule ();
@@ -194,7 +194,7 @@ namespace ioa {
 
   void automaton::sys_instance_exists_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_automaton_helper_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_helper_interface*> (t));
+    std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (t));
     assert (pos != m_create_recv.end ());
     (*pos)->instance_exists ();
     // The creation failed so erase.
@@ -204,7 +204,7 @@ namespace ioa {
 
   void automaton::sys_automaton_created_effect (std::pair<void*, aid_t> const & t) {
     // Find the helper (sanity check).
-    std::set<system_automaton_helper_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_helper_interface*> (t.first));
+    std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (t.first));
     assert (pos != m_create_recv.end ());
     (*pos)->automaton_created (t.second);
     // The create succeeded.  Leave in set.
@@ -313,7 +313,7 @@ namespace ioa {
     // An automaton was destroyed.
     // It can be in m_create_recv, m_destroy_send, or m_destroy_recv.
     
-    system_automaton_helper_interface* helper = static_cast<system_automaton_helper_interface*> (t);
+    system_automaton_manager_interface* helper = static_cast<system_automaton_manager_interface*> (t);
     
     if (m_create_recv.count (helper) != 0) {
       m_create_recv.erase (helper);

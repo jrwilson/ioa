@@ -17,6 +17,10 @@ namespace ioa {
     bool operator== (const action_runnable_interface& x) const {
       return get_action () == x.get_action ();
     }
+
+    bool operator< (const action_runnable_interface& x) const {
+      return get_action () < x.get_action ();
+    }
   };
 
 }
