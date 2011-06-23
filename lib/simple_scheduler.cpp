@@ -33,8 +33,8 @@
 
 namespace ioa {
 
-  typedef std::pair<action_runnable_interface*, time> action_time;
-  typedef std::pair<action_runnable_interface*, int> action_fd;
+  typedef std::pair<time, action_runnable_interface*> time_action;
+  typedef std::pair<int, action_runnable_interface*> fd_action;
 
   class simple_scheduler_impl :
     public system_scheduler_interface
@@ -45,9 +45,9 @@ namespace ioa {
     blocking_list<std::pair<bool, runnable_interface*> > m_sysq;
     blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
     int m_wakeup_fd[2];
-    blocking_list<action_time> m_timerq;
-    blocking_list<action_fd> m_readq;
-    blocking_list<action_fd> m_writeq;
+    blocking_list<time_action> m_timerq;
+    blocking_list<fd_action> m_readq;
+    blocking_list<fd_action> m_writeq;
     thread_key<aid_t> m_current_aid;
 
     struct action_runnable_equal
@@ -167,19 +167,19 @@ namespace ioa {
       time release_time (now);
       release_time += offset;
 
-      if (m_timerq.push (std::make_pair (r, release_time)) == 1) {
+      if (m_timerq.push (std::make_pair (release_time, r)) == 1) {
 	wakeup_io_thread ();
       }
     }
   
     void schedule_readq (action_runnable_interface* r, int fd) {
-      if (m_readq.push (std::make_pair (r, fd)) == 1) {
+      if (m_readq.push (std::make_pair (fd, r)) == 1) {
 	wakeup_io_thread ();
       }
     }
 
     void schedule_writeq (action_runnable_interface* r, int fd) {
-      if (m_writeq.push (std::make_pair (r, fd)) == 1) {
+      if (m_writeq.push (std::make_pair (fd, r)) == 1) {
 	wakeup_io_thread ();
       }
     }
@@ -187,7 +187,7 @@ namespace ioa {
     void process_ioq () {
       clear_current_aid ();
     
-      std::priority_queue<action_time, std::vector<action_time>, std::greater<action_time> > timer_queue;
+      std::priority_queue<time_action, std::vector<time_action>, std::greater<time_action> > timer_queue;
       std::map<int, action_runnable_interface*> read_actions;
       std::map<int, action_runnable_interface*> write_actions;
     
@@ -203,6 +203,7 @@ namespace ioa {
 	{
 	  lock lock (m_timerq.list_mutex);
 	  while (!m_timerq.list.empty ()) {
+	    // TODO:  What about duplicates?
 	    timer_queue.push (m_timerq.list.front ());
 	    m_timerq.list.pop_front ();
 	  }
@@ -211,28 +212,30 @@ namespace ioa {
 	{
 	  lock lock (m_readq.list_mutex);
 	  while (!m_readq.list.empty ()) {
-	    std::map<int, action_runnable_interface*>::iterator pos = read_actions.find (m_readq.list.front ().second);
-	    if (pos != read_actions.end ()) {
-	      // Action already registered using this fd.
-	      delete pos->second;
-	      read_actions.erase (pos);
-	    }
-	    read_actions.insert (std::make_pair (m_readq.list.front ().second, m_readq.list.front ().first));
+	    fd_action a = m_readq.list.front ();
 	    m_readq.list.pop_front ();
+	    
+	    if (read_actions.find (a.first) == read_actions.end ()) {
+	      read_actions.insert (a);
+	    }
+	    else {
+	      delete a.second;
+	    }
 	  }
 	}
 
 	{
 	  lock lock (m_writeq.list_mutex);
 	  while (!m_writeq.list.empty ()) {
-	    std::map<int, action_runnable_interface*>::iterator pos = write_actions.find (m_writeq.list.front ().second);
-	    if (pos != write_actions.end ()) {
-	      // Action already registered using this fd.
-	      delete pos->second;
-	      write_actions.erase (pos);
-	    }
-	    write_actions.insert (std::make_pair (m_writeq.list.front ().second, m_writeq.list.front ().first));
+	    fd_action a = m_writeq.list.front ();
 	    m_writeq.list.pop_front ();
+	    
+	    if (write_actions.find (a.first) == write_actions.end ()) {
+	      write_actions.insert (a);
+	    }
+	    else {
+	      delete a.second;
+	    }
 	  }
 	}
 
@@ -250,9 +253,9 @@ namespace ioa {
 	  assert (r == 0);
 	  time now (n);
 
-	  if (timer_queue.top ().second > now) {
+	  if (timer_queue.top ().first > now) {
 	    // Timer is some time in future.
-	    timeout = timer_queue.top ().second - now;
+	    timeout = timer_queue.top ().first - now;
 	  }
 	  else {
 	    // Timer is in the past.  Return immediately.
@@ -297,8 +300,8 @@ namespace ioa {
 	  assert (r == 0);
 	  time now (n);
 	
-	  while (!timer_queue.empty () && timer_queue.top ().second < now) {
-	    schedule_execq (timer_queue.top ().first);
+	  while (!timer_queue.empty () && timer_queue.top ().first < now) {
+	    schedule_execq (timer_queue.top ().second);
 	    timer_queue.pop ();
 	  }
 	}

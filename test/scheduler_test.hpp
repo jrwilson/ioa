@@ -1192,28 +1192,54 @@ schedulep ()
 class schedule_after_automaton :
   public ioa::automaton {
 private:
-
+  enum state_t {
+    ACTION1_WAIT,
+    ACTION2_WAIT,
+    ACTION3_WAIT,
+  };
+  state_t m_state;
   time_t m_schedule_time;
 
-  bool action_precondition () const {
-    return true;
+  bool action1_precondition () const {
+    return m_state == ACTION1_WAIT;
   }
 
-  int action_effect () {
+  void action1_effect () {
+    m_state = ACTION2_WAIT;
+  }
+
+  UV_UP_OUTPUT (schedule_after_automaton, action1);
+
+  bool action2_precondition () const {
+    return m_state == ACTION2_WAIT;
+  }
+
+  void action2_effect () {
+    m_state = ACTION3_WAIT;
+  }
+
+  UV_UP_OUTPUT (schedule_after_automaton, action2);
+
+  bool action3_precondition () const {
+    return m_state == ACTION3_WAIT;
+  }
+
+  void action3_effect () {
     time_t execute_time = time (0);
     // Should be within three seconds of each other.
-    assert (execute_time - m_schedule_time <= 3);
-    goal_reached = true;
-    return 0;
+    goal_reached = (execute_time - (m_schedule_time + 5)) <= 3;
   }
 
-  V_UP_OUTPUT (schedule_after_automaton, action, int);
+  UV_UP_OUTPUT (schedule_after_automaton, action3);
 
 public:
-  schedule_after_automaton ()
+  schedule_after_automaton () :
+    m_state (ACTION1_WAIT)
   {
     m_schedule_time = time (0);
-    ioa::schedule_after (&schedule_after_automaton::action, ioa::time (1, 0));
+    ioa::schedule_after (&schedule_after_automaton::action1, ioa::time (1, 0));
+    ioa::schedule_after (&schedule_after_automaton::action3, ioa::time (5, 0));
+    ioa::schedule_after (&schedule_after_automaton::action2, ioa::time (2, 0));
   }
   
 };
@@ -1232,30 +1258,60 @@ schedule_after ()
 class schedule_afterp_automaton :
   public ioa::automaton {
 private:
-
+  enum state_t {
+    ACTION1_WAIT,
+    ACTION2_WAIT,
+    ACTION3_WAIT,
+  };
+  state_t m_state;
   time_t m_schedule_time;
 
-  bool action_precondition (int param) const {
+  bool action1_precondition (int param) const {
     assert (param == 512);
-    return true;
+    return m_state == ACTION1_WAIT;
   }
 
-  int action_effect (int param) {
+  void action1_effect (int param) {
     assert (param == 512);
+    m_state = ACTION2_WAIT;
+  }
+
+  UV_P_OUTPUT (schedule_afterp_automaton, action1, int);
+
+  bool action2_precondition (int param) const {
+    assert (param == 513);
+    return m_state == ACTION2_WAIT;
+  }
+
+  void action2_effect (int param) {
+    assert (param == 513);
+    m_state = ACTION3_WAIT;
+  }
+
+  UV_P_OUTPUT (schedule_afterp_automaton, action2, int);
+
+  bool action3_precondition (int param) const {
+    assert (param == 514);
+    return m_state == ACTION3_WAIT;
+  }
+
+  void action3_effect (int param) {
+    assert (param == 514);
     time_t execute_time = time (0);
     // Should be within three seconds of each other.
-    assert (execute_time - m_schedule_time <= 3);
-    goal_reached = true;
-    return 0;
+    goal_reached = (execute_time - (m_schedule_time + 5)) <= 3;
   }
 
-  V_P_OUTPUT (schedule_afterp_automaton, action, int, int);
+  UV_P_OUTPUT (schedule_afterp_automaton, action3, int);
 
 public:
-  schedule_afterp_automaton ()
+  schedule_afterp_automaton () :
+    m_state (ACTION1_WAIT)
   {
     m_schedule_time = time (0);
-    ioa::schedule_after (&schedule_afterp_automaton::action, 512, ioa::time (1, 0));
+    ioa::schedule_after (&schedule_afterp_automaton::action1, 512, ioa::time (1, 0));
+    ioa::schedule_after (&schedule_afterp_automaton::action3, 514, ioa::time (5, 0));
+    ioa::schedule_after (&schedule_afterp_automaton::action2, 513, ioa::time (2, 0));
   }
   
 };

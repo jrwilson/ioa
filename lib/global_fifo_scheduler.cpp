@@ -174,36 +174,38 @@ namespace ioa {
     
     	// Process registrations.
 	while (!m_timerq.empty ()) {
+	  // TODO:  What about duplicates?
 	  timer_queue.push (m_timerq.front ());
 	  m_timerq.pop ();
 	}
 
 	while (!m_readq.empty ()) {
-	  std::map<int, action_runnable_interface*>::iterator pos = read_actions.find (m_readq.front ().first);
-	  if (pos != read_actions.end ()) {
-	    // Action already registered using this fd.
-	    delete pos->second;
-	    read_actions.erase (pos);
-	  }
-	  read_actions.insert (m_readq.front ());
+	  fd_action a = m_readq.front ();
 	  m_readq.pop ();
+
+	  if (read_actions.find (a.first) == read_actions.end ()) {
+	    read_actions.insert (a);
+	  }
+	  else {
+	    delete a.second;
+	  }
 	}
 	
 	while (!m_writeq.empty ()) {
-	  std::map<int, action_runnable_interface*>::iterator pos = write_actions.find (m_writeq.front ().first);
-	  if (pos != write_actions.end ()) {
-	    // Action already registered using this fd.
-	    delete pos->second;
-	    write_actions.erase (pos);
-	  }
-	  write_actions.insert (m_writeq.front ());
+	  fd_action a = m_writeq.front ();
 	  m_writeq.pop ();
+
+	  if (write_actions.find (a.first) == write_actions.end ()) {
+	    write_actions.insert (a);
+	  }
+	  else {
+	    delete a.second;
+	  }
 	}
 
     	// Determine timeout for select.
     	struct timeval* test_timeout;
     	struct timeval timeout;
-
 
 	// Start by assuming we need to wait forever.
 	test_timeout = 0;
