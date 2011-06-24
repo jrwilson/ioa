@@ -4,6 +4,7 @@
 #include "periodic_timer.hpp"
 #include "file.hpp"
 
+#include <arpa/inet.h>
 #include <cstdlib>
 #include <queue>
 #include <vector>
@@ -111,6 +112,7 @@ namespace mftp {
     message send_effect () {
       std::auto_ptr<message> m (m_sendq.front ());
       m_sendq.pop ();
+      convert_to_network (m.get ());
       m_send_state = SEND_COMPLETE_WAIT;
       schedule ();
       return *m;
@@ -129,51 +131,68 @@ namespace mftp {
     UV_UP_INPUT (mftp_automaton, send_complete);
 
   private:
-    void receive_effect (const message& m) {
+    void receive_effect (const message& mess) {
+      //message m;
+      //copy_message (mess, m);
+
+      //message* mp = &m;
+
+      message m;
+      convert_to_host(mess, m);
+
+      //if(mess.header.message_type == REQUEST) {
+
+        //std::cout << mess.req.start << " " << m.req.start << std::endl;
+      //}
+      //else {
+        //std::cout << mess.frag.offset << " " << m.frag.offset << std::endl;
+      //}
+
       switch (m.header.message_type) {
       case FRAGMENT:
-	{
-	  // It must be a fragment from our file and the offset must be correct.
-	  if (m.frag.fid == m_fileid &&
-	      m.frag.offset < m_mfileid.get_final_length () &&
-	      m.frag.offset % FRAGMENT_SIZE == 0) {
+      {
+        // It must be a fragment from our file and the offset must be correct.
+        if (m.frag.fid == m_fileid &&
+            m.frag.offset < m_mfileid.get_final_length () &&
+            m.frag.offset % FRAGMENT_SIZE == 0) {
 
-	    // Save the fragment.
-	    m_file.write_chunk (m.frag.offset, m.frag.data);
+          // Save the fragment.
+          m_file.write_chunk (m.frag.offset, m.frag.data);
 
-	    uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
-	    if (m_their_req[idx]) {
-	      // Somebody else wanted it and now has just seen it.
-	      m_their_req[idx] = false;
-	      --m_their_req_count;
-	    }
-	  }
-	}
-	break;
+          uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
+          if (m_their_req[idx]) {
+            // Somebody else wanted it and now has just seen it.
+            m_their_req[idx] = false;
+            --m_their_req_count;
+          }
+        }
+
+      }
+      break;
       case REQUEST:
-	{
-	  // Request must be for our file and in range.
-	  if (m.req.fid == m_fileid &&
-	      m.req.start % FRAGMENT_SIZE == 0 &&
-	      m.req.stop % FRAGMENT_SIZE == 0 &&
-	      m.req.start < m.req.stop &&
-	      m.req.stop <= m_mfileid.get_final_length ()) {
-	    // We have it.
-	    for (uint32_t offset = m.req.start;
-		 offset < m.req.stop;
-		 offset += FRAGMENT_SIZE) {
-	      uint32_t idx = offset / FRAGMENT_SIZE;
-	      if (m_file.have (offset) && !m_their_req[idx]) {
-		m_their_req[idx] = true;
-		++m_their_req_count;
-	      }
-	    }
-	  }
-	}
-	break;
+      {
+        // Request must be for our file and in range.
+        if (m.req.fid == m_fileid &&
+            m.req.start % FRAGMENT_SIZE == 0 &&
+            m.req.stop % FRAGMENT_SIZE == 0 &&
+            m.req.start < m.req.stop &&
+            m.req.stop <= m_mfileid.get_final_length ()) {
+          // We have it.
+          for (uint32_t offset = m.req.start;
+         offset < m.req.stop;
+         offset += FRAGMENT_SIZE) {
+            uint32_t idx = offset / FRAGMENT_SIZE;
+            if (m_file.have (offset) && !m_their_req[idx]) {
+        m_their_req[idx] = true;
+        ++m_their_req_count;
+            }
+          }
+        }
+      }
+      break;
       default:
-	// Unkown message type.
-	break;
+      // Unkown message type.
+      break;
       }
 
       schedule ();
@@ -257,6 +276,41 @@ namespace mftp {
     }
 
     UV_UP_INPUT (mftp_automaton, announcement_timer_interrupt);
+
+
+    void convert_to_network (message* m) {
+      if (m->header.message_type == FRAGMENT) {
+        m->frag.fid.length = htonl (m->frag.fid.length);
+        m->frag.fid.type = htonl (m->frag.fid.type);
+        m->frag.offset = htonl (m->frag.offset);
+      }
+      else {
+        m->req.fid.length = htonl (m->req.fid.length);
+        m->req.fid.type = htonl (m->req.fid.type);
+        m->req.start = htonl (m->req.start);
+        m->req.stop = htonl (m->req.stop);
+      }
+      m->header.message_type = htonl (m->header.message_type);
+    }
+
+    void convert_to_host (const message& mess, message& m) {
+      m.header.message_type = ntohl (mess.header.message_type);
+      //std::cout << "convert_to_host: mess header: " << mess.header.message_type << " and m header: " << m.header.message_type << std::endl;
+      //Message type conversion works correctly.
+      if (m.header.message_type == FRAGMENT) {
+        m.frag.fid.length = ntohl (mess.frag.fid.length);
+        m.frag.fid.type = ntohl (mess.frag.fid.type);
+        m.frag.offset = ntohl (mess.frag.offset);
+
+        memcpy(m.frag.data, mess.frag.data, 512);
+      }
+      else {
+        m.req.fid.length = ntohl (mess.req.fid.length);
+        m.req.fid.type = ntohl (mess.req.fid.type);
+        m.req.start = ntohl (mess.req.start);
+        m.req.stop = ntohl (mess.req.stop);
+      }
+    }
 
     uint32_t get_random_request_index () {
       assert (m_their_req_count != 0);

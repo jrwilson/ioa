@@ -145,8 +145,8 @@ namespace mftp {
 	
       // Printed out the file to make sure it was a valid transfer.
       if (m_have_count == m_mfileid.get_fragment_count ()) {
-	std::string st (reinterpret_cast<char*> (m_data), m_mfileid.get_original_length ());
-	std::cout << st << std::endl;
+        std::string st (reinterpret_cast<char*> (m_data), m_mfileid.get_original_length ());
+        std::cout << st << std::endl;
       }
       // TODO:  Validate it.
     }

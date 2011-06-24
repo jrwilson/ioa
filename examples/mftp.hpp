@@ -154,6 +154,8 @@ namespace mftp {
       request req;
     };
 
+    message (){}
+
     message (fragment_type /* */,
 	     const fileid& fileid,
 	     uint32_t offset,
