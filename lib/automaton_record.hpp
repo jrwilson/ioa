@@ -2,7 +2,7 @@
 #define __automaton_record_hpp__
 
 #include <ioa/aid.hpp>
-#include "mutex.hpp"
+#include <ioa/mutex.hpp>
 #include "sequential_set.hpp"
 
 #include <memory>

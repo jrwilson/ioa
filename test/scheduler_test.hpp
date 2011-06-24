@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <fcntl.h>
+#include <stdio.h>
 
 static bool goal_reached;
 
@@ -1353,7 +1354,7 @@ public:
     assert (fcntl (m_fd[0], F_SETFL, O_NONBLOCK) == 0);
     ioa::schedule_read_ready (&schedule_read_ready_automaton::action, m_fd[0]);
     char c = 0;
-    write (m_fd[1], &c, 1);
+    assert (write (m_fd[1], &c, 1) == 1);
   }
   
   ~schedule_read_ready_automaton () {
@@ -1403,7 +1404,7 @@ public:
     assert (fcntl (m_fd[0], F_SETFL, O_NONBLOCK) == 0);
     ioa::schedule_read_ready (&schedule_read_readyp_automaton::action, m_fd[0], m_fd[0]);
     char c = 0;
-    write (m_fd[1], &c, 1);
+    assert (write (m_fd[1], &c, 1) == 1);
   }
 
   ~schedule_read_readyp_automaton () {

@@ -19,6 +19,7 @@ ioa/global_fifo_scheduler.hpp \
 ioa/inet_address.hpp \
 ioa/ioa.hpp \
 ioa/model_interface.hpp \
+ioa/mutex.hpp \
 ioa/observer.hpp \
 ioa/runnable_interface.hpp \
 ioa/scheduler.hpp \

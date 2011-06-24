@@ -19,7 +19,6 @@ lock.hpp \
 lock.cpp \
 model.hpp \
 model.cpp \
-mutex.hpp \
 mutex.cpp \
 observer.cpp \
 output_bound_runnable.hpp \

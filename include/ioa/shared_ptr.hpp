@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cassert>
+#include <ioa/mutex.hpp>
 
 namespace ioa {
   
@@ -10,23 +11,33 @@ namespace ioa {
   class shared_ptr
   {
   private:
+    mutex* m_mutex;
     T* m_ptr;
     size_t* m_ref_count;
 
     void incref () {
+      m_mutex->lock ();
       ++(*m_ref_count);
+      m_mutex->unlock ();
     }
 
     void decref () {
+      m_mutex->lock ();
       --(*m_ref_count);
       if (*m_ref_count == 0) {
+	m_mutex->unlock ();
+	delete m_mutex;
 	delete m_ptr;
 	delete m_ref_count;
+      }
+      else {
+	m_mutex->unlock ();
       }
     }
 
   public:
     explicit shared_ptr (T* ptr = 0) :
+      m_mutex (new mutex),
       m_ptr (ptr),
       m_ref_count (new size_t)
     {
@@ -34,6 +45,7 @@ namespace ioa {
     }
     
     shared_ptr (const shared_ptr& s) :
+      m_mutex (s.m_mutex),
       m_ptr (s.m_ptr),
       m_ref_count (s.m_ref_count)
     {
@@ -42,6 +54,7 @@ namespace ioa {
     
     template <class Y>
     shared_ptr (shared_ptr<Y>& s) :
+      m_mutex (s.m_mutex),
       m_ptr (s.m_ptr),
       m_ref_count (s.m_ref_count)
     {
@@ -55,6 +68,7 @@ namespace ioa {
     shared_ptr& operator= (const shared_ptr& s) {
       if (this != &s) {
 	decref ();
+	m_mutex = s.m_mutex;
 	m_ptr = s.m_ptr;
 	m_ref_count = s.m_ref_count;
 	incref ();

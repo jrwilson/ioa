@@ -1,7 +1,7 @@
 #ifndef __lock_hpp__
 #define __lock_hpp__
 
-#include "mutex.hpp"
+#include <ioa/mutex.hpp>
 
 namespace ioa {
   
