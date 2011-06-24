@@ -92,7 +92,7 @@ namespace ioa {
     void destroy (system_automaton_manager_interface* helper);
 
   private:
-    void schedule ();
+    void _schedule () const;
 
     bool sys_create_precondition () const;
     std::pair<const_shared_ptr<generator_interface>, void*> sys_create_effect ();
