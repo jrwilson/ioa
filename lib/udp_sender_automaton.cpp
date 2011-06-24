@@ -3,6 +3,7 @@
 namespace ioa {
 
   udp_sender_automaton::udp_sender_automaton () :
+    m_state (SCHEDULE_WRITE_READY),
     m_fd (-1)
   {
     const int val = 1;
@@ -43,8 +44,7 @@ namespace ioa {
     // Success.
     m_errno = 0;
 
-    // Calling schedule is useless because there is nothing on the send queue.
-    //schedule ();
+    schedule ();
 
   the_end:	
     if (m_errno != 0) {
@@ -95,11 +95,23 @@ namespace ioa {
     schedule ();
   }
 
-  bool udp_sender_automaton::do_sendto_precondition () const {
-    return m_fd != -1 && !m_send_queue.empty ();
+  // Treat like an output.
+  bool udp_sender_automaton::schedule_write_ready_precondition () const {
+    return m_state == SCHEDULE_WRITE_READY && m_fd != -1 && !m_send_queue.empty ();
+  }
+  
+  void udp_sender_automaton::schedule_write_ready_effect () {
+    ioa::schedule_write_ready (&udp_sender_automaton::write, m_fd);
+    m_state = WRITE_WAIT;
+    schedule ();
   }
 
-  void udp_sender_automaton::do_sendto_effect () {
+  // Treat like an input.
+  bool udp_sender_automaton::write_precondition () const {
+    return true;
+  }
+
+  void udp_sender_automaton::write_effect () {
     std::pair<aid_t, send_arg*> item = m_send_queue.front ();
     m_send_queue.pop_front ();
     m_send_set.erase (item.first);
@@ -113,6 +125,8 @@ namespace ioa {
       // Bad address.
       add_to_complete_map (item.first, EINVAL);
     }
+
+    m_state = SCHEDULE_WRITE_READY;
       
     delete item.second;
     schedule ();
@@ -126,14 +140,13 @@ namespace ioa {
   int udp_sender_automaton::send_complete_effect (aid_t aid) {
     int retval = m_complete_map[aid];
     m_complete_map.erase (aid);
-    // Calling schedule is useless because we haven't changed the send queue.
-    // schedule ();
+    schedule ();
     return retval;
   }
 
   void udp_sender_automaton::schedule () const {
-    if (do_sendto_precondition ()) {
-      schedule_write_ready (&udp_sender_automaton::do_sendto, m_fd);
+    if (schedule_write_ready_precondition ()) {
+      ioa::schedule (&udp_sender_automaton::schedule_write_ready);
     }
   }
 
@@ -150,8 +163,7 @@ namespace ioa {
 
     m_complete_map.erase (aid);
 
-    // Calling schedule is useless.
-    // schedule ();
+    schedule ();
   }
 
   void udp_sender_automaton::observe (observable* o) {

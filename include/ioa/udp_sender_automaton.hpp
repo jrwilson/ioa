@@ -42,6 +42,11 @@ namespace ioa {
     };
 
   private:
+    enum state_t {
+      SCHEDULE_WRITE_READY,
+      WRITE_WAIT,
+    };
+    state_t m_state;
     int m_fd;
     int m_errno;
 
@@ -65,9 +70,15 @@ namespace ioa {
     V_AP_INPUT (udp_sender_automaton, send, send_arg);
 
   private:
-    bool do_sendto_precondition () const;
-    void do_sendto_effect ();
-    UP_INTERNAL (udp_sender_automaton, do_sendto);
+    // Treat like an output.
+    bool schedule_write_ready_precondition () const;
+    void schedule_write_ready_effect ();
+    UP_INTERNAL (udp_sender_automaton, schedule_write_ready);
+
+    // Treat like an input.
+    bool write_precondition () const;
+    void write_effect ();
+    UP_INTERNAL (udp_sender_automaton, write);
 
     bool send_complete_precondition (aid_t aid) const;
     int send_complete_effect (aid_t aid);

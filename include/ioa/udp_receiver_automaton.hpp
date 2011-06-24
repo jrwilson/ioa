@@ -48,6 +48,11 @@ namespace ioa {
     };
 
   private:
+    enum state_t {
+      SCHEDULE_READ_READY,
+      READ_WAIT,
+    };
+    state_t m_state;
     int m_fd;
     int m_errno;
     unsigned char* m_buffer;
@@ -64,9 +69,15 @@ namespace ioa {
     ~udp_receiver_automaton ();
 
   private:
-    bool do_recvfrom_precondition () const;
-    void do_recvfrom_effect ();
-    UP_INTERNAL (udp_receiver_automaton, do_recvfrom);
+    // This will be treated like an output.
+    bool schedule_read_ready_precondition () const;
+    void schedule_read_ready_effect ();
+    UP_INTERNAL (udp_receiver_automaton, schedule_read_ready);
+
+    // This will be treated like an input.
+    bool read_precondition () const;
+    void read_effect ();
+    UP_INTERNAL (udp_receiver_automaton, read);
 
   private:
     bool receive_precondition () const;

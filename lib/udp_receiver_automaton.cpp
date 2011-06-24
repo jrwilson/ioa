@@ -59,6 +59,7 @@ namespace ioa {
   }
 
   udp_receiver_automaton::udp_receiver_automaton (const inet_address& address) :
+    m_state (SCHEDULE_READ_READY),
     m_fd (-1),
     m_errno (0),
     m_buffer (0),
@@ -71,6 +72,7 @@ namespace ioa {
 
   udp_receiver_automaton::udp_receiver_automaton (const inet_address& group_addr,
 						  const inet_address& local_addr) :
+    m_state (SCHEDULE_READ_READY),
     m_fd (-1),
     m_buffer (0),
     m_buffer_size (0)
@@ -103,11 +105,23 @@ namespace ioa {
     }
   }
 
-  bool udp_receiver_automaton::do_recvfrom_precondition () const {
-    return m_fd != -1;
+  // Tread like an output.
+  bool udp_receiver_automaton::schedule_read_ready_precondition () const {
+    return m_state == SCHEDULE_READ_READY && m_fd != -1;
   }
 
-  void udp_receiver_automaton::do_recvfrom_effect () {
+  void udp_receiver_automaton::schedule_read_ready_effect () {
+    ioa::schedule_read_ready (&udp_receiver_automaton::read, m_fd);
+    m_state = READ_WAIT;
+    schedule ();
+  }
+
+  // Treat like an input.
+  bool udp_receiver_automaton::read_precondition () const {
+    return true;
+  }
+
+  void udp_receiver_automaton::read_effect () {
     int expect_bytes;
     int res = ioctl (m_fd, FIONREAD, &expect_bytes);
     if (res == -1) {
@@ -128,6 +142,7 @@ namespace ioa {
 	
       ssize_t actual_bytes = recvfrom (m_fd, m_buffer, m_buffer_size, 0, recv_address.get_sockaddr_ptr (), recv_address.get_socklen_ptr ());
       if (actual_bytes != -1) {
+	// Success.
 	m_receive.push (new receive_val (errno, recv_address, buffer (m_buffer, actual_bytes)));
       }
       else {
@@ -137,6 +152,8 @@ namespace ioa {
       }
     }
 
+    m_state = SCHEDULE_READ_READY;
+    
     schedule ();
   }
     
@@ -152,8 +169,8 @@ namespace ioa {
   }
 
   void udp_receiver_automaton::schedule () const {
-    if (do_recvfrom_precondition ()) {
-      schedule_read_ready (&udp_receiver_automaton::do_recvfrom, m_fd);
+    if (schedule_read_ready_precondition ()) {
+      ioa::schedule (&udp_receiver_automaton::schedule_read_ready);
     }
     if (receive_precondition ()) {
       ioa::schedule (&udp_receiver_automaton::receive);
