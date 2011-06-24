@@ -159,6 +159,11 @@ namespace mftp {
           // Save the fragment.
           m_file.write_chunk (m.frag.offset, m.frag.data);
 
+	  if (m_file.complete ()) {
+	    std::string s (reinterpret_cast<char*> (m_file.get_data_ptr ()), m_mfileid.get_original_length ());
+	    std::cout << s << std::endl;
+	  }
+
           uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
           if (m_their_req[idx]) {
             // Somebody else wanted it and now has just seen it.
@@ -280,36 +285,42 @@ namespace mftp {
 
 
     void convert_to_network (message* m) {
-      if (m->header.message_type == FRAGMENT) {
+      switch (m->header.message_type) {
+      case FRAGMENT:
         m->frag.fid.length = htonl (m->frag.fid.length);
         m->frag.fid.type = htonl (m->frag.fid.type);
         m->frag.offset = htonl (m->frag.offset);
-      }
-      else {
+	break;
+      case REQUEST:
         m->req.fid.length = htonl (m->req.fid.length);
         m->req.fid.type = htonl (m->req.fid.type);
         m->req.start = htonl (m->req.start);
         m->req.stop = htonl (m->req.stop);
+	break;
+      default:
+	// Unkown message type.
+	break;
       }
       m->header.message_type = htonl (m->header.message_type);
     }
 
     void convert_to_host (const message& mess, message& m) {
       m.header.message_type = ntohl (mess.header.message_type);
-      //std::cout << "convert_to_host: mess header: " << mess.header.message_type << " and m header: " << m.header.message_type << std::endl;
-      //Message type conversion works correctly.
-      if (m.header.message_type == FRAGMENT) {
+      switch (m.header.message_type) {
+      case FRAGMENT:
+	memcpy (m.frag.fid.hash, mess.frag.fid.hash, HASH_SIZE);
         m.frag.fid.length = ntohl (mess.frag.fid.length);
         m.frag.fid.type = ntohl (mess.frag.fid.type);
         m.frag.offset = ntohl (mess.frag.offset);
-
         memcpy(m.frag.data, mess.frag.data, 512);
-      }
-      else {
+	break;
+      case REQUEST:
+	memcpy (m.req.fid.hash, mess.req.fid.hash, HASH_SIZE);
         m.req.fid.length = ntohl (mess.req.fid.length);
         m.req.fid.type = ntohl (mess.req.fid.type);
         m.req.start = ntohl (mess.req.start);
         m.req.stop = ntohl (mess.req.stop);
+	break;
       }
     }
 
