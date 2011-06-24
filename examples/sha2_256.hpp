@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cassert>
-#include <string.h>
+#include <cstring>
 
 class sha2_256 {
 private:

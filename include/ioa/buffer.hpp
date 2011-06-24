@@ -1,7 +1,7 @@
 #ifndef __buffer_hpp__
 #define __buffer_hpp__
 
-#include <string.h>
+#include <cstring>
 
 namespace ioa {
 

@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <queue>
 #include <vector>
-#include <string.h>
+#include <cstring>
 #include <math.h>
 
 #include <iostream>

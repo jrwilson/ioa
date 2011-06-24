@@ -2,7 +2,7 @@
 #define __mftp_hpp__
 
 #include <stdint.h>
-#include <string.h>
+#include <cstring>
 #include <cassert>
 #include <math.h>
 #include <utility>
