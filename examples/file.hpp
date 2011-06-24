@@ -1,38 +1,36 @@
-/*
-  open the file (constructor with file name or id)
-  figures out how big the file is
-  how big the file is with hashing, which is reliant on hash length and fragment size
-  query the various sizes that we need
-  read/write chunks of data
-
-  Data array file
-
-  init(), update(), and final()
-*/
-
 #ifndef __file_hpp__
 #define __file_hpp__
 
 #include "mftp.hpp"
 
-class File {
-private:
-  fileID m_fileid;
-  unsigned char* m_data;
-public:
-  File (const char*,
-	const uint32_t);
-  File (const fileID& f);
-  File (const File& other);
-  ~File ();
+#include <vector>
 
-  const fileID& get_fileid () const {
-    return m_fileid;
-  }
+namespace mftp {
+  
+  class file {
+  private:
+    mfileid m_mfileid;
+    uint8_t* m_data;
+    std::vector<bool> m_have;
+    uint32_t m_have_count;
+    uint32_t m_start_idx;
 
-  unsigned char* get_data_ptr () {
-      return m_data;
-  }
-};
+  public:
+    file (const char*,
+	  const uint32_t);
+    file (const fileid& f);
+    file (const file& other);
+    ~file ();
+    const mfileid& get_mfileid () const;
+    unsigned char* get_data_ptr ();
+    bool complete () const;
+    bool empty () const;
+    bool have (const uint32_t offset) const;
+    void write_chunk (const uint32_t offset,
+		      const uint8_t* data);
+    std::pair<uint32_t, uint32_t> get_next_range ();
+    uint32_t get_random_index () const;
+  };
+}
 
 #endif

@@ -73,7 +73,7 @@ public:
 
 private:
 
-  void schedule () {
+  void schedule () const {
     if (receive_precondition ()) {
       ioa::schedule (&checking_channel_automaton::receive);
     }

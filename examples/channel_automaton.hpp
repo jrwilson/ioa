@@ -32,7 +32,7 @@ private:
     return retval;
   }
 
-  void schedule () {
+  void schedule () const {
     if (receive_precondition ()) {
       ioa::schedule (&channel_automaton::receive);
     }

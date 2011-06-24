@@ -16,7 +16,7 @@ private:
     schedule ();
   }
   
-  void schedule () {
+  void schedule () const {
     if (request_precondition ()) {
       ioa::schedule (&trigger::request);
     }
@@ -69,7 +69,7 @@ private:
     return m_counter;
   }
 
-  void schedule () {
+  void schedule () const {
     if (tick_precondition ()) {
       ioa::schedule (&clock_automaton::tick);
     }

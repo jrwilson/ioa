@@ -12,353 +12,285 @@
 
 #include <iostream>
 
-#define FRAGMENT_TIME_MICROSECONDS 1000
-#define REQUEST_TIME_SECONDS 1
-#define ANNOUNCEMENT_TIME_SECONDS 7
+namespace mftp {
 
-class mftp_automaton :
-  public ioa::automaton
-{
-private:
-  enum send_state {
-    SEND_READY,
-    SEND_COMPLETE_WAIT
+  const long FRAGMENT_TIME_MICROSECONDS = 1000;
+  const long REQUEST_TIME_SECONDS = 1;
+  const long ANNOUNCEMENT_TIME_SECONDS  = 7;
+
+  class mftp_automaton :
+    public ioa::automaton
+  {
+  private:
+    enum send_state_t {
+      SEND_READY,
+      SEND_COMPLETE_WAIT
+    };
+
+    enum timer_state_t {
+      SET_READY,
+      INTERRUPT_WAIT,
+    };
+
+    ioa::self_manager<mftp_automaton> m_self;
+    file m_file;
+    const mfileid& m_mfileid;
+    const fileid& m_fileid;
+    std::vector<bool> m_their_req;
+    uint32_t m_their_req_count;
+    std::queue<message*> m_sendq;
+    send_state_t m_send_state;
+    timer_state_t m_fragment_timer_state;
+    timer_state_t m_request_timer_state;
+    timer_state_t m_announcement_timer_state;
+  
+  public:
+    mftp_automaton (const file& file) :
+      m_file (file),
+      m_mfileid (file.get_mfileid ()),
+      m_fileid (m_mfileid.get_fileid ()),
+      m_their_req (m_mfileid.get_fragment_count ()),
+      m_their_req_count (0),
+      m_send_state (SEND_READY),
+      m_fragment_timer_state (SET_READY),
+      m_request_timer_state (SET_READY),
+      m_announcement_timer_state (SET_READY)
+    {
+      ioa::automaton_manager<periodic_timer>* fragment_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0, FRAGMENT_TIME_MICROSECONDS)));
+      ioa::make_bind_helper (this,
+			     &m_self,
+			     &mftp_automaton::set_fragment_timer,
+			     fragment_clock,
+			     &periodic_timer::set);
+      ioa::make_bind_helper (this,
+			     fragment_clock,
+			     &periodic_timer::interrupt,
+			     &m_self,
+			     &mftp_automaton::fragment_timer_interrupt);
+
+    
+      ioa::automaton_manager<periodic_timer>* request_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (REQUEST_TIME_SECONDS, 0)));
+      ioa::make_bind_helper (this,
+			     &m_self,
+			     &mftp_automaton::set_request_timer,
+			     request_clock,
+			     &periodic_timer::set);
+      ioa::make_bind_helper (this,
+			     request_clock,
+			     &periodic_timer::interrupt,
+			     &m_self,
+			     &mftp_automaton::request_timer_interrupt);
+    
+      ioa::automaton_manager<periodic_timer>* announcement_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (ANNOUNCEMENT_TIME_SECONDS, 0)));
+      ioa::make_bind_helper (this,
+			     &m_self,
+			     &mftp_automaton::set_announcement_timer,
+			     announcement_clock,
+			     &periodic_timer::set);
+      ioa::make_bind_helper (this,
+			     announcement_clock,
+			     &periodic_timer::interrupt,
+			     &m_self,
+			     &mftp_automaton::announcement_timer_interrupt);
+
+      schedule ();
+    }
+
+    ~mftp_automaton () {
+      while (!m_sendq.empty ()) {
+	delete m_sendq.front ();
+	m_sendq.pop ();
+      }
+    }
+
+  private:
+    bool send_precondition () const {
+      return !m_sendq.empty () && m_send_state == SEND_READY;
+    }
+
+    message send_effect () {
+      std::auto_ptr<message> m (m_sendq.front ());
+      m_sendq.pop ();
+      m_send_state = SEND_COMPLETE_WAIT;
+      schedule ();
+      return *m;
+    }
+
+  public:
+    V_UP_OUTPUT (mftp_automaton, send, message);
+
+  private:
+    void send_complete_effect () {
+      m_send_state = SEND_READY;
+      schedule ();
+    }
+
+  public:
+    UV_UP_INPUT (mftp_automaton, send_complete);
+
+  private:
+    void receive_effect (const message& m) {
+      switch (m.header.message_type) {
+      case FRAGMENT:
+	{
+	  // It must be a fragment from our file and the offset must be correct.
+	  if (m.frag.fid == m_fileid &&
+	      m.frag.offset < m_mfileid.get_final_length () &&
+	      m.frag.offset % FRAGMENT_SIZE == 0) {
+
+	    // Save the fragment.
+	    m_file.write_chunk (m.frag.offset, m.frag.data);
+
+	    uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
+	    if (m_their_req[idx]) {
+	      // Somebody else wanted it and now has just seen it.
+	      m_their_req[idx] = false;
+	      --m_their_req_count;
+	    }
+	  }
+	}
+	break;
+      case REQUEST:
+	{
+	  // Request must be for our file and in range.
+	  if (m.req.fid == m_fileid &&
+	      m.req.start % FRAGMENT_SIZE == 0 &&
+	      m.req.stop % FRAGMENT_SIZE == 0 &&
+	      m.req.start < m.req.stop &&
+	      m.req.stop <= m_mfileid.get_final_length ()) {
+	    // We have it.
+	    for (uint32_t offset = m.req.start;
+		 offset < m.req.stop;
+		 offset += FRAGMENT_SIZE) {
+	      uint32_t idx = offset / FRAGMENT_SIZE;
+	      if (m_file.have (offset) && !m_their_req[idx]) {
+		m_their_req[idx] = true;
+		++m_their_req_count;
+	      }
+	    }
+	  }
+	}
+	break;
+      default:
+	// Unkown message type.
+	break;
+      }
+
+      schedule ();
+    }
+
+  public:
+
+    V_UP_INPUT (mftp_automaton, receive, message);
+
+  private:
+    bool set_fragment_timer_precondition () const {
+      return m_fragment_timer_state == SET_READY && m_their_req_count != 0 && ioa::bind_count (&mftp_automaton::set_fragment_timer) != 0;
+    }
+
+    void set_fragment_timer_effect () {
+      m_fragment_timer_state = INTERRUPT_WAIT;
+      schedule ();
+    }
+
+    UV_UP_OUTPUT (mftp_automaton, set_fragment_timer);
+
+    void fragment_timer_interrupt_effect () {
+      // Purpose is to produce a randomly selected requested fragment.
+      if (m_their_req_count != 0 && m_sendq.empty()) {
+	// Get a random index.
+	uint32_t randy = get_random_request_index ();
+	m_their_req[randy] = false;
+	--m_their_req_count;
+
+	// Get the fragment for that index.
+	m_sendq.push (get_fragment (randy));
+      }
+
+      m_fragment_timer_state = SET_READY;
+      schedule();
+    }
+
+    UV_UP_INPUT (mftp_automaton, fragment_timer_interrupt);
+
+    bool set_request_timer_precondition () const {
+      return m_request_timer_state == SET_READY && !m_file.complete () && ioa::bind_count (&mftp_automaton::set_request_timer) != 0;
+    }
+
+    void set_request_timer_effect () {
+      m_request_timer_state = INTERRUPT_WAIT;
+      schedule ();
+    }
+
+    UV_UP_OUTPUT (mftp_automaton, set_request_timer);
+
+    void request_timer_interrupt_effect () {
+      if (m_sendq.empty () && !m_file.complete ()) {
+
+	std::pair<uint32_t, uint32_t> range = m_file.get_next_range ();
+	m_sendq.push (new message (request_type (), m_fileid, range.first, range.second));
+      }
+
+      m_request_timer_state = SET_READY;
+      schedule ();
+    }
+
+    UV_UP_INPUT (mftp_automaton, request_timer_interrupt);
+
+    bool set_announcement_timer_precondition () const {
+      return m_announcement_timer_state == SET_READY && ioa::bind_count (&mftp_automaton::set_announcement_timer) != 0;
+    }
+
+    void set_announcement_timer_effect () {
+      m_announcement_timer_state = INTERRUPT_WAIT;
+      schedule ();
+    }
+
+    UV_UP_OUTPUT (mftp_automaton, set_announcement_timer);
+
+    void announcement_timer_interrupt_effect () {
+      if (!m_file.empty () && m_sendq.empty()) {
+	m_sendq.push (get_fragment (m_file.get_random_index ()));
+      }
+      m_announcement_timer_state = SET_READY;
+      schedule();
+    }
+
+    UV_UP_INPUT (mftp_automaton, announcement_timer_interrupt);
+
+    uint32_t get_random_request_index () {
+      assert (m_their_req_count != 0);
+      uint32_t rf = rand () % m_their_req.size();
+      for (; !m_their_req[rf]; rf = (rf + 1) % m_their_req.size ()) { }
+      return rf;
+    }
+
+    message* get_fragment (uint32_t idx) {
+      uint32_t offset = idx * FRAGMENT_SIZE;
+      message* mp = new message (fragment_type (), m_fileid, offset, m_file.get_data_ptr() + offset);
+      return mp;
+    }
+
+    void schedule () const {
+      if (send_precondition ()) {
+	ioa::schedule (&mftp_automaton::send);
+      }
+
+      if (set_fragment_timer_precondition ()) {
+	ioa::schedule (&mftp_automaton::set_fragment_timer);
+      }
+
+      if (set_request_timer_precondition ()) {
+	ioa::schedule (&mftp_automaton::set_request_timer);
+      }
+
+      if (set_announcement_timer_precondition ()) {
+	ioa::schedule (&mftp_automaton::set_announcement_timer);
+      }
+    }
+
   };
 
-  ioa::self_manager<mftp_automaton> m_self;
-  File m_file;
-  const uint32_t m_fragment_count;
-  std::vector<bool> their_req;
-  uint32_t their_req_count;
-  std::vector<bool> have;
-  uint32_t have_count;
-  std::vector<bool> valid;
-  std::queue<message*> sendq;
-  send_state m_send_state;
-  uint32_t start_idx;
-  bool set_fragment_timer;
-  bool set_request_timer;
-  bool set_announcement_timer;
-  
-public:
-  mftp_automaton (const File& file,
-		  const bool have_it) :
-    m_file (file),
-    m_fragment_count (m_file.get_fileid ().fragment_count ()),
-    their_req (m_fragment_count),
-    their_req_count (0),
-    have (m_fragment_count),
-    have_count (have_it ? m_fragment_count : 0),
-    valid (m_fragment_count),
-    m_send_state (SEND_READY),
-    start_idx (0),
-    set_fragment_timer (true),
-    set_request_timer (true),
-    set_announcement_timer (true)
-  {
-    for(size_t i = 0; i < have.size(); i++) {
-      have[i] = have_it;
-      valid[i] = have_it;
-    }
-
-    ioa::automaton_manager<periodic_timer>* fragment_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0, FRAGMENT_TIME_MICROSECONDS)));
-    ioa::make_bind_helper (this,
-			   fragment_clock,
-			   &periodic_timer::interrupt,
-			   &m_self,
-			   &mftp_automaton::fragment_interrupt);
-
-    ioa::make_bind_helper (this,
-			   &m_self,
-			   &mftp_automaton::fragment_timer,
-			   fragment_clock,
-			   &periodic_timer::set);
-    
-    ioa::automaton_manager<periodic_timer>* request_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (REQUEST_TIME_SECONDS, 0)));
-    ioa::make_bind_helper (this,
-			   request_clock,
-			   &periodic_timer::interrupt,
-			   &m_self,
-			   &mftp_automaton::request_interrupt);
-
-    ioa::make_bind_helper (this,
-			   &m_self,
-			   &mftp_automaton::request_timer,
-			   request_clock,
-			   &periodic_timer::set);
-    
-    ioa::automaton_manager<periodic_timer>* announcement_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (ANNOUNCEMENT_TIME_SECONDS, 0)));
-    ioa::make_bind_helper (this,
-			   announcement_clock,
-			   &periodic_timer::interrupt,
-			   &m_self,
-			   &mftp_automaton::announcement_interrupt);
-
-    ioa::make_bind_helper (this,
-			   &m_self,
-			   &mftp_automaton::announcement_timer,
-			   announcement_clock,
-			   &periodic_timer::set);
-
-    schedule ();
-  }
-
-  ~mftp_automaton () {
-    while (!sendq.empty ()) {
-      delete sendq.front ();
-      sendq.pop ();
-    }
-  }
-
-private:
-
-  bool send_precondition () const {
-    return !sendq.empty() && m_send_state == SEND_READY;
-  }
-
-  message send_effect () {
-    std::cout << __func__ << std::endl;
-    std::auto_ptr<message> m (sendq.front());
-    sendq.pop();
-
-    m_send_state = SEND_COMPLETE_WAIT;
-    schedule ();
-    return *m;
-  }
-
-public:
-
-  V_UP_OUTPUT (mftp_automaton, send, message);
-
-private:
-
-  void send_complete_effect () {
-    m_send_state = SEND_READY;
-    schedule ();
-  }
-
-public:
-
-  UV_UP_INPUT (mftp_automaton, send_complete);
-
-private:
-
-  void receive_effect (const message& m) {
-    switch (m.header.message_type) {
-    case FRAGMENT:
-      {
-        if (m.frag.fid == m_file.get_fileid () &&
-            m.frag.offset < m.frag.fid.final_length () &&
-            m.frag.offset % FRAGMENT_SIZE == 0) {
-          // It's in range and it's one of ours.
-          uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
-
-          // Somebody else wanted it and now has just seen it.
-          if (their_req[idx]) {
-            their_req[idx] = false;
-            --their_req_count;
-          }
-
-	  // We don't have it.
-          if (!have[idx]) {
-	    // Copy it.
-	    memcpy (m_file.get_data_ptr () + m.frag.offset, m.frag.data, FRAGMENT_SIZE);
-	    // Now we have it.
-	    have[idx] = true;
-	    ++have_count;
-	    std::cout << "Now I have " << have_count << "/" << m_fragment_count << std::endl;
-	    
-	    // Printed out the file to make sure it was a valid transfer.
-	    if (have_count == m_fragment_count) {
-	      std::string st (m_file.get_data_ptr(), m_file.get_data_ptr() + static_cast<size_t>(m_file.get_fileid ().length));
-	      std::cout << st << std::endl;
-	    }
-	    // TODO:  Validate it.
-          }
-        }
-      }
-      break;
-    case REQUEST:
-      {
-        if (m.req.fid == m_file.get_fileid () &&
-            m.req.start % FRAGMENT_SIZE == 0 &&
-	    m.req.stop % FRAGMENT_SIZE == 0 &&
-	    m.req.start < m.req.stop &&
-            m.req.stop <= m.req.fid.final_length ()) {
-          // It's in range and it's one of ours.
-          // We have it.
-          for (uint32_t offset = m.req.start;
-               offset < m.req.stop;
-               offset += FRAGMENT_SIZE) {
-            uint32_t idx = offset / FRAGMENT_SIZE;
-            if (have[idx] && !their_req[idx]) {
-              their_req[idx] = true;
-              ++their_req_count;
-            }
-          }
-        }
-      }
-      break;
-    default:
-      // Wonky message.
-      break;
-    }
-
-    schedule ();
-  }
-
-public:
-
-  V_UP_INPUT (mftp_automaton, receive, message);
-
-private:
-
-  void fragment_interrupt_effect () {
-    // Purpose is to produce a randomly selected requested fragment.
-    if (their_req_count != 0 && sendq.empty()) {
-      std::cout << __func__ << std::endl;
-      // Get a random index.
-      uint32_t randy = get_random_request_index ();
-      their_req[randy] = false;
-      --their_req_count;
-
-      // Get the fragment for that index.
-      sendq.push (get_fragment (randy));
-      std::cout << their_req_count << " " << sendq.size() << std::endl;
-    }
-
-    set_fragment_timer = true;
-    schedule();
-  }
-
-  UV_UP_INPUT (mftp_automaton, fragment_interrupt);
-
-  void request_interrupt_effect () {
-    //have_count != m_fragment_count && my_req.empty ();
-    std::cout << __func__ << std::endl;
-    uint32_t end_idx;
-
-    if (sendq.empty () && have_count < m_fragment_count) {
-
-      if (start_idx > m_fragment_count) {
-        start_idx = 0;
-      }
-      // Move start until we don't have one.
-      for (;
-          start_idx < m_fragment_count && have[start_idx] == true;
-          ++start_idx)
-        ;;
-
-      if (start_idx < m_fragment_count) {
-        for (end_idx = start_idx + 1;
-             end_idx < m_fragment_count && have[end_idx] == false;
-             ++end_idx)
-          ;;
-
-        // Range is [start_idx, end_idx).
-        message* mp = new message (request_type (), m_file.get_fileid (), start_idx * FRAGMENT_SIZE, end_idx * FRAGMENT_SIZE);
-        sendq.push (mp);
-
-        start_idx = end_idx;
-      }
-    }
-    /*
-    // Purpose is to move from my_req to send queue.
-    if (!my_req.empty ()) {
-      std::cout << __func__ << std::endl;
-      sendq.push (my_req.front ());
-      my_req.pop ();
-    }
-    */
-    set_request_timer = true;
-    schedule ();
-  }
-
-  UV_UP_INPUT (mftp_automaton, request_interrupt);
-
-  void announcement_interrupt_effect () {
-    std::cout << "In " << __func__ << std::endl;
-    if (have_count > 0 && sendq.empty()) {
-      std::cout << "Announcing...\n";
-      sendq.push (get_fragment (get_random_index ()));
-    }
-    set_announcement_timer = true;
-    schedule();
-  }
-
-  UV_UP_INPUT (mftp_automaton, announcement_interrupt);
-
-  bool fragment_timer_precondition () const {
-    return ioa::bind_count (&mftp_automaton::fragment_timer) != 0 && their_req_count != 0 && set_fragment_timer;
-  }
-
-  void fragment_timer_effect () {
-    set_fragment_timer = false;
-    schedule ();
-  }
-
-  UV_UP_OUTPUT (mftp_automaton, fragment_timer);
-
-  bool request_timer_precondition () const {
-    return ioa::bind_count (&mftp_automaton::request_timer) != 0 && have_count < m_fragment_count && set_request_timer;
-  }
-
-  void request_timer_effect () {
-    set_request_timer = false;
-    schedule ();
-  }
-
-  UV_UP_OUTPUT (mftp_automaton, request_timer);
-
-  bool announcement_timer_precondition () const {
-    return ioa::bind_count (&mftp_automaton::announcement_timer) != 0 && set_announcement_timer;
-  }
-
-  void announcement_timer_effect () {
-    set_announcement_timer = false;
-    schedule ();
-  }
-
-  UV_UP_OUTPUT (mftp_automaton, announcement_timer);
-
-  uint32_t get_random_index () {
-    uint32_t rf = rand () % m_fragment_count;
-    for (; !have[rf]; rf = (rf + 1) % have.size ()) { }
-    return rf;  
-  }
-
-  uint32_t get_random_request_index () {
-    assert (their_req_count != 0);
-    uint32_t rf = rand () % their_req.size();
-    for (; !their_req[rf]; rf = (rf + 1) % their_req.size ()) { }
-    return rf;
-  }
-
-  message* get_fragment (uint32_t idx) {
-    uint32_t offset = idx * FRAGMENT_SIZE;
-    message* mp = new message (fragment_type (), m_file.get_fileid (), offset, m_file.get_data_ptr() + offset);
-    return mp;
-  }
-
-  void schedule () const {
-    if (send_precondition ()) {
-      ioa::schedule (&mftp_automaton::send);
-    }
-
-    if (fragment_timer_precondition ()) {
-      ioa::schedule (&mftp_automaton::fragment_timer);
-    }
-
-    if (request_timer_precondition ()) {
-      ioa::schedule (&mftp_automaton::request_timer);
-    }
-
-    if (announcement_timer_precondition ()) {
-      ioa::schedule (&mftp_automaton::announcement_timer);
-    }
-  }
-
-};
-
+}
 
 #endif

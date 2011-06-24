@@ -57,7 +57,7 @@ private:
     schedule ();
   }
 
-  void schedule () {
+  void schedule () const {
     if (send_precondition ()) {
       ioa::schedule (&asynch_lcr_automaton::send);
     }

@@ -123,7 +123,7 @@ private:
 
   UP_INTERNAL (peterson_leader_automaton, relay);
 
-  void schedule () {
+  void schedule () const {
     if (send_precondition ()) {
       ioa::schedule (&peterson_leader_automaton::send);
     }

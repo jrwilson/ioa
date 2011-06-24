@@ -67,7 +67,7 @@ private:
     schedule();
   }
 
-  void schedule () {
+  void schedule () const {
     if (parent_precondition ()) {
       ioa::schedule (&ast_automaton::parent);
     }

@@ -52,7 +52,7 @@ private:
     schedule();
   }
 
-  void schedule () {
+  void schedule () const {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
       if (send_precondition (*pos)) {
         ioa::schedule (&bf_automaton::send, *pos);
