@@ -16,6 +16,12 @@ namespace ioa {
       m_size (0)
     { }
 
+    buffer (const size_t size) :
+      m_size (size)
+    {
+      m_data = new unsigned char[m_size];
+    }
+
     buffer (const void* data,
 	    const size_t size) :
       m_size (size)
@@ -49,14 +55,17 @@ namespace ioa {
       return m_size;
     }
   
+    unsigned char* data () {
+      return m_data;
+    }
+
     const unsigned char* data () const {
       return m_data;
     }
 
     const char* c_str () const {
-      return reinterpret_cast<char* const> (m_data);
+      return reinterpret_cast<char*> (m_data);
     }
-
   };
 
 }
