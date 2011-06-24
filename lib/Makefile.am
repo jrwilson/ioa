@@ -40,8 +40,8 @@ thread.hpp \
 thread.cpp \
 thread_key.hpp \
 time.cpp \
+udp_receiver_automaton.cpp \
+udp_sender_automaton.cpp \
 unbind_runnable.hpp \
 unique_lock.hpp \
 unique_lock.cpp
-
-# libueioa_la_LIBADD = $(top_builddir)/libtable/libtable.la
