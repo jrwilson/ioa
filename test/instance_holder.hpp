@@ -16,7 +16,7 @@ public:
     m_instance (instance)
   { }
 
-  T* operator() () {
+  T* operator() () const {
     return m_instance;
   }
   

@@ -43,7 +43,7 @@ namespace ioa {
     void schedule_write_ready (action_runnable_interface*,
 			       int fd);
     
-    void run (shared_ptr<generator_interface> generator);
+    void run (const_shared_ptr<generator_interface> generator);
   };
 
 }

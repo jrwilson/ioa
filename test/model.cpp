@@ -162,7 +162,7 @@ struct test_system_scheduler :
   void clear_current_aid () { }
 
   void create (const ioa::aid_t automaton,
-	       ioa::shared_ptr<ioa::generator_interface> generator,
+	       ioa::const_shared_ptr<ioa::generator_interface> generator,
 	       void* const key) {
     assert (false);
   }
@@ -303,7 +303,7 @@ struct test_system_scheduler :
 
 ioa::aid_t create (ioa::model& model,
 		   test_system_scheduler& tss,
-		   ioa::shared_ptr<ioa::generator_interface> generator) {
+		   ioa::const_shared_ptr<ioa::generator_interface> generator) {
   tss.reset ();
   ioa::aid_t handle = model.create (generator);
   assert (handle != -1);
@@ -314,7 +314,7 @@ ioa::aid_t create (ioa::model& model,
 ioa::aid_t create (ioa::model& model,
 		   test_system_scheduler& tss,
 		   const ioa::aid_t creator,
-		   ioa::shared_ptr<ioa::generator_interface> generator,
+		   ioa::const_shared_ptr<ioa::generator_interface> generator,
 		   void* const key) {
   tss.reset ();
   ioa::aid_t handle = model.create (creator, generator, key);
@@ -399,8 +399,8 @@ instance_exists ()
   ioa::model model (tss);
 
   automaton1* instance2 = new automaton1 ();
-  ioa::shared_ptr<ioa::generator_interface> holder2 (new instance_holder<automaton1> (instance2));
-  ioa::shared_ptr<ioa::generator_interface> holder3 (new instance_holder<automaton1> (instance2));
+  ioa::const_shared_ptr<ioa::generator_interface> holder2 (new instance_holder<automaton1> (instance2));
+  ioa::const_shared_ptr<ioa::generator_interface> holder3 (new instance_holder<automaton1> (instance2));
 
   ioa::aid_t creator = create (model, tss, ioa::make_generator<automaton1> ());
 
@@ -660,7 +660,7 @@ bound ()
   ioa::automaton_handle<automaton1> output = create (model, tss, ioa::make_generator<automaton1> ());
 
   automaton1* instance = new automaton1 ();
-  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (instance));
+  ioa::const_shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> input = create (model, tss, holder);
   
@@ -898,7 +898,7 @@ execute_output ()
   ioa::model model (tss);
   
   automaton1* output_instance = new automaton1 ();
-  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
+  ioa::const_shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (model, tss, holder);
 
@@ -931,7 +931,7 @@ execute_internal ()
   ioa::model model (tss);
   
   automaton1* output_instance = new automaton1 ();
-  ioa::shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
+  ioa::const_shared_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (model, tss, holder);
 

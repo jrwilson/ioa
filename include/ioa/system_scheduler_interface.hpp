@@ -16,7 +16,7 @@ namespace ioa {
     virtual void clear_current_aid () = 0;
     
     virtual void create (const aid_t automaton,
-			 shared_ptr<generator_interface> generator,
+			 const_shared_ptr<generator_interface> generator,
 			 void* const key) = 0;
     
     virtual void bind (const aid_t automaton,

@@ -5,7 +5,6 @@
 #include "sequential_set.hpp"
 #include <map>
 #include <list>
-#include <ioa/shared_ptr.hpp>
 #include "automaton_record.hpp"
 #include <ioa/shared_mutex.hpp>
 #include <ioa/generator_interface.hpp>
@@ -106,18 +105,18 @@ namespace ioa {
     ~model ();
 
     void clear (void);
-    aid_t create (shared_ptr<generator_interface> generator);
+    aid_t create (const_shared_ptr<generator_interface> generator);
     aid_t create (const aid_t automaton,
-			 shared_ptr<generator_interface> generator,
-			 void* const key);
+		  const_shared_ptr<generator_interface> generator,
+		  void* const key);
     int bind (const aid_t automaton,
-		     shared_ptr<bind_executor_interface> exec,
-		     void* const key);
+	      shared_ptr<bind_executor_interface> exec,
+	      void* const key);
     int unbind (const aid_t automaton,
-		       void* const key);
+		void* const key);
     int destroy (const aid_t target);
     int destroy (const aid_t automaton,
-			void* const key);
+		 void* const key);
     int execute (output_executor_interface& exec);
     int execute (internal_executor_interface& exec);
     int execute (system_input_executor_interface& exec);
@@ -129,9 +128,9 @@ namespace ioa {
     int execute_input_bound (input_executor_interface& exec);
     int execute_output_unbound (output_executor_interface& exec);
     int execute_input_unbound (input_executor_interface& exec);
-
+    
     size_t bind_count (const action_executor_interface& action) const;
-
+    
     automaton* get_instance (const aid_t aid);
     void lock_automaton (const aid_t handle);
     void unlock_automaton (const aid_t handle);

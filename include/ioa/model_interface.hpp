@@ -3,6 +3,7 @@
 
 #include <ioa/aid.hpp>
 #include <ioa/shared_ptr.hpp>
+#include <ioa/const_shared_ptr.hpp>
 
 namespace ioa {
 
@@ -34,7 +35,7 @@ namespace ioa {
 
     // Executing configuation actions.
     virtual aid_t create (const aid_t automaton,
-			  shared_ptr<generator_interface> generator,
+			  const_shared_ptr<generator_interface> generator,
 			  void* const key) = 0;
     virtual int bind (const aid_t automaton,
 		      shared_ptr<bind_executor_interface> exec,

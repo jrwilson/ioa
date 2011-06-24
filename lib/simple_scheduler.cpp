@@ -421,7 +421,7 @@ namespace ioa {
       schedule_writeq (r, fd);
     }
 
-    void run (shared_ptr<generator_interface> generator) {
+    void run (const_shared_ptr<generator_interface> generator) {
       int r;
     
       assert (m_sysq.list.size () == 0);
@@ -492,7 +492,7 @@ namespace ioa {
     }
 
     void create (const aid_t automaton,
-		 shared_ptr<generator_interface> generator,
+		 const_shared_ptr<generator_interface> generator,
 		 void* const key) {
       schedule_sysq (new create_runnable (automaton, generator, key));
     }
@@ -655,7 +655,7 @@ namespace ioa {
     m_impl->schedule_write_ready (r, fd);
   }
   
-  void simple_scheduler::run (shared_ptr<generator_interface> generator) {
+  void simple_scheduler::run (const_shared_ptr<generator_interface> generator) {
     m_impl->run (generator);
   }
   

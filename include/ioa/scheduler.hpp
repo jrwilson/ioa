@@ -94,7 +94,7 @@ namespace ioa {
   }
   
   void run (scheduler_interface& s,
-	    shared_ptr<generator_interface> generator);
+	    const_shared_ptr<generator_interface> generator);
   
 }
 

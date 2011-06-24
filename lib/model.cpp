@@ -38,7 +38,7 @@ namespace ioa {
     assert (m_bindings.empty ());
   }
   
-  aid_t model::create (shared_ptr<generator_interface> generator)
+  aid_t model::create (const_shared_ptr<generator_interface> generator)
   {
     unique_lock lock (m_mutex);
     
@@ -69,7 +69,7 @@ namespace ioa {
   }
   
   aid_t model::create (const aid_t creator_aid,
-			shared_ptr<generator_interface> generator,
+			const_shared_ptr<generator_interface> generator,
 			void* const key)
   {
     unique_lock lock (m_mutex);
@@ -353,7 +353,7 @@ namespace ioa {
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
     if (instance->sys_create.precondition (*instance)) {
-      std::pair<shared_ptr<generator_interface>, void*> key = instance->sys_create (*instance);
+      std::pair<const_shared_ptr<generator_interface>, void*> key = instance->sys_create (*instance);
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
       m_system_scheduler.create (aid, key.first, key.second);

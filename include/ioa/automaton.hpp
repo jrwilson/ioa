@@ -2,6 +2,7 @@
 #define __automaton_hpp__
 
 #include <ioa/shared_ptr.hpp>
+#include <ioa/const_shared_ptr.hpp>
 #include <ioa/action.hpp>
 #include <set>
 #include <ioa/generator_interface.hpp>
@@ -47,7 +48,7 @@ namespace ioa {
   {
   public:
     virtual ~system_automaton_manager_interface () { }
-    virtual shared_ptr<generator_interface> get_generator () const = 0;
+    virtual const_shared_ptr<generator_interface> get_generator () const = 0;
     virtual void instance_exists () = 0;
     virtual void automaton_created (const aid_t aid) = 0;
     virtual void automaton_destroyed () = 0;
@@ -94,7 +95,7 @@ namespace ioa {
     void schedule ();
 
     bool sys_create_precondition () const;
-    std::pair<shared_ptr<generator_interface>, void*> sys_create_effect ();
+    std::pair<const_shared_ptr<generator_interface>, void*> sys_create_effect ();
 
     bool sys_bind_precondition () const;
     std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_effect ();
@@ -123,7 +124,7 @@ namespace ioa {
     void sys_event_delivered_effect (void* const &);
 
   public:
-    SYSTEM_OUTPUT (automaton, sys_create, std::pair<shared_ptr<generator_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton, sys_create, std::pair<const_shared_ptr<generator_interface> COMMA void*>);
     SYSTEM_OUTPUT (automaton, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
     SYSTEM_OUTPUT (automaton, sys_unbind, void*);
     SYSTEM_OUTPUT (automaton, sys_destroy, void*);

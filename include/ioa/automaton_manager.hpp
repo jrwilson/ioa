@@ -15,12 +15,12 @@ namespace ioa {
 
   private:
     automaton* m_automaton;
-    shared_ptr<generator_interface> m_generator;
+    const_shared_ptr<generator_interface> m_generator;
     automaton_handle<I> m_handle;
 
   public:
     automaton_manager (automaton* automaton,
-		      shared_ptr<generator_interface> generator) :
+		       const_shared_ptr<generator_interface> generator) :
       m_automaton (automaton),
       m_generator (generator)
     {
@@ -37,7 +37,7 @@ namespace ioa {
       m_automaton->destroy (this);
     }
 
-    shared_ptr<generator_interface> get_generator () const {
+    const_shared_ptr<generator_interface> get_generator () const {
       return m_generator;
     }
 

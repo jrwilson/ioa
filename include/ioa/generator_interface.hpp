@@ -14,7 +14,7 @@ namespace ioa {
   {
   public:
     virtual ~generator_interface () { }
-    virtual automaton* operator() () = 0;
+    virtual automaton* operator() () const = 0;
   };
 
 }
