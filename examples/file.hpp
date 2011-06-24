@@ -13,7 +13,15 @@ namespace mftp {
     uint8_t* m_data;
     std::vector<bool> m_have;
     uint32_t m_have_count;
+    std::vector<bool> m_valid;
+    uint32_t m_valid_count;
     uint32_t m_start_idx;
+
+    uint32_t offset_to_hash (const uint32_t) const;
+    uint32_t hash_to_offset (const uint32_t) const;
+    bool get_previous_hash (const uint32_t, unsigned char*) const;
+    bool get_hash (const uint32_t, unsigned char*) const;
+    void validate (const uint32_t);
 
   public:
     file (const char*,

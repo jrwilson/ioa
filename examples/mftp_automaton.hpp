@@ -169,6 +169,7 @@ namespace mftp {
 
       }
       break;
+
       case REQUEST:
       {
         // Request must be for our file and in range.

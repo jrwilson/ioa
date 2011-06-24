@@ -32,7 +32,7 @@ namespace mftp {
   {
   private:
     uint32_t m_fragment_count;
-    uint32_t m_padding;
+    uint32_t m_padded_length;
     uint32_t m_final_length;
     fileid m_fileid;
 
@@ -71,15 +71,16 @@ namespace mftp {
       m_final_length = hashed_length + FRAGMENT_SIZE - (hashed_length % FRAGMENT_SIZE);
       assert ((m_final_length % FRAGMENT_SIZE) == 0);
 
-      m_padding = (m_final_length - hashed_length) + (padded_length - m_fileid.length);
-      assert (m_padding < FRAGMENT_SIZE);
+      uint32_t padding = (m_final_length - hashed_length) + (padded_length - m_fileid.length);
+      assert (padding < FRAGMENT_SIZE);
+      m_padded_length = m_fileid.length + padding;
     }
     
   public:
 
     mfileid () :
       m_fragment_count (0),
-      m_padding (0),
+      m_padded_length (0),
       m_final_length (0)
     { }
 
@@ -114,8 +115,8 @@ namespace mftp {
       return m_fragment_count;
     }
 
-    const uint32_t get_padding () const {
-      return m_padding;
+    const uint32_t get_padded_length () const {
+      return m_padded_length;
     }
 
     const uint32_t get_final_length () const {
