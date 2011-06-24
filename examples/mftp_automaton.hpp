@@ -140,6 +140,10 @@ namespace mftp {
 
 	    // Save the fragment.
 	    m_file.write_chunk (m.frag.offset, m.frag.data);
+	    if (m_file.complete ()) {
+	      std::string s (reinterpret_cast<char *> (m_file.get_data_ptr ()), m_mfileid.get_original_length ());
+	      std::cout << s << std::endl;
+	    }
 
 	    uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
 	    if (m_their_req[idx]) {

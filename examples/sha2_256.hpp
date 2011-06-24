@@ -94,6 +94,23 @@ public:
     memset (buf, 0, sizeof (buf));
   }
 
+  sha2_256 (const unsigned int length,
+	    const unsigned char* hash) :
+    total_length (length),
+    buf_length (0)
+  {
+    if (length != 0) {
+      for (unsigned int idx = 0; idx < 8; ++idx) {
+	memcpy (h + idx, hash + idx * 4, 4);
+	h[idx] = htonl (h[idx]);
+      }
+    }
+    else {
+      memcpy (h, h_init, sizeof (h));
+    }
+    memset (buf, 0, sizeof (buf));
+  }
+
   void finalize () {
     if (buf_length == 64) {
       process ();
