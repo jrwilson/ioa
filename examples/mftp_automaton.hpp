@@ -1,7 +1,7 @@
 #ifndef __mftp_automaton_hpp__
 #define	__mftp_automaton_hpp__
 
-#include "periodic_timer.hpp"
+#include <ioa/alarm_automaton.hpp>
 #include "file.hpp"
 
 #include <arpa/inet.h>
@@ -15,14 +15,14 @@
 
 namespace mftp {
 
-  const long FRAGMENT_TIME_MICROSECONDS = 1000;
-  const long REQUEST_TIME_SECONDS = 1;
-  const long ANNOUNCEMENT_TIME_SECONDS  = 7;
-
   class mftp_automaton :
     public ioa::automaton
   {
   private:
+    const ioa::time m_fragment_interval;
+    const ioa::time m_request_interval;
+    const ioa::time m_announcement_interval;
+
     enum send_state_t {
       SEND_READY,
       SEND_COMPLETE_WAIT
@@ -47,6 +47,9 @@ namespace mftp {
   
   public:
     mftp_automaton (const file& file) :
+      m_fragment_interval (0, 1000), // 1000 microseconds = 1 millisecond
+      m_request_interval (1, 0), // 1 second
+      m_announcement_interval (7, 0), // 7 seconds
       m_file (file),
       m_mfileid (file.get_mfileid ()),
       m_fileid (m_mfileid.get_fileid ()),
@@ -57,40 +60,40 @@ namespace mftp {
       m_request_timer_state (SET_READY),
       m_announcement_timer_state (SET_READY)
     {
-      ioa::automaton_manager<periodic_timer>* fragment_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (0, FRAGMENT_TIME_MICROSECONDS)));
+      ioa::automaton_manager<ioa::alarm_automaton>* fragment_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
       ioa::make_bind_helper (this,
 			     &m_self,
 			     &mftp_automaton::set_fragment_timer,
 			     fragment_clock,
-			     &periodic_timer::set);
+			     &ioa::alarm_automaton::set);
       ioa::make_bind_helper (this,
 			     fragment_clock,
-			     &periodic_timer::interrupt,
+			     &ioa::alarm_automaton::alarm,
 			     &m_self,
 			     &mftp_automaton::fragment_timer_interrupt);
 
     
-      ioa::automaton_manager<periodic_timer>* request_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (REQUEST_TIME_SECONDS, 0)));
+      ioa::automaton_manager<ioa::alarm_automaton>* request_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
       ioa::make_bind_helper (this,
 			     &m_self,
 			     &mftp_automaton::set_request_timer,
 			     request_clock,
-			     &periodic_timer::set);
+			     &ioa::alarm_automaton::set);
       ioa::make_bind_helper (this,
 			     request_clock,
-			     &periodic_timer::interrupt,
+			     &ioa::alarm_automaton::alarm,
 			     &m_self,
 			     &mftp_automaton::request_timer_interrupt);
     
-      ioa::automaton_manager<periodic_timer>* announcement_clock = new ioa::automaton_manager<periodic_timer> (this, ioa::make_generator<periodic_timer> (ioa::time (ANNOUNCEMENT_TIME_SECONDS, 0)));
+      ioa::automaton_manager<ioa::alarm_automaton>* announcement_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
       ioa::make_bind_helper (this,
 			     &m_self,
 			     &mftp_automaton::set_announcement_timer,
 			     announcement_clock,
-			     &periodic_timer::set);
+			     &ioa::alarm_automaton::set);
       ioa::make_bind_helper (this,
 			     announcement_clock,
-			     &periodic_timer::interrupt,
+			     &ioa::alarm_automaton::alarm,
 			     &m_self,
 			     &mftp_automaton::announcement_timer_interrupt);
 
@@ -213,12 +216,13 @@ namespace mftp {
       return m_fragment_timer_state == SET_READY && m_their_req_count != 0 && ioa::bind_count (&mftp_automaton::set_fragment_timer) != 0;
     }
 
-    void set_fragment_timer_effect () {
+    ioa::time set_fragment_timer_effect () {
       m_fragment_timer_state = INTERRUPT_WAIT;
       schedule ();
+      return m_fragment_interval;
     }
 
-    UV_UP_OUTPUT (mftp_automaton, set_fragment_timer);
+    V_UP_OUTPUT (mftp_automaton, set_fragment_timer, ioa::time);
 
     void fragment_timer_interrupt_effect () {
       // Purpose is to produce a randomly selected requested fragment.
@@ -242,12 +246,13 @@ namespace mftp {
       return m_request_timer_state == SET_READY && !m_file.complete () && ioa::bind_count (&mftp_automaton::set_request_timer) != 0;
     }
 
-    void set_request_timer_effect () {
+    ioa::time set_request_timer_effect () {
       m_request_timer_state = INTERRUPT_WAIT;
       schedule ();
+      return m_request_interval;
     }
 
-    UV_UP_OUTPUT (mftp_automaton, set_request_timer);
+    V_UP_OUTPUT (mftp_automaton, set_request_timer, ioa::time);
 
     void request_timer_interrupt_effect () {
       if (m_sendq.empty () && !m_file.complete ()) {
@@ -266,12 +271,13 @@ namespace mftp {
       return m_announcement_timer_state == SET_READY && ioa::bind_count (&mftp_automaton::set_announcement_timer) != 0;
     }
 
-    void set_announcement_timer_effect () {
+    ioa::time set_announcement_timer_effect () {
       m_announcement_timer_state = INTERRUPT_WAIT;
       schedule ();
+      return m_announcement_interval;
     }
 
-    UV_UP_OUTPUT (mftp_automaton, set_announcement_timer);
+    V_UP_OUTPUT (mftp_automaton, set_announcement_timer, ioa::time);
 
     void announcement_timer_interrupt_effect () {
       if (!m_file.empty () && m_sendq.empty()) {

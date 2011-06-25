@@ -5,6 +5,7 @@ ioa/action_runnable.hpp \
 ioa/action_runnable_interface.hpp \
 ioa/action_wrapper.hpp \
 ioa/aid.hpp \
+ioa/alarm_automaton.hpp \
 ioa/automaton.hpp \
 ioa/automaton_handle.hpp \
 ioa/automaton_manager.hpp \
