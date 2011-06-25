@@ -70,11 +70,6 @@ namespace ioa {
     V_AP_INPUT (udp_sender_automaton, send, send_arg);
 
   private:
-    // Treat like an output.
-    bool schedule_write_ready_precondition () const;
-    void schedule_write_ready_effect ();
-    UP_INTERNAL (udp_sender_automaton, schedule_write_ready);
-
     // Treat like an input.
     bool write_precondition () const;
     void write_effect ();
@@ -87,8 +82,6 @@ namespace ioa {
     V_AP_OUTPUT (udp_sender_automaton, send_complete, int);
 
   private:
-    void schedule () const;
-
     struct first_aid_equal {
       const aid_t m_aid;
       

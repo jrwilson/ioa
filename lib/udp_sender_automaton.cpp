@@ -44,8 +44,6 @@ namespace ioa {
     // Success.
     m_errno = 0;
 
-    schedule ();
-
   the_end:	
     if (m_errno != 0) {
       if (m_fd != -1) {
@@ -85,25 +83,16 @@ namespace ioa {
       if (m_fd != -1) {
 	// No error.  Add to the send queue and set.
 	add_to_send_queue (aid, arg);
+	if (m_state == SCHEDULE_WRITE_READY) {
+	  ioa::schedule_write_ready (&udp_sender_automaton::write, m_fd);
+	  m_state = WRITE_WAIT;
+	}
       }
       else {
 	// Error.  Add to the complete queue.
 	add_to_complete_map (aid, m_errno);
       }
     }
-
-    schedule ();
-  }
-
-  // Treat like an output.
-  bool udp_sender_automaton::schedule_write_ready_precondition () const {
-    return m_state == SCHEDULE_WRITE_READY && m_fd != -1 && !m_send_queue.empty ();
-  }
-  
-  void udp_sender_automaton::schedule_write_ready_effect () {
-    ioa::schedule_write_ready (&udp_sender_automaton::write, m_fd);
-    m_state = WRITE_WAIT;
-    schedule ();
   }
 
   // Treat like an input.
@@ -129,7 +118,6 @@ namespace ioa {
     m_state = SCHEDULE_WRITE_READY;
       
     delete item.second;
-    schedule ();
   }
     
   bool udp_sender_automaton::send_complete_precondition (aid_t aid) const {
@@ -140,14 +128,7 @@ namespace ioa {
   int udp_sender_automaton::send_complete_effect (aid_t aid) {
     int retval = m_complete_map[aid];
     m_complete_map.erase (aid);
-    schedule ();
     return retval;
-  }
-
-  void udp_sender_automaton::schedule () const {
-    if (schedule_write_ready_precondition ()) {
-      ioa::schedule (&udp_sender_automaton::schedule_write_ready);
-    }
   }
 
   void udp_sender_automaton::purge (const aid_t aid) {
@@ -162,8 +143,6 @@ namespace ioa {
     }
 
     m_complete_map.erase (aid);
-
-    schedule ();
   }
 
   void udp_sender_automaton::observe (observable* o) {
