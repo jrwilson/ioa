@@ -33,96 +33,6 @@ private:
   std::queue<uuid> m_send;
   std::queue<uuid> m_receive;
 
-  void receive_effect (const uuid& v) {
-    m_receive.push (v);
-    schedule ();
-  }
-
-  bool send_precondition () const {
-    return !m_send.empty () && ioa::bind_count (&peterson_leader_automaton::send) != 0;
-  }
-
-  uuid send_effect () {
-    uuid retval = m_send.front ();
-    m_send.pop ();
-    schedule ();
-    return retval;
-  }
-
-  bool leader_precondition () const {
-    return m_status == CHOSEN && ioa::bind_count (&peterson_leader_automaton::leader) != 0;
-  }
-
-  void leader_effect () {
-    m_status = REPORTED;
-    schedule ();
-  }
-
-  bool get_second_uid_precondition () const {
-    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1].is_null ();
-  }
-
-  void get_second_uid_effect () {
-    m_uid[1] = m_receive.front ();
-    m_receive.pop ();
-    m_send.push (m_uid[1]);
-    if (m_uid[1] == m_uid[0]) {
-      m_status = CHOSEN;
-    }
-    schedule ();
-  }
-  
-  UP_INTERNAL (peterson_leader_automaton, get_second_uid);
-
-  bool get_third_uid_precondition () const {
-    return m_mode == ACTIVE && !m_receive.empty () && !m_uid[1].is_null () && m_uid[2].is_null ();
-  }
-
-  void get_third_uid_effect () {
-    m_uid[2] = m_receive.front ();
-    m_receive.pop ();
-    schedule ();
-  }
-
-  UP_INTERNAL (peterson_leader_automaton, get_third_uid);
-
-  bool advance_phase_precondition () const {
-    return m_mode == ACTIVE && !m_uid[2].is_null () && m_uid[1] > std::max (m_uid[0], m_uid[2]);
-  }
-
-  void advance_phase_effect () {
-    m_uid[0] = m_uid[1];
-    m_uid[1].clear ();
-    m_uid[2].clear ();
-    m_send.push (m_uid[0]);
-    schedule ();
-  }
-
-  UP_INTERNAL (peterson_leader_automaton, advance_phase);
-
-  bool become_relay_precondition () const {
-    return m_mode == ACTIVE && !m_uid[2].is_null () && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
-  }
-
-  void become_relay_effect () {
-    m_mode = RELAY;
-    schedule ();
-  }
-
-  UP_INTERNAL (peterson_leader_automaton, become_relay);
-
-  bool relay_precondition () const {
-    return m_mode == RELAY && !m_receive.empty ();
-  }
-
-  void relay_effect () {
-    m_send.push (m_receive.front ());
-    m_receive.pop ();
-    schedule ();
-  }
-
-  UP_INTERNAL (peterson_leader_automaton, relay);
-
   void schedule () const {
     if (send_precondition ()) {
       ioa::schedule (&peterson_leader_automaton::send);
@@ -152,6 +62,88 @@ private:
       ioa::schedule (&peterson_leader_automaton::relay);
     }
   }
+
+  void receive_effect (const uuid& v) {
+    m_receive.push (v);
+  }
+
+  bool send_precondition () const {
+    return !m_send.empty () && ioa::bind_count (&peterson_leader_automaton::send) != 0;
+  }
+
+  uuid send_effect () {
+    uuid retval = m_send.front ();
+    m_send.pop ();
+    return retval;
+  }
+
+  bool leader_precondition () const {
+    return m_status == CHOSEN && ioa::bind_count (&peterson_leader_automaton::leader) != 0;
+  }
+
+  void leader_effect () {
+    m_status = REPORTED;
+  }
+
+  bool get_second_uid_precondition () const {
+    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1].is_null ();
+  }
+
+  void get_second_uid_effect () {
+    m_uid[1] = m_receive.front ();
+    m_receive.pop ();
+    m_send.push (m_uid[1]);
+    if (m_uid[1] == m_uid[0]) {
+      m_status = CHOSEN;
+    }
+  }
+  
+  UP_INTERNAL (peterson_leader_automaton, get_second_uid);
+
+  bool get_third_uid_precondition () const {
+    return m_mode == ACTIVE && !m_receive.empty () && !m_uid[1].is_null () && m_uid[2].is_null ();
+  }
+
+  void get_third_uid_effect () {
+    m_uid[2] = m_receive.front ();
+    m_receive.pop ();
+  }
+
+  UP_INTERNAL (peterson_leader_automaton, get_third_uid);
+
+  bool advance_phase_precondition () const {
+    return m_mode == ACTIVE && !m_uid[2].is_null () && m_uid[1] > std::max (m_uid[0], m_uid[2]);
+  }
+
+  void advance_phase_effect () {
+    m_uid[0] = m_uid[1];
+    m_uid[1].clear ();
+    m_uid[2].clear ();
+    m_send.push (m_uid[0]);
+  }
+
+  UP_INTERNAL (peterson_leader_automaton, advance_phase);
+
+  bool become_relay_precondition () const {
+    return m_mode == ACTIVE && !m_uid[2].is_null () && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
+  }
+
+  void become_relay_effect () {
+    m_mode = RELAY;
+  }
+
+  UP_INTERNAL (peterson_leader_automaton, become_relay);
+
+  bool relay_precondition () const {
+    return m_mode == RELAY && !m_receive.empty ();
+  }
+
+  void relay_effect () {
+    m_send.push (m_receive.front ());
+    m_receive.pop ();
+  }
+
+  UP_INTERNAL (peterson_leader_automaton, relay);
 
 public:
 

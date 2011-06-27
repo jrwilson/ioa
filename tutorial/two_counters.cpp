@@ -17,6 +17,12 @@ public:
   }
   
 private:
+  void schedule () const {
+    if (increment_precondition ()) {
+      ioa::schedule (&count_to_ten_automaton::increment);
+    }
+  }
+
   bool increment_precondition () const {
     return m_count <= 10;
   }
@@ -26,16 +32,9 @@ private:
       "automaton: " << ioa::get_aid () <<
       " count: " << m_count << std::endl;
     ++m_count;
-    schedule ();
   }
 
   UP_INTERNAL (count_to_ten_automaton, increment);
-
-  void schedule () const {
-    if (increment_precondition ()) {
-      ioa::schedule (&count_to_ten_automaton::increment);
-    }
-  }
 };
 
 class two_counter_automaton :

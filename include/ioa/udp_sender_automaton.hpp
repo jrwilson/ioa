@@ -60,6 +60,7 @@ namespace ioa {
     ~udp_sender_automaton ();
 
   private:
+    void schedule () const;
     void add_to_send_queue (const aid_t aid,
 			    const send_arg& arg);
     void add_to_complete_map (const aid_t aid,

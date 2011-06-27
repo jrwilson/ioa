@@ -45,6 +45,11 @@ public:
   }
 
 private:
+  void schedule () const {
+    if (send_precondition ()) {
+      ioa::schedule (&broadcast_sender::send);
+    }
+  }
 
   bool send_precondition () const {
     return m_state == SEND_READY && ioa::bind_count (&broadcast_sender::send) != 0;
@@ -53,7 +58,6 @@ private:
   ioa::udp_sender_automaton::send_arg send_effect () {
     assert (m_state == SEND_READY);
     m_state = SEND_COMPLETE_WAIT;
-    schedule ();
     return ioa::udp_sender_automaton::send_arg (m_address, m_buffer);
   }
 
@@ -75,16 +79,9 @@ private:
     else {
       m_state = SEND_COMPLETE;
     }
-    schedule ();
   }
 
   V_UP_INPUT (broadcast_sender, send_complete, int);
-
-  void schedule () const {
-    if (send_precondition ()) {
-      ioa::schedule (&broadcast_sender::send);
-    }
-  }
 
 };
 

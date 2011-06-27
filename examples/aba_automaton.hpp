@@ -32,6 +32,50 @@ private:
   std::set<size_t> m_acked;	//the set of (the IDs of) all nodes that have acknowledged me
   std::map<size_t, msgq *> m_send;	//set of message queues; if i=i0 then each queue initially contains the single elt. ("bcast",w); otherwise each queue is empty
 
+public:
+  aba_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
+    m_i(i),
+    m_i0(i0),
+    m_nbrs(nbrs),
+    m_val (-1),
+    m_parent(-1),
+    m_reported(false)
+  {
+    // Initialize m_val because we are the root.
+    if (m_i == m_i0) {
+      m_val = rand ();
+    }
+
+    //If this is the root, broadcast to everyone; otherwise, do nothing.
+    for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
+      m_send.insert(make_pair(*pos, new msgq ()));
+      //Add a BCAST message to each message queue.
+      if(i == i0) {
+	m_send[*pos]->push (message_t (BCAST, m_val));
+      }
+    }
+
+    schedule ();
+  }
+
+  ~aba_automaton ()
+  {
+     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
+       delete m_send[*pos];
+    }
+  }
+
+private:
+  void schedule () const {
+    for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
+      if (send_precondition (*pos)) {
+        ioa::schedule (&aba_automaton::send, *pos);
+      }
+    }
+
+    if (report_precondition()) ioa::schedule(&aba_automaton::report);
+  }
+
   bool send_precondition (size_t j) const {
     msgq* q = m_send.find(j)->second;
     bool b =  (ioa::bind_count (&aba_automaton::send, j) != 0) && !q->empty ();
@@ -41,11 +85,13 @@ private:
   message_t send_effect (size_t j) {
     message_t retm = m_send[j]->front();
     m_send[j]->pop();
-
-    schedule();
     return retm;
   }
 
+public:
+  V_P_OUTPUT (aba_automaton, send, message_t, size_t);             //MANUAL NEEDS TO SAY WHAT THESE ARE
+
+private:
   void receive_effect (const message_t& m, size_t j) {
     if(m.first == BCAST){          //if receiving a broadcast:
       if (m_val == static_cast<size_t> (-1)) {
@@ -64,10 +110,12 @@ private:
     else {
       m_acked.insert (j);
     }
-
-    schedule();
   }
 
+public:
+  V_P_INPUT (aba_automaton, receive, message_t, size_t);
+
+private:
   bool report_precondition () const {
     if (m_i != m_i0){
       //ASSERTION: if m_nbrs.size() is 1 greater than m_acked.size(), then all my neighbors except my parent have acknowledged me
@@ -92,58 +140,9 @@ private:
       m_reported = true;
       std::cout << "We are done" << std::endl;
     }
-    schedule();
-  }
-
-  void schedule() const {
-    for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
-      if (send_precondition (*pos)) {
-        ioa::schedule (&aba_automaton::send, *pos);
-      }
-    }
-
-    if (report_precondition()) ioa::schedule(&aba_automaton::report);
   }
 
   UP_INTERNAL (aba_automaton, report);
-
-public:
-  aba_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
-    m_i(i),
-    m_i0(i0),
-    m_nbrs(nbrs),
-    m_val (-1),
-    m_parent(-1),
-    m_reported(false)
-  {
-    // Initialize m_val because we are the root.
-    if (m_i == m_i0) {
-      m_val = rand ();
-    }
-
-    //If this is the root, broadcast to everyone; otherwise, do nothing.
-    for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
-      m_send.insert(make_pair(*pos, new msgq ()));
-      //Add a BCAST message to each message queue.
-      if(i == i0) {
-	m_send[*pos]->push (message_t (BCAST, m_val));
-      }
-    }
-
-    schedule();
-  }
-
-  ~aba_automaton ()
-  {
-     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
-       delete m_send[*pos];
-    }
-  }
-  V_P_OUTPUT (aba_automaton, send, message_t, size_t);             //MANUAL NEEDS TO SAY WHAT THESE ARE
-  V_P_INPUT (aba_automaton, receive, message_t, size_t);
-
-
-
 };
 
 #endif

@@ -155,4 +155,7 @@ namespace ioa {
     }
   }
 
+  void udp_sender_automaton::schedule () const {
+  }
+
 }

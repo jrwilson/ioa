@@ -9,6 +9,7 @@ asynch_lcr \
 beast \
 bellman_ford \
 clock_213 \
+echo_client \
 mftp \
 peterson_leader \
 slow_count \
@@ -23,6 +24,7 @@ asynch_lcr_SOURCES = uuid.hpp unidirectional_ring_leader_election.hpp asynch_lcr
 beast_SOURCES = aba_automaton.hpp beast.cpp
 bellman_ford_SOURCES = weighted_bidirectional_network.hpp bf_automaton.hpp bellman_ford.cpp
 clock_213_SOURCES = clock_213.cpp
+echo_client_SOURCES = echo_client.cpp
 mftp_SOURCES = file.cpp mftp.cpp simple_network.hpp checking_channel_automaton.hpp mftp_automaton.hpp file.hpp mftp.hpp sha2_256.hpp
 peterson_leader_SOURCES = peterson_leader_automaton.hpp peterson_leader.cpp
 slow_count_SOURCES = slow_count.cpp

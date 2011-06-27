@@ -851,6 +851,8 @@ private:
 
   helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type>* m_helper;
 
+  void schedule () const { }
+
   bool poll_precondition () const {
     return true;
   }
@@ -1038,6 +1040,8 @@ private:
 
   helper* m_helper;
 
+  void schedule () const { }
+
   bool poll_precondition () const {
     return true;
   }
@@ -1125,6 +1129,7 @@ automaton_destroyed2 ()
 class schedule_automaton :
   public ioa::automaton {
 private:
+  void schedule () const { }
 
   bool action_precondition () const {
     return true;
@@ -1158,6 +1163,7 @@ schedule ()
 class schedule_automatonp :
   public ioa::automaton {
 private:
+  void schedule () const { }
 
   bool action_precondition (int param) const {
     assert (param == 18887235);
@@ -1200,6 +1206,8 @@ private:
   };
   state_t m_state;
   time_t m_schedule_time;
+
+  void schedule () const { }
 
   bool action1_precondition () const {
     return m_state == ACTION1_WAIT;
@@ -1267,6 +1275,8 @@ private:
   state_t m_state;
   time_t m_schedule_time;
 
+  void schedule () const { }
+
   bool action1_precondition (int param) const {
     assert (param == 512);
     return m_state == ACTION1_WAIT;
@@ -1333,6 +1343,8 @@ class schedule_read_ready_automaton :
 private:
   int m_fd[2];
 
+  void schedule () const { }
+
   bool action_precondition () const {
     return true;
   }
@@ -1379,6 +1391,7 @@ class schedule_read_readyp_automaton :
   public ioa::automaton {
 private:
   int m_fd[2];
+  void schedule () const { }
 
   bool action_precondition (int fd) const {
     assert (fd == m_fd[0]);
@@ -1430,6 +1443,8 @@ class schedule_write_ready_automaton :
 private:
   int m_fd[2];
 
+  void schedule () const { }
+
   bool action_precondition () const {
     return true;
   }
@@ -1469,6 +1484,8 @@ class schedule_write_readyp_automaton :
   public ioa::automaton {
 private:
   int m_fd[2];
+
+  void schedule () const { }
 
   bool action_precondition (int fd) const {
     assert (fd == m_fd[1]);

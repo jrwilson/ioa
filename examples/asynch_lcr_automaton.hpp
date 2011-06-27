@@ -34,7 +34,6 @@ private:
     else {
       // Do nothing.
     }
-    schedule ();
   }
 
   bool send_precondition () const {
@@ -44,7 +43,6 @@ private:
   uuid send_effect () {
     uuid retval = m_send.front ();
     m_send.pop ();
-    schedule ();
     return retval;
   }
 
@@ -54,7 +52,6 @@ private:
 
   void leader_effect () {
     m_status = REPORTED;
-    schedule ();
   }
 
   void schedule () const {

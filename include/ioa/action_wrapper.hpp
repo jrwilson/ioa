@@ -7,6 +7,22 @@
 // TODO:  Eliminate redundancy.
 
 namespace ioa {
+  
+  template <class T, void (T::*schedule_ptr) () const>
+  class auto_scheduler
+  {
+  private:
+    const T& m_ref;
+
+  public:
+    auto_scheduler (const T& ref) :
+      m_ref (ref)
+    { }
+
+    ~auto_scheduler () {
+      (m_ref.*schedule_ptr) ();
+    }
+  };
 
   enum recent_op_t {
     NOOP,
@@ -14,7 +30,7 @@ namespace ioa {
     UNBOUND
   };
     
-  template <class C, void (C::*action_ptr) ()>
+  template <class C, void (C::*effect_ptr) (), void (C::*schedule_ptr) () const>
   struct uv_up_input_wrapper :
     public input,
     public no_value,
@@ -28,7 +44,8 @@ namespace ioa {
     { }
 
     void operator() (C& c) {
-      (c.*action_ptr) ();
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) ();
     }
     
     void bound () {
@@ -42,7 +59,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class P, void (C::*action_ptr) (P)>
+  template <class C, class P, void (C::*effect_ptr) (P), void (C::*schedule_ptr) () const>
   struct uv_p_input_wrapper :
     public input,
     public no_value,
@@ -57,7 +74,8 @@ namespace ioa {
     { }
     
     void operator() (C& c, P p) {
-      (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (p);
     }
 
     void bound (P p) {
@@ -73,7 +91,7 @@ namespace ioa {
     }
   };
 
-  template <class C, void (C::*action_ptr) (aid_t)>
+  template <class C, void (C::*effect_ptr) (aid_t), void (C::*schedule_ptr) () const>
   struct uv_ap_input_wrapper :
     public input,
     public no_value,
@@ -88,7 +106,8 @@ namespace ioa {
     { }
     
     void operator() (C& c, aid_t p) {
-      (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (p);
     }
 
     void bound (aid_t p) {
@@ -104,7 +123,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, void (C::*action_ptr) (const T&)>
+  template <class C, class T, void (C::*effect_ptr) (const T&), void (C::*schedule_ptr) () const>
   struct v_up_input_wrapper :
     public input,
     public value<T>,
@@ -118,7 +137,8 @@ namespace ioa {
     { }
 
     void operator() (C& c, const T& t) {
-      (c.*action_ptr) (t);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (t);
     }
     
     void bound () {
@@ -132,7 +152,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class P, void (C::*action_ptr)(const T&, P) >
+  template <class C, class T, class P, void (C::*effect_ptr)(const T&, P), void (C::*schedule_ptr) () const>
   struct v_p_input_wrapper :
     public input,
     public value<T>,
@@ -147,7 +167,8 @@ namespace ioa {
     { }
     
     void operator() (C& c, const T& t, P p) {
-      (c.*action_ptr) (t, p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (t, p);
     }
 
     void bound (P p) {
@@ -163,7 +184,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, void (C::*action_ptr)(const T&, aid_t) >
+  template <class C, class T, void (C::*effect_ptr)(const T&, aid_t), void (C::*schedule_ptr) () const>
   struct v_ap_input_wrapper :
     public input,
     public value<T>,
@@ -178,7 +199,8 @@ namespace ioa {
     { }
     
     void operator() (C& c, const T& t, aid_t p) {
-      (c.*action_ptr) (t, p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (t, p);
     }
 
     void bound (aid_t p) {
@@ -194,7 +216,7 @@ namespace ioa {
     }
   };
 
-  template <class C, bool (C::*precondition_ptr) () const, void (C::*action_ptr) ()>
+  template <class C, bool (C::*precondition_ptr) () const, void (C::*effect_ptr) (), void (C::*schedule_ptr) () const>
   struct uv_up_output_wrapper :
     public output,
     public no_value,
@@ -212,7 +234,8 @@ namespace ioa {
     }
 
     void operator() (C& c) {
-      (c.*action_ptr) ();
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) ();
     }
 
     void bound () {
@@ -226,7 +249,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class P, bool (C::*precondition_ptr) (P) const, void (C::*action_ptr)(P)>
+  template <class C, class P, bool (C::*precondition_ptr) (P) const, void (C::*effect_ptr)(P), void (C::*schedule_ptr) () const>
   struct uv_p_output_wrapper :
     public output,
     public no_value,
@@ -245,7 +268,8 @@ namespace ioa {
     }
 
     void operator() (C& c, P p) {
-      (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (p);
     }
     
     void bound (P p) {
@@ -261,7 +285,7 @@ namespace ioa {
     }
   };
 
-  template <class C, bool (C::*precondition_ptr) (aid_t) const, void (C::*action_ptr)(aid_t)>
+  template <class C, bool (C::*precondition_ptr) (aid_t) const, void (C::*effect_ptr)(aid_t), void (C::*schedule_ptr) () const>
   struct uv_ap_output_wrapper :
     public output,
     public no_value,
@@ -280,7 +304,8 @@ namespace ioa {
     }
 
     void operator() (C& c, aid_t p) {
-      (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (p);
     }
     
     void bound (aid_t p) {
@@ -296,7 +321,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*action_ptr) (void)>
+  template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*effect_ptr) (void), void (C::*schedule_ptr) () const>
   struct v_up_output_wrapper :
     public output,
     public value<T>,
@@ -314,7 +339,8 @@ namespace ioa {
     }
     
     T operator() (C& c) {
-      return (c.*action_ptr) ();
+      auto_scheduler<C, schedule_ptr> as (c);
+      return (c.*effect_ptr) ();
     }
 
     void bound () {
@@ -328,7 +354,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, class P, bool (C::*precondition_ptr) (P) const, T (C::*action_ptr)(P)>
+  template <class C, class T, class P, bool (C::*precondition_ptr) (P) const, T (C::*effect_ptr)(P), void (C::*schedule_ptr) () const>
   struct v_p_output_wrapper :
     public output,
     public value<T>,
@@ -347,7 +373,8 @@ namespace ioa {
     }
 
     T operator() (C& c, P p) {
-      return (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      return (c.*effect_ptr) (p);
     }
 
     void bound (P p) {
@@ -363,7 +390,7 @@ namespace ioa {
     }
   };
 
-  template <class C, class T, bool (C::*precondition_ptr) (aid_t) const, T (C::*action_ptr)(aid_t)>
+  template <class C, class T, bool (C::*precondition_ptr) (aid_t) const, T (C::*effect_ptr)(aid_t), void (C::*schedule_ptr) () const>
   struct v_ap_output_wrapper :
     public output,
     public value<T>,
@@ -382,7 +409,8 @@ namespace ioa {
     }
 
     T operator() (C& c, aid_t p) {
-      return (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      return (c.*effect_ptr) (p);
     }
 
     void bound (aid_t p) {
@@ -398,7 +426,7 @@ namespace ioa {
     }
   };
 
-  template <class C, bool (C::*precondition_ptr) () const, void (C::*action_ptr) ()>
+  template <class C, bool (C::*precondition_ptr) () const, void (C::*effect_ptr) (), void (C::*schedule_ptr) () const>
   struct up_internal_wrapper :
     public internal,
     public no_parameter
@@ -408,11 +436,12 @@ namespace ioa {
     }
 
     void operator() (C& c) {
-      (c.*action_ptr) ();
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) ();
     }
   };
 
-  template <class C, class P, bool (C::*precondition_ptr) (P) const, void (C::*action_ptr)(P)>
+  template <class C, class P, bool (C::*precondition_ptr) (P) const, void (C::*effect_ptr)(P), void (C::*schedule_ptr) () const>
   struct p_internal_wrapper :
     public internal,
     public parameter<P>
@@ -422,64 +451,99 @@ namespace ioa {
     }
 
     void operator() (C& c, P p) {
-      (c.*action_ptr) (p);
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*effect_ptr) (p);
+    }
+  };
+
+  template <class C, class T, void (C::*member_function_ptr)(T const &), void (C::*schedule_ptr) () const>
+  struct system_input_wrapper :
+    public system_input,
+    public value<T>
+  {
+    void operator() (C& c, T const & t) {
+      auto_scheduler<C, schedule_ptr> as (c);
+      (c.*member_function_ptr) (t);
+    }
+  };
+
+  template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*member_function_ptr)(), void (C::*schedule_ptr) () const>
+  struct system_output_wrapper :
+    public system_output,
+    public value<T>
+  {
+    bool precondition (C& c) {
+      return (c.*precondition_ptr) ();
+    }
+    
+    T operator() (C& c) {
+      auto_scheduler<C, schedule_ptr> as (c);
+      return (c.*member_function_ptr) ();
     }
   };
 
 }
 
 #define UV_UP_INPUT(c, name) \
-  typedef ioa::uv_up_input_wrapper<c, &c::name##_effect> name##_type; \
+  typedef ioa::uv_up_input_wrapper<c, &c::name##_effect, &c::schedule> name##_type; \
   name##_type name;
 
 #define UV_P_INPUT(c, name, param_type)	\
-  typedef ioa::uv_p_input_wrapper<c, param_type, &c::name##_effect> name##_type; \
+  typedef ioa::uv_p_input_wrapper<c, param_type, &c::name##_effect, &c::schedule> name##_type; \
   name##_type name;
 
 #define UV_AP_INPUT(c, name)	\
-  typedef ioa::uv_ap_input_wrapper<c, &c::name##_effect> name##_type; \
+  typedef ioa::uv_ap_input_wrapper<c, &c::name##_effect, &c::schedule> name##_type; \
   name##_type name;
 
 #define V_UP_INPUT(c, name, type)			\
-  typedef ioa::v_up_input_wrapper<c, type, &c::name##_effect> name##_type;	\
+  typedef ioa::v_up_input_wrapper<c, type, &c::name##_effect, &c::schedule> name##_type;	\
   name##_type name;
 
 #define V_P_INPUT(c, name, type, param_type)	\
-  typedef ioa::v_p_input_wrapper<c, type, param_type, &c::name##_effect> name##_type;	\
+  typedef ioa::v_p_input_wrapper<c, type, param_type, &c::name##_effect, &c::schedule> name##_type;	\
   name##_type name;
 
 #define V_AP_INPUT(c, name, type)			\
-  typedef ioa::v_ap_input_wrapper<c, type, &c::name##_effect> name##_type;	\
+  typedef ioa::v_ap_input_wrapper<c, type, &c::name##_effect, &c::schedule> name##_type;	\
   name##_type name;
 
 #define UV_UP_OUTPUT(c, name) \
-  typedef ioa::uv_up_output_wrapper<c, &c::name##_precondition, &c::name##_effect> name##_type; \
+  typedef ioa::uv_up_output_wrapper<c, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type; \
   name##_type name;
 
 #define UV_P_OUTPUT(c, name, param_type)	\
-  typedef ioa::uv_p_output_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect> name##_type; \
+  typedef ioa::uv_p_output_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type; \
   name##_type name;
 
 #define UV_AP_OUTPUT(c, name) \
-  typedef ioa::uv_ap_output_wrapper<c, &c::name##_precondition, &c::name##_effect> name##_type; \
+  typedef ioa::uv_ap_output_wrapper<c, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type; \
   name##_type name;
 
 #define V_UP_OUTPUT(c, name, type)			\
-  typedef ioa::v_up_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type;	\
+  typedef ioa::v_up_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type;	\
   name##_type name;
 
 #define V_P_OUTPUT(c, name, type, param_type)	\
-  typedef ioa::v_p_output_wrapper<c, type, param_type, &c::name##_precondition, &c::name##_effect> name##_type;	\
+  typedef ioa::v_p_output_wrapper<c, type, param_type, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type;	\
   name##_type name;
 
 #define V_AP_OUTPUT(c, name, type)			\
-  typedef ioa::v_ap_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type;	\
+  typedef ioa::v_ap_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type;	\
   name##_type name;
 
 #define UP_INTERNAL(c, name) \
-  ioa::up_internal_wrapper<c, &c::name##_precondition, &c::name##_effect> name;
+  ioa::up_internal_wrapper<c, &c::name##_precondition, &c::name##_effect, &c::schedule> name;
 
 #define P_INTERNAL(c, name, param_type)	\
-  ioa::p_internal_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect> name;
+  ioa::p_internal_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect, &c::schedule> name;
+
+#define SYSTEM_INPUT(c, name, type)		\
+  typedef ioa::system_input_wrapper<c, type, &c::name##_effect, &c::schedule> name##_type;	\
+  name##_type name;
+
+#define SYSTEM_OUTPUT(c, name, type)		\
+  typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect, &c::schedule> name##_type; \
+  name##_type name;
 
 #endif

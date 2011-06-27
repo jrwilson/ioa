@@ -108,6 +108,24 @@ namespace mftp {
     }
 
   private:
+    void schedule () const {
+      if (send_precondition ()) {
+	ioa::schedule (&mftp_automaton::send);
+      }
+
+      if (set_fragment_timer_precondition ()) {
+	ioa::schedule (&mftp_automaton::set_fragment_timer);
+      }
+
+      if (set_request_timer_precondition ()) {
+	ioa::schedule (&mftp_automaton::set_request_timer);
+      }
+
+      if (set_announcement_timer_precondition ()) {
+	ioa::schedule (&mftp_automaton::set_announcement_timer);
+      }
+    }
+
     bool send_precondition () const {
       return !m_sendq.empty () && m_send_state == SEND_READY;
     }
@@ -117,7 +135,6 @@ namespace mftp {
       m_sendq.pop ();
       convert_to_network (m.get ());
       m_send_state = SEND_COMPLETE_WAIT;
-      schedule ();
       return *m;
     }
 
@@ -127,7 +144,6 @@ namespace mftp {
   private:
     void send_complete_effect () {
       m_send_state = SEND_READY;
-      schedule ();
     }
 
   public:
@@ -203,8 +219,6 @@ namespace mftp {
       // Unkown message type.
       break;
       }
-
-      schedule ();
     }
 
   public:
@@ -218,7 +232,6 @@ namespace mftp {
 
     ioa::time set_fragment_timer_effect () {
       m_fragment_timer_state = INTERRUPT_WAIT;
-      schedule ();
       return m_fragment_interval;
     }
 
@@ -237,7 +250,6 @@ namespace mftp {
       }
 
       m_fragment_timer_state = SET_READY;
-      schedule();
     }
 
     UV_UP_INPUT (mftp_automaton, fragment_timer_interrupt);
@@ -248,7 +260,6 @@ namespace mftp {
 
     ioa::time set_request_timer_effect () {
       m_request_timer_state = INTERRUPT_WAIT;
-      schedule ();
       return m_request_interval;
     }
 
@@ -262,7 +273,6 @@ namespace mftp {
       }
 
       m_request_timer_state = SET_READY;
-      schedule ();
     }
 
     UV_UP_INPUT (mftp_automaton, request_timer_interrupt);
@@ -273,7 +283,6 @@ namespace mftp {
 
     ioa::time set_announcement_timer_effect () {
       m_announcement_timer_state = INTERRUPT_WAIT;
-      schedule ();
       return m_announcement_interval;
     }
 
@@ -284,7 +293,6 @@ namespace mftp {
 	m_sendq.push (get_fragment (m_file.get_random_index ()));
       }
       m_announcement_timer_state = SET_READY;
-      schedule();
     }
 
     UV_UP_INPUT (mftp_automaton, announcement_timer_interrupt);
@@ -341,24 +349,6 @@ namespace mftp {
       uint32_t offset = idx * FRAGMENT_SIZE;
       message* mp = new message (fragment_type (), m_fileid, offset, m_file.get_data_ptr() + offset);
       return mp;
-    }
-
-    void schedule () const {
-      if (send_precondition ()) {
-	ioa::schedule (&mftp_automaton::send);
-      }
-
-      if (set_fragment_timer_precondition ()) {
-	ioa::schedule (&mftp_automaton::set_fragment_timer);
-      }
-
-      if (set_request_timer_precondition ()) {
-	ioa::schedule (&mftp_automaton::set_request_timer);
-      }
-
-      if (set_announcement_timer_precondition ()) {
-	ioa::schedule (&mftp_automaton::set_announcement_timer);
-      }
     }
 
   };

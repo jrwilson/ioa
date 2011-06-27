@@ -68,6 +68,8 @@ namespace ioa {
 			    const inet_address& local_addr);
     ~udp_receiver_automaton ();
 
+    void schedule () const;
+
   private:
     // This will be treated like an output.
     bool schedule_read_ready_precondition () const;
@@ -87,7 +89,6 @@ namespace ioa {
     V_UP_OUTPUT (udp_receiver_automaton, receive, receive_val);
 
   private:
-    void schedule () const;
     void observe (observable* o);
   };
 

@@ -16,6 +16,8 @@ namespace ioa {
     };
     state_t m_state;
 
+    void schedule () const;
+
   public:
     alarm_automaton ();
 
@@ -35,10 +37,6 @@ namespace ioa {
 
   public:
     UV_UP_OUTPUT (alarm_automaton, alarm);
-
-  private:
-    void schedule () const;
-
   };
 
 }

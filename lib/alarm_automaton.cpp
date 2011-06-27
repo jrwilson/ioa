@@ -13,7 +13,6 @@ namespace ioa {
       m_state = INTERRUPT_WAIT;
       schedule_after (&alarm_automaton::interrupt, interval);
     }
-    schedule ();
   }
 
   // Treat like an input.
@@ -23,7 +22,6 @@ namespace ioa {
   
   void alarm_automaton::interrupt_effect () { 
     m_state = ALARM_READY;
-    schedule ();
   }
   
   bool alarm_automaton::alarm_precondition () const {
@@ -32,7 +30,6 @@ namespace ioa {
   
   void alarm_automaton::alarm_effect () {
     m_state = SET_WAIT;
-    schedule ();
   }
 
   void alarm_automaton::schedule () const {

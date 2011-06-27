@@ -113,7 +113,6 @@ namespace ioa {
   void udp_receiver_automaton::schedule_read_ready_effect () {
     ioa::schedule_read_ready (&udp_receiver_automaton::read, m_fd);
     m_state = READ_WAIT;
-    schedule ();
   }
 
   // Treat like an input.
@@ -153,8 +152,6 @@ namespace ioa {
     }
 
     m_state = SCHEDULE_READ_READY;
-    
-    schedule ();
   }
     
   bool udp_receiver_automaton::receive_precondition () const {
@@ -164,7 +161,6 @@ namespace ioa {
   udp_receiver_automaton::receive_val udp_receiver_automaton::receive_effect () {
     std::auto_ptr<receive_val> retval (m_receive.front ());
     m_receive.pop ();
-    schedule ();
     return *retval;
   }
 

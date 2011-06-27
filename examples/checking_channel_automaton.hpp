@@ -26,12 +26,20 @@ public:
   }
 
 private:
+  void schedule () const {
+    if (receive_precondition ()) {
+      ioa::schedule (&checking_channel_automaton::receive);
+    }
+    if(send_complete_precondition ()) {
+        ioa::schedule (&checking_channel_automaton::send_complete);
+    }
+  }
+
   void send_effect (const T& t) {
     if (m_state == SEND_WAIT) {
       m_queue.push (t);
       m_state = RECV_READY;
     }
-    schedule ();
   }
 
 public:
@@ -48,7 +56,6 @@ private:
     T retval =  m_queue.front ();
     m_queue.pop ();
     m_state = SEND_COMPLETE_READY;
-    schedule ();
     return retval;
   }
 
@@ -64,24 +71,11 @@ private:
 
   void send_complete_effect () {
     m_state = SEND_WAIT;
-    schedule ();
   }
 
 public:
 
   UV_UP_OUTPUT (checking_channel_automaton, send_complete);
-
-private:
-
-  void schedule () const {
-    if (receive_precondition ()) {
-      ioa::schedule (&checking_channel_automaton::receive);
-    }
-    if(send_complete_precondition ()) {
-        ioa::schedule (&checking_channel_automaton::send_complete);
-    }
-  }
-
 };
 
 #endif

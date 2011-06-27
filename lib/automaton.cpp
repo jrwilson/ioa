@@ -57,7 +57,7 @@ namespace ioa {
 	    m_destroy_recv.count (helper) == 0);
     // Add to the send set and schedule.
     m_create_send.insert (helper);
-    _schedule ();
+    schedule ();
   }
   
   void automaton::bind (system_bind_helper_interface* helper) {
@@ -69,7 +69,7 @@ namespace ioa {
 	    m_unbind_recv.count (helper) == 0);
     // Add to the send set and schedule.
     m_bind_send.insert (helper);
-    _schedule ();
+    schedule ();
   }
   
   void automaton::unbind (system_bind_helper_interface* helper) {
@@ -100,8 +100,7 @@ namespace ioa {
       // We should have seen this helper before.  Otherwise, we will get a bind_key_dne error.
       assert (false);
     }
-    
-    _schedule ();
+    schedule ();
   }
   
   void automaton::destroy (system_automaton_manager_interface* helper) {
@@ -132,8 +131,7 @@ namespace ioa {
       // We should have seen this helper before.  Otherwise, we will get a create_key_dne error.
       assert (false);
     }
-    
-    _schedule ();
+    schedule ();
   }
 
   bool automaton::sys_create_precondition () const {
@@ -145,7 +143,6 @@ namespace ioa {
     system_automaton_manager_interface* helper = *pos;
     m_create_send.erase (pos);
     m_create_recv.insert (helper);
-    _schedule ();
     return std::make_pair (helper->get_generator (), helper);
   }
 
@@ -158,7 +155,6 @@ namespace ioa {
     system_bind_helper_interface* helper = *pos;
     m_bind_send.erase (pos);
     m_bind_recv.insert (helper);
-    _schedule ();
     return std::make_pair (helper->get_executor (), helper);
   }
 
@@ -171,7 +167,6 @@ namespace ioa {
     system_bind_helper_interface* helper = *pos;
     m_unbind_send.erase (pos);
     m_unbind_recv.insert (helper);
-    _schedule ();
     return helper;
   }
 
@@ -184,7 +179,6 @@ namespace ioa {
     system_automaton_manager_interface* helper = *pos;
     m_destroy_send.erase (pos);
     m_destroy_recv.insert (helper);
-    _schedule ();
     return helper;
   }
 
@@ -200,7 +194,6 @@ namespace ioa {
     (*pos)->instance_exists ();
     // The creation failed so erase.
     m_create_recv.erase (pos);
-    _schedule ();
   }
 
   void automaton::sys_automaton_created_effect (std::pair<void*, aid_t> const & t) {
@@ -209,7 +202,6 @@ namespace ioa {
     assert (pos != m_create_recv.end ());
     (*pos)->automaton_created (t.second);
     // The create succeeded.  Leave in set.
-    _schedule ();
   }
 
   void automaton::sys_bind_key_exists_effect (void* const & t) {
@@ -224,7 +216,6 @@ namespace ioa {
     (*pos)->output_automaton_dne ();
     // The bind failed so erase.
     m_bind_recv.erase (pos);
-    _schedule ();
   }
 
   void automaton::sys_input_automaton_dne_effect (void* const & t) {
@@ -234,7 +225,6 @@ namespace ioa {
     (*pos)->input_automaton_dne ();
     // The bind failed so erase.
     m_bind_recv.erase (pos);
-    _schedule ();
   }
 
   void automaton::sys_binding_exists_effect (void* const & t) {
@@ -244,7 +234,6 @@ namespace ioa {
     (*pos)->binding_exists ();
     // The bind failed so erase.
     m_bind_recv.erase (pos);
-    _schedule ();
   }
 
   void automaton::sys_output_action_unavailable_effect (void* const & t) {
@@ -254,7 +243,6 @@ namespace ioa {
     (*pos)->output_action_unavailable ();
     // The bind failed so erase.
     m_bind_recv.erase (pos);
-    _schedule ();
   }
 
   void automaton::sys_input_action_unavailable_effect (void* const & t) {
@@ -264,7 +252,6 @@ namespace ioa {
     (*pos)->input_action_unavailable ();
     // The bind failed so erase.
     m_bind_recv.erase (pos);
-    _schedule ();
   }
 
   void automaton::sys_bound_effect (void* const & t) {
@@ -273,7 +260,6 @@ namespace ioa {
     assert (pos != m_bind_recv.end ());
     (*pos)->bound ();
     // The bind succeeded.  Leave in set.
-    _schedule ();
   }
   
   void automaton::sys_bind_key_dne_effect (void* const & t) {
@@ -302,7 +288,6 @@ namespace ioa {
     }
     
     helper->unbound ();
-    _schedule ();
   }
   
   void automaton::sys_create_key_dne_effect (void* const & t) {
@@ -331,7 +316,6 @@ namespace ioa {
     }
     
     helper->automaton_destroyed ();
-    _schedule ();
   }
   
   void automaton::sys_recipient_dne_effect (void* const & t) {
@@ -344,7 +328,7 @@ namespace ioa {
     assert (false);
   }
 
-  void automaton::_schedule () const {
+  void automaton::schedule () const {
     if (sys_create_precondition ()) {
       ioa::schedule (&automaton::sys_create);
     }

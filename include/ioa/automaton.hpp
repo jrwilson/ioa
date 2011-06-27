@@ -7,42 +7,11 @@
 #include <set>
 #include <ioa/generator_interface.hpp>
 #include <ioa/executor_interface.hpp>
+#include <ioa/action_wrapper.hpp>
 
 #define COMMA ,
 
 namespace ioa {
-
-  template <class C, class T, void (C::*member_function_ptr)(T const &)>
-  struct system_input_wrapper :
-    public system_input,
-    public value<T>
-  {
-    void operator() (C& c, T const & t) {
-      (c.*member_function_ptr) (t);
-    }
-  };
-
-  template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*member_function_ptr)()>
-  struct system_output_wrapper :
-    public system_output,
-    public value<T>
-  {
-    bool precondition (C& c) {
-      return (c.*precondition_ptr) ();
-    }
-    
-    T operator() (C& c) {
-      return (c.*member_function_ptr) ();
-    }
-  };
-
-#define SYSTEM_INPUT(c, name, type)		\
-  typedef ioa::system_input_wrapper<c, type, &c::name##_effect> name##_type;	\
-  name##_type name;
-
-#define SYSTEM_OUTPUT(c, name, type)		\
-  typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect> name##_type; \
-  name##_type name;
 
   class system_automaton_manager_interface
   {
@@ -92,7 +61,7 @@ namespace ioa {
     void destroy (system_automaton_manager_interface* helper);
 
   private:
-    void _schedule () const;
+    void schedule () const;
 
     bool sys_create_precondition () const;
     std::pair<const_shared_ptr<generator_interface>, void*> sys_create_effect ();

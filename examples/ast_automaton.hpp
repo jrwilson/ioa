@@ -33,8 +33,6 @@ private:
   size_t parent_effect () {
     m_reported = true;
     size_t retval = m_parent;
-
-    schedule();
     return retval;
   }
 
@@ -46,8 +44,6 @@ private:
   search_t send_effect (size_t j) {
     m_send[j] = NOSEARCH;
     search_t retval = SEARCH_MESSAGE;
-
-    schedule();
     return retval;
   }
 
@@ -63,8 +59,6 @@ private:
         }
       }
     }
-
-    schedule();
   }
 
   void schedule () const {
@@ -99,7 +93,7 @@ public:
       }
     }
 
-    schedule();
+    schedule ();
   }
 
   V_UP_OUTPUT (ast_automaton, parent, size_t);

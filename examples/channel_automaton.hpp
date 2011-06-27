@@ -18,7 +18,6 @@ private:
 
   void send_effect (const T& t) {
     m_queue.push (t);
-    schedule ();
   }
   
   bool receive_precondition () const {
@@ -28,7 +27,6 @@ private:
   T receive_effect () {
     T retval =  m_queue.front ();
     m_queue.pop ();
-    schedule ();
     return retval;
   }
 

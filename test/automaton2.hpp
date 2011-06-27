@@ -12,6 +12,7 @@ private:
   int m_vole;
 
 private:
+  void schedule () const { }
   void uv_up_input_effect () { }
   void uv_p_input_effect (int pole) { m_pole += pole; }
   void uv_ap_input_effect (ioa::aid_t aid) { }

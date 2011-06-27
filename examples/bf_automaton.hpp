@@ -29,7 +29,6 @@ private:
   size_t send_effect (size_t j) {
     size_t retval = m_send[j]->front();
     m_send[j]->pop();
-    schedule();
     return retval;
   }
 
@@ -48,8 +47,6 @@ private:
 	}
       }  
     }
-    
-    schedule();
   }
 
   void schedule () const {
@@ -81,7 +78,7 @@ public:
         m_send[*pos]->push (0);
       }
     }
-    schedule();
+    schedule ();
   }
 
   ~bf_automaton () {

@@ -9,6 +9,12 @@ class count_to_ten :
 private:
   int m_count;
 
+  void schedule () const {
+    if (increment_precondition ()) {
+      ioa::schedule_after (&count_to_ten::increment, ioa::time (1, 0));
+    }
+  }
+
   bool increment_precondition () const {
     return m_count <= 10;
   }
@@ -18,16 +24,9 @@ private:
     if (increment_precondition ()) {
       ++m_count;
     }
-    schedule ();
   }
 
   UP_INTERNAL (count_to_ten, increment);
-
-  void schedule () const {
-    if (increment_precondition ()) {
-      ioa::schedule_after (&count_to_ten::increment, ioa::time (1, 0));
-    }
-  }
 
 public:
   count_to_ten () :

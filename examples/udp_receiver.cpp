@@ -36,6 +36,9 @@ public:
     ioa::make_bind_helper (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
   }
 
+private:
+  void schedule () const { }
+
   void receive_effect (const ioa::udp_receiver_automaton::receive_val& v) {
     if (v.err_no != 0) {
       char buf[256];

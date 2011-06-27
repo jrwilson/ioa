@@ -14,6 +14,7 @@ class bidirectional_spanning_tree :
   public ioa::automaton
 {
 private:
+  void schedule () const { }
 
   void parent_effect(const size_t& j, size_t i) {
     parents.insert(std::make_pair(i,j));
