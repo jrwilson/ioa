@@ -151,21 +151,9 @@ namespace mftp {
 
   private:
     void receive_effect (const message& mess) {
-      //message m;
-      //copy_message (mess, m);
-
-      //message* mp = &m;
 
       message m;
       convert_to_host(mess, m);
-
-      //if(mess.header.message_type == REQUEST) {
-
-        //std::cout << mess.req.start << " " << m.req.start << std::endl;
-      //}
-      //else {
-        //std::cout << mess.frag.offset << " " << m.frag.offset << std::endl;
-      //}
 
       switch (m.header.message_type) {
       case FRAGMENT:
@@ -196,31 +184,36 @@ namespace mftp {
 
       case REQUEST:
       {
-        // Request must be for our file and in range.
-        if (m.req.fid == m_fileid &&
-            m.req.start % FRAGMENT_SIZE == 0 &&
-            m.req.stop % FRAGMENT_SIZE == 0 &&
-            m.req.start < m.req.stop &&
-            m.req.stop <= m_mfileid.get_final_length ()) {
-          // We have it.
-          for (uint32_t offset = m.req.start;
-         offset < m.req.stop;
-         offset += FRAGMENT_SIZE) {
-            uint32_t idx = offset / FRAGMENT_SIZE;
-            if (m_file.have (offset) && !m_their_req[idx]) {
-        m_their_req[idx] = true;
-        ++m_their_req_count;
-            }
-          }
-        }
+	std::cout << "Receiving request" << std::endl;
+	//Requests must be for our file.
+	if (m.req.fid == m_fileid){
+	  for (uint32_t sp = 0; sp < m.req.span_count; sp++){
+	    // Request must be in range.
+	    if (m.req.spans[sp].start % FRAGMENT_SIZE == 0 &&
+		m.req.spans[sp].stop % FRAGMENT_SIZE == 0 &&
+		m.req.spans[sp].start < m.req.spans[sp].stop &&
+		m.req.spans[sp].stop <= m_mfileid.get_final_length ()) {
+	      // We have it.
+	      for (uint32_t offset = m.req.spans[sp].start;
+		   offset < m.req.spans[sp].stop;
+		   offset += FRAGMENT_SIZE) {
+		uint32_t idx = offset / FRAGMENT_SIZE;
+		if (m_file.have (offset) && !m_their_req[idx]) {
+		  m_their_req[idx] = true;
+		  ++m_their_req_count;
+		}
+	      }
+	    }
+	  }
+	}
       }
       break;
       default:
-      // Unkown message type.
-      break;
+	// Unkown message type.
+	break;
       }
     }
-
+    
   public:
 
     V_UP_INPUT (mftp_automaton, receive, message);
@@ -266,10 +259,23 @@ namespace mftp {
     V_UP_OUTPUT (mftp_automaton, set_request_timer, ioa::time);
 
     void request_timer_interrupt_effect () {
+      //std::cout << "creating request message to send" << std::endl;
       if (m_sendq.empty () && !m_file.complete ()) {
-
-	std::pair<uint32_t, uint32_t> range = m_file.get_next_range ();
-	m_sendq.push (new message (request_type (), m_fileid, range.first, range.second));
+	span_t spans[64];
+	spans[0] = m_file.get_next_range();
+	uint32_t sp_count = 1;
+	bool looking = true;
+	while (looking){
+	  span_t range = m_file.get_next_range ();
+	  if (range.start == spans[0].start || sp_count == 64){ //when we've come back to the range we started on, or we have as many ranges as we can hold
+	    looking = false;
+	  }
+	  else {
+	    spans[sp_count] = range;
+	    ++sp_count;
+	  }
+	}
+	m_sendq.push (new message (request_type (), m_fileid, sp_count, spans));
       }
 
       m_request_timer_state = SET_READY;
@@ -299,6 +305,7 @@ namespace mftp {
 
 
     void convert_to_network (message* m) {
+      std::cout << "converting to network byte order" << std::endl;
       switch (m->header.message_type) {
       case FRAGMENT:
         m->frag.fid.length = htonl (m->frag.fid.length);
@@ -308,17 +315,18 @@ namespace mftp {
       case REQUEST:
         m->req.fid.length = htonl (m->req.fid.length);
         m->req.fid.type = htonl (m->req.fid.type);
-        m->req.start = htonl (m->req.start);
-        m->req.stop = htonl (m->req.stop);
-	break;
-      default:
-	// Unkown message type.
+	for (uint32_t i = 0; i < m->req.span_count; ++i){
+	  m->req.spans[i].start = htonl (m->req.spans[i].start);
+	  m->req.spans[i].stop = htonl (m->req.spans[i].stop);
+	}
+	m->req.span_count = htonl (m-> req.span_count);
 	break;
       }
       m->header.message_type = htonl (m->header.message_type);
     }
 
     void convert_to_host (const message& mess, message& m) {
+      std::cout << "converting to host byte order" << std::endl;
       m.header.message_type = ntohl (mess.header.message_type);
       switch (m.header.message_type) {
       case FRAGMENT:
@@ -332,8 +340,14 @@ namespace mftp {
 	memcpy (m.req.fid.hash, mess.req.fid.hash, HASH_SIZE);
         m.req.fid.length = ntohl (mess.req.fid.length);
         m.req.fid.type = ntohl (mess.req.fid.type);
-        m.req.start = ntohl (mess.req.start);
-        m.req.stop = ntohl (mess.req.stop);
+        m.req.span_count = ntohl (mess.req.span_count);
+	for (uint32_t i = 0; i<m.req.span_count; ++i){
+	  m.req.spans[i].start = ntohl (mess.req.spans[i].start);
+	  m.req.spans[i].stop = ntohl (mess.req.spans[i].stop);
+	}
+	break;
+      default:
+	//Received unknown message type.
 	break;
       }
     }

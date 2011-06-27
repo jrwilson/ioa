@@ -36,7 +36,7 @@ namespace mftp {
     bool have (const uint32_t offset) const;
     void write_chunk (const uint32_t offset,
 		      const uint8_t* data);
-    std::pair<uint32_t, uint32_t> get_next_range ();
+    span_t get_next_range ();
     uint32_t get_random_index () const;
   };
 }

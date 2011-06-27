@@ -15,6 +15,8 @@ namespace mftp {
   const uint32_t REQUEST = 0;
   const uint32_t FRAGMENT = 1;
 
+  const uint32_t SPANS_SIZE = 64;
+
   struct fileid
   {
     uint8_t hash[HASH_SIZE];
@@ -132,11 +134,17 @@ namespace mftp {
     uint8_t data[FRAGMENT_SIZE];
   };
 
+  struct span_t
+  {
+    uint32_t start;
+    uint32_t stop;
+  };
+
   struct request
   {
     fileid fid;
-    uint32_t start;
-    uint32_t stop;
+    uint32_t span_count;
+    span_t spans[SPANS_SIZE];
   };
 
   struct message_header
@@ -170,13 +178,15 @@ namespace mftp {
 
     message (request_type /* */,
 	     const fileid& fileid,
-	     uint32_t start,
-	     uint32_t stop)
+	     uint32_t span_count,
+	     const span_t * spans)
     {
       header.message_type = REQUEST;
       req.fid = fileid;
-      req.start = start;
-      req.stop = stop;
+      req.span_count = span_count;
+      for (uint32_t i = 0; i<span_count; i++){
+	req.spans[i] = spans[i];
+      }
     }
 
   };
