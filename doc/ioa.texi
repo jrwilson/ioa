@@ -49,9 +49,9 @@ This manual describes version @value{VERSION} of the I/O Automata Library.
 A number of formal models have been developed that make reasoning about concurrent and distributed computation easier than reasoning about the same systems using the thread model.
 In practice, however, threads dominate due to processor architectures, programming languages, operating system support, and the widespread availability of thread libraries.
 Other approaches to concurrency focus on domain specific problems and tend to be ad hoc.
-The I/O Automata Library (@acronym{ioa}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
-The goal of @acronym{ioa} is to bring the reasoning power of the I/O automata model to the programmer.
-@acronym{Ioa} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
+The I/O Automata Library (@acronym{IOA}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
+The goal of @acronym{IOA} is to bring the reasoning power of the I/O automata model to the programmer.
+@acronym{IOA} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
 
 @menu
 * I/O Automata::	The I/O automata formal model.
@@ -67,7 +67,7 @@ The set of actions in an automaton is known as its @dfn{signature}.
 Output and internal actions are under the control of the automaton and are known as @dfn{local actions}.
 Execution proceeds by repeatedly selecting a local action, evaluating its precondition, and then applying the action body if the precondition is true.
 The model admits non-determinism by allowing the scheduler to pick actions in any order so long as it is fair, i.e., every action is selected (but not necessary executed) infinitely often.
-I/O automata can be composed to form a new automaton by matching names, types are considered part of the name, and consolidating input and output actions.
+I/O automata can be composed to form a new automaton by matching names and consolidating input and output actions.
 Input and output actions are known as @dfn{external actions}.
 Whereas output and internal actions can selectively be enabled or disabled using a precondition, input actions are executed whenever their corresponding output is executed.
 This property is known as being @dfn{input enabled}.
@@ -78,7 +78,7 @@ This property is known as being @dfn{input enabled}.
 @subsection Dynamics
 
 The I/O automata model assumes that the automata in a system are @emph{static}.
-By static I mean that all automata exist in their initial states and before the first action is executed.
+By static I mean that all automata exist in their initial states before the first action is executed.
 This also means that outputs and inputs that are composed can be consolidated and treated as one action.
 
 Real systems, on the other hand, are @emph{dynamic}.
@@ -112,12 +112,13 @@ All of the examples in this document use the middle approach.
 * Compiling and Linking::
 * Internal Actions::
 * Creating Automata::
+* External Actions::
 @end menu
 
 @node Compiling and Linking
 @section Compiling and Linking
 
-The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{ioa}.
+The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{IOA}.
 The following program contains the null automaton---an automaton with no actions.
 The source can be found in @file{tutorial/null_automaton.cpp}.
 
@@ -144,7 +145,7 @@ class null_automaton :
 @end example
 declares a new automaton type called @code{null_automaton}.
 All automata must inherit from @code{ioa::automaton}.
-Also note that all @acronym{ioa} types and functions are in the @code{ioa} namespace.
+Also note that all @acronym{IOA} types and functions are in the @code{ioa} namespace.
 The definition of the main function
 @example
 @verbatim
@@ -185,15 +186,15 @@ The automata in this tutorial are listed in a way that attempts to mimic the sty
 In general, an automaton will have the following structure:
 @itemize
 
-@item Type definitions --- Declare types that are used internally by the automaton (private) and types that are used by external actions (public).
+@item Type definitions --- Declare types that are used internally by the automaton and types that are used by external actions.
 
-@item State declarations --- Declare the state variables of the automaton (private).
+@item State declarations --- Declare the state variables of the automaton.
 
-@item Constructors/Destructors --- Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up (public).
+@item Constructors/Destructors --- Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up.
 
-@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.  Preconditions and actions bodies are declared private while the member variables can be declared public or private depending on their intended use.
+@item @code{schedule} and other member functions --- Declare/define the function for scheduling actions and other useful functions.
 
-@item Schedule and other member functions --- Declare/define one or more functions for scheduling actions and useful functions for manipulating the state (private).
+@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.
 
 @end itemize
 
@@ -206,8 +207,9 @@ private:
 @end verbatim
 @end example
 In this case, the state of the automaton consists of a single integer @code{m_count}.
+State variables should always be declared @code{private}.
 
-The count is initialized to 1 in the constructor:
+The construction initializes the count to 1 and calls the @code{schedule ()} member function:
 @example
 @verbatim
 public:
@@ -218,47 +220,11 @@ public:
   }
 @end verbatim
 @end example
-The call to @code{schedule ()} will be explained later in the tutorial.
 
-The automaton defines the precondition and effect for an unparameterized internal action named @code{increment} with
+The @code{schedule ()} member function informs the scheduler what local actions to consider:
 @example
 @verbatim
 private:
-  bool increment_precondition () const {
-    return m_count <= 10;
-  }
-
-  void increment_effect () {
-    std::cout << m_count << std::endl;
-    ++m_count;
-    schedule ();
-  }
-@end verbatim
-@end example
-Parameters are discussed in (TODO).
-Following the style in @cite{Distributed Algorithms}, internal actions are divided into a @dfn{precondition} and @dfn{effect}.
-The precondition returns a Boolean indicating if the action can be executed.
-In this example, the precondition returns true so long as the count is less than or equal to ten.
-The pattern for declaring the precondition for an unparameterized internal actions is @code{bool @var{action-name}_precondition () const;}.
-Note that preconditions have the @code{const} modifier as they should not change the state of the automaton.
-The effect changes the state of the automaton.
-In this example, the effect prints the current value of the count, increments the count, and calles @code{schedule ()}.
-The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ();}.
-
-The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler.
-The is tedious so a set of a macros is defined to simplify declaring the members.
-The code
-@example
-@verbatim
-  UP_INTERNAL (count_to_ten_automaton, increment);
-@end verbatim
-@end example
-uses the @code{UP_INTERNAL} macro to declare an action member variable @code{increment}.
-The macros rely on the @code{*_precondition} and @code{*_action} naming convention described earlier.
-
-The final part of the automaton is a function that informs the scheduler what local actions to consider.
-@example
-@verbatim
   void schedule () const {
     if (increment_precondition ()) {
       ioa::schedule (&count_to_ten_automaton::increment);
@@ -266,11 +232,50 @@ The final part of the automaton is a function that informs the scheduler what lo
   }
 @end verbatim
 @end example
-The action of @code{schedule ()} is straightforward:  it evaluates the precondition for increment and then schedules the increment action.
-It is good style to write one or more @code{schedule ()} functions and call them in the constructor and at the end of every action effect.
-A common source of errors is to either omit a local action from the @code{schedule ()} function or forget to call @code{schedule ()} in an action effect.
-As an exercise, comment out one or both of the calls to @code{schedule} and see what happens.
-It is important that none of the state variables change after the call to @code{schedule ()} so that the preconditions will be evaluated correctly.
+The @code{schedule ()} member function evaluates the precondition for the increment action and then schedules the increment action if the precondition is true.
+A common source of errors is to either omit a local action from the @code{schedule ()} function or forget to call @code{schedule ()} in a constructor.
+As an exercise, comment out the call to @code{schedule ()} in the constructor and see what happens.
+The @code{schedule ()} member function should always be declared @code{private}.
+
+The next section defines the precondition and effect for an unparameterized internal action named @code{increment}:
+@example
+@verbatim
+  bool increment_precondition () const {
+    return m_count <= 10;
+  }
+
+  void increment_effect () {
+    std::cout << m_count << std::endl;
+    ++m_count;
+  }
+@end verbatim
+@end example
+Parameters and parameterized actions are discussed in (TODO).
+Following the style in @cite{Distributed Algorithms}, internal actions are divided into a @dfn{precondition} and @dfn{effect}.
+The precondition returns a @code{bool} indicating if the action can be executed.
+In this example, the precondition returns true so long as the count is less than or equal to ten.
+The pattern for declaring the precondition for an unparameterized internal actions is @code{bool @var{action-name}_precondition () const;}.
+Note that preconditions have the @code{const} modifier as they should not change the state of the automaton.
+The effect changes the state of the automaton.
+In this example, the effect prints the current value of the count and increments the count.
+The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ();}.
+Preconditions and effects should be declared @code{private}.
+
+The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler.
+This is tedious so a set of a macros is defined to simplify declaring the members.
+The code
+@example
+@verbatim
+  UP_INTERNAL (count_to_ten_automaton, increment);
+@end verbatim
+@end example
+uses the @code{UP_INTERNAL} macro to declare an action member variable @code{increment}.
+The @code{UP_INTERNAL} macro and similar macros rely on the @code{*_precondition} and @code{*_action} naming convention described earlier.
+The macros also require that the @code{schedule ()} member function be declared before the macro and has the signature @code{void schedule () const}.
+The macro arranges for the @code{schedule () } member function to be called after each action effect.
+This frees the programmer from remembering to call schedule in every action effect.
+Internal actions, i.e., the scope where @code{UP_INTERNAL} appears, should be @code{private}.
+External actions can either be @code{private}, @code{protected}, or @code{public} depending on their intended use.
 
 To summarize, consider the uses of the automaton name and action names.
 To declare an automaton:
@@ -327,14 +332,14 @@ Of primary interest is the constructor of the @code{two_counter_automaton}.
 @end verbatim
 @end example
 An @code{ioa::automaton_manager} uses an @code{ioa::automaton} object and generator to @emph{asynchronously} create a new automaton.
-@emph{Automaton creation and destruction are asynchronous in @acronym{ioa}.}
+@emph{Automaton creation and destruction are asynchronous in @acronym{IOA}.}
 A pointer to an @code{ioa::automaton} object is specified by the first argument to the @code{ioa::automaton_manager} constructor.
 This should always be the @code{this} pointer of the automaton that is creating a new automaton.
 The second argument is a generator that returns an instance of the automaton to be created.
 In this example, each generator returns a @code{count_to_ten} automaton.
 
 If automaton A creates automaton B then A is the @dfn{parent} of B and B is the @dfn{child} of A.
-Thus, automata in @acronym{ioa} form a tree with the automaton generated by @code{ioa::run} being the root.
+Thus, automata in @acronym{IOA} form a tree with the automaton generated by @code{ioa::run} being the root.
 When an automaton is destroyed, so are all of its children.
 
 Something that might concern you is that fact that the automaton managers are dynamically allocated with @code{new} but we neither save their address nor @code{delete} them in a destructor.
@@ -353,23 +358,150 @@ To distinguish the output of the two @code{count_to_ten_automaton}s, we use the 
 @end example
 Associated with each instance of an automaton is an @dfn{automaton identifier (aid)} of type @code{aid_t} that can be retrieved with @code{ioa::get_aid ()}.
 
-@c @section External Actions: Cooperative Count-to-Ten
+@node External Actions
+@section External Actions
 
-@c Input and output actions
-@c Bind helpers
+In this tutorial, we introduce external actions, input and output actions, and the concept of binding using a simple producer-consumer problem.
+We split the @code{count_to_ten_automaton} in previous tutorials into an automaton that produces numbers and another automaton that prints numbers.
+The source is given below and can be found in @file{tutorial/producer_consumer.cpp}.
 
-@c @section Advanced Topic: Parameters
+@example
+@verbatiminclude tutorial/producer_consumer.cpp
+@end example
 
-@c Parameters
+The first part of the @code{producer_automaton} resembles the @code{count_to_ten_automaton} in previous tutorials where we have renamed the @code{increment} action to @code{produce}.
+Of interest in this tutorial is @code{produce_effect} and the declaration of the @code{produce} output action:
+@example
+@verbatim
+  int produce_effect () {
+    int retval = m_count++;
+    std::cout << "producing " << retval << std::endl;
+    return retval;
+  }
 
-@c @section Advanced Topic: Automatic Parameters
+public:
+  V_UP_OUTPUT (producer_automaton, produce, int);
+@end verbatim
+@end example
+The @code{produce_effect} increments the counter and returns the old value of the counter.
+The macro @code{V_UP_OUTPUT} declares a valued unparameterized output action named @code{produce} that produces a value of type @code{int}.
+The @code{V_UP_OUTPUT} macro relies on the same naming conventions as the @code{UP_INTERNAL} action seen in preceding tutorials.
+As an exercise, make the type given to @code{V_UP_OUTPUT} different from the type returned by @code{produce_effect}.
+Note that @code{V_UP_OUTPUT} appears in a @code{public} section.
+This is necessary because we want to allow other automata to bind to this action.
+
+The @code{consumer_automaton} is quite simple and only contains a single valued unparameterized input action:
+@example
+@verbatim
+  void consume_effect (const int& val) {
+    std::cout << "consuming " << val << std::endl;
+  }
+
+public:
+  V_UP_INPUT (consumer_automaton, consume, int);
+@end verbatim
+@end example
+Recall that I/O automata are input enabled so there is no @code{consume_precondition}.
+The macro @code{V_UP_INPUT} declares a valued unparameterized input action named @code{consume} that takes a value of type @code{int}.
+The @code{V_UP_INPUT} macro relies on the same naming conventions as the other macros.
+The effect used by @code{V_UP_INPUT} must take a single argument declared as a constant reference.
+Compare this with @code{consume_effect}.
+Again, note that @code{V_UP_INPUT} appears in a @code{public} section so we can bind to it.
+
+The @code{consumer_automaton} contains no local actions but still requires a @code{schedule ()} member function before the invocation of @code{V_UP_INPUT}.
+As an exercise, comment out the @code{schedule ()} function to become familiar with the compilation error caused by omitting it.
+
+The constructor of the @code{producer_consumer_automaton} creates a @code{producer_automaton} and a @code{consumer_automaton} and then binds the @code{produce} and @code{consume} actions of the respective automatons together:
+@example
+@verbatim
+  producer_consumer_automaton () {
+    ioa::automaton_manager<producer_automaton>* producer =
+      new ioa::automaton_manager<producer_automaton> (
+	this,
+	ioa::make_generator<producer_automaton> ()
+      );
+
+    ioa::automaton_manager<consumer_automaton>* consumer =
+      new ioa::automaton_manager<consumer_automaton> (
+        this,
+	ioa::make_generator<consumer_automaton> ()
+      );
+
+    ioa::make_binding_manager (this,
+			       producer, &producer_automaton::produce,
+			       consumer, &consumer_automaton::consume);
+  }
+@end verbatim
+@end example
+The child automata are created in the same way as in the preceding tutorials only we save the pointer to the new manager so we can pass it to the @code{make_binding_manager} function.
+This version of @code{make_binding_manager} takes a pointer to an @code{ioa::automaton} (@pxref{Creating Automata}), a pointer to an @code{automaton_handle_interface} for the output automaton, a pointer to a member for the output action, a pointer to an @code{automaton_handle_interface} for the input automaton, and a pointer to a member for the input action.
+The @code{automaton_handle_interface} is unimportant save to say that @code{automaton_manager} implements @code{automaton_handle_interface}.
+The @code{make_binding_manager} function creates a new @code{binding_manager} that binds the output and input actions once the output and input automata have been created.
+Note that like automata creation, binding is asynchronous in @acronym{IOA}.
+
+@subsection Binding Rules
+
+There are a number of rules that must be observed when binding.
+The first set of rules are checked at compile time.
+@enumerate
+@item One Output, One Input --- The first automaton/action pair must be an output and the second automaton/action pair must be an input.
+
+@item Access --- The output and input must be accessible from the scope where @code{make_binding_helper} is invoked.  For example, if automaton C is binding an output action in automaton O to an input action in automaton I, then both of the actions must be declared @code{public}.  As another example, if automaton C is binding one of its own output actions to an input in automaton I, then C can (and probably should) declare the output to be @code{private}.
+
+@item Value Status Agreement --- External actions need not produce/consume values.  External actions that don't produce/consume values are called @dfn{unvalued} while external action that do produce/consume values are called @dfn{valued}.  When binding, both the output and the input action must have the same value status.
+
+@item Type Agreement --- Valued external actions must agree on the same type.  For example, the @code{produce} action and @code{consume} action agree that the value being produced/consumed is an @code{int}.
+
+@end enumerate
+The second set of rules are checked at run time.
+@enumerate
+@item An input action can only be bound to one output action.
+@item An output action cannot be bound to two different inputs residing in the same automaton.
+@item An output action cannot be bound to an input action in the same automaton.
+@end enumerate
+These rules are necessary to adhere to the I/O automata model.
+Recall that automata are composed by matching the names of output and input actions.
+One could imagine a function that rewrites the names of all actions before composing.
+These rules say that such a function exists.
+
+@subsection Binding Dynamics
+
+When I execute @code{producer_consumer}, I get the following output:
+@example
+@verbatim
+$ ./producer_consumer 
+producing 1
+producing 2
+producing 3
+producing 4
+producing 5
+producing 6
+producing 7
+consuming 7
+producing 8
+consuming 8
+producing 9
+consuming 9
+producing 10
+consuming 10
+@end verbatim
+@end example
+Recall that automata creation and binding is asynchronous.
+In this example, the producer was allowed to @code{produce} six times before @code{produce} was bound to @code{consume}.
+The @code{produce} action is a @dfn{lossy output} or an output whose values might be lost because no input is bound to receive them.
+We address this topic in the next tutorial.
+
+@c Bind count and multiple bindings
+
+@c Expected bind count in parameter
 
 @c automatic parameters
 
-
-
-
 @c self helper
+
+@c unbind
+
+@c destroy
 
 
 @c @node Index

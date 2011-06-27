@@ -53,7 +53,7 @@ public:
 
     for (size_t i = 0; i < N; ++i) {
       T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i])));
-      make_bind_helper (this,
+      make_binding_manager (this,
 			T_helpers[i],
 			&T::parent,
 			&self,
@@ -70,14 +70,14 @@ public:
           ioa::automaton_manager<channel_automaton<search_t> >* i_to_j_channel = new ioa::automaton_manager<channel_automaton<search_t> > (this, ioa::make_generator<channel_automaton<search_t> > ());
           ioa::automaton_manager<channel_automaton<search_t> >* j_to_i_channel = new ioa::automaton_manager<channel_automaton<search_t> > (this, ioa::make_generator<channel_automaton<search_t> > ());
 
-          make_bind_helper (this,
+          make_binding_manager (this,
                             T_helpers[i],
                            &T::send,
                            j,
                            i_to_j_channel,
                            &channel_automaton<search_t>::send);
 
-          make_bind_helper (this,
+          make_binding_manager (this,
                              T_helpers[j],
                              &T::send,
                              i,
@@ -85,14 +85,14 @@ public:
                              &channel_automaton<search_t>::send);
 
 
-          make_bind_helper (this,
+          make_binding_manager (this,
                             i_to_j_channel,
                             &channel_automaton<search_t>::receive,
                             T_helpers[j],
                             &T::receive,
                             i);
 
-          make_bind_helper (this,
+          make_binding_manager (this,
                             j_to_i_channel,
                             &channel_automaton<search_t>::receive,
                             T_helpers[i],

@@ -22,7 +22,7 @@ public:
   {
     ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
 
-    ioa::make_bind_helper (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
+    ioa::make_binding_manager (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
   }
 
   udp_receiver (const std::string& group,
@@ -33,7 +33,7 @@ public:
   {
     ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_group, m_address));
 
-    ioa::make_bind_helper (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
+    ioa::make_binding_manager (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
   }
 
 private:

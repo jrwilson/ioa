@@ -26,22 +26,22 @@ namespace ioa {
 	 ++pos) {
       (*pos)->automaton_destroyed ();
     }
-    for (std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_send.begin ();
+    for (std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_send.begin ();
 	 pos != m_bind_send.end ();
 	 ++pos) {
       (*pos)->unbound ();
     }
-    for (std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.begin ();
+    for (std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.begin ();
 	 pos != m_bind_recv.end ();
 	 ++pos) {
       (*pos)->unbound ();
     }
-    for (std::set<system_bind_helper_interface*>::const_iterator pos = m_unbind_send.begin ();
+    for (std::set<system_binding_manager_interface*>::const_iterator pos = m_unbind_send.begin ();
 	 pos != m_unbind_send.end ();
 	 ++pos) {
       (*pos)->unbound ();
     }
-    for (std::set<system_bind_helper_interface*>::const_iterator pos = m_unbind_recv.begin ();
+    for (std::set<system_binding_manager_interface*>::const_iterator pos = m_unbind_recv.begin ();
 	 pos != m_unbind_recv.end ();
 	 ++pos) {
       (*pos)->unbound ();
@@ -60,7 +60,7 @@ namespace ioa {
     schedule ();
   }
   
-  void automaton::bind (system_bind_helper_interface* helper) {
+  void automaton::bind (system_binding_manager_interface* helper) {
     assert (helper != 0);
     // We should not have seen this helper before.  Otherwise, we will get a bind_key_exists error.
     assert (m_bind_send.count (helper) == 0 &&
@@ -72,15 +72,15 @@ namespace ioa {
     schedule ();
   }
   
-  void automaton::unbind (system_bind_helper_interface* helper) {
+  void automaton::unbind (system_binding_manager_interface* helper) {
     assert (helper != 0);
     
     // Error to unbind again.
     assert (m_unbind_send.count (helper) == 0 &&
 	    m_unbind_recv.count (helper) == 0);
     
-    std::set<system_bind_helper_interface*>::const_iterator send_iter = m_bind_send.find (helper);
-    std::set<system_bind_helper_interface*>::const_iterator recv_iter = m_bind_recv.find (helper);
+    std::set<system_binding_manager_interface*>::const_iterator send_iter = m_bind_send.find (helper);
+    std::set<system_binding_manager_interface*>::const_iterator recv_iter = m_bind_recv.find (helper);
     
     if (send_iter != m_bind_send.end () && recv_iter != m_bind_recv.end ()) {
       // Invariant is violated.
@@ -151,8 +151,8 @@ namespace ioa {
   }
   
   std::pair<shared_ptr<bind_executor_interface> , void*> automaton::sys_bind_effect () {
-    std::set<system_bind_helper_interface*>::iterator pos = m_bind_send.begin ();
-    system_bind_helper_interface* helper = *pos;
+    std::set<system_binding_manager_interface*>::iterator pos = m_bind_send.begin ();
+    system_binding_manager_interface* helper = *pos;
     m_bind_send.erase (pos);
     m_bind_recv.insert (helper);
     return std::make_pair (helper->get_executor (), helper);
@@ -163,8 +163,8 @@ namespace ioa {
   }
   
   void* automaton::sys_unbind_effect () {
-    std::set<system_bind_helper_interface*>::iterator pos = m_unbind_send.begin ();
-    system_bind_helper_interface* helper = *pos;
+    std::set<system_binding_manager_interface*>::iterator pos = m_unbind_send.begin ();
+    system_binding_manager_interface* helper = *pos;
     m_unbind_send.erase (pos);
     m_unbind_recv.insert (helper);
     return helper;
@@ -211,7 +211,7 @@ namespace ioa {
   
   void automaton::sys_output_automaton_dne_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
+    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
     assert (pos != m_bind_recv.end ());
     (*pos)->output_automaton_dne ();
     // The bind failed so erase.
@@ -220,7 +220,7 @@ namespace ioa {
 
   void automaton::sys_input_automaton_dne_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
+    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
     assert (pos != m_bind_recv.end ());
     (*pos)->input_automaton_dne ();
     // The bind failed so erase.
@@ -229,7 +229,7 @@ namespace ioa {
 
   void automaton::sys_binding_exists_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
+    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
     assert (pos != m_bind_recv.end ());
     (*pos)->binding_exists ();
     // The bind failed so erase.
@@ -238,7 +238,7 @@ namespace ioa {
 
   void automaton::sys_output_action_unavailable_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
+    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
     assert (pos != m_bind_recv.end ());
     (*pos)->output_action_unavailable ();
     // The bind failed so erase.
@@ -247,7 +247,7 @@ namespace ioa {
 
   void automaton::sys_input_action_unavailable_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
+    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
     assert (pos != m_bind_recv.end ());
     (*pos)->input_action_unavailable ();
     // The bind failed so erase.
@@ -256,7 +256,7 @@ namespace ioa {
 
   void automaton::sys_bound_effect (void* const & t) {
     // Find the helper (sanity check).
-    std::set<system_bind_helper_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_bind_helper_interface*> (t));
+    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
     assert (pos != m_bind_recv.end ());
     (*pos)->bound ();
     // The bind succeeded.  Leave in set.
@@ -271,7 +271,7 @@ namespace ioa {
     // Something was unbound.
     // It can be in m_bind_recv, m_unbind_send, or m_unbind_recv.
     
-    system_bind_helper_interface* helper = static_cast<system_bind_helper_interface*> (t);
+    system_binding_manager_interface* helper = static_cast<system_binding_manager_interface*> (t);
     
     if (m_bind_recv.count (helper) != 0) {
       m_bind_recv.erase (helper);

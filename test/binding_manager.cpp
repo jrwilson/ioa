@@ -12,7 +12,7 @@ class uv_up_uv_up_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -25,7 +25,7 @@ public:
   uv_up_uv_up_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_up_output, input, &automaton2::uv_up_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_up_output, input, &automaton2::uv_up_input);
     add_observable (m_helper);
   };
 };
@@ -46,7 +46,7 @@ class uv_up_uv_p_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -59,7 +59,7 @@ public:
   uv_up_uv_p_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_up_output, input, &automaton2::uv_p_input, 37);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_up_output, input, &automaton2::uv_p_input, 37);
     add_observable (m_helper);
   };
 };
@@ -80,7 +80,7 @@ class uv_up_uv_ap_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -93,7 +93,7 @@ public:
   uv_up_uv_ap_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_up_output, input, &automaton2::uv_ap_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_up_output, input, &automaton2::uv_ap_input);
     add_observable (m_helper);
   };
 };
@@ -114,7 +114,7 @@ class uv_p_uv_up_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -127,7 +127,7 @@ public:
   uv_p_uv_up_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_p_output, 37, input, &automaton2::uv_up_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_p_output, 37, input, &automaton2::uv_up_input);
     add_observable (m_helper);
   };
 };
@@ -148,7 +148,7 @@ class uv_p_uv_p_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -161,7 +161,7 @@ public:
   uv_p_uv_p_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_p_output, 37, input, &automaton2::uv_p_input, 85);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_p_output, 37, input, &automaton2::uv_p_input, 85);
     add_observable (m_helper);
   };
 };
@@ -182,7 +182,7 @@ class uv_p_uv_ap_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -195,7 +195,7 @@ public:
   uv_p_uv_ap_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_p_output, 37, input, &automaton2::uv_ap_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_p_output, 37, input, &automaton2::uv_ap_input);
     add_observable (m_helper);
   };
 };
@@ -216,7 +216,7 @@ class uv_ap_uv_up_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -229,7 +229,7 @@ public:
   uv_ap_uv_up_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_ap_output, input, &automaton2::uv_up_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_ap_output, input, &automaton2::uv_up_input);
     add_observable (m_helper);
   };
 };
@@ -250,7 +250,7 @@ class uv_ap_uv_p_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -263,7 +263,7 @@ public:
   uv_ap_uv_p_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_ap_output, input, &automaton2::uv_p_input, 38);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_ap_output, input, &automaton2::uv_p_input, 38);
     add_observable (m_helper);
   };
 };
@@ -284,7 +284,7 @@ class uv_ap_uv_ap_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -297,7 +297,7 @@ public:
   uv_ap_uv_ap_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::uv_ap_output, input, &automaton2::uv_ap_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::uv_ap_output, input, &automaton2::uv_ap_input);
     add_observable (m_helper);
   };
 };
@@ -318,7 +318,7 @@ class v_up_v_up_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -331,7 +331,7 @@ public:
   v_up_v_up_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_up_output, input, &automaton2::v_up_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_up_output, input, &automaton2::v_up_input);
     add_observable (m_helper);
   };
 };
@@ -352,7 +352,7 @@ class v_up_v_p_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -365,7 +365,7 @@ public:
   v_up_v_p_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_up_output, input, &automaton2::v_p_input, 37);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_up_output, input, &automaton2::v_p_input, 37);
     add_observable (m_helper);
   };
 };
@@ -386,7 +386,7 @@ class v_up_v_ap_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -399,7 +399,7 @@ public:
   v_up_v_ap_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_up_output, input, &automaton2::v_ap_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_up_output, input, &automaton2::v_ap_input);
     add_observable (m_helper);
   };
 };
@@ -420,7 +420,7 @@ class v_p_v_up_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -433,7 +433,7 @@ public:
   v_p_v_up_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_p_output, 37, input, &automaton2::v_up_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_p_output, 37, input, &automaton2::v_up_input);
     add_observable (m_helper);
   };
 };
@@ -454,7 +454,7 @@ class v_p_v_p_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -467,7 +467,7 @@ public:
   v_p_v_p_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_p_output, 37, input, &automaton2::v_p_input, 85);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_p_output, 37, input, &automaton2::v_p_input, 85);
     add_observable (m_helper);
   };
 };
@@ -488,7 +488,7 @@ class v_p_v_ap_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -501,7 +501,7 @@ public:
   v_p_v_ap_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_p_output, 37, input, &automaton2::v_ap_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_p_output, 37, input, &automaton2::v_ap_input);
     add_observable (m_helper);
   };
 };
@@ -522,7 +522,7 @@ class v_ap_v_up_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -535,7 +535,7 @@ public:
   v_ap_v_up_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_ap_output, input, &automaton2::v_up_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_ap_output, input, &automaton2::v_up_input);
     add_observable (m_helper);
   };
 };
@@ -556,7 +556,7 @@ class v_ap_v_p_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -569,7 +569,7 @@ public:
   v_ap_v_p_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_ap_output, input, &automaton2::v_p_input, 85);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_ap_output, input, &automaton2::v_p_input, 85);
     add_observable (m_helper);
   };
 };
@@ -590,7 +590,7 @@ class v_ap_v_ap_automaton :
   public ioa::observer
 {
 private:
-  ioa::bind_helper_interface* m_helper;
+  ioa::binding_manager_interface* m_helper;
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
@@ -603,7 +603,7 @@ public:
   v_ap_v_ap_automaton () {
     ioa::automaton_manager<automaton2>* output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
     ioa::automaton_manager<automaton2>* input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    m_helper = ioa::make_bind_helper (this, output, &automaton2::v_ap_output, input, &automaton2::v_ap_input);
+    m_helper = ioa::make_binding_manager (this, output, &automaton2::v_ap_output, input, &automaton2::v_ap_input);
     add_observable (m_helper);
   };
 };

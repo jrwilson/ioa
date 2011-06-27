@@ -118,7 +118,7 @@ private:
 
   template <class OI, class OM, class IH, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename IH::instance II;
@@ -215,7 +215,7 @@ private:
 
   template <class OH, class OM, class II, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -312,7 +312,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -425,7 +425,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -539,7 +539,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -652,7 +652,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -763,7 +763,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   struct helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
     typedef typename OH::instance OI;
@@ -898,7 +898,7 @@ private:
 
   template <class OH, class OM, class IH, class IM>
   class helper :
-    public ioa::system_bind_helper_interface,
+    public ioa::system_binding_manager_interface,
     public ioa::observer
   {
   public:

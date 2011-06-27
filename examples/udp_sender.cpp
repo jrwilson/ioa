@@ -32,8 +32,8 @@ public:
   {
     ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_generator<ioa::udp_sender_automaton> ());
 
-    ioa::make_bind_helper (this, &m_self, &broadcast_sender::send, sender, &ioa::udp_sender_automaton::send);
-    ioa::make_bind_helper (this, sender, &ioa::udp_sender_automaton::send_complete, &m_self, &broadcast_sender::send_complete);
+    ioa::make_binding_manager (this, &m_self, &broadcast_sender::send, sender, &ioa::udp_sender_automaton::send);
+    ioa::make_binding_manager (this, sender, &ioa::udp_sender_automaton::send_complete, &m_self, &broadcast_sender::send_complete);
 
     schedule ();
   }

@@ -61,12 +61,12 @@ namespace mftp {
       m_announcement_timer_state (SET_READY)
     {
       ioa::automaton_manager<ioa::alarm_automaton>* fragment_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
-      ioa::make_bind_helper (this,
+      ioa::make_binding_manager (this,
 			     &m_self,
 			     &mftp_automaton::set_fragment_timer,
 			     fragment_clock,
 			     &ioa::alarm_automaton::set);
-      ioa::make_bind_helper (this,
+      ioa::make_binding_manager (this,
 			     fragment_clock,
 			     &ioa::alarm_automaton::alarm,
 			     &m_self,
@@ -74,24 +74,24 @@ namespace mftp {
 
     
       ioa::automaton_manager<ioa::alarm_automaton>* request_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
-      ioa::make_bind_helper (this,
+      ioa::make_binding_manager (this,
 			     &m_self,
 			     &mftp_automaton::set_request_timer,
 			     request_clock,
 			     &ioa::alarm_automaton::set);
-      ioa::make_bind_helper (this,
+      ioa::make_binding_manager (this,
 			     request_clock,
 			     &ioa::alarm_automaton::alarm,
 			     &m_self,
 			     &mftp_automaton::request_timer_interrupt);
     
       ioa::automaton_manager<ioa::alarm_automaton>* announcement_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
-      ioa::make_bind_helper (this,
+      ioa::make_binding_manager (this,
 			     &m_self,
 			     &mftp_automaton::set_announcement_timer,
 			     announcement_clock,
 			     &ioa::alarm_automaton::set);
-      ioa::make_bind_helper (this,
+      ioa::make_binding_manager (this,
 			     announcement_clock,
 			     &ioa::alarm_automaton::alarm,
 			     &m_self,

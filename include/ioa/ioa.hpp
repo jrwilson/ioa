@@ -9,6 +9,6 @@
 #include <ioa/generator.hpp>
 #include <ioa/self_manager.hpp>
 #include <ioa/automaton_manager.hpp>
-#include <ioa/bind_helper.hpp>
+#include <ioa/binding_manager.hpp>
 
 #endif
