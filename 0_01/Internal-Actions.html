@@ -66,6 +66,12 @@ The source is given below and can be found in <samp><span class="file">tutorial/
        }
        
      private:
+       void schedule () const {
+         if (increment_precondition ()) {
+           ioa::schedule (&amp;count_to_ten_automaton::increment);
+         }
+       }
+     
        bool increment_precondition () const {
          return m_count &lt;= 10;
        }
@@ -73,16 +79,9 @@ The source is given below and can be found in <samp><span class="file">tutorial/
        void increment_effect () {
          std::cout &lt;&lt; m_count &lt;&lt; std::endl;
          ++m_count;
-         schedule ();
        }
      
        UP_INTERNAL (count_to_ten_automaton, increment);
-     
-       void schedule () const {
-         if (increment_precondition ()) {
-           ioa::schedule (&amp;count_to_ten_automaton::increment);
-         }
-       }
      };
      
      int main () {
@@ -95,15 +94,15 @@ The source is given below and can be found in <samp><span class="file">tutorial/
    <p>The automata in this tutorial are listed in a way that attempts to mimic the style in <cite>Distributed Algorithms</cite>. 
 In general, an automaton will have the following structure:
      <ul>
-<li>Type definitions &mdash; Declare types that are used internally by the automaton (private) and types that are used by external actions (public).
+<li>Type definitions &mdash; Declare types that are used internally by the automaton and types that are used by external actions.
 
-     <li>State declarations &mdash; Declare the state variables of the automaton (private).
+     <li>State declarations &mdash; Declare the state variables of the automaton.
 
-     <li>Constructors/Destructors &mdash; Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up (public).
+     <li>Constructors/Destructors &mdash; Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up.
 
-     <li>Actions &mdash; Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.  Preconditions and actions bodies are declared private while the member variables can be declared public or private depending on their intended use.
+     <li><code>schedule</code> and other member functions &mdash; Declare/define the function for scheduling actions and other useful functions.
 
-     <li>Schedule and other member functions &mdash; Declare/define one or more functions for scheduling actions and useful functions for manipulating the state (private).
+     <li>Actions &mdash; Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.
 
    </ul>
 
@@ -113,9 +112,10 @@ The state of the automaton is declared with
        int m_count;
 </pre>
 </pre>
-   <p>In this case, the state of the automaton consists of a single integer <code>m_count</code>.
+   <p>In this case, the state of the automaton consists of a single integer <code>m_count</code>. 
+State variables should always be declared <code>private</code>.
 
-   <p>The count is initialized to 1 in the constructor:
+   <p>The construction initializes the count to 1 and calls the <code>schedule ()</code> member function:
 <pre class="example"><pre class="verbatim">     public:
        count_to_ten_automaton () :
          m_count (1)
@@ -124,53 +124,55 @@ The state of the automaton is declared with
        }
 </pre>
 </pre>
-   <p>The call to <code>schedule ()</code> will be explained later in the tutorial.
-
-   <p>The automaton defines the precondition and effect for an unparameterized internal action named <code>increment</code> with
+   <p>The <code>schedule ()</code> member function informs the scheduler what local actions to consider:
 <pre class="example"><pre class="verbatim">     private:
-       bool increment_precondition () const {
-         return m_count &lt;= 10;
-       }
-     
-       void increment_effect () {
-         std::cout &lt;&lt; m_count &lt;&lt; std::endl;
-         ++m_count;
-         schedule ();
-       }
-</pre>
-</pre>
-   <p>Parameters are discussed in (TODO). 
-Following the style in <cite>Distributed Algorithms</cite>, internal actions are divided into a <dfn>precondition</dfn> and <dfn>effect</dfn>. 
-The precondition returns a Boolean indicating if the action can be executed. 
-In this example, the precondition returns true so long as the count is less than or equal to ten. 
-The pattern for declaring the precondition for an unparameterized internal actions is <code>bool </code><var>action-name</var><code>_precondition () const;</code>. 
-Note that preconditions have the <code>const</code> modifier as they should not change the state of the automaton. 
-The effect changes the state of the automaton. 
-In this example, the effect prints the current value of the count, increments the count, and calles <code>schedule ()</code>. 
-The pattern for declaring the effect of an unparameterized internal action is <code>void </code><var>action-name</var><code>_effect ();</code>.
-
-   <p>The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler. 
-The is tedious so a set of a macros is defined to simplify declaring the members. 
-The code
-<pre class="example"><pre class="verbatim">       UP_INTERNAL (count_to_ten_automaton, increment);
-</pre>
-</pre>
-   <p>uses the <code>UP_INTERNAL</code> macro to declare an action member variable <code>increment</code>. 
-The macros rely on the <code>*_precondition</code> and <code>*_action</code> naming convention described earlier.
-
-   <p>The final part of the automaton is a function that informs the scheduler what local actions to consider.
-<pre class="example"><pre class="verbatim">       void schedule () const {
+       void schedule () const {
          if (increment_precondition ()) {
            ioa::schedule (&amp;count_to_ten_automaton::increment);
          }
        }
 </pre>
 </pre>
-   <p>The action of <code>schedule ()</code> is straightforward:  it evaluates the precondition for increment and then schedules the increment action. 
-It is good style to write one or more <code>schedule ()</code> functions and call them in the constructor and at the end of every action effect. 
-A common source of errors is to either omit a local action from the <code>schedule ()</code> function or forget to call <code>schedule ()</code> in an action effect. 
-As an exercise, comment out one or both of the calls to <code>schedule</code> and see what happens. 
-It is important that none of the state variables change after the call to <code>schedule ()</code> so that the preconditions will be evaluated correctly.
+   <p>The <code>schedule ()</code> member function evaluates the precondition for the increment action and then schedules the increment action if the precondition is true. 
+A common source of errors is to either omit a local action from the <code>schedule ()</code> function or forget to call <code>schedule ()</code> in a constructor. 
+As an exercise, comment out the call to <code>schedule ()</code> in the constructor and see what happens. 
+The <code>schedule ()</code> member function should always be declared <code>private</code>.
+
+   <p>The next section defines the precondition and effect for an unparameterized internal action named <code>increment</code>:
+<pre class="example"><pre class="verbatim">       bool increment_precondition () const {
+         return m_count &lt;= 10;
+       }
+     
+       void increment_effect () {
+         std::cout &lt;&lt; m_count &lt;&lt; std::endl;
+         ++m_count;
+       }
+</pre>
+</pre>
+   <p>Parameters and parameterized actions are discussed in (TODO). 
+Following the style in <cite>Distributed Algorithms</cite>, internal actions are divided into a <dfn>precondition</dfn> and <dfn>effect</dfn>. 
+The precondition returns a <code>bool</code> indicating if the action can be executed. 
+In this example, the precondition returns true so long as the count is less than or equal to ten. 
+The pattern for declaring the precondition for an unparameterized internal actions is <code>bool </code><var>action-name</var><code>_precondition () const;</code>. 
+Note that preconditions have the <code>const</code> modifier as they should not change the state of the automaton. 
+The effect changes the state of the automaton. 
+In this example, the effect prints the current value of the count and increments the count. 
+The pattern for declaring the effect of an unparameterized internal action is <code>void </code><var>action-name</var><code>_effect ();</code>. 
+Preconditions and effects should be declared <code>private</code>.
+
+   <p>The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler. 
+This is tedious so a set of a macros is defined to simplify declaring the members. 
+The code
+<pre class="example"><pre class="verbatim">       UP_INTERNAL (count_to_ten_automaton, increment);
+</pre>
+</pre>
+   <p>uses the <code>UP_INTERNAL</code> macro to declare an action member variable <code>increment</code>. 
+The <code>UP_INTERNAL</code> macro and similar macros rely on the <code>*_precondition</code> and <code>*_action</code> naming convention described earlier. 
+The macros also require that the <code>schedule ()</code> member function be declared before the macro and has the signature <code>void schedule () const</code>. 
+The macro arranges for the <code>schedule () </code> member function to be called after each action effect. 
+This frees the programmer from remembering to call schedule in every action effect. 
+Internal actions, i.e., the scope where <code>UP_INTERNAL</code> appears, should be <code>private</code>. 
+External actions can either be <code>private</code>, <code>protected</code>, or <code>public</code> depending on their intended use.
 
    <p>To summarize, consider the uses of the automaton name and action names. 
 To declare an automaton:

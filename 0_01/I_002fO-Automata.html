@@ -48,7 +48,7 @@ The set of actions in an automaton is known as its <dfn>signature</dfn>.
 Output and internal actions are under the control of the automaton and are known as <dfn>local actions</dfn>. 
 Execution proceeds by repeatedly selecting a local action, evaluating its precondition, and then applying the action body if the precondition is true. 
 The model admits non-determinism by allowing the scheduler to pick actions in any order so long as it is fair, i.e., every action is selected (but not necessary executed) infinitely often. 
-I/O automata can be composed to form a new automaton by matching names, types are considered part of the name, and consolidating input and output actions. 
+I/O automata can be composed to form a new automaton by matching names and consolidating input and output actions. 
 Input and output actions are known as <dfn>external actions</dfn>. 
 Whereas output and internal actions can selectively be enabled or disabled using a precondition, input actions are executed whenever their corresponding output is executed. 
 This property is known as being <dfn>input enabled</dfn>.

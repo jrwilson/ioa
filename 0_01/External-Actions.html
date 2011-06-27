@@ -1,0 +1,397 @@
+<html lang="en">
+<head>
+<title>External Actions - The I/O Automata Library</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The I/O Automata Library">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tutorials.html#Tutorials" title="Tutorials">
+<link rel="prev" href="Creating-Automata.html#Creating-Automata" title="Creating Automata">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2011 Justin R. Wilson.
+
+     This work is licensed under the Creative Commons
+     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
+     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
+     send a letter to Creative Commons, 444 Castro Street, Suite 900,
+     Mountain View, California, 94041, USA.
+   -->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="External-Actions"></a>
+<p>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Creating-Automata.html#Creating-Automata">Creating Automata</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tutorials.html#Tutorials">Tutorials</a>
+<hr>
+</div>
+
+<h3 class="section">2.4 External Actions</h3>
+
+<p>In this tutorial, we introduce external actions, input and output actions, and the concept of binding using a simple producer-consumer problem. 
+We split the <code>count_to_ten_automaton</code> in previous tutorials into an automaton that produces numbers and another automaton that prints numbers. 
+The source is given below and can be found in <samp><span class="file">tutorial/producer_consumer.cpp</span></samp>.
+
+<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+     #include &lt;ioa/global_fifo_scheduler.hpp>
+     
+     #include &lt;iostream>
+     
+     class producer_automaton :
+       public ioa::automaton
+     {
+     private:
+       int m_count;
+     
+     public:
+       producer_automaton () :
+         m_count (1)
+       {
+         schedule ();
+       }
+       
+     private:
+       void schedule () const {
+         if (produce_precondition ()) {
+           ioa::schedule (&amp;producer_automaton::produce);
+         }
+       }
+     
+       bool produce_precondition () const {
+         return m_count &lt;= 10;
+       }
+     
+       int produce_effect () {
+         int retval = m_count++;
+         std::cout &lt;&lt; "producing " &lt;&lt; retval &lt;&lt; std::endl;
+         return retval;
+       }
+     
+     public:
+       V_UP_OUTPUT (producer_automaton, produce, int);
+     };
+     
+     class consumer_automaton :
+       public ioa::automaton
+     {
+     private:
+       void schedule () const { }
+     
+       void consume_effect (const int&amp; val) {
+         std::cout &lt;&lt; "consuming " &lt;&lt; val &lt;&lt; std::endl;
+       }
+     
+     public:
+       V_UP_INPUT (consumer_automaton, consume, int);
+     };
+     
+     class producer_consumer_automaton :
+       public ioa::automaton
+     {
+     public:
+       producer_consumer_automaton () {
+         ioa::automaton_manager&lt;producer_automaton>* producer =
+           new ioa::automaton_manager&lt;producer_automaton> (
+     	this,
+     	ioa::make_generator&lt;producer_automaton> ()
+           );
+     
+         ioa::automaton_manager&lt;consumer_automaton>* consumer =
+           new ioa::automaton_manager&lt;consumer_automaton> (
+             this,
+     	ioa::make_generator&lt;consumer_automaton> ()
+           );
+     
+         ioa::make_binding_manager (this,
+     			       producer, &amp;producer_automaton::produce,
+     			       consumer, &amp;consumer_automaton::consume);
+       }
+     
+     };
+     
+     int main () {
+       ioa::global_fifo_scheduler sched;
+       ioa::run (sched, ioa::make_generator&lt;producer_consumer_automaton> ());
+       return 0; 
+     }
+     
+</pre></pre>
+   <p>The first part of the <code>producer_automaton</code> resembles the <code>count_to_ten_automaton</code> in previous tutorials where we have renamed the <code>increment</code> action to <code>produce</code>. 
+Of interest in this tutorial is <code>produce_effect</code> and the declaration of the <code>produce</code> output action:
+<pre class="example"><pre class="verbatim">       int produce_effect () {
+         int retval = m_count++;
+         std::cout &lt;&lt; "producing " &lt;&lt; retval &lt;&lt; std::endl;
+         return retval;
+       }
+     
+     public:
+       V_UP_OUTPUT (producer_automaton, produce, int);
+</pre>
+</pre>
+   <p>The <code>produce_effect</code> increments the counter and returns the old value of the counter. 
+The macro <code>V_UP_OUTPUT</code> declares a valued unparameterized output action named <code>produce</code> that produces a value of type <code>int</code>. 
+The <code>V_UP_OUTPUT</code> macro relies on the same naming conventions as the <code>UP_INTERNAL</code> action seen in preceding tutorials. 
+As an exercise, make the type given to <code>V_UP_OUTPUT</code> different from the type returned by <code>produce_effect</code>. 
+Note that <code>V_UP_OUTPUT</code> appears in a <code>public</code> section. 
+This is necessary because we want to allow other automata to bind to this action.
+
+   <p>The <code>consumer_automaton</code> is quite simple and only contains a single valued unparameterized input action:
+<pre class="example"><pre class="verbatim">       void consume_effect (const int&amp; val) {
+         std::cout &lt;&lt; "consuming " &lt;&lt; val &lt;&lt; std::endl;
+       }
+     
+     public:
+       V_UP_INPUT (consumer_automaton, consume, int);
+</pre>
+</pre>
+   <p>Recall that I/O automata are input enabled so there is no <code>consume_precondition</code>. 
+The macro <code>V_UP_INPUT</code> declares a valued unparameterized input action named <code>consume</code> that takes a value of type <code>int</code>. 
+The <code>V_UP_INPUT</code> macro relies on the same naming conventions as the other macros. 
+The effect used by <code>V_UP_INPUT</code> must take a single argument declared as a constant reference. 
+Compare this with <code>consume_effect</code>. 
+Again, note that <code>V_UP_INPUT</code> appears in a <code>public</code> section so we can bind to it.
+
+   <p>The <code>consumer_automaton</code> contains no local actions but still requires a <code>schedule ()</code> member function before the invocation of <code>V_UP_INPUT</code>. 
+As an exercise, comment out the <code>schedule ()</code> function to become familiar with the compilation error caused by omitting it.
+
+   <p>The constructor of the <code>producer_consumer_automaton</code> creates a <code>producer_automaton</code> and a <code>consumer_automaton</code> and then binds the <code>produce</code> and <code>consume</code> actions of the respective automatons together:
+<pre class="example"><pre class="verbatim">       producer_consumer_automaton () {
+         ioa::automaton_manager&lt;producer_automaton>* producer =
+           new ioa::automaton_manager&lt;producer_automaton> (
+     	this,
+     	ioa::make_generator&lt;producer_automaton> ()
+           );
+     
+         ioa::automaton_manager&lt;consumer_automaton>* consumer =
+           new ioa::automaton_manager&lt;consumer_automaton> (
+             this,
+     	ioa::make_generator&lt;consumer_automaton> ()
+           );
+     
+         ioa::make_binding_manager (this,
+     			       producer, &amp;producer_automaton::produce,
+     			       consumer, &amp;consumer_automaton::consume);
+       }
+</pre>
+</pre>
+   <p>The child automata are created in the same way as in the preceding tutorials only we save the pointer to the new manager so we can pass it to the <code>make_binding_manager</code> function. 
+This version of <code>make_binding_manager</code> takes a pointer to an <code>ioa::automaton</code> (see <a href="Creating-Automata.html#Creating-Automata">Creating Automata</a>), a pointer to an <code>automaton_handle_interface</code> for the output automaton, a pointer to a member for the output action, a pointer to an <code>automaton_handle_interface</code> for the input automaton, and a pointer to a member for the input action. 
+The <code>automaton_handle_interface</code> is unimportant save to say that <code>automaton_manager</code> implements <code>automaton_handle_interface</code>. 
+The <code>make_binding_manager</code> function creates a new <code>binding_manager</code> that binds the output and input actions once the output and input automata have been created. 
+Note that like automata creation, binding is asynchronous in <acronym>IOA</acronym>.
+
+<h4 class="subsection">2.4.1 Binding Rules</h4>
+
+<p>There are a number of rules that must be observed when binding. 
+The first set of rules are checked at compile time.
+     <ol type=1 start=1>
+<li>One Output, One Input &mdash; The first automaton/action pair must be an output and the second automaton/action pair must be an input.
+
+     <li>Access &mdash; The output and input must be accessible from the scope where <code>make_binding_helper</code> is invoked.  For example, if automaton C is binding an output action in automaton O to an input action in automaton I, then both of the actions must be declared <code>public</code>.  As another example, if automaton C is binding one of its own output actions to an input in automaton I, then C can (and probably should) declare the output to be <code>private</code>.
+
+     <li>Value Status Agreement &mdash; External actions need not produce/consume values.  External actions that don't produce/consume values are called <dfn>unvalued</dfn> while external action that do produce/consume values are called <dfn>valued</dfn>.  When binding, both the output and the input action must have the same value status.
+
+     <li>Type Agreement &mdash; Valued external actions must agree on the same type.  For example, the <code>produce</code> action and <code>consume</code> action agree that the value being produced/consumed is an <code>int</code>.
+
+        </ol>
+The second set of rules are checked at run time.
+     <ol type=1 start=1>
+<li>An input action can only be bound to one output action. 
+<li>An output action cannot be bound to two different inputs residing in the same automaton. 
+<li>An output action cannot be bound to an input action in the same automaton.
+        </ol>
+These rules are necessary to adhere to the I/O automata model. 
+Recall that automata are composed by matching the names of output and input actions. 
+One could imagine a function that rewrites the names of all actions before composing. 
+These rules say that such a function exists.
+
+<h4 class="subsection">2.4.2 Binding Dynamics</h4>
+
+<p>When I execute <code>producer_consumer</code>, I get the following output:
+<pre class="example"><pre class="verbatim">     $ ./producer_consumer 
+     producing 1
+     producing 2
+     producing 3
+     producing 4
+     producing 5
+     producing 6
+     producing 7
+     consuming 7
+     producing 8
+     consuming 8
+     producing 9
+     consuming 9
+     producing 10
+     consuming 10
+</pre>
+</pre>
+   <p>Recall that automata creation and binding is asynchronous. 
+In this example, the producer was allowed to <code>produce</code> six times before <code>produce</code> was bound to <code>consume</code>. 
+The <code>produce</code> action is a <dfn>lossy output</dfn> or an output whose values might be lost because no input is bound to receive them. 
+We address this topic in the next tutorial.
+
+<!-- Bind count and multiple bindings -->
+<!-- Expected bind count in parameter -->
+<!-- automatic parameters -->
+<!-- self helper -->
+<!-- unbind -->
+<!-- destroy -->
+<!-- @node Index -->
+<!-- @unnumbered Index -->
+<!-- @printindex cp -->
+<!-- @chapter Using the Formalism -->
+<!-- @chapter Gotchas -->
+<!-- @chapter Tips and Tricks -->
+<!-- @section The Problem with Threads -->
+<!-- The thread model dominates modern computing. -->
+<!-- A @dfn{thread} consists of a sequence of instructions, state, and an instruction pointer indicating the location of the current instruction. -->
+<!-- Conventional processors are a direct implementation of the thread model, mainstream compilers are designed to produce code for these processors, and modern operating systems are designed to execute programs on these processors. -->
+<!-- Naturally, the application developed for these systems are also based on the thread model. -->
+<!-- The dominance of the thread model makes it a practical choice for concurrency. -->
+<!-- A physical processor can be multiplexed to execute multiple threads by repeatedly switching from one thread to another. -->
+<!-- Multiple processors allow concurrent threads to execute simultaneously. -->
+<!-- Concurrent threads communicate by sharing state and using synchronization primitives to control access to the state. -->
+<!-- A section of code that updates shared state is called a @dfn{critical section}. -->
+<!-- There are two main issues with using threads as a basis for concurrency. -->
+<!-- The first is that reasoning about the correctness of a threaded program is notoriously difficult because one must consider all possible interleavings of critical sections. -->
+<!-- System developers know that developing and debugging shared-state, lock-based programs is difficult. -->
+<!-- Threads are also not composable. -->
+<!-- One cannot combine the code for two threads into a single thread and reason about the behavior of the composition as the interactions of the two original threads. -->
+<!-- The second issue is a diversity of threading techniques, resulting in systems that cannot easily be integrated. -->
+<!-- Consider an application based on a reactive event loop that wishes to use a library that performs blocking I/O. -->
+<!-- If the goal is to be responsive, the programmer must wrap all calls to the library as events and pass them to another thread to perform the blocking I/O. -->
+<!-- The overhead of integration is often not negligible and tends to be a source of concurrency bugs. -->
+<!-- @c In addition to the problems just mentioned, the clock frequencies of processors have reached a ceiling and processor manufacturers are looking to multi-core to deliver increased performance. -->
+<!-- @c Gains in performance will only be realized through better data structures and algorithms, optimization, hardware acceleration, or concurrent computation. -->
+<!-- @section The Search for Better Models -->
+<!-- To ease the difficulties of developing systems with threads, practitioners and researchers have explored a number of options including new programming languages, language extensions, and libraries/frameworks/middleware/design patterns. -->
+<!-- New programming languages and their run-time systems tend to not be adopted unless they resemble the language used to implement the operating system. -->
+<!-- Consequently, C, C++, Java, and the like will dominate system programming languages for the foreseeable future. -->
+<!-- Language extensions by their very definition are non-standard and therefore cannot be used to develop portable software. -->
+<!-- Furthermore, concurrency is rather large and difficult piece to bolt on to an existing programming language. -->
+<!-- Libraries, frameworks, middleware, and design patterns have been successful because they can take advantage of existing compilers and operating systems. -->
+<!-- However, they tend to focus on domain-specific problems and lack generality in that sense. -->
+<!-- I agree with Chris Gill's argument that the reason we have not found a better solution for concurrency is because we've been looking the wrong places. -->
+<!-- Specifically, we've only considered domain-specific solutions that are all variations of the thread model. -->
+<!-- I argue that a better place to look is the formal methods community. -->
+<!-- The formal methods community has proposed a number of different models for concurrency, e.g., Petri nets, UNITY, I/O automata, all for the purpose of making reasoning about concurrency easier. -->
+<!-- It stands to reason that a model that makes formal reasoning about concurrency easier will also make informal reasoning about concurrency easier. -->
+<!-- What is lacking are implementations of these models that permit an honest evaluation. -->
+<!-- Ideally, one would build a processor, programming language, operating system, and applications all based on Petri nets to evaluate the usefulness of Petri nets as a model of concurrency. -->
+<!-- Cost and effort prohibit such a bottom-up approach. -->
+<!-- Conversely, starting at the top and working down is a much better approach as many models can be tried with a smaller investment. -->
+<!-- A model that succeeds can gradually sink from the application layer to the operating system layer. -->
+<!-- Further subsuming is only necessary if a new programming language is need to make programming in the new model more efficient (for the machine or the programmer) or a new processor architecture based on the model provides significant advantages over existing processor architectures. -->
+<!-- @section Scope -->
+<!-- In pursuit of production grade implementations of different models of concurrency, @acronym{UEIOA} is an application level implementation of the I/O automata model. -->
+<!-- @chapter Tutorial -->
+<!-- @chapter Cookbook -->
+<!-- @chapter Reference -->
+<!-- @chapter Examples -->
+<!-- @chapter FAQ -->
+<!-- * Action Wrappers -->
+<!-- Sensing when an action changes binding status is useful. -->
+<!-- Consider a pair of automata, A and B, that are bound. -->
+<!-- If either one of them dies, the other should die. -->
+<!-- The automata can detect the death of the other by detecting when their respective actions are unbound. -->
+<!-- The Observer Pattern to the rescue again. -->
+<!-- We can make all input and output wrappers be observable so the automaton can know when something changes status. -->
+<!-- The thread model is at the heart of modern computing as indicated by modern processors, programming languages, and operating systems. -->
+<!-- A thread consists of 1) a sequence of instructions, 2) an instruction pointer indicating the current instruction, and 3) state that is manipulated by the instructions. -->
+<!-- The current instruction and thread state including the instruction pointer determines the subsequent instruction pointer with the default being to advance to the next instruction. -->
+<!-- All major processors are a direct realization of the thread model. -->
+<!-- All major programming languages are based on the structured sequential programming paradigm which is defined using the thread abstraction. -->
+<!-- All major operating systems are written using sequential languages and multiplex processors among different threads by periodically interrupting the current thread,  saving its instruction pointer and other processor state, and then loading and starting another thread. -->
+<!-- Most modern applications are thread-based due to the strong agreement between the processor, programming language, and operating system. -->
+<!-- # File System -->
+<!-- The file system is a critical part of traditional operating systems. -->
+<!-- If we use communication sequential processes, then we can model the virtual file system (or kernel) as a process that rendezvous with user processes at open, read, write, etc. -->
+<!-- In an I/O Automata-based operating system, the file system is just another coordination mechanism. -->
+<!-- From the bottom up, we can model physical disks as (physical) automata. -->
+<!-- On top of the disks are file system drivers, e.g., ext, FAT, xfs, that are also automata. -->
+<!-- On top of the disk drivers is the virtual file system automaton. -->
+<!-- The virtual file system automaton creates file and directory automata with which users can interact. -->
+<!-- Using I/O Automata to build a virtual file system has the potential to simplify certain features such as change notification and database triggers. -->
+<!-- Inputs -->
+<!-- read -->
+<!-- write -->
+<!-- Ouputs -->
+<!-- read_complete -->
+<!-- write_complete -->
+<!-- (We are asynchronous.  Consequently, we could take advantage of ASIO if it is available.  The complete calls allow us to have good back pressure (or flow control).) -->
+<!-- Closing can be accomplished with an input or upon the first action unbind. -->
+<!-- * Memory allocation -->
+<!-- The scheduler knows what automaton is running at any given time. -->
+<!-- Thus, we can associated allocated memory with an automaton and free it when the automaton is destroyed. -->
+<!-- * Helpers -->
+<!-- System calls cannot be made while in the constructor of an automaton because the "this" pointer is not known to the scheduler and can't be used for certian sanity checks. -->
+<!-- So, the helpers have methods, create and bind respectively, that that get the helpers started. -->
+<!-- A starting point is to move all of the parameters required at construction to the appropriate start-up method. -->
+<!-- We desire (and have) the ability to create helpers dynamically, either directly (calling "new helper") or indirectly (calling "new object" where object contains one or more helpers). -->
+<!-- This gives us the power to create dynamic constellations of automata. -->
+<!-- However, they must be stopped before they are destroyed. -->
+<!-- To illustrate, consider the following sequence -->
+<!-- new automaton_helper -->
+<!-- create -> -->
+<!-- created <-              automaton -->
+<!-- |                        | -->
+<!-- delete automaton_helper       | -->
+<!-- | -->
+<!-- delete automaton -->
+<!-- <-destroyed  [The system will call a non-existent callback.] -->
+<!-- Instead of calling delete, the sequence should contain a destroy/unbind call. -->
+<!-- The handler in the helper can then call delete to clean up. -->
+<!-- The new sequence looks like. -->
+<!-- new automaton_helper -->
+<!-- create -> -->
+<!-- created <-              automaton -->
+<!-- |                        | -->
+<!-- automaton_helper->destroy ()  | -->
+<!-- |                        | -->
+<!-- |                 delete automaton -->
+<!-- <-destroyed  [The helper will call "delete this" to clean the helper.] -->
+<!-- If the helper always calls delete, then we cannot have statically allocated helpers. -->
+<!-- This seems acceptable to me at this time. -->
+<!-- If we only allow dynamically allocated helpers, we can move all of the create/bind parameters back to the constructor and stipulate that the helpers are dynamically allocated at or after the init methods of the automaton. -->
+<!-- The helpers then have a very simple interface: a constructor and a destroy/unbind method. -->
+<!-- Suppose that an automaton has allocated some helpers is in its destructor. -->
+<!-- Also, suppose that the memory accounting framework does not exists (because it doesn't). -->
+<!-- The automaton designer, wishing to not introduce memory leaks, wishes to delete the helpers. -->
+<!-- However, the helper might have already been destroyed due to a callback resulting in a double-free. -->
+<!-- If we could guarantee that the helpers receive the appropriate destroyed/unbound signals before the destructor for the automaton, then the destructor doesn't need to delete the helpers. -->
+<!-- The system can (and does) enforce this. -->
+<!-- Otherwise, helpers become too complex and their utility is greatly diminished. -->
+<!-- We can group helpers into other objects to make the creation and maintenance of constellations easier. -->
+<!-- Initially, this looks difficult as it appears that we have the same problem as before, i.e., an automaton has no way of knowing when a grouping object is safe to delete. -->
+<!-- The Observer Pattern to the rescue. -->
+<!-- The helpers are observable, thus, the grouping object can observe them and know when they are all destroyed. -->
+<!-- If the group object itself is observable, then the automaton can know when the grouping object is defunct. -->
+<!-- The pattern can be repeated ad infinitum and resembles a tree structure with the automaton at the root, group objects at the branches, and helpers at the roots. -->
+<!-- In the tree, parents observe their children. -->
+<!-- * Round-robin scheduler -->
+<!-- I would like to make a round-robin scheduler. -->
+<!-- Other scheduler's are also possible. -->
+<!-- To write: -->
+<!--  Explain dispatching_automaton. -->
+<!--  UP_INTERNAL macros and underlying wrappers -->
+<!--  Why can't you do stuff in constructors? -->
+<!--  init () -->
+<!--  helpers instead of the Big 4 -->
+<!--  scheduling actions -->
+<!--  creation caveats = type safety -->
+<!--  Why is "this" everywhere? -->
+</body></html>
+
