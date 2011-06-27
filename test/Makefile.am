@@ -8,7 +8,7 @@ action_executor \
 model \
 global_fifo_scheduler \
 simple_scheduler \
-bind_helper
+binding_manager
 
 check_PROGRAMS = $(TESTS)
 
@@ -26,6 +26,6 @@ simple_scheduler_SOURCES = minunit.h automaton2.hpp simple_scheduler.cpp schedul
 # TODO:  Write test for automaton_helper.
 
 # TODO:  Beef up this test with execution and unbinding.
-bind_helper_SOURCES = minunit.h automaton2.hpp bind_helper.cpp test_main.cpp
+binding_manager_SOURCES = minunit.h automaton2.hpp binding_manager.cpp test_main.cpp
 
 # TODO:  Incorporate configuration.cpp

@@ -63,28 +63,28 @@ public:
 	  ioa::automaton_manager<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
 	  ioa::automaton_manager<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
 	  //Helper for send i,j:
-	  make_bind_helper(this,
+	  make_binding_manager(this,
 			   T_helpers[i],
 			   &T::send,
 			   j,
 			   i_to_j_channel,
 			   &channel_automaton<M>::send);
 	  //Helper for send j,i:
-	  make_bind_helper(this,
+	  make_binding_manager(this,
 			   T_helpers[j],
 			   &T::send,
 			   i,
 			   j_to_i_channel,
 			   &channel_automaton<M>::send);
 	  //Helper for receive i,j:
-	  make_bind_helper(this,
+	  make_binding_manager(this,
 			   i_to_j_channel,
 			   &channel_automaton<M>::receive,
 			   T_helpers[j],
 			   &T::receive,
 			   i);
 	  //Helper for receive j,i:
-	  make_bind_helper(this,
+	  make_binding_manager(this,
 			   j_to_i_channel,
 			   &channel_automaton<M>::receive,
 			   T_helpers[i],

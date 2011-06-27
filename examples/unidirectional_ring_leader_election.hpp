@@ -32,9 +32,9 @@ public:
     }
     
     for (size_t i = 0; i < N; ++i) {
-      make_bind_helper (this, T_helpers[i], &T::send, channel_automaton_managers[i], &channel_automaton<uuid>::send);
-      make_bind_helper (this, channel_automaton_managers[i], &channel_automaton<uuid>::receive, T_helpers[(i + 1) % N], &T::receive);
-      make_bind_helper (this, T_helpers[i], &T::leader, &self, &unidirectional_ring_leader_election::leader, i);
+      make_binding_manager (this, T_helpers[i], &T::send, channel_automaton_managers[i], &channel_automaton<uuid>::send);
+      make_binding_manager (this, channel_automaton_managers[i], &channel_automaton<uuid>::receive, T_helpers[(i + 1) % N], &T::receive);
+      make_binding_manager (this, T_helpers[i], &T::leader, &self, &unidirectional_ring_leader_election::leader, i);
     }
 
   }

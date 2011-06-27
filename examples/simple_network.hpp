@@ -27,32 +27,32 @@ public:
     ioa::automaton_manager<checking_channel_automaton<mftp::message> >* b_to_a_channel = new ioa::automaton_manager<checking_channel_automaton<mftp::message> > (this, ioa::make_generator<checking_channel_automaton<mftp::message> > ());
 
     //Helper for send i,j:
-    ioa::make_bind_helper(this,
+    ioa::make_binding_manager(this,
 			  a,
 			  &mftp::mftp_automaton::send,
 			  a_to_b_channel,
 			  &checking_channel_automaton<mftp::message>::send);
-    ioa::make_bind_helper(this,
+    ioa::make_binding_manager(this,
 			  a_to_b_channel,
 			  &checking_channel_automaton<mftp::message>::send_complete,
 			  a,
 			  &mftp::mftp_automaton::send_complete);
-    ioa::make_bind_helper(this,
+    ioa::make_binding_manager(this,
 			  a_to_b_channel,
 			  &checking_channel_automaton<mftp::message>::receive,
 			  b,
 			  &mftp::mftp_automaton::receive);
-    ioa::make_bind_helper(this,
+    ioa::make_binding_manager(this,
 			  b,
 			  &mftp::mftp_automaton::send,
 			  b_to_a_channel,
 			  &checking_channel_automaton<mftp::message>::send);
-    ioa::make_bind_helper(this,
+    ioa::make_binding_manager(this,
 			  b_to_a_channel,
 			  &checking_channel_automaton<mftp::message>::send_complete,
 			  b,
 			  &mftp::mftp_automaton::send_complete);
-    ioa::make_bind_helper(this,
+    ioa::make_binding_manager(this,
 			  b_to_a_channel,
 			  &checking_channel_automaton<mftp::message>::receive,
 			  a,

@@ -10,7 +10,7 @@ ioa/automaton.hpp \
 ioa/automaton_handle.hpp \
 ioa/automaton_manager.hpp \
 ioa/automaton_manager_interface.hpp \
-ioa/bind_helper.hpp \
+ioa/binding_manager.hpp \
 ioa/buffer.hpp \
 ioa/const_shared_ptr.hpp \
 ioa/environment.hpp \
@@ -31,6 +31,9 @@ ioa/shared_mutex.hpp \
 ioa/shared_ptr.hpp \
 ioa/simple_scheduler.hpp \
 ioa/system_scheduler_interface.hpp \
+ioa/tcp_acceptor.hpp \
+ioa/tcp_connection.hpp \
+ioa/tcp_connector.hpp \
 ioa/time.hpp \
 ioa/udp_receiver_automaton.hpp \
 ioa/udp_sender_automaton.hpp

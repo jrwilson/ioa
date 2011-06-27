@@ -23,10 +23,10 @@ namespace ioa {
     virtual void automaton_destroyed () = 0;
   };
 
-  class system_bind_helper_interface
+  class system_binding_manager_interface
   {
   public:
-    virtual ~system_bind_helper_interface () { }
+    virtual ~system_binding_manager_interface () { }
     virtual shared_ptr<bind_executor_interface> get_executor () const = 0;
     virtual void output_automaton_dne () = 0;
     virtual void input_automaton_dne () = 0;
@@ -48,16 +48,16 @@ namespace ioa {
     std::set<system_automaton_manager_interface*> m_destroy_send;
     std::set<system_automaton_manager_interface*> m_destroy_recv;
     // Same thing for binding.
-    std::set<system_bind_helper_interface*> m_bind_send;
-    std::set<system_bind_helper_interface*> m_bind_recv;
-    std::set<system_bind_helper_interface*> m_unbind_send;
-    std::set<system_bind_helper_interface*> m_unbind_recv;
+    std::set<system_binding_manager_interface*> m_bind_send;
+    std::set<system_binding_manager_interface*> m_bind_recv;
+    std::set<system_binding_manager_interface*> m_unbind_send;
+    std::set<system_binding_manager_interface*> m_unbind_recv;
 
   public:
     virtual ~automaton ();
     void create (system_automaton_manager_interface* helper);
-    void bind (system_bind_helper_interface* helper);
-    void unbind (system_bind_helper_interface* helper);
+    void bind (system_binding_manager_interface* helper);
+    void unbind (system_binding_manager_interface* helper);
     void destroy (system_automaton_manager_interface* helper);
 
   private:
