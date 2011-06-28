@@ -24,8 +24,8 @@ udp_receiver
 
 asynch_bfs_SOURCES = channel_automaton.hpp bidirectional_network.hpp bfs_automaton.hpp asynch_bfs.cpp
 asynch_lcr_SOURCES = uuid.hpp unidirectional_ring_leader_election.hpp asynch_lcr_automaton.hpp asynch_lcr.cpp
-basic_client_SOURCES = basic_client.cpp file.cpp udp_receiver_automaton.hpp mftp_automaton.hpp file.hpp mftp.hpp sha2_256.hpp
-basic_server_SOURCES = basic_server.cpp file.cpp udp_sender_automaton.hpp mftp_automaton.hpp file.hpp mftp.hpp sha2_256.hpp
+basic_client_SOURCES = basic_client.cpp file.cpp mftp_automaton.hpp file.hpp mftp.hpp sha2_256.hpp
+basic_server_SOURCES = basic_server.cpp file.cpp mftp_automaton.hpp file.hpp mftp.hpp sha2_256.hpp
 beast_SOURCES = aba_automaton.hpp beast.cpp
 bellman_ford_SOURCES = weighted_bidirectional_network.hpp bf_automaton.hpp bellman_ford.cpp
 clock_213_SOURCES = clock_213.cpp
