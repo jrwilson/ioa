@@ -14,14 +14,15 @@ namespace ioa {
     m_fd = socket (AF_INET, SOCK_DGRAM, 0);
     if (m_fd == -1) {
       m_errno = errno;
-      goto the_end;
+      return;
     }
       
     // Get the flags.
     flags = fcntl (m_fd, F_GETFL, 0);
     if (flags < 0) {
       m_errno = errno;
-      goto the_end;
+      close (m_fd);
+      return;
     }
 
     // Set non-blocking.
@@ -29,13 +30,15 @@ namespace ioa {
     res = fcntl (m_fd, F_SETFL, flags);
     if (res < 0) {
       m_errno = errno;
-      goto the_end;
+      close (m_fd);
+      return;
     }
 
     // Set broadcasting.
     if (setsockopt (m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof (val)) == -1) {
       m_errno = errno;
-      goto the_end;
+      close (m_fd);
+      return;
     }
       
     add_observable (&send);
@@ -43,14 +46,6 @@ namespace ioa {
       
     // Success.
     m_errno = 0;
-
-  the_end:	
-    if (m_errno != 0) {
-      if (m_fd != -1) {
-	close (m_fd);
-	m_fd = -1;
-      }
-    }
   }
 
   udp_sender_automaton::~udp_sender_automaton () {

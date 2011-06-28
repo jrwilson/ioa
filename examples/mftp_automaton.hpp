@@ -33,7 +33,7 @@ namespace mftp {
       INTERRUPT_WAIT,
     };
 
-    ioa::self_manager<mftp_automaton> m_self;
+    ioa::handle_manager<mftp_automaton> m_self;
     file m_file;
     const mfileid& m_mfileid;
     const fileid& m_fileid;
@@ -50,6 +50,7 @@ namespace mftp {
       m_fragment_interval (0, 1000), // 1000 microseconds = 1 millisecond
       m_request_interval (1, 0), // 1 second
       m_announcement_interval (7, 0), // 7 seconds
+      m_self (ioa::get_aid ()),
       m_file (file),
       m_mfileid (file.get_mfileid ()),
       m_fileid (m_mfileid.get_fileid ()),

@@ -22,6 +22,7 @@ namespace ioa {
     virtual automaton_handle<I> get_handle () const = 0;
   };
 
+
 }
 
 #endif

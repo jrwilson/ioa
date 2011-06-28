@@ -7,7 +7,7 @@
 #include <ioa/automaton.hpp>
 #include <ioa/action_wrapper.hpp>
 #include <ioa/generator.hpp>
-#include <ioa/self_manager.hpp>
+#include <ioa/handle_manager.hpp>
 #include <ioa/automaton_manager.hpp>
 #include <ioa/binding_manager.hpp>
 

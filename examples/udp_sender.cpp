@@ -17,7 +17,7 @@ private:
   };
   
   state_t m_state;
-  ioa::self_manager<broadcast_sender> m_self;
+  ioa::handle_manager<broadcast_sender> m_self;
   ioa::inet_address m_address;
   ioa::buffer m_buffer;
 
@@ -27,6 +27,7 @@ public:
 		    const unsigned short port,
 		    const std::string& message) :
     m_state (SEND_READY),
+    m_self (ioa::get_aid ()),
     m_address (address, port),
     m_buffer (message.c_str (), message.size ())
   {

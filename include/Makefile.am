@@ -18,6 +18,7 @@ ioa/executor_interface.hpp \
 ioa/generator.hpp \
 ioa/generator_interface.hpp \
 ioa/global_fifo_scheduler.hpp \
+ioa/handle_manager.hpp \
 ioa/inet_address.hpp \
 ioa/ioa.hpp \
 ioa/model_interface.hpp \
@@ -26,7 +27,6 @@ ioa/observer.hpp \
 ioa/runnable_interface.hpp \
 ioa/scheduler.hpp \
 ioa/scheduler_interface.hpp \
-ioa/self_manager.hpp \
 ioa/shared_mutex.hpp \
 ioa/shared_ptr.hpp \
 ioa/simple_scheduler.hpp \

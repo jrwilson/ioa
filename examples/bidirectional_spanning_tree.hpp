@@ -23,7 +23,7 @@ private:
 
   V_P_INPUT (bidirectional_spanning_tree, parent, size_t, size_t);
 
-  ioa::self_manager<bidirectional_spanning_tree> self;
+  ioa::handle_manager<bidirectional_spanning_tree> self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
 
   std::vector<std::set<size_t> > nbrhd; //nbrhd = neighborhood.  Collection of neighboring automata
@@ -32,6 +32,7 @@ private:
 
 public:
   bidirectional_spanning_tree () :
+    self (ioa::get_aid ()),
     nbrhd(N)
   {
     srand ((unsigned)time(0));

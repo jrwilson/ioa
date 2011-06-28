@@ -5,43 +5,40 @@
 
 #include <iostream>
 
-template <class T>
-class auto_scheduler
-{
-private:
-  const T& m_automaton;
-  void (T::*m_schedule_ptr) () const;
-
-public:
-  auto_scheduler (const T& automaton,
-		  void (T::*schedule_ptr) () const) :
-    m_automaton (automaton),
-    m_schedule_ptr (schedule_ptr)
-  { }
-
-  ~auto_scheduler () {
-    (m_automaton.*m_schedule_ptr) ();
-  }
-};
-
 class echo_client_automaton :
-  public ioa::automaton
+  public ioa::automaton,
+  private ioa::observer
 {
 private:
   enum state_t {
     CONNECT_READY,
     CONNECT_COMPLETE_WAIT,
+    SEND_READY,
+    RECEIVE_WAIT
   };
 
   state_t m_state;
+  ioa::handle_manager<echo_client_automaton> m_self;
+  ioa::handle_manager<ioa::tcp_connection> m_connection;
 
 public:
   echo_client_automaton () :
-    m_state (CONNECT_READY)
+    m_state (CONNECT_READY),
+    m_self (ioa::get_aid ())
   {
-    auto_scheduler<echo_client_automaton> as (*this, &echo_client_automaton::schedule);
+    ioa::automaton_manager<ioa::tcp_connector>* connector = new ioa::automaton_manager<ioa::tcp_connector> (this, ioa::make_generator<ioa::tcp_connector> ());
 
-    new ioa::automaton_manager<ioa::tcp_connector> (this, ioa::make_generator<ioa::tcp_connector> ());
+    ioa::make_binding_manager (this,
+			       &m_self, &echo_client_automaton::connect,
+			       connector, &ioa::tcp_connector::connect);
+
+    ioa::make_binding_manager (this,
+			       connector, &ioa::tcp_connector::connect_complete,
+			       &m_self, &echo_client_automaton::connect_complete);
+
+    add_observable (&connect_complete);
+    
+    schedule ();
   }
 
 private:
@@ -49,19 +46,86 @@ private:
     if (connect_precondition ()) {
       ioa::schedule (&echo_client_automaton::connect);
     }
+    if (send_precondition ()) {
+      ioa::schedule (&echo_client_automaton::send);
+    }
+  }
+
+  void observe (ioa::observable* o) {
+    if (o == &connect_complete || o == &send_complete || o == &receive) {
+      schedule ();
+    }
   }
 
   bool connect_precondition () const {
-    return m_state == CONNECT_READY;
+    return m_state == CONNECT_READY &&
+      ioa::bind_count (&echo_client_automaton::connect) != 0 &&
+      ioa::bind_count (&echo_client_automaton::connect_complete) != 0;
   }
 
   ioa::inet_address connect_effect () {
-    auto_scheduler<echo_client_automaton> as (*this, &echo_client_automaton::schedule);
     m_state = CONNECT_COMPLETE_WAIT;
     return ioa::inet_address ("127.0.0.1", 54321);
   }
 
   V_UP_OUTPUT (echo_client_automaton, connect, ioa::inet_address);  
+
+  void connect_complete_effect (const ioa::automaton_handle<ioa::tcp_connection>& handle) {
+    assert (m_state == CONNECT_COMPLETE_WAIT);
+    std::cout << __func__ << " " << handle << std::endl;
+    m_connection = handle;
+
+    ioa::make_binding_manager (this,
+			       &m_self, &echo_client_automaton::send,
+			       &m_connection, &ioa::tcp_connection::send);
+
+    ioa::make_binding_manager (this,
+			       &m_connection, &ioa::tcp_connection::send_complete,
+			       &m_self, &echo_client_automaton::send_complete);
+
+    ioa::make_binding_manager (this,
+			       &m_connection, &ioa::tcp_connection::receive,
+			       &m_self, &echo_client_automaton::receive);
+
+    add_observable (&send_complete);
+    add_observable (&receive);
+
+    m_state = SEND_READY;
+  }
+
+  V_UP_INPUT (echo_client_automaton, connect_complete, ioa::automaton_handle<ioa::tcp_connection>);
+
+  bool send_precondition () const {
+    return m_state == SEND_READY &&
+      ioa::bind_count (&echo_client_automaton::send) != 0 &&
+      ioa::bind_count (&echo_client_automaton::send_complete) != 0 &&
+      ioa::bind_count (&echo_client_automaton::receive) != 0;
+  }
+
+  ioa::buffer send_effect () {
+    m_state = RECEIVE_WAIT;
+    std::string s ("Hello World!!");
+    std::cout << "Sent: " << s << std::endl;
+    return ioa::buffer (s.c_str (), s.size ());
+  }
+
+  V_UP_OUTPUT (echo_client_automaton, send, ioa::buffer);
+
+  void send_complete_effect () {
+    std::cout << "Got send complete" << std::endl;
+  }
+
+  UV_UP_INPUT (echo_client_automaton, send_complete);
+
+  void receive_effect (const ioa::buffer& buf) {
+    assert (m_state == RECEIVE_WAIT);
+    std::cout << __func__ << std::endl;
+    std::string s (buf.c_str (), buf.size ());
+    std::cout << "Received: " << s << std::endl;
+    std::cout << "Time to die" << std::endl;
+  }
+  
+  V_UP_INPUT (echo_client_automaton, receive, ioa::buffer);
 };
 
 int main () {

@@ -10,7 +10,7 @@ class udp_receiver :
   public ioa::automaton
 {
 private:
-  ioa::self_manager<udp_receiver> m_self;
+  ioa::handle_manager<udp_receiver> m_self;
   ioa::inet_address m_group;
   ioa::inet_address m_address;
 
@@ -18,6 +18,7 @@ public:
 
   udp_receiver (const std::string& address,
 		      const unsigned short port) :
+    m_self (ioa::get_aid ()),
     m_address (address, port)
   {
     ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
@@ -28,6 +29,7 @@ public:
   udp_receiver (const std::string& group,
 		const std::string& address,
 		const unsigned short port) :
+    m_self (ioa::get_aid ()),
     m_group (group),
     m_address (address, port)
   {

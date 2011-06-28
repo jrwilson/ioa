@@ -18,13 +18,14 @@ private:
 
   UV_P_INPUT (unidirectional_ring_leader_election, leader, size_t);
 
-  ioa::self_manager<unidirectional_ring_leader_election> self;
+  ioa::handle_manager<unidirectional_ring_leader_election> self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
   std::vector<ioa::automaton_handle_interface<channel_automaton<uuid> >*> channel_automaton_managers;
 
 public:
 
-  unidirectional_ring_leader_election ()
+  unidirectional_ring_leader_election () :
+    self (ioa::get_aid ())
   { 
     for (size_t i = 0; i < N; ++i) {
       T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> ()));

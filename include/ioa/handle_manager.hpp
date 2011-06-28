@@ -1,5 +1,5 @@
-#ifndef __self_manager_hpp__
-#define __self_manager_hpp__
+#ifndef __handle_manager_hpp__
+#define __handle_manager_hpp__
 
 #include <ioa/automaton_manager_interface.hpp>
 #include <ioa/scheduler.hpp>
@@ -7,17 +7,19 @@
 namespace ioa {
   
   template <class T>
-  class self_manager :
+  class handle_manager :
     public automaton_handle_interface<T>
   {
   private:
-    const automaton_handle<T> m_handle;
+    automaton_handle<T> m_handle;
 
   public:
     typedef T instance;
-    
-    self_manager () :
-      m_handle (ioa::get_aid ())
+
+    handle_manager () { }
+
+    handle_manager (const automaton_handle<T>& handle) :
+      m_handle (handle)
     { }
     
     automaton_handle<T> get_handle () const {
@@ -25,7 +27,8 @@ namespace ioa {
     }
 
     void destroy () {
-      // Do nothing.
+      // This should never be called.
+      assert (false);
     }
     
   };
