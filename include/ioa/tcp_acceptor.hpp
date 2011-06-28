@@ -2,7 +2,7 @@
 #define __tcp_acceptor_hpp__
 
 #include <fcntl.h>
-#include <ioa/tcp_connection.hpp>
+#include <ioa/tcp_connection_automaton.hpp>
 #include <queue>
 
 #include <iostream>
@@ -17,7 +17,7 @@ namespace ioa {
   {
   private:
     int m_accept_fd;
-    std::queue<automaton_handle<tcp_connection> > m_connectionq;
+    std::queue<automaton_handle<tcp_connection_automaton> > m_connectionq;
 
   public:
     tcp_acceptor (const ioa::inet_address& address) {
@@ -123,8 +123,8 @@ namespace ioa {
 	}
       }
       else {
-	// Must be an automaton_manager<tcp_connection>.
-	automaton_manager<tcp_connection>* conn = dynamic_cast<automaton_manager<tcp_connection>*> (o);
+	// Must be an automaton_manager<tcp_connection_automaton>.
+	automaton_manager<tcp_connection_automaton>* conn = dynamic_cast<automaton_manager<tcp_connection_automaton>*> (o);
 	assert (conn != 0);
 	if (conn->get_handle () != -1) {
 	  // A connection is now created.
@@ -148,9 +148,9 @@ namespace ioa {
 	// TODO
 	assert (false);
       }
-      std::cout << "creating tcp_connection automaton using fd = " << fd << std::endl;
+      std::cout << "creating tcp_connection_automaton automaton using fd = " << fd << std::endl;
       
-      add_observable (new automaton_manager<tcp_connection> (this, make_generator<tcp_connection> (fd)));
+      add_observable (new automaton_manager<tcp_connection_automaton> (this, make_generator<tcp_connection_automaton> (fd)));
     }
 
     UP_INTERNAL (tcp_acceptor, read_ready);
@@ -159,14 +159,14 @@ namespace ioa {
       return !m_connectionq.empty () && ioa::bind_count (&tcp_acceptor::accept_complete) != 0;
     }
     
-    automaton_handle<tcp_connection> accept_complete_effect () {
-      automaton_handle<tcp_connection> handle = m_connectionq.front ();
+    automaton_handle<tcp_connection_automaton> accept_complete_effect () {
+      automaton_handle<tcp_connection_automaton> handle = m_connectionq.front ();
       m_connectionq.pop ();
       return handle;
     }
     
   public:
-    V_UP_OUTPUT (tcp_acceptor, accept_complete, automaton_handle<tcp_connection>);
+    V_UP_OUTPUT (tcp_acceptor, accept_complete, automaton_handle<tcp_connection_automaton>);
   };
 
 }

@@ -119,7 +119,7 @@ namespace ioa {
   }
   
   void udp_receiver_automaton::observe (observable* o) {
-    if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive == 0) {
+    if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_state == SCHEDULE_READ_READY) {
       // An automaton has bound to receive but we will never receive because m_fd is bad.
       // Generate an error.
       m_receive = new receive_val (m_errno, inet_address (), buffer ());

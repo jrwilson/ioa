@@ -32,7 +32,7 @@ ioa/shared_ptr.hpp \
 ioa/simple_scheduler.hpp \
 ioa/system_scheduler_interface.hpp \
 ioa/tcp_acceptor.hpp \
-ioa/tcp_connection.hpp \
+ioa/tcp_connection_automaton.hpp \
 ioa/tcp_connector.hpp \
 ioa/time.hpp \
 ioa/udp_receiver_automaton.hpp \

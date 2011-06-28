@@ -59,6 +59,7 @@ namespace ioa {
     int m_errno;
     unsigned char* m_buffer;
     size_t m_buffer_size;
+    // TODO:  Why is this a pointer?
     receive_val* m_receive;
 
   private:

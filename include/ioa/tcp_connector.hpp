@@ -1,7 +1,7 @@
 #ifndef __tcp_connector_hpp__
 #define __tcp_connector_hpp__
 
-#include <ioa/tcp_connection.hpp>
+#include <ioa/tcp_connection_automaton.hpp>
 
 #include <iostream>
 #include <fcntl.h>
@@ -15,19 +15,19 @@ namespace ioa {
   {
   private:
     std::map<aid_t, int> m_aid_to_fd;
-    std::map<automaton_manager<tcp_connection>*, aid_t> m_manager_to_aid;
-    std::map<aid_t, automaton_manager<tcp_connection>*> m_aid_to_manager;
+    std::map<automaton_manager<tcp_connection_automaton>*, aid_t> m_manager_to_aid;
+    std::map<aid_t, automaton_manager<tcp_connection_automaton>*> m_aid_to_manager;
 
     void schedule () const { }
 
     void observe (observable* o) {
       std::cout << __func__ << " " << o << std::endl;
 
-      automaton_manager<tcp_connection>* conn = dynamic_cast<automaton_manager<tcp_connection> *> (o);
+      automaton_manager<tcp_connection_automaton>* conn = dynamic_cast<automaton_manager<tcp_connection_automaton> *> (o);
       assert (conn != 0);
 
       if (conn->get_handle () != -1) {
-	std::cout << "aid " << m_manager_to_aid[conn] << " will have tcp_connection " << conn->get_handle () << std::endl;
+	std::cout << "aid " << m_manager_to_aid[conn] << " will have tcp_connection_automaton " << conn->get_handle () << std::endl;
 	ioa::schedule (&tcp_connector::connect_complete, m_manager_to_aid[conn]);
       }
       
@@ -99,7 +99,7 @@ namespace ioa {
       std::cout << __func__ << std::endl;
       std::cout << "fd = " << m_aid_to_fd[aid] << std::endl;
 
-      automaton_manager<tcp_connection>* conn = new automaton_manager<tcp_connection> (this, make_generator<tcp_connection> (m_aid_to_fd[aid]));
+      automaton_manager<tcp_connection_automaton>* conn = new automaton_manager<tcp_connection_automaton> (this, make_generator<tcp_connection_automaton> (m_aid_to_fd[aid]));
       add_observable (conn);
       m_manager_to_aid.insert (std::make_pair (conn, aid));
       m_aid_to_manager.insert (std::make_pair (aid, conn));
@@ -122,15 +122,15 @@ namespace ioa {
 	bind_count (&tcp_connector::connect_complete, aid) != 0;
     }
 
-    automaton_handle<tcp_connection> connect_complete_effect (aid_t aid) {
+    automaton_handle<tcp_connection_automaton> connect_complete_effect (aid_t aid) {
       std::cout << __func__ << " " << aid << std::endl;
-      automaton_handle<tcp_connection> retval = m_aid_to_manager[aid]->get_handle ();
+      automaton_handle<tcp_connection_automaton> retval = m_aid_to_manager[aid]->get_handle ();
       // TODO: Cleanup.
       return retval;
     }
 
   public:
-    V_AP_OUTPUT (tcp_connector, connect_complete, automaton_handle<tcp_connection>);
+    V_AP_OUTPUT (tcp_connector, connect_complete, automaton_handle<tcp_connection_automaton>);
   };
 
 }

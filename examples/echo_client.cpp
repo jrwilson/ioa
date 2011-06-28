@@ -19,7 +19,7 @@ private:
 
   state_t m_state;
   ioa::handle_manager<echo_client_automaton> m_self;
-  ioa::handle_manager<ioa::tcp_connection> m_connection;
+  ioa::handle_manager<ioa::tcp_connection_automaton> m_connection;
 
 public:
   echo_client_automaton () :
@@ -70,21 +70,21 @@ private:
 
   V_UP_OUTPUT (echo_client_automaton, connect, ioa::inet_address);  
 
-  void connect_complete_effect (const ioa::automaton_handle<ioa::tcp_connection>& handle) {
+  void connect_complete_effect (const ioa::automaton_handle<ioa::tcp_connection_automaton>& handle) {
     assert (m_state == CONNECT_COMPLETE_WAIT);
     std::cout << __func__ << " " << handle << std::endl;
     m_connection = handle;
 
     ioa::make_binding_manager (this,
 			       &m_self, &echo_client_automaton::send,
-			       &m_connection, &ioa::tcp_connection::send);
+			       &m_connection, &ioa::tcp_connection_automaton::send);
 
     ioa::make_binding_manager (this,
-			       &m_connection, &ioa::tcp_connection::send_complete,
+			       &m_connection, &ioa::tcp_connection_automaton::send_complete,
 			       &m_self, &echo_client_automaton::send_complete);
 
     ioa::make_binding_manager (this,
-			       &m_connection, &ioa::tcp_connection::receive,
+			       &m_connection, &ioa::tcp_connection_automaton::receive,
 			       &m_self, &echo_client_automaton::receive);
 
     add_observable (&send_complete);
@@ -93,7 +93,7 @@ private:
     m_state = SEND_READY;
   }
 
-  V_UP_INPUT (echo_client_automaton, connect_complete, ioa::automaton_handle<ioa::tcp_connection>);
+  V_UP_INPUT (echo_client_automaton, connect_complete, ioa::automaton_handle<ioa::tcp_connection_automaton>);
 
   bool send_precondition () const {
     return m_state == SEND_READY &&
@@ -111,21 +111,21 @@ private:
 
   V_UP_OUTPUT (echo_client_automaton, send, ioa::buffer);
 
-  void send_complete_effect () {
+  void send_complete_effect (const int& err) {
     std::cout << "Got send complete" << std::endl;
   }
 
-  UV_UP_INPUT (echo_client_automaton, send_complete);
+  V_UP_INPUT (echo_client_automaton, send_complete, int);
 
-  void receive_effect (const ioa::buffer& buf) {
+  void receive_effect (const ioa::tcp_connection_automaton::receive_val& val) {
     assert (m_state == RECEIVE_WAIT);
     std::cout << __func__ << std::endl;
-    std::string s (buf.c_str (), buf.size ());
+    std::string s (val.buf.c_str (), val.buf.size ());
     std::cout << "Received: " << s << std::endl;
     std::cout << "Time to die" << std::endl;
   }
   
-  V_UP_INPUT (echo_client_automaton, receive, ioa::buffer);
+  V_UP_INPUT (echo_client_automaton, receive, ioa::tcp_connection_automaton::receive_val);
 };
 
 int main () {
