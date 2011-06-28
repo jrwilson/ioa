@@ -12,11 +12,7 @@ beast \
 bellman_ford \
 clock_213 \
 echo_client \
-<<<<<<< HEAD
 echo_server \
-mftp \
-=======
->>>>>>> cc00d0b9df09416eefe18232a92f809afbbf41ea
 peterson_leader \
 slow_count \
 spanning_tree \

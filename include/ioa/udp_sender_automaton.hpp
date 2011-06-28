@@ -43,46 +43,11 @@ namespace ioa {
 
   private:
     enum state_t {
+      SEND_WAIT,
       SCHEDULE_WRITE_READY,
-      WRITE_WAIT,
+      WRITE_READY_WAIT,
     };
-    state_t m_state;
-    int m_fd;
-    int m_errno;
 
-    std::list<std::pair<aid_t, send_arg*> > m_send_queue;
-    std::set<aid_t> m_send_set; // Set of aids in send_queue.
-    
-    std::map<aid_t, int> m_complete_map;
-
-  public:
-    udp_sender_automaton ();
-    ~udp_sender_automaton ();
-
-  private:
-    void schedule () const;
-    void add_to_send_queue (const aid_t aid,
-			    const send_arg& arg);
-    void add_to_complete_map (const aid_t aid,
-			      const int err_no);
-    void send_effect (const send_arg& arg, aid_t aid);
-
-  public:
-    V_AP_INPUT (udp_sender_automaton, send, send_arg);
-
-  private:
-    // Treat like an input.
-    bool write_precondition () const;
-    void write_effect ();
-    UP_INTERNAL (udp_sender_automaton, write);
-
-    bool send_complete_precondition (aid_t aid) const;
-    int send_complete_effect (aid_t aid);
-
-  public:
-    V_AP_OUTPUT (udp_sender_automaton, send_complete, int);
-
-  private:
     struct first_aid_equal {
       const aid_t m_aid;
       
@@ -99,8 +64,47 @@ namespace ioa {
       }
     };
 
-    void purge (const aid_t aid);
+    state_t m_state;
+    int m_fd;
+    int m_errno;
+
+    std::list<std::pair<aid_t, send_arg*> > m_send_queue;
+    std::set<aid_t> m_send_set; // Set of aids in send_queue.
+    
+    std::map<aid_t, int> m_complete_map;
+
+  public:
+    udp_sender_automaton ();
+    ~udp_sender_automaton ();
+
+  private:
+    void schedule () const;
     void observe (observable* o);
+    void purge (const aid_t aid);
+    void add_to_send_queue (const aid_t aid,
+			    const send_arg& arg);
+    void add_to_complete_map (const aid_t aid,
+			      const int err_no);
+
+  private:
+    void send_effect (const send_arg& arg, aid_t aid);
+  public:
+    V_AP_INPUT (udp_sender_automaton, send, send_arg);
+
+  private:
+    bool schedule_write_ready_precondition () const;
+    void schedule_write_ready_effect ();
+    UP_INTERNAL (udp_sender_automaton, schedule_write_ready);
+
+    bool write_ready_precondition () const;
+    void write_ready_effect ();
+    UP_INTERNAL (udp_sender_automaton, write_ready);
+
+  private:
+    bool send_complete_precondition (aid_t aid) const;
+    int send_complete_effect (aid_t aid);
+  public:
+    V_AP_OUTPUT (udp_sender_automaton, send_complete, int);
   };
 
 }

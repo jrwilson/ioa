@@ -11,30 +11,36 @@ namespace ioa {
   private:
     enum state_t {
       SET_WAIT,
+      SCHEDULE_AFTER_READY,
       INTERRUPT_WAIT,
       ALARM_READY,
     };
     state_t m_state;
-
-    void schedule () const;
+    const size_t m_fan_out;
+    time m_interval;
 
   public:
-    alarm_automaton ();
+    alarm_automaton (const size_t fan_out = 1);
 
   private:
-    void set_effect (const time& interval);
+    void schedule () const;
 
+    void set_effect (const time& interval);
   public:
     V_UP_INPUT (alarm_automaton, set, time);
 
   private:    
-    // Treat like an input.
+    bool schedule_after_precondition () const;
+    void schedule_after_effect ();
+    UP_INTERNAL (alarm_automaton, schedule_after);
+
     bool interrupt_precondition () const;
     void interrupt_effect ();
     UP_INTERNAL (alarm_automaton, interrupt);
+
+  private:
     bool alarm_precondition () const;
     void alarm_effect ();
-
   public:
     UV_UP_OUTPUT (alarm_automaton, alarm);
   };

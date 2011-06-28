@@ -50,36 +50,38 @@ namespace ioa {
   private:
     enum state_t {
       SCHEDULE_READ_READY,
-      READ_WAIT,
+      READ_READY_WAIT,
+      RECEIVE_READY,
     };
     state_t m_state;
+    const size_t m_fan_out;
     int m_fd;
     int m_errno;
     unsigned char* m_buffer;
     size_t m_buffer_size;
-    std::queue<receive_val*> m_receive;
+    receive_val* m_receive;
 
   private:
     void prepare_socket (const inet_address& address);
 
   public:
-    udp_receiver_automaton (const inet_address& address);
+    udp_receiver_automaton (const inet_address& address,
+			    const size_t fan_out = 1);
     udp_receiver_automaton (const inet_address& group_addr,
-			    const inet_address& local_addr);
+			    const inet_address& local_addr,
+			    const size_t fan_out = 1);
     ~udp_receiver_automaton ();
 
     void schedule () const;
 
   private:
-    // This will be treated like an output.
     bool schedule_read_ready_precondition () const;
     void schedule_read_ready_effect ();
     UP_INTERNAL (udp_receiver_automaton, schedule_read_ready);
 
-    // This will be treated like an input.
-    bool read_precondition () const;
-    void read_effect ();
-    UP_INTERNAL (udp_receiver_automaton, read);
+    bool read_ready_precondition () const;
+    void read_ready_effect ();
+    UP_INTERNAL (udp_receiver_automaton, read_ready);
 
   private:
     bool receive_precondition () const;

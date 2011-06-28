@@ -2,22 +2,38 @@
 
 namespace ioa {
 
-  alarm_automaton::alarm_automaton () :
-    m_state (SET_WAIT)
-  {
-    schedule ();
+  alarm_automaton::alarm_automaton (const size_t fan_out) :
+    m_state (SET_WAIT),
+    m_fan_out (fan_out)
+  { }
+
+  void alarm_automaton::schedule () const {
+    if (schedule_after_precondition ()) {
+      ioa::schedule (&alarm_automaton::schedule_after);
+    }
+    if (alarm_precondition ()) {
+      ioa::schedule (&alarm_automaton::alarm);
+    }
   }
 
   void alarm_automaton::set_effect (const time& interval) {
     if (m_state == SET_WAIT) {
-      m_state = INTERRUPT_WAIT;
-      schedule_after (&alarm_automaton::interrupt, interval);
+      m_state = SCHEDULE_AFTER_READY;
+      m_interval = interval;
     }
   }
 
-  // Treat like an input.
+  bool alarm_automaton::schedule_after_precondition () const {
+    return m_state == SCHEDULE_AFTER_READY;
+  }
+
+  void alarm_automaton::schedule_after_effect () {
+    ioa::schedule_after (&alarm_automaton::interrupt, m_interval);
+    m_state = INTERRUPT_WAIT;
+  }
+
   bool alarm_automaton::interrupt_precondition () const {
-    return true;
+    return m_state == INTERRUPT_WAIT;
   }
   
   void alarm_automaton::interrupt_effect () { 
@@ -25,17 +41,11 @@ namespace ioa {
   }
   
   bool alarm_automaton::alarm_precondition () const {
-    return m_state == ALARM_READY && bind_count (&alarm_automaton::alarm) != 0;
+    return m_state == ALARM_READY && bind_count (&alarm_automaton::alarm) == m_fan_out;
   }
   
   void alarm_automaton::alarm_effect () {
     m_state = SET_WAIT;
-  }
-
-  void alarm_automaton::schedule () const {
-    if (alarm_precondition ()) {
-      ioa::schedule (&alarm_automaton::alarm);
-    }
   }
 
 }
