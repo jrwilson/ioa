@@ -3,6 +3,8 @@
 
 #include <ioa/alarm_automaton.hpp>
 #include "file.hpp"
+#include <ioa/udp_sender_automaton.hpp>
+#include <ioa/udp_receiver_automaton.hpp>
 
 #include <arpa/inet.h>
 #include <cstdlib>
@@ -130,36 +132,52 @@ namespace mftp {
       return !m_sendq.empty () && m_send_state == SEND_READY;
     }
 
-    message send_effect () {
-      std::auto_ptr<message> m (m_sendq.front ());
-      m_sendq.pop ();
-      convert_to_network (m.get ());
-      m_send_state = SEND_COMPLETE_WAIT;
-      return *m;
+    // message send_effect () {
+    //   std::auto_ptr<message> m (m_sendq.front ());
+    //   m_sendq.pop ();
+    //   convert_to_network (m.get ());
+    //   m_send_state = SEND_COMPLETE_WAIT;
+    //   return *m;
+    // }
+
+     ioa::udp_sender_automaton::send_arg send_effect () {
+       message * m = m_sendq.front ();
+       m_sendq.pop ();
+       convert_to_network(m);
+       m_send_state = SEND_COMPLETE_WAIT;
+
+       ioa::inet_address a ("255.255.255.255", 54321);
+       ioa::buffer b (m, sizeof (message));
+       delete m;
+       return ioa::udp_sender_automaton::send_arg (a,b);
     }
 
   public:
-    V_UP_OUTPUT (mftp_automaton, send, message);
+    V_UP_OUTPUT (mftp_automaton, send, ioa::udp_sender_automaton::send_arg);
 
   private:
-    void send_complete_effect () {
+    void send_complete_effect (const int& sc) {
       m_send_state = SEND_READY;
     }
 
   public:
-    UV_UP_INPUT (mftp_automaton, send_complete);
+    V_UP_INPUT (mftp_automaton, send_complete, int);
+
+    //    void receive_effect (const message& mess)
 
   private:
-    void receive_effect (const message& mess) {
-
+    void receive_effect (const ioa::udp_receiver_automaton::receive_val& rv) {
+      
       message m;
-      convert_to_host(mess, m);
+      memcpy(&m, rv.buffer.data (), rv.buffer.size ());
+      convert_to_host(m);
 
       switch (m.header.message_type) {
       case FRAGMENT:
-      {
-        // It must be a fragment from our file and the offset must be correct.
-        if (m.frag.fid == m_fileid &&
+	{
+	// It must be a fragment from our file and the offset must be correct.
+        if (!m_file.complete () &&
+	    m.frag.fid == m_fileid &&
             m.frag.offset < m_mfileid.get_final_length () &&
             m.frag.offset % FRAGMENT_SIZE == 0) {
 
@@ -216,7 +234,7 @@ namespace mftp {
     
   public:
 
-    V_UP_INPUT (mftp_automaton, receive, message);
+    V_UP_INPUT (mftp_automaton, receive, ioa::udp_receiver_automaton::receive_val);
 
   private:
     bool set_fragment_timer_precondition () const {
@@ -305,7 +323,7 @@ namespace mftp {
 
 
     void convert_to_network (message* m) {
-      std::cout << "converting to network byte order" << std::endl;
+      //std::cout << "converting to network byte order" << std::endl;
       switch (m->header.message_type) {
       case FRAGMENT:
         m->frag.fid.length = htonl (m->frag.fid.length);
@@ -325,25 +343,22 @@ namespace mftp {
       m->header.message_type = htonl (m->header.message_type);
     }
 
-    void convert_to_host (const message& mess, message& m) {
-      std::cout << "converting to host byte order" << std::endl;
-      m.header.message_type = ntohl (mess.header.message_type);
+    void convert_to_host (message& m){
+      //std::cout << "converting to host byte order" << std::endl;
+      m.header.message_type = ntohl (m.header.message_type);
       switch (m.header.message_type) {
       case FRAGMENT:
-	memcpy (m.frag.fid.hash, mess.frag.fid.hash, HASH_SIZE);
-        m.frag.fid.length = ntohl (mess.frag.fid.length);
-        m.frag.fid.type = ntohl (mess.frag.fid.type);
-        m.frag.offset = ntohl (mess.frag.offset);
-        memcpy(m.frag.data, mess.frag.data, 512);
+        m.frag.fid.length = ntohl (m.frag.fid.length);
+        m.frag.fid.type = ntohl (m.frag.fid.type);
+        m.frag.offset = ntohl (m.frag.offset);
 	break;
       case REQUEST:
-	memcpy (m.req.fid.hash, mess.req.fid.hash, HASH_SIZE);
-        m.req.fid.length = ntohl (mess.req.fid.length);
-        m.req.fid.type = ntohl (mess.req.fid.type);
-        m.req.span_count = ntohl (mess.req.span_count);
-	for (uint32_t i = 0; i<m.req.span_count; ++i){
-	  m.req.spans[i].start = ntohl (mess.req.spans[i].start);
-	  m.req.spans[i].stop = ntohl (mess.req.spans[i].stop);
+        m.req.fid.length = ntohl (m.req.fid.length);
+        m.req.fid.type = ntohl (m.req.fid.type);
+        m.req.span_count = ntohl (m.req.span_count);
+	for (uint32_t i = 0; i < m.req.span_count; ++i){
+	  m.req.spans[i].start = ntohl (m.req.spans[i].start);
+	  m.req.spans[i].stop = ntohl (m.req.spans[i].stop);
 	}
 	break;
       default:
@@ -351,6 +366,33 @@ namespace mftp {
 	break;
       }
     }
+
+    // void convert_to_host (const message& mess, message& m) {
+    //   std::cout << "converting to host byte order" << std::endl;
+    //   m.header.message_type = ntohl (mess.header.message_type);
+    //   switch (m.header.message_type) {
+    //   case FRAGMENT:
+    // 	memcpy (m.frag.fid.hash, mess.frag.fid.hash, HASH_SIZE);
+    //     m.frag.fid.length = ntohl (mess.frag.fid.length);
+    //     m.frag.fid.type = ntohl (mess.frag.fid.type);
+    //     m.frag.offset = ntohl (mess.frag.offset);
+    //     memcpy(m.frag.data, mess.frag.data, 512);
+    // 	break;
+    //   case REQUEST:
+    // 	memcpy (m.req.fid.hash, mess.req.fid.hash, HASH_SIZE);
+    //     m.req.fid.length = ntohl (mess.req.fid.length);
+    //     m.req.fid.type = ntohl (mess.req.fid.type);
+    //     m.req.span_count = ntohl (mess.req.span_count);
+    // 	for (uint32_t i = 0; i<m.req.span_count; ++i){
+    // 	  m.req.spans[i].start = ntohl (mess.req.spans[i].start);
+    // 	  m.req.spans[i].stop = ntohl (mess.req.spans[i].stop);
+    // 	}
+    // 	break;
+    //   default:
+    // 	//Received unknown message type.
+    // 	break;
+    //   }
+    // }
 
     uint32_t get_random_request_index () {
       assert (m_their_req_count != 0);
