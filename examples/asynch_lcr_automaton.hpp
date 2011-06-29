@@ -37,7 +37,7 @@ private:
   }
 
   bool send_precondition () const {
-    return !m_send.empty () && ioa::bind_count (&asynch_lcr_automaton::send) != 0;
+    return !m_send.empty () && ioa::binding_count (&asynch_lcr_automaton::send) != 0;
   }
 
   uuid send_effect () {
@@ -47,7 +47,7 @@ private:
   }
 
   bool leader_precondition () const {
-    return m_status == CHOSEN && ioa::bind_count (&asynch_lcr_automaton::leader) != 0;
+    return m_status == CHOSEN && ioa::binding_count (&asynch_lcr_automaton::leader) != 0;
   }
 
   void leader_effect () {

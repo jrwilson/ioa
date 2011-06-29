@@ -78,7 +78,7 @@ private:
 
   bool send_precondition (size_t j) const {
     msgq* q = m_send.find(j)->second;
-    bool b =  (ioa::bind_count (&aba_automaton::send, j) != 0) && !q->empty ();
+    bool b =  (ioa::binding_count (&aba_automaton::send, j) != 0) && !q->empty ();
     return b;
   }
 

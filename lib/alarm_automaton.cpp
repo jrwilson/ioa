@@ -41,7 +41,7 @@ namespace ioa {
   }
   
   bool alarm_automaton::alarm_precondition () const {
-    return m_state == ALARM_READY && bind_count (&alarm_automaton::alarm) == m_fan_out;
+    return m_state == ALARM_READY && binding_count (&alarm_automaton::alarm) == m_fan_out;
   }
   
   void alarm_automaton::alarm_effect () {

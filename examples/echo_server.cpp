@@ -47,7 +47,7 @@ private:
   bool send_precondition () const {
     return m_state == SEND_READY && 
       !m_buffers.empty () &&
-      ioa::bind_count (&client_handler_automaton::send) != 0;
+      ioa::binding_count (&client_handler_automaton::send) != 0;
   }
 
   ioa::buffer send_effect () {

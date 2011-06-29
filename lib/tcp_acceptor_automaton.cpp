@@ -151,7 +151,7 @@ namespace ioa {
   }
 
   bool tcp_acceptor_automaton::accept_precondition () const {
-    return m_state == ACCEPT_READY && ioa::bind_count (&tcp_acceptor_automaton::accept) != 0;
+    return m_state == ACCEPT_READY && ioa::binding_count (&tcp_acceptor_automaton::accept) != 0;
   }
     
   tcp_acceptor_automaton::accept_val tcp_acceptor_automaton::accept_effect () {

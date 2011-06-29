@@ -239,7 +239,7 @@ namespace mftp {
 
   private:
     bool set_fragment_timer_precondition () const {
-      return m_fragment_timer_state == SET_READY && m_their_req_count != 0 && ioa::bind_count (&mftp_automaton::set_fragment_timer) != 0;
+      return m_fragment_timer_state == SET_READY && m_their_req_count != 0 && ioa::binding_count (&mftp_automaton::set_fragment_timer) != 0;
     }
 
     ioa::time set_fragment_timer_effect () {
@@ -267,7 +267,7 @@ namespace mftp {
     UV_UP_INPUT (mftp_automaton, fragment_timer_interrupt);
 
     bool set_request_timer_precondition () const {
-      return m_request_timer_state == SET_READY && !m_file.complete () && ioa::bind_count (&mftp_automaton::set_request_timer) != 0;
+      return m_request_timer_state == SET_READY && !m_file.complete () && ioa::binding_count (&mftp_automaton::set_request_timer) != 0;
     }
 
     ioa::time set_request_timer_effect () {
@@ -303,7 +303,7 @@ namespace mftp {
     UV_UP_INPUT (mftp_automaton, request_timer_interrupt);
 
     bool set_announcement_timer_precondition () const {
-      return m_announcement_timer_state == SET_READY && ioa::bind_count (&mftp_automaton::set_announcement_timer) != 0;
+      return m_announcement_timer_state == SET_READY && ioa::binding_count (&mftp_automaton::set_announcement_timer) != 0;
     }
 
     ioa::time set_announcement_timer_effect () {

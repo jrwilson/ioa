@@ -25,7 +25,7 @@ private:
 
   bool send_precondition(size_t j) const {
     distq * q = m_send.find(j)->second;
-    return (ioa::bind_count (&bfs_automaton::send, j) != 0) && !q->empty();
+    return (ioa::binding_count (&bfs_automaton::send, j) != 0) && !q->empty();
   }
 
   size_t send_effect (size_t j) {

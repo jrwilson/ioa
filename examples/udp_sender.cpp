@@ -52,7 +52,7 @@ private:
   }
 
   bool send_precondition () const {
-    return m_state == SEND_READY && ioa::bind_count (&broadcast_sender::send) != 0;
+    return m_state == SEND_READY && ioa::binding_count (&broadcast_sender::send) != 0;
   }
 
   ioa::udp_sender_automaton::send_arg send_effect () {

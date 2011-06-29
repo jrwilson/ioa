@@ -27,7 +27,7 @@ private:
   size_t m_i0;
 
   bool parent_precondition () const {
-    return m_parent != size_t(-1) && !m_reported && ioa::bind_count (&ast_automaton::parent) != 0;
+    return m_parent != size_t(-1) && !m_reported && ioa::binding_count (&ast_automaton::parent) != 0;
   }
 
   size_t parent_effect () {
@@ -37,8 +37,8 @@ private:
   }
 
   bool send_precondition (size_t j) const {
-    //might be a different syntax than bind_count (j)
-    return m_send.find (j)->second == SEARCH && ioa::bind_count (&ast_automaton::send, j) != 0;
+    //might be a different syntax than binding_count (j)
+    return m_send.find (j)->second == SEARCH && ioa::binding_count (&ast_automaton::send, j) != 0;
   }
 
   search_t send_effect (size_t j) {

@@ -130,7 +130,7 @@ namespace ioa {
     int execute_output_unbound (output_executor_interface& exec);
     int execute_input_unbound (input_executor_interface& exec);
     
-    size_t bind_count (const action_executor_interface& action) const;
+    size_t binding_count (const action_executor_interface& action) const;
     
     automaton* get_instance (const aid_t aid);
     void lock_automaton (const aid_t handle);

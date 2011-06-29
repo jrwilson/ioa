@@ -112,7 +112,7 @@ namespace ioa {
 
   bool tcp_connector_automaton::connect_complete_precondition (aid_t aid) const {
     return m_aid_to_connect.count (aid) != 0 && 
-      bind_count (&tcp_connector_automaton::connect_complete, aid) != 0;
+      binding_count (&tcp_connector_automaton::connect_complete, aid) != 0;
   }
 
   tcp_connector_automaton::connect_val tcp_connector_automaton::connect_complete_effect (aid_t aid) {

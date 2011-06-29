@@ -21,7 +21,7 @@ private:
   }
   
   bool receive_precondition () const {
-    return !m_queue.empty () && ioa::bind_count (&channel_automaton::receive) != 0;
+    return !m_queue.empty () && ioa::binding_count (&channel_automaton::receive) != 0;
   }
 
   T receive_effect () {

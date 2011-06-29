@@ -537,7 +537,7 @@ namespace ioa {
   }
 
   // This should only be called from user code because we don't get a lock.
-  size_t model::bind_count (const action_executor_interface& action) const {
+  size_t model::binding_count (const action_executor_interface& action) const {
     std::list<output_executor_interface*>::const_iterator in_pos = std::find_if (m_bindings.begin (),
 										 m_bindings.end (),
 										 binding_input_equal (action));

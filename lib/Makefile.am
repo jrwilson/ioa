@@ -27,6 +27,7 @@ output_exec_runnable.hpp \
 output_unbound_runnable.hpp \
 runnable_interface.cpp \
 scheduler.cpp \
+self_destruct_runnable.hpp \
 sequential_set.hpp \
 shared_lock.hpp \
 shared_lock.cpp \
@@ -35,6 +36,7 @@ simple_scheduler.cpp \
 sys_bind_runnable.hpp \
 sys_create_runnable.hpp \
 sys_destroy_runnable.hpp \
+sys_self_destruct_runnable.hpp \
 sys_unbind_runnable.hpp \
 tcp_acceptor_automaton.cpp \
 tcp_connection_automaton.cpp \

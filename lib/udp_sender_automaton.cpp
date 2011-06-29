@@ -181,7 +181,7 @@ namespace ioa {
     
   bool udp_sender_automaton::send_complete_precondition (aid_t aid) const {
     return m_complete_map.count (aid) != 0 && 
-      bind_count (&udp_sender_automaton::send_complete, aid) != 0;
+      binding_count (&udp_sender_automaton::send_complete, aid) != 0;
   }
 
   int udp_sender_automaton::send_complete_effect (aid_t aid) {

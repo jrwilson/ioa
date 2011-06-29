@@ -410,8 +410,8 @@ namespace ioa {
       return retval;
     }
 
-    size_t bind_count (const action_executor_interface& ac) {
-      return m_model.bind_count (ac);
+    size_t binding_count (const action_executor_interface& ac) {
+      return m_model.binding_count (ac);
     }
   
     void schedule (automaton::sys_create_type automaton::*member_ptr) {
@@ -659,8 +659,8 @@ namespace ioa {
     return m_impl->get_current_aid ();
   }
   
-  size_t simple_scheduler::bind_count (const action_executor_interface& ac) {
-    return m_impl->bind_count (ac);
+  size_t simple_scheduler::binding_count (const action_executor_interface& ac) {
+    return m_impl->binding_count (ac);
   }
   
   void simple_scheduler::schedule (automaton::sys_create_type automaton::*ptr) {

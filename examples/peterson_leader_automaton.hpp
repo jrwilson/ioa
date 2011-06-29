@@ -68,7 +68,7 @@ private:
   }
 
   bool send_precondition () const {
-    return !m_send.empty () && ioa::bind_count (&peterson_leader_automaton::send) != 0;
+    return !m_send.empty () && ioa::binding_count (&peterson_leader_automaton::send) != 0;
   }
 
   uuid send_effect () {
@@ -78,7 +78,7 @@ private:
   }
 
   bool leader_precondition () const {
-    return m_status == CHOSEN && ioa::bind_count (&peterson_leader_automaton::leader) != 0;
+    return m_status == CHOSEN && ioa::binding_count (&peterson_leader_automaton::leader) != 0;
   }
 
   void leader_effect () {

@@ -19,7 +19,6 @@ private:
   state_t m_state;
   ioa::handle_manager<echo_client_automaton> m_self;
   ioa::handle_manager<ioa::tcp_connection_automaton> m_connection;
-  ioa::binding_manager_interface* m_binding_manager;
 
 public:
   echo_client_automaton () :
@@ -50,7 +49,7 @@ private:
   }
 
   bool connect_precondition () const {
-    return m_state == CONNECT_READY && ioa::bind_count (&echo_client_automaton::connect) != 0;
+    return m_state == CONNECT_READY && ioa::binding_count (&echo_client_automaton::connect) != 0;
   }
 
   ioa::inet_address connect_effect () {
@@ -81,9 +80,9 @@ private:
 				 &m_connection, &ioa::tcp_connection_automaton::send_complete,
 				 &m_self, &echo_client_automaton::send_complete);
       
-      m_binding_manager = ioa::make_binding_manager (this,
-						     &m_connection, &ioa::tcp_connection_automaton::receive,
-						     &m_self, &echo_client_automaton::receive);
+      ioa::make_binding_manager (this,
+				 &m_connection, &ioa::tcp_connection_automaton::receive,
+				 &m_self, &echo_client_automaton::receive);
       
       m_state = SEND_READY;
     }
@@ -92,7 +91,7 @@ private:
   V_UP_INPUT (echo_client_automaton, connect_complete, ioa::tcp_connector_automaton::connect_val);
 
   bool send_precondition () const {
-    return m_state == SEND_READY && ioa::bind_count (&echo_client_automaton::send) != 0;
+    return m_state == SEND_READY && ioa::binding_count (&echo_client_automaton::send) != 0;
   }
 
   ioa::buffer send_effect () {
@@ -133,7 +132,7 @@ private:
     else {
       std::string s (val.buffer.c_str (), val.buffer.size ());
       std::cout << "Received:\t" << s << std::endl;
-      m_binding_manager->unbind ();
+      self_destruct ();
     }
   }
   

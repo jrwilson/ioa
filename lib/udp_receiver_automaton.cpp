@@ -163,7 +163,7 @@ namespace ioa {
   }
     
   bool udp_receiver_automaton::receive_precondition () const {
-    return m_state == RECEIVE_READY && bind_count (&udp_receiver_automaton::receive) == m_fan_out;
+    return m_state == RECEIVE_READY && binding_count (&udp_receiver_automaton::receive) == m_fan_out;
   }
 
   udp_receiver_automaton::receive_val udp_receiver_automaton::receive_effect () {

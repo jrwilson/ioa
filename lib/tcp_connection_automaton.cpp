@@ -114,7 +114,7 @@ namespace ioa {
   }
 
   bool tcp_connection_automaton::send_complete_precondition () const {
-    return m_send_state == SEND_COMPLETE_READY && bind_count (&tcp_connection_automaton::send_complete) != 0;
+    return m_send_state == SEND_COMPLETE_READY && binding_count (&tcp_connection_automaton::send_complete) != 0;
   }
 
   int tcp_connection_automaton::send_complete_effect () {
@@ -185,7 +185,7 @@ namespace ioa {
   }
 
   bool tcp_connection_automaton::receive_precondition () const {
-    return m_receive_state == RECEIVE_READY && bind_count (&tcp_connection_automaton::receive) != 0;
+    return m_receive_state == RECEIVE_READY && binding_count (&tcp_connection_automaton::receive) != 0;
   }
 
   tcp_connection_automaton::receive_val tcp_connection_automaton::receive_effect () {

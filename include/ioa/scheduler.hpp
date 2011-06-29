@@ -82,18 +82,18 @@ namespace ioa {
   void close (int fd);
 
   template <class I, class M>
-  size_t bind_count (M I::*member_ptr) {
+  size_t binding_count (M I::*member_ptr) {
     assert (scheduler != 0);
     action_executor<I, M> action (automaton_handle<I> (get_aid ()), member_ptr);
-    return scheduler->bind_count (action);
+    return scheduler->binding_count (action);
   }
   
   template <class I, class M>
-  size_t bind_count (M I::*member_ptr,
-		     const typename M::parameter_type& param) {
+  size_t binding_count (M I::*member_ptr,
+			const typename M::parameter_type& param) {
     assert (scheduler != 0);
     action_executor<I, M> action (automaton_handle<I> (get_aid ()), member_ptr, param);
-    return scheduler->bind_count (action);
+    return scheduler->binding_count (action);
   }
   
   void run (scheduler_interface& s,

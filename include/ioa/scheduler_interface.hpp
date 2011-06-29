@@ -14,7 +14,7 @@ namespace ioa {
 
     virtual aid_t get_current_aid () = 0;
 
-    virtual size_t bind_count (const action_executor_interface&) = 0;
+    virtual size_t binding_count (const action_executor_interface&) = 0;
 
     virtual void schedule (automaton::sys_create_type automaton::*ptr) = 0;
 
