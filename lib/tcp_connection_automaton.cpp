@@ -14,6 +14,12 @@ namespace ioa {
     schedule ();
   }
 
+  tcp_connection_automaton::~tcp_connection_automaton () {
+    if (m_fd != -1) {
+      close (m_fd);
+    }
+  }
+
   void tcp_connection_automaton::schedule () const {
     if (schedule_write_precondition ()) {
       ioa::schedule (&tcp_connection_automaton::schedule_write);

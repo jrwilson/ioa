@@ -6,6 +6,14 @@ namespace ioa {
     add_observable (&connect_complete);
   }
 
+  tcp_connector_automaton::~tcp_connector_automaton () {
+    for (std::map<aid_t, int>::const_iterator pos = m_aid_to_fd.begin ();
+	 pos != m_aid_to_fd.end ();
+	 ++pos) {
+      close (pos->second);
+    }
+  }
+
   void tcp_connector_automaton::schedule () const { }
 
   void tcp_connector_automaton::observe (observable* o) {

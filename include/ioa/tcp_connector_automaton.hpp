@@ -33,6 +33,7 @@ namespace ioa {
 
   public:
     tcp_connector_automaton ();
+    ~tcp_connector_automaton ();
 
   private:
     void schedule () const;

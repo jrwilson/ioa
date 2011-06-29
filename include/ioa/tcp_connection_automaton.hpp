@@ -38,7 +38,7 @@ namespace ioa {
       READ_READY_WAIT,
       RECEIVE_READY,
     };
-      
+
     int m_fd;
     send_state_t m_send_state;
     int m_send_errno;
@@ -50,6 +50,7 @@ namespace ioa {
 
   public:
     tcp_connection_automaton (const int fd);
+    ~tcp_connection_automaton ();
 
   private:
     void schedule () const;
