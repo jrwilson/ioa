@@ -3,6 +3,8 @@
 #include <ioa/udp_receiver_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 #include <ioa/ioa.hpp>
+#include <iostream>
+#include <stdio.h>
 
 #include <string>
 
@@ -13,6 +15,10 @@ public:
     const char* fname = "ftestBig.txt";
     uint32_t size = 12;
     mftp::file f (fname, size);
+    ioa::buffer buff (40 + size * sizeof (char));
+    mftp::fileid copy = f.get_mfileid ().get_fileid ();
+    //file::convert_fileid (copy);
+    
     const std::string address = "255.255.255.255";
     const unsigned short port = 54321;
 

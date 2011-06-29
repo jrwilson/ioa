@@ -11,6 +11,9 @@
 
 namespace mftp {
 
+#define FILE_TYPE 0
+#define META_TYPE 1
+
   file::file (const char* name,
 	      const uint32_t type) :
     m_start_idx (0)
@@ -110,8 +113,61 @@ namespace mftp {
     memcpy (m_data, other.m_data, final_length);
   }
 
+  file::file (void* ptr, uint32_t size)
+  {
+    m_mfileid.set_length (size);
+    m_mfileid.set_type (META_TYPE);
+    m_have_count = m_mfileid.get_fragment_count ();
+    m_valid_count = m_mfileid.get_fragment_count ();
+    m_have.resize (m_mfileid.get_fragment_count ());
+    m_valid.resize (m_mfileid.get_fragment_count ());
+    for (uint32_t idx = 0; idx < m_mfileid.get_fragment_count (); ++idx) {
+      m_have[idx] = true;
+      m_valid[idx] = true;
+    }
+    
+    m_data = new unsigned char[m_mfileid.get_final_length ()];
+    memcpy (m_data, ptr, size);
+  
+    // Clear the padding.
+    for (uint32_t idx = m_mfileid.get_original_length (); idx < m_mfileid.get_padded_length (); ++idx) {
+      m_data[idx] = 0;
+    }
+
+    sha2_256 digester;
+
+    uint32_t read_idx;
+    uint32_t write_idx;
+
+    for (read_idx = 0, write_idx = m_mfileid.get_padded_length ();
+	 read_idx < m_mfileid.get_final_length ();
+	 read_idx += FRAGMENT_SIZE, write_idx += HASH_SIZE) {
+      // Update the digest.
+      digester.update (m_data + read_idx, FRAGMENT_SIZE);
+      
+      if (write_idx < m_mfileid.get_final_length ()) {
+	// Sample it without finalizing.
+	unsigned char samp[HASH_SIZE];
+	digester.get (samp);
+	memcpy (m_data + write_idx, samp, HASH_SIZE);
+      }
+      else {
+	// Finalize it then sample.
+	digester.finalize ();
+	unsigned char samp[HASH_SIZE];
+	digester.get (samp);
+	m_mfileid.set_hash (samp);
+      }
+    }    
+  }
+
   file::~file () {
     delete [] m_data;
+  }
+
+  void file::convert_fileid (mftp::fileid & fid) {
+    fid.type = htonl (fid.type);
+    fid.length = htonl (fid.length);
   }
 
   const mfileid& file::get_mfileid () const {
