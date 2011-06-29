@@ -6,6 +6,7 @@
 #include <cstring>
 #include <string>
 #include <errno.h>
+#include <cassert>
 
 namespace ioa {
 

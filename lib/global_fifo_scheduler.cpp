@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <queue>
 
+#include <unistd.h>
 #include <sys/select.h>
 
 #include "sys_create_runnable.hpp"
@@ -306,9 +307,6 @@ namespace ioa {
 	    max_fd = std::max ((--write_actions.end ())->first, max_fd);
 	  }
 	  int select_result = select (max_fd + 1, &read_set, &write_set, 0, test_timeout);
-	  if (select_result == -1) {
-	    perror ("select");
-	  }
 	  assert (select_result >= 0);
 	  
 	  // Process timers.

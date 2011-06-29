@@ -5,6 +5,7 @@
 #include <ioa/buffer.hpp>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <unistd.h>
 
 namespace ioa {
   
