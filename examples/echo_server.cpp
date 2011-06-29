@@ -1,7 +1,7 @@
 #include <ioa/ioa.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 #include <ioa/inet_address.hpp>
-#include <ioa/tcp_acceptor.hpp>
+#include <ioa/tcp_acceptor_automaton.hpp>
 
 #include <iostream>
 
@@ -72,9 +72,9 @@ private:
 
   void receive_effect (const ioa::tcp_connection_automaton::receive_val& val) {
     std::cout << __func__ << std::endl;
-    std::string s (val.buf.c_str (), val.buf.size ());
+    std::string s (val.buffer.c_str (), val.buffer.size ());
     std::cout << "Got: " << s << std::endl;
-    m_buffers.push (val.buf);
+    m_buffers.push (val.buffer);
   }
 
   V_UP_INPUT (client_handler_automaton, receive, ioa::tcp_connection_automaton::receive_val);
@@ -90,24 +90,24 @@ public:
   echo_server_automaton () :
     m_self (ioa::get_aid ())
   {
-    ioa::automaton_manager<ioa::tcp_acceptor>* acceptor = new ioa::automaton_manager<ioa::tcp_acceptor> (this, ioa::make_generator<ioa::tcp_acceptor> (ioa::inet_address ("0.0.0.0", 54321)));
+    ioa::automaton_manager<ioa::tcp_acceptor_automaton>* acceptor = new ioa::automaton_manager<ioa::tcp_acceptor_automaton> (this, ioa::make_generator<ioa::tcp_acceptor_automaton> (ioa::inet_address ("0.0.0.0", 54321)));
     ioa::make_binding_manager (this,
-			       acceptor, &ioa::tcp_acceptor::accept_complete,
-			       &m_self, &echo_server_automaton::accept_complete);
+			       acceptor, &ioa::tcp_acceptor_automaton::accept,
+			       &m_self, &echo_server_automaton::accept);
 			       
   }
 
 private:
   void schedule () const { }
 
-  void accept_complete_effect (const ioa::automaton_handle<ioa::tcp_connection_automaton>& connection) {
+  void accept_effect (const ioa::tcp_acceptor_automaton::accept_val& val) {
     std::cout << __func__ << std::endl;
-    std::cout << "Got connection " << connection << std::endl;
+    std::cout << "Got connection " << val.handle << std::endl;
 
-    new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (connection));
+    new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (val.handle));
   }
 
-  V_UP_INPUT (echo_server_automaton, accept_complete, ioa::automaton_handle<ioa::tcp_connection_automaton>);
+  V_UP_INPUT (echo_server_automaton, accept, ioa::tcp_acceptor_automaton::accept_val);
 };
 
 int main () {

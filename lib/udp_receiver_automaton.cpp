@@ -63,10 +63,7 @@ namespace ioa {
 						  const size_t fan_out) :
     m_state (SCHEDULE_READ_READY),
     m_fan_out (fan_out),
-    m_errno (0),
-    m_buffer (0),
-    m_buffer_size (0),
-    m_receive (0)
+    m_errno (0)
   {
     add_observable (&receive);
     prepare_socket (address);
@@ -78,10 +75,7 @@ namespace ioa {
 						  const size_t fan_out) :
     m_state (SCHEDULE_READ_READY),
     m_fan_out (fan_out),
-    m_errno (0),
-    m_buffer (0),
-    m_buffer_size (0),
-    m_receive (0)
+    m_errno (0)
   {
     add_observable (&receive);
     prepare_socket (local_addr);
@@ -101,12 +95,6 @@ namespace ioa {
     if (m_fd != -1) {
       close (m_fd);
     }
-
-    delete[] m_buffer;
-
-    if (m_receive != 0) {
-      delete m_receive;
-    }
   }
 
   void udp_receiver_automaton::schedule () const {
@@ -122,7 +110,6 @@ namespace ioa {
     if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_state == SCHEDULE_READ_READY) {
       // An automaton has bound to receive but we will never receive because m_fd is bad.
       // Generate an error.
-      m_receive = new receive_val (m_errno, inet_address (), buffer ());
       m_state = RECEIVE_READY;
       schedule ();
     }
@@ -137,38 +124,30 @@ namespace ioa {
     m_state = READ_READY_WAIT;
   }
 
-  // Treat like an input.
   bool udp_receiver_automaton::read_ready_precondition () const {
     return m_state == READ_READY_WAIT;
   }
 
   void udp_receiver_automaton::read_ready_effect () {
-    assert (m_receive == 0);
-
     int expect_bytes;
     int res = ioctl (m_fd, FIONREAD, &expect_bytes);
     if (res == -1) {
       m_errno = errno;
       close (m_fd);
       m_fd = -1;
-      m_receive = new receive_val (m_errno, inet_address (), buffer ());
+      m_address = inet_address ();
+      m_buffer.resize (0);
       m_state = RECEIVE_READY;
       return;
     }
 
     // Resize the buffer.
-    if (static_cast<int> (m_buffer_size) < expect_bytes) {
-      delete[] m_buffer;
-      m_buffer = new unsigned char[expect_bytes];
-      m_buffer_size = expect_bytes;
-    }
+    m_buffer.resize (expect_bytes);
 	
-    inet_address recv_address;
-    
-    ssize_t actual_bytes = recvfrom (m_fd, m_buffer, m_buffer_size, 0, recv_address.get_sockaddr_ptr (), recv_address.get_socklen_ptr ());
+    ssize_t actual_bytes = recvfrom (m_fd, m_buffer.data (), expect_bytes, 0, m_address.get_sockaddr_ptr (), m_address.get_socklen_ptr ());
     if (actual_bytes != -1) {
       // Success.
-      m_receive = new receive_val (0, recv_address, buffer (m_buffer, actual_bytes));
+      m_buffer.resize (actual_bytes);
       m_state = RECEIVE_READY;
       return;
     }
@@ -176,7 +155,8 @@ namespace ioa {
       m_errno = errno;
       close (m_fd);
       m_fd = -1;
-      m_receive = new receive_val (m_errno, inet_address (), buffer ());
+      m_address = inet_address ();
+      m_buffer.resize (0);
       m_state = RECEIVE_READY;
       return;
     }
@@ -187,11 +167,8 @@ namespace ioa {
   }
 
   udp_receiver_automaton::receive_val udp_receiver_automaton::receive_effect () {
-    assert (m_receive != 0);
-    std::auto_ptr<receive_val> retval (m_receive);
-    m_receive = 0;
     m_state = SCHEDULE_READ_READY;
-    return *retval;
+    return receive_val (m_errno, m_address, m_buffer);
   }
 
 };

@@ -120,7 +120,7 @@ private:
   void receive_effect (const ioa::tcp_connection_automaton::receive_val& val) {
     assert (m_state == RECEIVE_WAIT);
     std::cout << __func__ << std::endl;
-    std::string s (val.buf.c_str (), val.buf.size ());
+    std::string s (val.buffer.c_str (), val.buffer.size ());
     std::cout << "Received: " << s << std::endl;
     std::cout << "Time to die" << std::endl;
   }

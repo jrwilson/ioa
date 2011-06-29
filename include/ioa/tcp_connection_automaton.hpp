@@ -16,16 +16,12 @@ namespace ioa {
     struct receive_val
     {
       int err;
-      buffer buf;
+      ioa::buffer buffer;
       
-      receive_val () :
-	err (0)
-      { }
-
       receive_val (const int e,
-		   const buffer& b) :
+		   const ioa::buffer& b) :
 	err (e),
-	buf (b)
+	buffer (b)
       { }
     };
 
@@ -50,7 +46,7 @@ namespace ioa {
     ssize_t m_bytes_written;
     receive_state_t m_receive_state;
     int m_receive_errno;
-    receive_val m_receive_val;
+    buffer m_receive_buffer;
 
   public:
     tcp_connection_automaton (const int fd);

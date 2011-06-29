@@ -26,19 +26,6 @@ namespace ioa {
 	address (a),
 	buffer (b)
       { }
-
-      send_arg (const send_arg& other) :
-	address (other.address),
-	buffer (other.buffer)
-      { }
-
-      send_arg& operator= (const send_arg& other) {
-	if (this != &other) {
-	  address = other.address;
-	  buffer = other.buffer;
-	}
-	return *this;
-      }
     };
 
   private:

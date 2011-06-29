@@ -42,17 +42,17 @@ private:
   void schedule () const { }
 
   void receive_effect (const ioa::udp_receiver_automaton::receive_val& v) {
-    if (v.err_no != 0) {
+    if (v.err != 0) {
       char buf[256];
 #ifdef STRERROR_R_CHAR_P
-      std::cerr << "Couldn't receive udp_receiver_automaton: " << strerror_r (v.err_no, buf, 256) << std::endl;
+      std::cerr << "Couldn't receive udp_receiver_automaton: " << strerror_r (v.err, buf, 256) << std::endl;
 #else
-      strerror_r (v.err_no, buf, 256);
+      strerror_r (v.err, buf, 256);
       std::cerr << "Couldn't receive udp_receiver_automaton: " << buf << std::endl;
 #endif
     }
     else {
-      std::cout << v.address.address_str () << ":" << v.address.port () << " " << std::string (v.buffer.c_str (), v.buffer.size ()) << std::endl;
+      std::cout << v.address.address_str () << ":" << v.address.port () << " (" << v.buffer.size () << ") " << std::string (v.buffer.c_str (), v.buffer.size ()) << std::endl;
     }
   }
   

@@ -19,32 +19,17 @@ namespace ioa {
   {
   public:
     struct receive_val {
-      int err_no;
+      int err;
       inet_address address;
       ioa::buffer buffer;
 
       receive_val (const int e,
 		   const inet_address& a,
 		   const ioa::buffer& b) :
-	err_no (e),
+	err (e),
 	address (a),
 	buffer (b)
       { }
-
-      receive_val (const receive_val& other) :
-	err_no (other.err_no),
-	address (other.address),
-	buffer (other.buffer)
-      { }
-
-      receive_val& operator= (const receive_val& other) {
-	if (this != &other) {
-	  err_no = other.err_no;
-	  address = other.address;
-	  buffer = other.buffer;
-	}
-	return *this;
-      }
     };
 
   private:
@@ -57,10 +42,8 @@ namespace ioa {
     const size_t m_fan_out;
     int m_fd;
     int m_errno;
-    unsigned char* m_buffer;
-    size_t m_buffer_size;
-    // TODO:  Why is this a pointer?
-    receive_val* m_receive;
+    inet_address m_address;
+    buffer m_buffer;
 
   private:
     void prepare_socket (const inet_address& address);

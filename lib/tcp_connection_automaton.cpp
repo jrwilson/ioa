@@ -33,7 +33,7 @@ namespace ioa {
     if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive_state == SCHEDULE_READ_READY) {
       // An automaton has bound to receive but we will never receive because m_fd is bad.
       // Generate an error.
-      m_receive_val = receive_val (m_receive_errno, buffer ());
+      m_receive_buffer = buffer ();
       m_receive_state = RECEIVE_READY;
       schedule ();
     }
@@ -119,7 +119,7 @@ namespace ioa {
     if (ioctl (m_fd, FIONREAD, &num_bytes) == -1) {
       m_send_errno = errno;
       m_receive_errno = errno;
-      m_receive_val = receive_val (m_receive_errno, buffer ());
+      m_receive_buffer = buffer ();
       close (m_fd);
       m_fd = -1;
       m_receive_state = RECEIVE_READY;
@@ -132,14 +132,14 @@ namespace ioa {
     if (bytes_read == -1) {
       m_send_errno = errno;
       m_receive_errno = errno;
-      m_receive_val = receive_val (m_receive_errno, buffer ());
+      m_receive_buffer = buffer ();
       close (m_fd);
       m_fd = -1;
       m_receive_state = RECEIVE_READY;      
       return;
     }
 
-    m_receive_val = receive_val (0, buf);
+    m_receive_buffer = buf;
     m_receive_state = RECEIVE_READY;      
   }
 
@@ -149,7 +149,7 @@ namespace ioa {
 
   tcp_connection_automaton::receive_val tcp_connection_automaton::receive_effect () {
     m_receive_state = SCHEDULE_READ_READY;
-    return m_receive_val;
+    return receive_val (m_receive_errno, m_receive_buffer);
   }
 
 }
