@@ -19,7 +19,8 @@ namespace ioa {
   void schedule (automaton::sys_bind_type automaton::*ptr);
   void schedule (automaton::sys_unbind_type automaton::*ptr);
   void schedule (automaton::sys_destroy_type automaton::*ptr);
-  
+  void schedule (automaton::sys_self_destruct_type automaton::*ptr);
+
   template <class I, class M>
   void schedule (M I::*member_ptr) {
     assert (scheduler != 0);
@@ -78,6 +79,8 @@ namespace ioa {
     scheduler->schedule_write_ready (make_action_runnable (automaton_handle<I> (get_aid ()), member_ptr, param), fd);
   }
   
+  void close (int fd);
+
   template <class I, class M>
   size_t bind_count (M I::*member_ptr) {
     assert (scheduler != 0);

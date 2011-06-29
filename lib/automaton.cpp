@@ -4,6 +4,10 @@
 
 namespace ioa {
 
+  automaton::automaton () :
+    m_self_destruct (false)
+  { }
+
   automaton::~automaton () {
     // Send the helpers a destroyed signal.
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_send.begin ();
@@ -134,6 +138,11 @@ namespace ioa {
     schedule ();
   }
 
+  void automaton::self_destruct () {
+    m_self_destruct = true;
+    schedule ();
+  }
+
   bool automaton::sys_create_precondition () const {
     return !m_create_send.empty ();
   }
@@ -180,6 +189,15 @@ namespace ioa {
     m_destroy_send.erase (pos);
     m_destroy_recv.insert (helper);
     return helper;
+  }
+
+  bool automaton::sys_self_destruct_precondition () const {
+    return m_self_destruct;
+  }
+
+  void* automaton::sys_self_destruct_effect () {
+    m_self_destruct = false;
+    return 0;
   }
 
   void automaton::sys_create_key_exists_effect (void* const &) {
@@ -340,6 +358,9 @@ namespace ioa {
     }
     if (sys_destroy_precondition ()) {
       ioa::schedule (&automaton::sys_destroy);
+    }
+    if (sys_self_destruct_precondition ()) {
+      ioa::schedule (&automaton::sys_self_destruct);
     }
   }
 

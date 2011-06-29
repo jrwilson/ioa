@@ -28,6 +28,8 @@ namespace ioa {
     
     virtual void destroy (const aid_t automaton,
 			  void* const key) = 0;
+
+    virtual void self_destruct (const aid_t automaton) = 0;
     
     virtual void create_key_exists (const aid_t automaton,
 				    void* const key) = 0;

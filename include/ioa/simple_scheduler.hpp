@@ -31,6 +31,8 @@ namespace ioa {
     void schedule (automaton::sys_unbind_type automaton::*ptr);
     
     void schedule (automaton::sys_destroy_type automaton::*ptr);
+
+    void schedule (automaton::sys_self_destruct_type automaton::*ptr);
     
     void schedule (action_runnable_interface*);
     
@@ -42,7 +44,9 @@ namespace ioa {
     
     void schedule_write_ready (action_runnable_interface*,
 			       int fd);
-    
+
+    void close (int fd);
+
     void run (const_shared_ptr<generator_interface> generator);
   };
 

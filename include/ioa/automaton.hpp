@@ -53,12 +53,16 @@ namespace ioa {
     std::set<system_binding_manager_interface*> m_unbind_send;
     std::set<system_binding_manager_interface*> m_unbind_recv;
 
+    bool m_self_destruct;
+
   public:
+    automaton ();
     virtual ~automaton ();
     void create (system_automaton_manager_interface* helper);
     void bind (system_binding_manager_interface* helper);
     void unbind (system_binding_manager_interface* helper);
     void destroy (system_automaton_manager_interface* helper);
+    void self_destruct ();
 
   private:
     void schedule () const;
@@ -74,6 +78,9 @@ namespace ioa {
 
     bool sys_destroy_precondition () const;
     void* sys_destroy_effect ();
+
+    bool sys_self_destruct_precondition () const;
+    void* sys_self_destruct_effect ();
 
     void sys_create_key_exists_effect (void* const &);
     void sys_instance_exists_effect (void* const &);
@@ -97,6 +104,7 @@ namespace ioa {
     SYSTEM_OUTPUT (automaton, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
     SYSTEM_OUTPUT (automaton, sys_unbind, void*);
     SYSTEM_OUTPUT (automaton, sys_destroy, void*);
+    SYSTEM_OUTPUT (automaton, sys_self_destruct, void*);
 
     SYSTEM_INPUT (automaton, sys_create_key_exists, void*);
     SYSTEM_INPUT (automaton, sys_instance_exists, void*);

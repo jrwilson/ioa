@@ -24,6 +24,8 @@ namespace ioa {
 
     virtual void schedule (automaton::sys_destroy_type automaton::*ptr) = 0;
 
+    virtual void schedule (automaton::sys_self_destruct_type automaton::*ptr) = 0;
+
     virtual void schedule (action_runnable_interface*) = 0;
 
     virtual void schedule_after (action_runnable_interface*,
@@ -34,6 +36,8 @@ namespace ioa {
     
     virtual void schedule_write_ready (action_runnable_interface*,
 				       int fd) = 0;
+
+    virtual void close (int fd) = 0;
 
     virtual void run (const_shared_ptr<generator_interface> generator) = 0;
   };

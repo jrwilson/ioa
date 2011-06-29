@@ -13,11 +13,13 @@
 #include "sys_bind_runnable.hpp"
 #include "sys_unbind_runnable.hpp"
 #include "sys_destroy_runnable.hpp"
+#include "sys_self_destruct_runnable.hpp"
 
 #include "create_runnable.hpp"
 #include "bind_runnable.hpp"
 #include "unbind_runnable.hpp"
 #include "destroy_runnable.hpp"
+#include "self_destruct_runnable.hpp"
 
 #include "output_exec_runnable.hpp"
 #include "output_bound_runnable.hpp"
@@ -41,6 +43,7 @@ namespace ioa {
     std::queue<time_action> m_timerq;
     std::queue<fd_action> m_readq;
     std::queue<fd_action> m_writeq;
+    std::set<int> m_close;
     aid_t m_current_aid;
 
     struct action_runnable_equal
@@ -136,6 +139,10 @@ namespace ioa {
   
     void schedule (automaton::sys_destroy_type automaton::*member_ptr) {
       schedule_configq (new sys_destroy_runnable (get_current_aid ()));
+    }
+
+    void schedule (automaton::sys_self_destruct_type automaton::*member_ptr) {
+      schedule_configq (new sys_self_destruct_runnable (get_current_aid ()));
     }
 
     void schedule (action_runnable_interface* r) {
@@ -257,6 +264,26 @@ namespace ioa {
 	// We only need to select if we have fds or timers.
 	if (!read_actions.empty () || !write_actions.empty () || !timer_queue.empty ()) {
 	  
+	  // Remove closed fds.
+	  for (std::set<int>::const_iterator pos = m_close.begin ();
+	       pos != m_close.end ();
+	       ++pos) {
+	    std::map<int, action_runnable_interface*>::iterator p;
+
+	    p = read_actions.find (*pos);
+	    if (p != read_actions.end ()) {
+	      delete p->second;
+	      read_actions.erase (p);
+	    }
+
+	    p = write_actions.find (*pos);
+	    if (p != write_actions.end ()) {
+	      delete p->second;
+	      write_actions.erase (p);
+	    }
+	    
+	  }
+
 	  // Determine the read set.
 	  for (std::map<int, action_runnable_interface*>::const_iterator pos = read_actions.begin ();
 	       pos != read_actions.end ();
@@ -271,7 +298,6 @@ namespace ioa {
 	    FD_SET (pos->first, &write_set);
 	  }
 	  
-	  // TODO: Do better than FD_SETSIZE.
 	  int max_fd = 0;
 	  if (!read_actions.empty ()) {
 	    max_fd = std::max ((--read_actions.end ())->first, max_fd);
@@ -280,6 +306,9 @@ namespace ioa {
 	    max_fd = std::max ((--write_actions.end ())->first, max_fd);
 	  }
 	  int select_result = select (max_fd + 1, &read_set, &write_set, 0, test_timeout);
+	  if (select_result == -1) {
+	    perror ("select");
+	  }
 	  assert (select_result >= 0);
 	  
 	  // Process timers.
@@ -331,6 +360,8 @@ namespace ioa {
 
 	}
 
+	m_close.clear ();
+
 	// Process configuration actions.
 	if (!m_configq.empty ()) {
 	  runnable_interface* r = m_configq.front ();
@@ -339,6 +370,7 @@ namespace ioa {
 	  delete r;
 	}
 
+	// Process user actions.
 	if (!m_userq.empty ()) {
 	  runnable_interface* r = m_userq.front ();
 	  m_userq.pop_front ();
@@ -375,6 +407,11 @@ namespace ioa {
       assert (m_userq.empty ());
       assert (runnable_interface::count () == 0);
     }
+
+    void close (int fd) {
+      m_close.insert (fd);
+      ::close (fd);
+    }
   
     void set_current_aid (const aid_t aid) {
       // This is to be used during generation so that any allocated memory can be associated with the automaton.
@@ -406,6 +443,10 @@ namespace ioa {
     void destroy (const aid_t automaton,
 		  void* const key) {
       schedule_configq (new destroy_runnable (automaton, key));
+    }
+
+    void self_destruct (const aid_t automaton) {
+      schedule_configq (new self_destruct_runnable (automaton));
     }
 
     void create_key_exists (const aid_t aid,
@@ -530,7 +571,11 @@ namespace ioa {
   void global_fifo_scheduler::schedule (automaton::sys_destroy_type automaton::*ptr) {
     m_impl->schedule (ptr);
   }
-  
+
+  void global_fifo_scheduler::schedule (automaton::sys_self_destruct_type automaton::*ptr) {
+    m_impl->schedule (ptr);
+  }
+
   void global_fifo_scheduler::schedule (action_runnable_interface* r) {
     m_impl->schedule (r);
   }
@@ -548,6 +593,10 @@ namespace ioa {
   void global_fifo_scheduler::schedule_write_ready (action_runnable_interface* r,
 						    int fd) {
     m_impl->schedule_write_ready (r, fd);
+  }
+
+  void global_fifo_scheduler::close (int fd) {
+    m_impl->close (fd);
   }
   
   void global_fifo_scheduler::run (const_shared_ptr<generator_interface> generator) {

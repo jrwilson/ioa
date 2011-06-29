@@ -6,20 +6,21 @@
 #include <iostream>
 
 class echo_client_automaton :
-  public ioa::automaton,
-  private ioa::observer
+  public ioa::automaton
 {
 private:
   enum state_t {
     CONNECT_READY,
     CONNECT_COMPLETE_WAIT,
     SEND_READY,
-    RECEIVE_WAIT
+    RECEIVE_WAIT,
+    ERROR
   };
 
   state_t m_state;
   ioa::handle_manager<echo_client_automaton> m_self;
   ioa::handle_manager<ioa::tcp_connection_automaton> m_connection;
+  ioa::binding_manager_interface* m_binding_manager;
 
 public:
   echo_client_automaton () :
@@ -36,8 +37,6 @@ public:
 			       connector, &ioa::tcp_connector_automaton::connect_complete,
 			       &m_self, &echo_client_automaton::connect_complete);
 
-    add_observable (&connect_complete);
-    
     schedule ();
   }
 
@@ -51,16 +50,8 @@ private:
     }
   }
 
-  void observe (ioa::observable* o) {
-    if (o == &connect_complete || o == &send_complete || o == &receive) {
-      schedule ();
-    }
-  }
-
   bool connect_precondition () const {
-    return m_state == CONNECT_READY &&
-      ioa::bind_count (&echo_client_automaton::connect) != 0 &&
-      ioa::bind_count (&echo_client_automaton::connect_complete) != 0;
+    return m_state == CONNECT_READY && ioa::bind_count (&echo_client_automaton::connect) != 0;
   }
 
   ioa::inet_address connect_effect () {
@@ -71,58 +62,80 @@ private:
   V_UP_OUTPUT (echo_client_automaton, connect, ioa::inet_address);  
 
   void connect_complete_effect (const ioa::tcp_connector_automaton::connect_val& val) {
-    assert (m_state == CONNECT_COMPLETE_WAIT);
-    std::cout << __func__ << " " << val.handle << std::endl;
-    m_connection = val.handle;
-
-    ioa::make_binding_manager (this,
-			       &m_self, &echo_client_automaton::send,
-			       &m_connection, &ioa::tcp_connection_automaton::send);
-
-    ioa::make_binding_manager (this,
-			       &m_connection, &ioa::tcp_connection_automaton::send_complete,
-			       &m_self, &echo_client_automaton::send_complete);
-
-    ioa::make_binding_manager (this,
-			       &m_connection, &ioa::tcp_connection_automaton::receive,
-			       &m_self, &echo_client_automaton::receive);
-
-    add_observable (&send_complete);
-    add_observable (&receive);
-
-    m_state = SEND_READY;
+    if (val.err != 0) {
+      char buf[256];
+#ifdef STRERROR_R_CHAR_P
+      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (val.err, buf, 256) << std::endl;
+#else
+      strerror_r (val.err, buf, 256);
+      std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+#endif
+      m_state = ERROR;
+    }
+    else {
+      m_connection = val.handle;
+      ioa::make_binding_manager (this,
+				 &m_self, &echo_client_automaton::send,
+				 &m_connection, &ioa::tcp_connection_automaton::send);
+      
+      ioa::make_binding_manager (this,
+				 &m_connection, &ioa::tcp_connection_automaton::send_complete,
+				 &m_self, &echo_client_automaton::send_complete);
+      
+      m_binding_manager = ioa::make_binding_manager (this,
+						     &m_connection, &ioa::tcp_connection_automaton::receive,
+						     &m_self, &echo_client_automaton::receive);
+      
+      m_state = SEND_READY;
+    }
   }
 
   V_UP_INPUT (echo_client_automaton, connect_complete, ioa::tcp_connector_automaton::connect_val);
 
   bool send_precondition () const {
-    return m_state == SEND_READY &&
-      ioa::bind_count (&echo_client_automaton::send) != 0 &&
-      ioa::bind_count (&echo_client_automaton::send_complete) != 0 &&
-      ioa::bind_count (&echo_client_automaton::receive) != 0;
+    return m_state == SEND_READY && ioa::bind_count (&echo_client_automaton::send) != 0;
   }
 
   ioa::buffer send_effect () {
     m_state = RECEIVE_WAIT;
     std::string s ("Hello World!!");
-    std::cout << "Sent: " << s << std::endl;
+    std::cout << "Sent:\t\t" << s << std::endl;
     return ioa::buffer (s.c_str (), s.size ());
   }
 
   V_UP_OUTPUT (echo_client_automaton, send, ioa::buffer);
 
   void send_complete_effect (const int& err) {
-    std::cout << "Got send complete" << std::endl;
+    if (err != 0) {
+      char buf[256];
+#ifdef STRERROR_R_CHAR_P
+      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (err, buf, 256) << std::endl;
+#else
+      strerror_r (err, buf, 256);
+      std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+#endif
+      m_state = ERROR;
+    }
   }
 
   V_UP_INPUT (echo_client_automaton, send_complete, int);
 
   void receive_effect (const ioa::tcp_connection_automaton::receive_val& val) {
-    assert (m_state == RECEIVE_WAIT);
-    std::cout << __func__ << std::endl;
-    std::string s (val.buffer.c_str (), val.buffer.size ());
-    std::cout << "Received: " << s << std::endl;
-    std::cout << "Time to die" << std::endl;
+    if (val.err != 0) {
+      char buf[256];
+#ifdef STRERROR_R_CHAR_P
+      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (val.err, buf, 256) << std::endl;
+#else
+      strerror_r (val.err, buf, 256);
+      std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+#endif
+      m_state = ERROR;
+    }
+    else {
+      std::string s (val.buffer.c_str (), val.buffer.size ());
+      std::cout << "Received:\t" << s << std::endl;
+      m_binding_manager->unbind ();
+    }
   }
   
   V_UP_INPUT (echo_client_automaton, receive, ioa::tcp_connection_automaton::receive_val);
