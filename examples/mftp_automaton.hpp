@@ -46,7 +46,8 @@ namespace mftp {
     timer_state_t m_fragment_timer_state;
     timer_state_t m_request_timer_state;
     timer_state_t m_announcement_timer_state;
-  
+    bool m_reported;
+
   public:
     mftp_automaton (const file& file) :
       m_fragment_interval (0, 1000), // 1000 microseconds = 1 millisecond
@@ -61,7 +62,8 @@ namespace mftp {
       m_send_state (SEND_READY),
       m_fragment_timer_state (SET_READY),
       m_request_timer_state (SET_READY),
-      m_announcement_timer_state (SET_READY)
+      m_announcement_timer_state (SET_READY),
+      m_reported (m_file.complete ())
     {
       ioa::automaton_manager<ioa::alarm_automaton>* fragment_clock = new ioa::automaton_manager<ioa::alarm_automaton> (this, ioa::make_generator<ioa::alarm_automaton> ());
       ioa::make_binding_manager (this,
@@ -176,6 +178,7 @@ namespace mftp {
       switch (m.header.message_type) {
       case FRAGMENT:
 	{
+	  // std::cout << "Receiving fragment" << std::endl;
 	// It must be a fragment from our file and the offset must be correct.
         if (!m_file.complete () &&
 	    m.frag.fid == m_fileid &&
@@ -203,7 +206,7 @@ namespace mftp {
 
       case REQUEST:
       {
-	std::cout << "Receiving request" << std::endl;
+	//std::cout << "Receiving request" << std::endl;
 	//Requests must be for our file.
 	if (m.req.fid == m_fileid){
 	  for (uint32_t sp = 0; sp < m.req.span_count; sp++){
@@ -312,7 +315,7 @@ namespace mftp {
     }
 
     V_UP_OUTPUT (mftp_automaton, set_announcement_timer, ioa::time);
-
+    
     void announcement_timer_interrupt_effect () {
       if (!m_file.empty () && m_sendq.empty()) {
 	m_sendq.push (get_fragment (m_file.get_random_index ()));
@@ -322,7 +325,17 @@ namespace mftp {
 
     UV_UP_INPUT (mftp_automaton, announcement_timer_interrupt);
 
+    bool download_complete_precondition () const {
+      return m_file.complete () && !m_reported && ioa::binding_count (&mftp_automaton::download_complete) != 0;
+    }
 
+    mftp::file download_complete_effect () {
+      return m_file;
+    }
+  public:
+    V_UP_OUTPUT (mftp_automaton, download_complete, mftp::file);
+
+  private:
     void convert_to_network (message* m) {
       //std::cout << "converting to network byte order" << std::endl;
       switch (m->header.message_type) {
