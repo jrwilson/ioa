@@ -25,11 +25,6 @@ namespace ioa {
     automaton_handle<T> get_handle () const {
       return m_handle;
     }
-
-    void destroy () {
-      // This should never be called.
-      assert (false);
-    }
     
   };
 

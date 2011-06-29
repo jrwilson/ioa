@@ -8,6 +8,7 @@ namespace ioa {
   template <class I>
   class automaton_manager :
     public system_automaton_manager_interface,
+    public automaton_manager_interface,
     public automaton_handle_interface<I>
   {
   public:
