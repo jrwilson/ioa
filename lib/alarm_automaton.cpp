@@ -2,9 +2,8 @@
 
 namespace ioa {
 
-  alarm_automaton::alarm_automaton (const size_t fan_out) :
-    m_state (SET_WAIT),
-    m_fan_out (fan_out)
+  alarm_automaton::alarm_automaton () :
+    m_state (SET_WAIT)
   { }
 
   void alarm_automaton::schedule () const {
@@ -41,7 +40,7 @@ namespace ioa {
   }
   
   bool alarm_automaton::alarm_precondition () const {
-    return m_state == ALARM_READY && binding_count (&alarm_automaton::alarm) == m_fan_out;
+    return m_state == ALARM_READY && binding_count (&alarm_automaton::alarm) != 0;
   }
   
   void alarm_automaton::alarm_effect () {

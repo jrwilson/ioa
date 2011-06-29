@@ -59,10 +59,8 @@ namespace ioa {
     }
   }
 
-  udp_receiver_automaton::udp_receiver_automaton (const inet_address& address,
-						  const size_t fan_out) :
+  udp_receiver_automaton::udp_receiver_automaton (const inet_address& address) :
     m_state (SCHEDULE_READ_READY),
-    m_fan_out (fan_out),
     m_errno (0)
   {
     add_observable (&receive);
@@ -71,10 +69,8 @@ namespace ioa {
   }
 
   udp_receiver_automaton::udp_receiver_automaton (const inet_address& group_addr,
-						  const inet_address& local_addr,
-						  const size_t fan_out) :
+						  const inet_address& local_addr) :
     m_state (SCHEDULE_READ_READY),
-    m_fan_out (fan_out),
     m_errno (0)
   {
     add_observable (&receive);
@@ -163,7 +159,7 @@ namespace ioa {
   }
     
   bool udp_receiver_automaton::receive_precondition () const {
-    return m_state == RECEIVE_READY && binding_count (&udp_receiver_automaton::receive) == m_fan_out;
+    return m_state == RECEIVE_READY && binding_count (&udp_receiver_automaton::receive) != 0;
   }
 
   udp_receiver_automaton::receive_val udp_receiver_automaton::receive_effect () {

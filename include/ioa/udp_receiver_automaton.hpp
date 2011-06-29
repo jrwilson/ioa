@@ -39,7 +39,6 @@ namespace ioa {
       RECEIVE_READY,
     };
     state_t m_state;
-    const size_t m_fan_out;
     int m_fd;
     int m_errno;
     inet_address m_address;
@@ -49,11 +48,9 @@ namespace ioa {
     void prepare_socket (const inet_address& address);
 
   public:
-    udp_receiver_automaton (const inet_address& address,
-			    const size_t fan_out = 1);
+    udp_receiver_automaton (const inet_address& address);
     udp_receiver_automaton (const inet_address& group_addr,
-			    const inet_address& local_addr,
-			    const size_t fan_out = 1);
+			    const inet_address& local_addr);
     ~udp_receiver_automaton ();
 
     void schedule () const;

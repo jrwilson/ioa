@@ -16,11 +16,10 @@ namespace ioa {
       ALARM_READY,
     };
     state_t m_state;
-    const size_t m_fan_out;
     time m_interval;
 
   public:
-    alarm_automaton (const size_t fan_out = 1);
+    alarm_automaton ();
 
   private:
     void schedule () const;
