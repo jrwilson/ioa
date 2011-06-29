@@ -5,6 +5,9 @@
 
 #include <vector>
 
+#define FILE_TYPE 0
+#define META_TYPE 1
+
 namespace mftp {
   
   class file {
@@ -28,10 +31,9 @@ namespace mftp {
 	  const uint32_t);
     file (const fileid& f);
     file (const file& other);
-    file (void* ptr, uint32_t size);
+    file (const void* ptr, uint32_t size);
     ~file ();
     
-    void convert_fileid (mftp::fileid & fid);
     const mfileid& get_mfileid () const;
     unsigned char* get_data_ptr ();
     bool complete () const;

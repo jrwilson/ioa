@@ -6,6 +6,7 @@
 #include <cassert>
 #include <math.h>
 #include <utility>
+#include <arpa/inet.h>
 
 namespace mftp {
 
@@ -27,6 +28,11 @@ namespace mftp {
       return memcmp (hash, other.hash, HASH_SIZE) == 0 &&
 	type == other.type &&
 	length == other.length;
+    }
+
+    void convert_to_network () {
+      type = htonl (type);
+      length = htonl (length);
     }
   };
 

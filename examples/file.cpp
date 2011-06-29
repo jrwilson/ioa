@@ -11,9 +11,6 @@
 
 namespace mftp {
 
-#define FILE_TYPE 0
-#define META_TYPE 1
-
   file::file (const char* name,
 	      const uint32_t type) :
     m_start_idx (0)
@@ -113,7 +110,7 @@ namespace mftp {
     memcpy (m_data, other.m_data, final_length);
   }
 
-  file::file (void* ptr, uint32_t size)
+  file::file (const void* ptr, uint32_t size)
   {
     m_mfileid.set_length (size);
     m_mfileid.set_type (META_TYPE);
@@ -163,11 +160,6 @@ namespace mftp {
 
   file::~file () {
     delete [] m_data;
-  }
-
-  void file::convert_fileid (mftp::fileid & fid) {
-    fid.type = htonl (fid.type);
-    fid.length = htonl (fid.length);
   }
 
   const mfileid& file::get_mfileid () const {
