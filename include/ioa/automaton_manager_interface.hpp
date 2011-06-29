@@ -5,8 +5,7 @@
 
 namespace ioa {
 
-  class automaton_manager_interface :
-    public observable
+  class automaton_manager_interface
   {
   public:
     virtual ~automaton_manager_interface () { }
@@ -15,7 +14,7 @@ namespace ioa {
   
   template <class I>
   class automaton_handle_interface :
-    public automaton_manager_interface
+    public observable
   {
   public:
     virtual ~automaton_handle_interface () { }
