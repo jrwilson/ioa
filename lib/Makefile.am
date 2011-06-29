@@ -38,6 +38,7 @@ sys_destroy_runnable.hpp \
 sys_unbind_runnable.hpp \
 tcp_acceptor_automaton.cpp \
 tcp_connection_automaton.cpp \
+tcp_connector_automaton.cpp \
 thread.hpp \
 thread.cpp \
 thread_key.hpp \

@@ -57,8 +57,13 @@ namespace ioa {
   }
 
   void tcp_connection_automaton::schedule_write_effect () {
-    ioa::schedule_write_ready (&tcp_connection_automaton::write_ready, m_fd);
-    m_send_state = WRITE_READY_WAIT;
+    if (m_fd != -1) {
+      ioa::schedule_write_ready (&tcp_connection_automaton::write_ready, m_fd);
+      m_send_state = WRITE_READY_WAIT;
+    }
+    else {
+      m_send_state = SEND_COMPLETE_READY;
+    }
   }
 
   bool tcp_connection_automaton::write_ready_precondition () const {
@@ -66,9 +71,14 @@ namespace ioa {
   }
 
   void tcp_connection_automaton::write_ready_effect () {
+    if (m_fd == -1) {
+      m_send_state = SEND_COMPLETE_READY;
+      return;
+    }
+
     // Write to the socket.
     ssize_t bytes_written = write (m_fd, m_send_buffer.data () + m_bytes_written, m_send_buffer.size () - m_bytes_written);
-
+    
     if (bytes_written == -1) {
       m_send_errno = errno;
       m_receive_errno = errno;
@@ -79,7 +89,7 @@ namespace ioa {
     else {
       // We have made progress.
       m_bytes_written += bytes_written;
-	
+      
       if (m_bytes_written == static_cast<ssize_t> (m_send_buffer.size ())) {
 	// We are done with this buffer.
 	m_send_state = SEND_COMPLETE_READY;
@@ -105,8 +115,13 @@ namespace ioa {
   }
 
   void tcp_connection_automaton::schedule_read_effect () {
-    ioa::schedule_read_ready (&tcp_connection_automaton::read_ready, m_fd);
-    m_receive_state = READ_READY_WAIT;
+    if (m_fd != -1) {
+      ioa::schedule_read_ready (&tcp_connection_automaton::read_ready, m_fd);
+      m_receive_state = READ_READY_WAIT;
+    }
+    else {
+      m_receive_state = RECEIVE_READY;
+    }
   }
 
   bool tcp_connection_automaton::read_ready_precondition () const {
@@ -114,6 +129,11 @@ namespace ioa {
   }
 
   void tcp_connection_automaton::read_ready_effect () {
+    if (m_fd == -1) {
+      m_receive_state = RECEIVE_READY;
+      return;
+    }
+
     // Determine the number of bytes we can read without blocking.
     int num_bytes;
     if (ioctl (m_fd, FIONREAD, &num_bytes) == -1) {

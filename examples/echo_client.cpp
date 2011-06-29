@@ -1,7 +1,7 @@
 #include <ioa/ioa.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 #include <ioa/inet_address.hpp>
-#include <ioa/tcp_connector.hpp>
+#include <ioa/tcp_connector_automaton.hpp>
 
 #include <iostream>
 
@@ -26,14 +26,14 @@ public:
     m_state (CONNECT_READY),
     m_self (ioa::get_aid ())
   {
-    ioa::automaton_manager<ioa::tcp_connector>* connector = new ioa::automaton_manager<ioa::tcp_connector> (this, ioa::make_generator<ioa::tcp_connector> ());
+    ioa::automaton_manager<ioa::tcp_connector_automaton>* connector = new ioa::automaton_manager<ioa::tcp_connector_automaton> (this, ioa::make_generator<ioa::tcp_connector_automaton> ());
 
     ioa::make_binding_manager (this,
 			       &m_self, &echo_client_automaton::connect,
-			       connector, &ioa::tcp_connector::connect);
+			       connector, &ioa::tcp_connector_automaton::connect);
 
     ioa::make_binding_manager (this,
-			       connector, &ioa::tcp_connector::connect_complete,
+			       connector, &ioa::tcp_connector_automaton::connect_complete,
 			       &m_self, &echo_client_automaton::connect_complete);
 
     add_observable (&connect_complete);
@@ -70,10 +70,10 @@ private:
 
   V_UP_OUTPUT (echo_client_automaton, connect, ioa::inet_address);  
 
-  void connect_complete_effect (const ioa::automaton_handle<ioa::tcp_connection_automaton>& handle) {
+  void connect_complete_effect (const ioa::tcp_connector_automaton::connect_val& val) {
     assert (m_state == CONNECT_COMPLETE_WAIT);
-    std::cout << __func__ << " " << handle << std::endl;
-    m_connection = handle;
+    std::cout << __func__ << " " << val.handle << std::endl;
+    m_connection = val.handle;
 
     ioa::make_binding_manager (this,
 			       &m_self, &echo_client_automaton::send,
@@ -93,7 +93,7 @@ private:
     m_state = SEND_READY;
   }
 
-  V_UP_INPUT (echo_client_automaton, connect_complete, ioa::automaton_handle<ioa::tcp_connection_automaton>);
+  V_UP_INPUT (echo_client_automaton, connect_complete, ioa::tcp_connector_automaton::connect_val);
 
   bool send_precondition () const {
     return m_state == SEND_READY &&
