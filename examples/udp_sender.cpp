@@ -13,7 +13,6 @@ private:
     SEND_READY,
     SEND_COMPLETE_WAIT,
     SEND_COMPLETE,
-    ERROR
   };
   
   state_t m_state;
@@ -40,7 +39,7 @@ public:
   }
 
   ~broadcast_sender () {
-    if (!(m_state == SEND_COMPLETE || m_state == ERROR)) {
+    if (!(m_state == SEND_COMPLETE)) {
       std::cerr << "Didn't receive send complete from udp_sender_automaton." << std::endl;
     }
   }
@@ -75,7 +74,7 @@ private:
       strerror_r (result, buf, 256);
       std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
 #endif
-      m_state = ERROR;
+      self_destruct ();
     }
     else {
       m_state = SEND_COMPLETE;

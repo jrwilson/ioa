@@ -50,6 +50,7 @@ private:
       strerror_r (v.err, buf, 256);
       std::cerr << "Couldn't receive udp_receiver_automaton: " << buf << std::endl;
 #endif
+      self_destruct ();
     }
     else {
       std::cout << v.address.address_str () << ":" << v.address.port () << " (" << v.buffer.size () << ") " << std::string (v.buffer.c_str (), v.buffer.size ()) << std::endl;
