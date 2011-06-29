@@ -170,6 +170,15 @@ namespace ioa {
       m_receive_state = RECEIVE_READY;      
       return;
     }
+    else if (bytes_read == 0) {
+      m_send_errno = ECONNRESET;
+      m_receive_errno = ECONNRESET;
+      m_receive_buffer = buffer ();
+      close (m_fd);
+      m_fd = -1;
+      m_receive_state = RECEIVE_READY;
+      return;
+    }
 
     m_receive_buffer = buf;
     m_receive_state = RECEIVE_READY;      

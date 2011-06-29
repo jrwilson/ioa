@@ -45,11 +45,13 @@ namespace ioa {
     // The receive set is waiting for a response.
     std::set<system_automaton_manager_interface*> m_create_send;
     std::set<system_automaton_manager_interface*> m_create_recv;
+    std::set<system_automaton_manager_interface*> m_create_done;
     std::set<system_automaton_manager_interface*> m_destroy_send;
     std::set<system_automaton_manager_interface*> m_destroy_recv;
     // Same thing for binding.
     std::set<system_binding_manager_interface*> m_bind_send;
     std::set<system_binding_manager_interface*> m_bind_recv;
+    std::set<system_binding_manager_interface*> m_bind_done;
     std::set<system_binding_manager_interface*> m_unbind_send;
     std::set<system_binding_manager_interface*> m_unbind_recv;
 
@@ -96,8 +98,6 @@ namespace ioa {
     void sys_unbound_effect (void* const &);
     void sys_create_key_dne_effect (void* const &);
     void sys_automaton_destroyed_effect (void* const &);
-    void sys_recipient_dne_effect (void* const &);
-    void sys_event_delivered_effect (void* const &);
 
   public:
     SYSTEM_OUTPUT (automaton, sys_create, std::pair<const_shared_ptr<generator_interface> COMMA void*>);
@@ -120,8 +120,6 @@ namespace ioa {
     SYSTEM_INPUT (automaton, sys_unbound, void*);
     SYSTEM_INPUT (automaton, sys_create_key_dne, void*);
     SYSTEM_INPUT (automaton, sys_automaton_destroyed, void*);
-    SYSTEM_INPUT (automaton, sys_recipient_dne, void*);
-    SYSTEM_INPUT (automaton, sys_event_delivered, void*);
   };
 
 }

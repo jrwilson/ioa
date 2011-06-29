@@ -281,7 +281,8 @@ namespace ioa {
 	      delete p->second;
 	      write_actions.erase (p);
 	    }
-	    
+
+	    ::close (*pos);	    
 	  }
 
 	  // Determine the read set.
@@ -410,7 +411,6 @@ namespace ioa {
 
     void close (int fd) {
       m_close.insert (fd);
-      ::close (fd);
     }
   
     void set_current_aid (const aid_t aid) {

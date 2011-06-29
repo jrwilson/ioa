@@ -182,7 +182,11 @@ struct test_system_scheduler :
 		void* const key) {
     assert (false);
   }
-  
+
+  void self_destruct (const ioa::aid_t automaton) {
+    assert (false);
+  }
+
   void create_key_exists (const ioa::aid_t automaton,
 			  void* const key) {
     m_create_key_exists_automaton = automaton;

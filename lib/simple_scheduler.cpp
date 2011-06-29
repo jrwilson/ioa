@@ -50,6 +50,8 @@ namespace ioa {
     blocking_list<time_action> m_timerq;
     blocking_list<fd_action> m_readq;
     blocking_list<fd_action> m_writeq;
+    // TODO:  Replace with block set.  Actually, all of these could be sets.
+    blocking_list<int> m_closeq;
     thread_key<aid_t> m_current_aid;
 
     struct action_runnable_equal
@@ -284,6 +286,31 @@ namespace ioa {
 	  test_timeout = &timeout;
 	}
 
+	// Remove closed fds.
+	{
+	  lock lock (m_closeq.list_mutex);
+	  while (!m_closeq.list.empty ()) {
+	    int fd = m_closeq.list.front ();
+	    m_closeq.list.pop_front ();
+
+	    std::map<int, action_runnable_interface*>::iterator p;
+
+	    p = read_actions.find (fd);
+	    if (p != read_actions.end ()) {
+	      delete p->second;
+	      read_actions.erase (p);
+	    }
+
+	    p = write_actions.find (fd);
+	    if (p != write_actions.end ()) {
+	      delete p->second;
+	      write_actions.erase (p);
+	    }
+
+	    ::close (fd);	    
+	  }
+	}
+
 	// Determine the read set.
 	for (std::map<int, action_runnable_interface*>::const_iterator pos = read_actions.begin ();
 	     pos != read_actions.end ();
@@ -488,8 +515,9 @@ namespace ioa {
     }
   
     void close (int fd) {
-      // TODO:  Implement this.
-      assert (false);
+      if (m_closeq.push (fd) == 1) {
+	wakeup_io_thread ();
+      }
     }
 
     void set_current_aid (const aid_t aid) {

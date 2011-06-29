@@ -14,7 +14,6 @@ private:
     CONNECT_COMPLETE_WAIT,
     SEND_READY,
     RECEIVE_WAIT,
-    ERROR
   };
 
   state_t m_state;
@@ -65,12 +64,12 @@ private:
     if (val.err != 0) {
       char buf[256];
 #ifdef STRERROR_R_CHAR_P
-      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (val.err, buf, 256) << std::endl;
+      std::cerr << "Couldn't connect: " << strerror_r (val.err, buf, 256) << std::endl;
 #else
       strerror_r (val.err, buf, 256);
-      std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+      std::cerr << "Couldn't connect: " << buf << std::endl;
 #endif
-      m_state = ERROR;
+      self_destruct ();
     }
     else {
       m_connection = val.handle;
@@ -109,12 +108,12 @@ private:
     if (err != 0) {
       char buf[256];
 #ifdef STRERROR_R_CHAR_P
-      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (err, buf, 256) << std::endl;
+      std::cerr << "Couldn't send: " << strerror_r (err, buf, 256) << std::endl;
 #else
       strerror_r (err, buf, 256);
-      std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+      std::cerr << "Couldn't send: " << buf << std::endl;
 #endif
-      m_state = ERROR;
+      self_destruct ();
     }
   }
 
@@ -124,12 +123,12 @@ private:
     if (val.err != 0) {
       char buf[256];
 #ifdef STRERROR_R_CHAR_P
-      std::cerr << "Couldn't send udp_sender_automaton: " << strerror_r (val.err, buf, 256) << std::endl;
+      std::cerr << "Couldn't receive: " << strerror_r (val.err, buf, 256) << std::endl;
 #else
       strerror_r (val.err, buf, 256);
-      std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
+      std::cerr << "Couldn't receive: " << buf << std::endl;
 #endif
-      m_state = ERROR;
+      self_destruct ();
     }
     else {
       std::string s (val.buffer.c_str (), val.buffer.size ());

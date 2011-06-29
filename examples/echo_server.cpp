@@ -24,8 +24,6 @@ public:
     m_connection (handle),
     m_state (SEND_READY)
   {
-    std::cout << m_self.get_handle () << " will serve " << m_connection.get_handle () << std::endl;
-
     ioa::make_binding_manager (this,
 			       &m_self, &client_handler_automaton::send,
 			       &m_connection, &ioa::tcp_connection_automaton::send);
@@ -35,8 +33,8 @@ public:
     			       &m_self, &client_handler_automaton::send_complete);
 
     ioa::make_binding_manager (this,
-    			       &m_connection, &ioa::tcp_connection_automaton::receive,
-    			       &m_self, &client_handler_automaton::receive);
+			       &m_connection, &ioa::tcp_connection_automaton::receive,
+			       &m_self, &client_handler_automaton::receive);
   }
 
 private:
@@ -53,7 +51,6 @@ private:
   }
 
   ioa::buffer send_effect () {
-    std::cout << __func__ << std::endl;
     ioa::buffer buf = m_buffers.front ();
     m_buffers.pop ();
     m_state = SEND_COMPLETE_WAIT;
@@ -63,7 +60,6 @@ private:
   V_UP_OUTPUT (client_handler_automaton, send, ioa::buffer);
 
   void send_complete_effect (const int& err) {
-    std::cout << __func__ << std::endl;
     assert (m_state == SEND_COMPLETE_WAIT);
     m_state = SEND_READY;
   }
@@ -71,10 +67,13 @@ private:
   V_UP_INPUT (client_handler_automaton, send_complete, int);
 
   void receive_effect (const ioa::tcp_connection_automaton::receive_val& val) {
-    std::cout << __func__ << std::endl;
-    std::string s (val.buffer.c_str (), val.buffer.size ());
-    std::cout << "Got: " << s << std::endl;
-    m_buffers.push (val.buffer);
+    if (val.buffer.size () != 0) {
+      m_buffers.push (val.buffer);
+    }
+    else {
+      // Done.
+      self_destruct ();
+    }
   }
 
   V_UP_INPUT (client_handler_automaton, receive, ioa::tcp_connection_automaton::receive_val);
@@ -101,10 +100,19 @@ private:
   void schedule () const { }
 
   void accept_effect (const ioa::tcp_acceptor_automaton::accept_val& val) {
-    std::cout << __func__ << std::endl;
-    std::cout << "Got connection " << val.handle << std::endl;
-
-    new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (val.handle));
+    if (val.err != 0) {
+      new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (val.handle));
+    }
+    else {
+      char buf[256];
+#ifdef STRERROR_R_CHAR_P
+      std::cerr << "Couldn't accept: " << strerror_r (val.err, buf, 256) << std::endl;
+#else
+      strerror_r (val.err, buf, 256);
+      std::cerr << "Couldn't accept: " << buf << std::endl;
+#endif
+      self_destruct ();
+    }
   }
 
   V_UP_INPUT (echo_server_automaton, accept, ioa::tcp_acceptor_automaton::accept_val);
