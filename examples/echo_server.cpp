@@ -16,7 +16,7 @@ private:
   ioa::handle_manager<client_handler_automaton> m_self;
   ioa::handle_manager<ioa::tcp_connection_automaton> m_connection;
   state_t m_state;
-  std::queue<ioa::const_shared_ptr<ioa::buffer_interface> > m_buffers;
+  std::queue<ioa::const_shared_ptr<ioa::buffer> > m_buffers;
 
 public:
   client_handler_automaton (const ioa::automaton_handle<ioa::tcp_connection_automaton>& handle) :
@@ -51,7 +51,7 @@ private:
   }
 
   ioa::const_shared_ptr<ioa::buffer_interface> send_effect () {
-    ioa::const_shared_ptr<ioa::buffer_interface> buf = m_buffers.front ();
+    ioa::const_shared_ptr<ioa::buffer> buf = m_buffers.front ();
     m_buffers.pop ();
     m_state = SEND_COMPLETE_WAIT;
     return buf;

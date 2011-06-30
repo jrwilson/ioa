@@ -52,15 +52,6 @@ namespace ioa {
       incref ();
     }
     
-    template <class Y>
-    shared_ptr (shared_ptr<Y>& s) :
-      m_mutex (s.m_mutex),
-      m_ptr (s.m_ptr),
-      m_ref_count (s.m_ref_count)
-    {
-      incref ();
-    }
-
     ~shared_ptr () {
       decref ();
     }

@@ -12,7 +12,7 @@ namespace ioa {
   {
   private:
     mutex* m_mutex;
-    T* m_ptr;
+    const T* m_ptr;
     size_t* m_ref_count;
 
     void incref () {
@@ -52,6 +52,15 @@ namespace ioa {
       incref ();
     }
     
+    template <class Y>
+    const_shared_ptr (const const_shared_ptr<Y>& s) :
+      m_mutex (s.get_mutex ()),
+      m_ptr (s.get ()),
+      m_ref_count (s.get_ref_count ())
+    {
+      incref ();
+    }
+
     ~const_shared_ptr () {
       decref ();
     }
@@ -69,6 +78,14 @@ namespace ioa {
 
     const T* get () const {
       return m_ptr;
+    }
+
+    mutex* get_mutex () const {
+      return m_mutex;
+    }
+
+    size_t* get_ref_count () const {
+      return m_ref_count;
     }
 
     const T* operator-> () const {

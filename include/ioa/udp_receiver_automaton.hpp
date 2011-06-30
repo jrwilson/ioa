@@ -21,11 +21,11 @@ namespace ioa {
     struct receive_val {
       int err;
       inet_address address;
-      const_shared_ptr<buffer_interface> buffer;
+      const_shared_ptr<ioa::buffer> buffer;
 
       receive_val (const int e,
 		   const inet_address& a,
-		   const const_shared_ptr<buffer_interface>& b) :
+		   const const_shared_ptr<ioa::buffer>& b) :
 	err (e),
 	address (a),
 	buffer (b)
@@ -42,7 +42,7 @@ namespace ioa {
     int m_fd;
     int m_errno;
     inet_address m_address;
-    const_shared_ptr<buffer_interface> m_buffer;
+    const_shared_ptr<buffer> m_buffer;
 
   private:
     void prepare_socket (const inet_address& address);

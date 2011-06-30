@@ -17,10 +17,10 @@ namespace ioa {
     struct receive_val
     {
       int err;
-      const_shared_ptr<buffer_interface> buffer;
+      const_shared_ptr<ioa::buffer> buffer;
       
       receive_val (const int e,
-		   const const_shared_ptr<buffer_interface>& b) :
+		   const const_shared_ptr<ioa::buffer>& b) :
 	err (e),
 	buffer (b)
       { }
@@ -47,7 +47,7 @@ namespace ioa {
     ssize_t m_bytes_written;
     receive_state_t m_receive_state;
     int m_receive_errno;
-    const_shared_ptr<buffer_interface> m_receive_buffer;
+    const_shared_ptr<buffer> m_receive_buffer;
 
   public:
     tcp_connection_automaton (const int fd);
