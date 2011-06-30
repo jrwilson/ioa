@@ -167,27 +167,26 @@ namespace mftp {
     V_UP_INPUT (mftp_automaton, send_complete, int);
 
   private:
-    //void receive_effect (const ioa::udp_receiver_automaton::receive_val& rv) {
-    void receive_effect (const message& m) {
-      switch (m.header.message_type) {
+    void receive_effect (const ioa::const_shared_ptr<message>& m) {
+      switch (m->header.message_type) {
       case FRAGMENT:
 	{
 	  // std::cout << "Receiving fragment" << std::endl;
 	// It must be a fragment from our file and the offset must be correct.
         if (!m_file.complete () &&
-	    m.frag.fid == m_fileid &&
-            m.frag.offset < m_mfileid.get_final_length () &&
-            m.frag.offset % FRAGMENT_SIZE == 0) {
+	    m->frag.fid == m_fileid &&
+            m->frag.offset < m_mfileid.get_final_length () &&
+            m->frag.offset % FRAGMENT_SIZE == 0) {
 
           // Save the fragment.
-          m_file.write_chunk (m.frag.offset, m.frag.data);
+          m_file.write_chunk (m->frag.offset, m->frag.data);
 
 	  if (m_file.complete ()) {
 	    std::string s (reinterpret_cast<char*> (m_file.get_data_ptr ()), m_mfileid.get_original_length ());
 	    std::cout << s << std::endl;
 	  }
 
-          uint32_t idx = (m.frag.offset / FRAGMENT_SIZE);
+          uint32_t idx = (m->frag.offset / FRAGMENT_SIZE);
           if (m_their_req[idx]) {
             // Somebody else wanted it and now has just seen it.
             m_their_req[idx] = false;
@@ -202,16 +201,16 @@ namespace mftp {
       {
 	//std::cout << "Receiving request" << std::endl;
 	//Requests must be for our file.
-	if (m.req.fid == m_fileid){
-	  for (uint32_t sp = 0; sp < m.req.span_count; sp++){
+	if (m->req.fid == m_fileid){
+	  for (uint32_t sp = 0; sp < m->req.span_count; sp++){
 	    // Request must be in range.
-	    if (m.req.spans[sp].start % FRAGMENT_SIZE == 0 &&
-		m.req.spans[sp].stop % FRAGMENT_SIZE == 0 &&
-		m.req.spans[sp].start < m.req.spans[sp].stop &&
-		m.req.spans[sp].stop <= m_mfileid.get_final_length ()) {
+	    if (m->req.spans[sp].start % FRAGMENT_SIZE == 0 &&
+		m->req.spans[sp].stop % FRAGMENT_SIZE == 0 &&
+		m->req.spans[sp].start < m->req.spans[sp].stop &&
+		m->req.spans[sp].stop <= m_mfileid.get_final_length ()) {
 	      // We have it.
-	      for (uint32_t offset = m.req.spans[sp].start;
-		   offset < m.req.spans[sp].stop;
+	      for (uint32_t offset = m->req.spans[sp].start;
+		   offset < m->req.spans[sp].stop;
 		   offset += FRAGMENT_SIZE) {
 		uint32_t idx = offset / FRAGMENT_SIZE;
 		if (m_file.have (offset) && !m_their_req[idx]) {
@@ -232,7 +231,7 @@ namespace mftp {
     
   public:
 
-    V_UP_INPUT (mftp_automaton, receive, message);
+    V_UP_INPUT (mftp_automaton, receive, ioa::const_shared_ptr<message>);
 
   private:
     bool set_fragment_timer_precondition () const {
@@ -351,57 +350,6 @@ namespace mftp {
       }
       m->header.message_type = htonl (m->header.message_type);
     }
-
-    void convert_to_host (message& m){
-      //std::cout << "converting to host byte order" << std::endl;
-      m.header.message_type = ntohl (m.header.message_type);
-      switch (m.header.message_type) {
-      case FRAGMENT:
-        m.frag.fid.length = ntohl (m.frag.fid.length);
-        m.frag.fid.type = ntohl (m.frag.fid.type);
-        m.frag.offset = ntohl (m.frag.offset);
-	break;
-      case REQUEST:
-        m.req.fid.length = ntohl (m.req.fid.length);
-        m.req.fid.type = ntohl (m.req.fid.type);
-        m.req.span_count = ntohl (m.req.span_count);
-	for (uint32_t i = 0; i < m.req.span_count; ++i){
-	  m.req.spans[i].start = ntohl (m.req.spans[i].start);
-	  m.req.spans[i].stop = ntohl (m.req.spans[i].stop);
-	}
-	break;
-      default:
-	//Received unknown message type.
-	break;
-      }
-    }
-
-    // void convert_to_host (const message& mess, message& m) {
-    //   std::cout << "converting to host byte order" << std::endl;
-    //   m.header.message_type = ntohl (mess.header.message_type);
-    //   switch (m.header.message_type) {
-    //   case FRAGMENT:
-    // 	memcpy (m.frag.fid.hash, mess.frag.fid.hash, HASH_SIZE);
-    //     m.frag.fid.length = ntohl (mess.frag.fid.length);
-    //     m.frag.fid.type = ntohl (mess.frag.fid.type);
-    //     m.frag.offset = ntohl (mess.frag.offset);
-    //     memcpy(m.frag.data, mess.frag.data, 512);
-    // 	break;
-    //   case REQUEST:
-    // 	memcpy (m.req.fid.hash, mess.req.fid.hash, HASH_SIZE);
-    //     m.req.fid.length = ntohl (mess.req.fid.length);
-    //     m.req.fid.type = ntohl (mess.req.fid.type);
-    //     m.req.span_count = ntohl (mess.req.span_count);
-    // 	for (uint32_t i = 0; i<m.req.span_count; ++i){
-    // 	  m.req.spans[i].start = ntohl (mess.req.spans[i].start);
-    // 	  m.req.spans[i].stop = ntohl (mess.req.spans[i].stop);
-    // 	}
-    // 	break;
-    //   default:
-    // 	//Received unknown message type.
-    // 	break;
-    //   }
-    // }
 
     uint32_t get_random_request_index () {
       assert (m_their_req_count != 0);

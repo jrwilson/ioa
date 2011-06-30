@@ -1,24 +1,19 @@
 #include "mftp_automaton.hpp"
+#include "conversion_channel_automaton.hpp"
 #include <ioa/udp_sender_automaton.hpp>
 #include <ioa/udp_receiver_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
 #include <ioa/ioa.hpp>
+
 #include <iostream>
 #include <stdio.h>
-
 #include <string>
 
 class mftp_server_automaton :
   public ioa::automaton {
-private:
-  std::queue<mftp::message> q;
-  ioa::handle_manager<mftp_server_automaton> m_self;
-
 public:
-  mftp_server_automaton (const char* fname, const char* sname) :
-    m_self (ioa::get_aid ())
+  mftp_server_automaton (const char* fname, const char* sname)
   {
-    //const char* fname = "ftestBig.txt";
     mftp::file file (fname, FILE_TYPE);
 
     mftp::fileid copy = file.get_mfileid ().get_fileid ();
@@ -38,13 +33,20 @@ public:
 
     ioa::inet_address m_address (address, port);
 
+    ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_generator<ioa::udp_sender_automaton> ());
+
+    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
+
+    ioa::automaton_manager<conversion_channel_automaton>* converter = new ioa::automaton_manager<conversion_channel_automaton> (this, ioa::make_generator<conversion_channel_automaton> ());
+
+    ioa::make_binding_manager (this,
+			       receiver, &ioa::udp_receiver_automaton::receive,
+			       converter, &conversion_channel_automaton::receive_buffer);
+
     ioa::automaton_manager<mftp::mftp_automaton>* file_server = new ioa::automaton_manager<mftp::mftp_automaton> (this, ioa::make_generator<mftp::mftp_automaton> (file));
 
     ioa::automaton_manager<mftp::mftp_automaton>* meta_server = new ioa::automaton_manager<mftp::mftp_automaton> (this, ioa::make_generator<mftp::mftp_automaton> (meta));
 
-    ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_generator<ioa::udp_sender_automaton> ());
-
-    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
 
     ioa::make_binding_manager (this,
 			       file_server, &mftp::mftp_automaton::send,
@@ -55,11 +57,7 @@ public:
 			       file_server, &mftp::mftp_automaton::send_complete);
 
     ioa::make_binding_manager (this,
-			       receiver, &ioa::udp_receiver_automaton::receive,
-			       &m_self, &mftp_server_automaton::receive_buffer);
-
-    ioa::make_binding_manager (this,
-			       &m_self, &mftp_server_automaton::pass_message,
+			       converter, &conversion_channel_automaton::pass_message,
 			       file_server, &mftp::mftp_automaton::receive);    
 
     ioa::make_binding_manager (this,
@@ -71,68 +69,9 @@ public:
   			       meta_server, &mftp::mftp_automaton::send_complete);
 
     ioa::make_binding_manager (this,
-			       receiver, &ioa::udp_receiver_automaton::receive,
-			       &m_self, &mftp_server_automaton::receive_buffer);
+			       converter, &conversion_channel_automaton::pass_message,
+			       meta_server, &mftp::mftp_automaton::receive);    
 
-    ioa::make_binding_manager (this,
-			       &m_self, &mftp_server_automaton::pass_message,
-			       file_server, &mftp::mftp_automaton::receive);    
-
-  }
-private:
-  void schedule () const {
-    if (pass_message_precondition ()) {
-      ioa::schedule (&mftp_server_automaton::pass_message);
-    }
-  }
-
-  void receive_buffer_effect (const ioa::udp_receiver_automaton::receive_val& rv){
-    mftp::message m;
-    memcpy (&m, rv.buffer.data (), rv.buffer.size ());
-    convert_to_host (m);
-
-    q.push (m);
-  }
-
-public:
-  V_UP_INPUT (mftp_server_automaton, receive_buffer, ioa::udp_receiver_automaton::receive_val);
-
-private:
-  bool pass_message_precondition () const {
-    return q.size () > 0  && ioa::binding_count (&mftp_server_automaton::pass_message) != 0;
-  }
-
-  mftp::message pass_message_effect () {
-    mftp::message m = q.front ();
-    q.pop ();
-    return m;
-  }
-
-  V_UP_OUTPUT (mftp_server_automaton, pass_message, mftp::message);
-  
-
-  void convert_to_host (mftp::message& m) {
-    //std::cout << "converting to host byte order" << std::endl;
-    m.header.message_type = ntohl (m.header.message_type);
-    switch (m.header.message_type) {
-    case mftp::FRAGMENT:
-      m.frag.fid.length = ntohl (m.frag.fid.length);
-      m.frag.fid.type = ntohl (m.frag.fid.type);
-      m.frag.offset = ntohl (m.frag.offset);
-      break;
-    case mftp::REQUEST:
-      m.req.fid.length = ntohl (m.req.fid.length);
-      m.req.fid.type = ntohl (m.req.fid.type);
-      m.req.span_count = ntohl (m.req.span_count);
-      for (uint32_t i = 0; i < m.req.span_count; ++i){
-	m.req.spans[i].start = ntohl (m.req.spans[i].start);
-	m.req.spans[i].stop = ntohl (m.req.spans[i].stop);
-      }
-      break;
-    default:
-      //Received unknown message type.
-      break;
-    }
   }
 };
 
