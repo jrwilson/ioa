@@ -17,8 +17,11 @@ public:
     mftp::file file (fname, FILE_TYPE);
 
     mftp::fileid copy = file.get_mfileid ().get_fileid ();
-    copy.convert_to_network ();
 
+    std::cout << "Sharing " << fname << " as " << (std::string (sname) + "-" + copy.to_string ()) << std::endl;
+
+    copy.convert_to_network ();
+    
     uint32_t size = strlen (sname);
     
     ioa::buffer buff (sizeof (mftp::fileid) + size * sizeof (char));
@@ -87,7 +90,6 @@ int main (int argc, char* argv[]) {
   }
 
   ioa::global_fifo_scheduler sched;
-  std::cout << "Sharing " << real_path << " as " << shared_as << std::endl;
   ioa::run (sched, ioa::make_generator<mftp_server_automaton> (real_path, shared_as));
 
   return 0;

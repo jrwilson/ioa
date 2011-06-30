@@ -13,8 +13,6 @@
 #include <cstring>
 #include <math.h>
 
-#include <iostream>
-
 namespace mftp {
 
   class mftp_automaton :
@@ -122,6 +120,10 @@ namespace mftp {
       if (set_announcement_timer_precondition ()) {
 	ioa::schedule (&mftp_automaton::set_announcement_timer);
       }
+
+      if (download_complete_precondition ()) {
+	ioa::schedule (&mftp_automaton::download_complete);
+      }
     }
 
     bool send_precondition () const {
@@ -152,58 +154,51 @@ namespace mftp {
       switch (m->header.message_type) {
       case FRAGMENT:
 	{
-	  // std::cout << "Receiving fragment" << std::endl;
-	// It must be a fragment from our file and the offset must be correct.
-        if (!m_file.complete () &&
-	    m->frag.fid == m_fileid &&
-            m->frag.offset < m_mfileid.get_final_length () &&
-            m->frag.offset % FRAGMENT_SIZE == 0) {
-
-          // Save the fragment.
-          m_file.write_chunk (m->frag.offset, m->frag.data);
-
-	  if (m_file.complete ()) {
-	    std::string s (reinterpret_cast<char*> (m_file.get_data_ptr ()), m_mfileid.get_original_length ());
-	    std::cout << s << std::endl;
+	  // It must be a fragment from our file and the offset must be correct.
+	  if (!m_file.complete () &&
+	      m->frag.fid == m_fileid &&
+	      m->frag.offset < m_mfileid.get_final_length () &&
+	      m->frag.offset % FRAGMENT_SIZE == 0) {
+	    
+	    // Save the fragment.
+	    m_file.write_chunk (m->frag.offset, m->frag.data);
+	    
+	    uint32_t idx = (m->frag.offset / FRAGMENT_SIZE);
+	    if (m_their_req[idx]) {
+	      // Somebody else wanted it and now has just seen it.
+	      m_their_req[idx] = false;
+	      --m_their_req_count;
+	    }
 	  }
-
-          uint32_t idx = (m->frag.offset / FRAGMENT_SIZE);
-          if (m_their_req[idx]) {
-            // Somebody else wanted it and now has just seen it.
-            m_their_req[idx] = false;
-            --m_their_req_count;
-          }
-        }
-
-      }
-      break;
-
+	  
+	}
+	break;
+	
       case REQUEST:
-      {
-	//std::cout << "Receiving request" << std::endl;
-	//Requests must be for our file.
-	if (m->req.fid == m_fileid){
-	  for (uint32_t sp = 0; sp < m->req.span_count; sp++){
-	    // Request must be in range.
-	    if (m->req.spans[sp].start % FRAGMENT_SIZE == 0 &&
-		m->req.spans[sp].stop % FRAGMENT_SIZE == 0 &&
-		m->req.spans[sp].start < m->req.spans[sp].stop &&
-		m->req.spans[sp].stop <= m_mfileid.get_final_length ()) {
-	      // We have it.
-	      for (uint32_t offset = m->req.spans[sp].start;
-		   offset < m->req.spans[sp].stop;
-		   offset += FRAGMENT_SIZE) {
-		uint32_t idx = offset / FRAGMENT_SIZE;
-		if (m_file.have (offset) && !m_their_req[idx]) {
-		  m_their_req[idx] = true;
-		  ++m_their_req_count;
+	{
+	  //Requests must be for our file.
+	  if (m->req.fid == m_fileid){
+	    for (uint32_t sp = 0; sp < m->req.span_count; sp++){
+	      // Request must be in range.
+	      if (m->req.spans[sp].start % FRAGMENT_SIZE == 0 &&
+		  m->req.spans[sp].stop % FRAGMENT_SIZE == 0 &&
+		  m->req.spans[sp].start < m->req.spans[sp].stop &&
+		  m->req.spans[sp].stop <= m_mfileid.get_final_length ()) {
+		// We have it.
+		for (uint32_t offset = m->req.spans[sp].start;
+		     offset < m->req.spans[sp].stop;
+		     offset += FRAGMENT_SIZE) {
+		  uint32_t idx = offset / FRAGMENT_SIZE;
+		  if (m_file.have (offset) && !m_their_req[idx]) {
+		    m_their_req[idx] = true;
+		    ++m_their_req_count;
+		  }
 		}
 	      }
 	    }
 	  }
 	}
-      }
-      break;
+	break;
       default:
 	// Unkown message type.
 	break;
@@ -255,7 +250,6 @@ namespace mftp {
     V_UP_OUTPUT (mftp_automaton, set_request_timer, ioa::time);
 
     void request_timer_interrupt_effect () {
-      //std::cout << "creating request message to send" << std::endl;
       if (m_sendq.empty () && !m_file.complete ()) {
 	span_t spans[64];
 	spans[0] = m_file.get_next_range();
@@ -305,6 +299,7 @@ namespace mftp {
     }
 
     mftp::file download_complete_effect () {
+      m_reported = true;
       return m_file;
     }
 
@@ -313,7 +308,6 @@ namespace mftp {
 
   private:
     message_buffer* convert_to_network (message_buffer* m) {
-      //std::cout << "converting to network byte order" << std::endl;
       switch (m->msg.header.message_type) {
       case FRAGMENT:
         m->msg.frag.fid.length = htonl (m->msg.frag.fid.length);

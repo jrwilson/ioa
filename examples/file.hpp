@@ -36,6 +36,7 @@ namespace mftp {
     
     const mfileid& get_mfileid () const;
     unsigned char* get_data_ptr ();
+    const unsigned char* get_data_ptr () const;
     bool complete () const;
     bool empty () const;
     bool have (const uint32_t offset) const;

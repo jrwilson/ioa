@@ -170,6 +170,10 @@ namespace mftp {
     return m_data;
   }
 
+  const unsigned char* file::get_data_ptr () const {
+    return m_data;
+  }
+
   bool file::complete () const {
     return m_valid_count == m_mfileid.get_fragment_count ();
   }

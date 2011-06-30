@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <ioa/buffer.hpp>
 #include <iostream>
+#include <stdio.h>
 
 namespace mftp {
 
@@ -32,9 +33,34 @@ namespace mftp {
 	length == other.length;
     }
 
+    bool operator< (const fileid& other) const {
+      int temp = memcmp (hash, other.hash, HASH_SIZE);
+      if (temp != 0) {
+	return temp < 0;
+      }
+      if (type != other.type) {
+	return type < other.type;
+      }
+      return length < other.length;
+    }
+
     void convert_to_network () {
       type = htonl (type);
       length = htonl (length);
+    }
+
+    void convert_to_host () {
+      type = ntohl (type);
+      length = ntohl (length);
+    }
+
+    std::string to_string () const {
+      char temp[2 * sizeof (fileid) + 1];
+      for (size_t idx = 0; idx < HASH_SIZE; ++idx) {
+      	sprintf (&temp[2 * idx], "%02x", hash[idx]);
+      }
+      sprintf (temp + 2 * HASH_SIZE, "%08x%08x", type, length);
+      return std::string (temp, 2 * sizeof (fileid));
     }
   };
 
