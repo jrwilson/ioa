@@ -23,7 +23,7 @@ public:
     ioa::buffer buff (sizeof (mftp::fileid) + size * sizeof (char));
     
     memcpy (buff.data (), &copy, sizeof (mftp::fileid));
-    memcpy (buff.data () + sizeof(mftp::fileid), sname, size);
+    memcpy (static_cast<char*>(buff.data ()) + sizeof(mftp::fileid), sname, size);
     
     mftp::file meta (buff.data (), buff.size ());
 

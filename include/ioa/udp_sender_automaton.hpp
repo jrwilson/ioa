@@ -19,10 +19,10 @@ namespace ioa {
   public:
     struct send_arg {
       inet_address address;
-      ioa::buffer buffer;
+      const_shared_ptr<buffer_interface> buffer;
 
       send_arg (const inet_address& a,
-		const ioa::buffer& b) :
+		const const_shared_ptr<buffer_interface>& b) :
 	address (a),
 	buffer (b)
       { }

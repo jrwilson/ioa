@@ -17,10 +17,10 @@ namespace ioa {
     struct receive_val
     {
       int err;
-      ioa::buffer buffer;
+      const_shared_ptr<buffer_interface> buffer;
       
       receive_val (const int e,
-		   const ioa::buffer& b) :
+		   const const_shared_ptr<buffer_interface>& b) :
 	err (e),
 	buffer (b)
       { }
@@ -43,11 +43,11 @@ namespace ioa {
     int m_fd;
     send_state_t m_send_state;
     int m_send_errno;
-    buffer m_send_buffer;
+    const_shared_ptr<buffer_interface> m_send_buffer;
     ssize_t m_bytes_written;
     receive_state_t m_receive_state;
     int m_receive_errno;
-    buffer m_receive_buffer;
+    const_shared_ptr<buffer_interface> m_receive_buffer;
 
   public:
     tcp_connection_automaton (const int fd);
@@ -58,9 +58,9 @@ namespace ioa {
     void observe (observable* o);
 
   private:
-    void send_effect (const buffer& buf);
+    void send_effect (const const_shared_ptr<buffer_interface>& buf);
   public:
-    V_UP_INPUT (tcp_connection_automaton, send, buffer);
+    V_UP_INPUT (tcp_connection_automaton, send, const_shared_ptr<buffer_interface>);
 
   private:
     bool schedule_write_precondition () const;

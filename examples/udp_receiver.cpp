@@ -53,7 +53,8 @@ private:
       self_destruct ();
     }
     else {
-      std::cout << v.address.address_str () << ":" << v.address.port () << " (" << v.buffer.size () << ") " << std::string (v.buffer.c_str (), v.buffer.size ()) << std::endl;
+      assert (v.buffer.get () != 0);
+      std::cout << v.address.address_str () << ":" << v.address.port () << " (" << v.buffer->size () << ") " << std::string (static_cast<const char*> (v.buffer->data ()), v.buffer->size ()) << std::endl;
     }
   }
   

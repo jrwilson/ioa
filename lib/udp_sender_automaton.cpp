@@ -110,13 +110,21 @@ namespace ioa {
   void udp_sender_automaton::send_effect (const send_arg& arg, aid_t aid) {
     // Ignore if aid has an outstanding send or send_complete.
     if (m_send_set.count (aid) == 0 && m_complete_map.count (aid) == 0) {
-      if (m_fd != -1) {
-	// No error.  Add to the send queue and set.
-	add_to_send_queue (aid, arg);
-      }
-      else {
+      if (m_fd == -1) {
 	// Error.  Add to the complete queue.
 	add_to_complete_map (aid, m_errno);
+      }
+      else if (arg.address.get_errno () != 0) {
+	// Bad address.
+	add_to_complete_map (aid, EINVAL);
+      }
+      else if (arg.buffer.get () == 0) {
+	// No data.  Succeed immediately.
+	add_to_complete_map (aid, 0);
+      }
+      else {
+	// No error.  Add to the send queue and set.
+	add_to_send_queue (aid, arg);
       }
     }
   }
@@ -140,31 +148,25 @@ namespace ioa {
     m_send_queue.pop_front ();
     m_send_set.erase (item.first);
       
-    if (item.second->address.get_errno () == 0) {
-      if (sendto (m_fd, item.second->buffer.data (), item.second->buffer.size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ()) != -1) {
-	// Success.
-	add_to_complete_map (item.first, 0);
-      }
-      else {
-	// Fail.
-	m_errno = errno;
-	close (m_fd);
-	m_fd = -1;
-	add_to_complete_map (item.first, m_errno);
-
-	// Drain the send queue.
-	for (std::list<std::pair<aid_t, send_arg*> >::const_iterator pos = m_send_queue.begin ();
-	     pos != m_send_queue.end ();
-	     ++pos) {
-	  add_to_complete_map (pos->first, m_errno);
-	  delete pos->second;
-	}
-	m_send_queue.clear ();
-      }
+    if (sendto (m_fd, item.second->buffer->data (), item.second->buffer->size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ()) != -1) {
+      // Success.
+      add_to_complete_map (item.first, 0);
     }
     else {
-      // Bad address.
-      add_to_complete_map (item.first, EINVAL);
+      // Fail.
+      m_errno = errno;
+      close (m_fd);
+      m_fd = -1;
+      add_to_complete_map (item.first, m_errno);
+      
+      // Drain the send queue.
+      for (std::list<std::pair<aid_t, send_arg*> >::const_iterator pos = m_send_queue.begin ();
+	   pos != m_send_queue.end ();
+	   ++pos) {
+	add_to_complete_map (pos->first, m_errno);
+	delete pos->second;
+      }
+      m_send_queue.clear ();
     }
 
     if (m_send_queue.empty ()) {

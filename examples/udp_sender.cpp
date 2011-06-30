@@ -18,7 +18,7 @@ private:
   state_t m_state;
   ioa::handle_manager<broadcast_sender> m_self;
   ioa::inet_address m_address;
-  ioa::buffer m_buffer;
+  ioa::const_shared_ptr<ioa::buffer_interface> m_buffer;
 
 public:
 
@@ -28,7 +28,7 @@ public:
     m_state (SEND_READY),
     m_self (ioa::get_aid ()),
     m_address (address, port),
-    m_buffer (message.c_str (), message.size ())
+    m_buffer (new ioa::buffer (message.c_str (), message.size ()))
   {
     ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_generator<ioa::udp_sender_automaton> ());
 

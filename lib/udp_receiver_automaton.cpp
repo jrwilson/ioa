@@ -132,18 +132,19 @@ namespace ioa {
       close (m_fd);
       m_fd = -1;
       m_address = inet_address ();
-      m_buffer.resize (0);
+      m_buffer.reset ();
       m_state = RECEIVE_READY;
       return;
     }
 
-    // Resize the buffer.
-    m_buffer.resize (expect_bytes);
-	
-    ssize_t actual_bytes = recvfrom (m_fd, m_buffer.data (), expect_bytes, 0, m_address.get_sockaddr_ptr (), m_address.get_socklen_ptr ());
+    // Create a buffer.
+    std::auto_ptr<buffer> buf (new buffer (expect_bytes));
+
+    ssize_t actual_bytes = recvfrom (m_fd, buf->data (), expect_bytes, 0, m_address.get_sockaddr_ptr (), m_address.get_socklen_ptr ());
     if (actual_bytes != -1) {
       // Success.
-      m_buffer.resize (actual_bytes);
+      buf->resize (actual_bytes);
+      m_buffer.reset (buf.release ());
       m_state = RECEIVE_READY;
       return;
     }
@@ -152,7 +153,7 @@ namespace ioa {
       close (m_fd);
       m_fd = -1;
       m_address = inet_address ();
-      m_buffer.resize (0);
+      m_buffer.reset ();
       m_state = RECEIVE_READY;
       return;
     }

@@ -45,21 +45,25 @@ namespace ioa {
     else if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive_state == SCHEDULE_READ_READY) {
       // An automaton has bound to receive but we will never receive because m_fd is bad.
       // Generate an error.
-      m_receive_buffer = buffer ();
+      m_receive_buffer.reset ();
       m_receive_state = RECEIVE_READY;
       schedule ();
     }
   }
 
-  void tcp_connection_automaton::send_effect (const buffer& buf) {
+  void tcp_connection_automaton::send_effect (const const_shared_ptr<buffer_interface>& buf) {
     if (m_send_state == SEND_WAIT) {
-      if (m_fd != -1) {
+      if (m_fd == -1) {
+	m_send_state = SEND_COMPLETE_READY;
+      }
+      else if (buf.get () == 0) {
+	// No buffer.  Go straight to complete.
+	m_send_state = SEND_COMPLETE_READY;
+      }
+      else {
 	m_send_buffer = buf;
 	m_bytes_written = 0;
 	m_send_state = SCHEDULE_WRITE_READY;
-      }
-      else {
-	m_send_state = SEND_COMPLETE_READY;
       }
     }
   }
@@ -89,7 +93,7 @@ namespace ioa {
     }
 
     // Write to the socket.
-    ssize_t bytes_written = write (m_fd, m_send_buffer.data () + m_bytes_written, m_send_buffer.size () - m_bytes_written);
+    ssize_t bytes_written = write (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written);
     
     if (bytes_written == -1) {
       m_send_errno = errno;
@@ -102,7 +106,7 @@ namespace ioa {
       // We have made progress.
       m_bytes_written += bytes_written;
       
-      if (m_bytes_written == static_cast<ssize_t> (m_send_buffer.size ())) {
+      if (m_bytes_written == static_cast<ssize_t> (m_send_buffer->size ())) {
 	// We are done with this buffer.
 	m_send_state = SEND_COMPLETE_READY;
       }
@@ -151,7 +155,7 @@ namespace ioa {
     if (ioctl (m_fd, FIONREAD, &num_bytes) == -1) {
       m_send_errno = errno;
       m_receive_errno = errno;
-      m_receive_buffer = buffer ();
+      m_receive_buffer.reset ();
       close (m_fd);
       m_fd = -1;
       m_receive_state = RECEIVE_READY;
@@ -159,12 +163,12 @@ namespace ioa {
     }
 
     // Create a buffer capable of holding num_bytes and fill it.
-    buffer buf (num_bytes);
-    ssize_t bytes_read = read (m_fd, buf.data (), num_bytes);
+    std::auto_ptr<buffer> buf (new buffer (num_bytes));
+    ssize_t bytes_read = read (m_fd, buf->data (), num_bytes);
     if (bytes_read == -1) {
       m_send_errno = errno;
       m_receive_errno = errno;
-      m_receive_buffer = buffer ();
+      m_receive_buffer.reset ();
       close (m_fd);
       m_fd = -1;
       m_receive_state = RECEIVE_READY;      
@@ -173,14 +177,15 @@ namespace ioa {
     else if (bytes_read == 0) {
       m_send_errno = ECONNRESET;
       m_receive_errno = ECONNRESET;
-      m_receive_buffer = buffer ();
+      m_receive_buffer.reset ();
       close (m_fd);
       m_fd = -1;
       m_receive_state = RECEIVE_READY;
       return;
     }
 
-    m_receive_buffer = buf;
+    buf->resize (bytes_read);
+    m_receive_buffer.reset (buf.release ());
     m_receive_state = RECEIVE_READY;      
   }
 

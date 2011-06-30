@@ -4,8 +4,18 @@
 #include <cstring>
 
 namespace ioa {
+  
+  class buffer_interface
+  {
+  public:
+    virtual ~buffer_interface () { }
+    virtual const void* data () const = 0;
+    virtual size_t size () const = 0;
+  };
 
-  class buffer {
+  class buffer :
+    public buffer_interface
+  {
   private:
     unsigned char* m_data;
     size_t m_size;
@@ -74,16 +84,12 @@ namespace ioa {
       return m_size;
     }
   
-    unsigned char* data () {
+    void* data () {
       return m_data;
     }
 
-    const unsigned char* data () const {
+    const void* data () const {
       return m_data;
-    }
-
-    const char* c_str () const {
-      return reinterpret_cast<char*> (m_data);
     }
   };
 
