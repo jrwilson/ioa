@@ -87,11 +87,7 @@ private:
   }
 
   void receive_buffer_effect (const ioa::udp_receiver_automaton::receive_val& rv){
-    mftp::message m;
-    memcpy (&m, rv.buffer.data (), rv.buffer.size ());
-    convert_to_host (m);
 
-    q.push (m);
   }
 
 public:
