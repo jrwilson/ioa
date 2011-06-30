@@ -10,8 +10,14 @@
 
 class mftp_server_automaton :
   public ioa::automaton {
+private:
+  std::queue<mftp::message> q;
+  ioa::handle_manager<mftp_server_automaton> m_self;
+
 public:
-  mftp_server_automaton (const char* fname, const char* sname) {
+  mftp_server_automaton (const char* fname, const char* sname) :
+    m_self (ioa::get_aid ())
+  {
     //const char* fname = "ftestBig.txt";
     mftp::file file (fname, FILE_TYPE);
 
@@ -50,8 +56,12 @@ public:
 
     ioa::make_binding_manager (this,
 			       receiver, &ioa::udp_receiver_automaton::receive,
-			       file_server, &mftp::mftp_automaton::receive);
-    
+			       &m_self, &mftp_server_automaton::receive_buffer);
+
+    ioa::make_binding_manager (this,
+			       &m_self, &mftp_server_automaton::pass_message,
+			       file_server, &mftp::mftp_automaton::receive);    
+
     ioa::make_binding_manager (this,
   			       meta_server, &mftp::mftp_automaton::send,
   			       sender, &ioa::udp_sender_automaton::send);
@@ -61,11 +71,69 @@ public:
   			       meta_server, &mftp::mftp_automaton::send_complete);
 
     ioa::make_binding_manager (this,
-  			       receiver, &ioa::udp_receiver_automaton::receive,
-  			       meta_server, &mftp::mftp_automaton::receive);
+			       receiver, &ioa::udp_receiver_automaton::receive,
+			       &m_self, &mftp_server_automaton::receive_buffer);
+
+    ioa::make_binding_manager (this,
+			       &m_self, &mftp_server_automaton::pass_message,
+			       file_server, &mftp::mftp_automaton::receive);    
+
   }
 private:
+  void schedule () const {
+    if (pass_message_precondition ()) {
+      ioa::schedule (&mftp_server_automaton::pass_message);
+    }
+  }
 
+  void receive_buffer_effect (const ioa::udp_receiver_automaton::receive_val& rv){
+    mftp::message m;
+    memcpy (&m, rv.buffer.data (), rv.buffer.size ());
+    convert_to_host (m);
+
+    q.push (m);
+  }
+
+public:
+  V_UP_INPUT (mftp_server_automaton, receive_buffer, ioa::udp_receiver_automaton::receive_val);
+
+private:
+  bool pass_message_precondition () const {
+    return q.size () > 0  && ioa::binding_count (&mftp_server_automaton::pass_message) != 0;
+  }
+
+  mftp::message pass_message_effect () {
+    mftp::message m = q.front ();
+    q.pop ();
+    return m;
+  }
+
+  V_UP_OUTPUT (mftp_server_automaton, pass_message, mftp::message);
+  
+
+  void convert_to_host (mftp::message& m) {
+    //std::cout << "converting to host byte order" << std::endl;
+    m.header.message_type = ntohl (m.header.message_type);
+    switch (m.header.message_type) {
+    case mftp::FRAGMENT:
+      m.frag.fid.length = ntohl (m.frag.fid.length);
+      m.frag.fid.type = ntohl (m.frag.fid.type);
+      m.frag.offset = ntohl (m.frag.offset);
+      break;
+    case mftp::REQUEST:
+      m.req.fid.length = ntohl (m.req.fid.length);
+      m.req.fid.type = ntohl (m.req.fid.type);
+      m.req.span_count = ntohl (m.req.span_count);
+      for (uint32_t i = 0; i < m.req.span_count; ++i){
+	m.req.spans[i].start = ntohl (m.req.spans[i].start);
+	m.req.spans[i].stop = ntohl (m.req.spans[i].stop);
+      }
+      break;
+    default:
+      //Received unknown message type.
+      break;
+    }
+  }
 };
 
 int main (int argc, char* argv[]) {

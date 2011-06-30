@@ -166,15 +166,9 @@ namespace mftp {
   public:
     V_UP_INPUT (mftp_automaton, send_complete, int);
 
-    //    void receive_effect (const message& mess)
-
   private:
-    void receive_effect (const ioa::udp_receiver_automaton::receive_val& rv) {
-      
-      message m;
-      memcpy (&m, rv.buffer->data (), rv.buffer->size ());
-      convert_to_host(m);
-
+    //void receive_effect (const ioa::udp_receiver_automaton::receive_val& rv) {
+    void receive_effect (const message& m) {
       switch (m.header.message_type) {
       case FRAGMENT:
 	{
@@ -238,7 +232,7 @@ namespace mftp {
     
   public:
 
-    V_UP_INPUT (mftp_automaton, receive, ioa::udp_receiver_automaton::receive_val);
+    V_UP_INPUT (mftp_automaton, receive, message);
 
   private:
     bool set_fragment_timer_precondition () const {
@@ -332,6 +326,7 @@ namespace mftp {
     mftp::file download_complete_effect () {
       return m_file;
     }
+
   public:
     V_UP_OUTPUT (mftp_automaton, download_complete, mftp::file);
 
