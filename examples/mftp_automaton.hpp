@@ -150,9 +150,9 @@ namespace mftp {
        m_send_state = SEND_COMPLETE_WAIT;
 
        ioa::inet_address a ("255.255.255.255", 54321);
-       ioa::buffer b (m, sizeof (message));
+       ioa::buffer* b = new ioa::buffer (m, sizeof (message));
        delete m;
-       return ioa::udp_sender_automaton::send_arg (a,b);
+       return ioa::udp_sender_automaton::send_arg (a, ioa::const_shared_ptr<ioa::buffer_interface> (b));
     }
 
   public:
@@ -169,11 +169,6 @@ namespace mftp {
   private:
     //void receive_effect (const ioa::udp_receiver_automaton::receive_val& rv) {
     void receive_effect (const message& m) {
-      
-      // message m;
-      // memcpy(&m, rv.buffer.data (), rv.buffer.size ());
-      // convert_to_host(m);
-
       switch (m.header.message_type) {
       case FRAGMENT:
 	{

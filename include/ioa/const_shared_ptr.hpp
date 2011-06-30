@@ -52,15 +52,6 @@ namespace ioa {
       incref ();
     }
     
-    template <class Y>
-    const_shared_ptr (const_shared_ptr<Y>& s) :
-      m_mutex (s.m_mutex),
-      m_ptr (s.m_ptr),
-      m_ref_count (s.m_ref_count)
-    {
-      incref ();
-    }
-
     ~const_shared_ptr () {
       decref ();
     }
@@ -76,12 +67,24 @@ namespace ioa {
       return *this;
     }
 
-    const T* operator-> () {
+    const T* get () const {
       return m_ptr;
     }
 
-    const T& operator* () {
+    const T* operator-> () const {
+      return m_ptr;
+    }
+
+    const T& operator* () const {
       return *m_ptr;
+    }
+
+    void reset (T* ptr = 0) {
+      decref ();
+      m_mutex = new mutex;
+      m_ptr = ptr;
+      m_ref_count = new size_t;
+      *m_ref_count = 1;
     }
   };
   
