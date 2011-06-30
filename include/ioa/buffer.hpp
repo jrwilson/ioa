@@ -5,9 +5,8 @@
 
 namespace ioa {
   
-  class buffer_interface
+  struct buffer_interface
   {
-  public:
     virtual ~buffer_interface () { }
     virtual const void* data () const = 0;
     virtual size_t size () const = 0;

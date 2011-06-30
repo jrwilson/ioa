@@ -8,6 +8,7 @@
 #include <utility>
 #include <arpa/inet.h>
 #include <ioa/buffer.hpp>
+#include <iostream>
 
 namespace mftp {
 
@@ -162,8 +163,7 @@ namespace mftp {
   struct fragment_type { };
   struct request_type { };
 
-  struct message :
-    public ioa::buffer_interface
+  struct message
   {
     message_header header;
     union {
@@ -196,9 +196,29 @@ namespace mftp {
 	req.spans[i] = spans[i];
       }
     }
+  };
+
+  struct message_buffer :
+    public ioa::buffer_interface
+  {
+    message msg;
+
+    message_buffer (fragment_type type,
+		    const fileid& fileid,
+		    uint32_t offset,
+		    const uint8_t* data) :
+      msg (type, fileid, offset, data)
+    { }
+
+    message_buffer (request_type type,
+		    const fileid& fileid,
+		    uint32_t span_count,
+		    const span_t * spans) :
+      msg (type, fileid, span_count, spans)
+    { }
 
     const void* data () const {
-      return this;
+      return &msg;
     }
 
     size_t size () const {

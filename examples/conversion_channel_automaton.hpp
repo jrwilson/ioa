@@ -92,6 +92,8 @@ private:
       return false;
       break;
     }
+
+    return false;
   }
 };
 

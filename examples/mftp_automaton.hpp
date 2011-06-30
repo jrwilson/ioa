@@ -41,7 +41,7 @@ namespace mftp {
     const fileid& m_fileid;
     std::vector<bool> m_their_req;
     uint32_t m_their_req_count;
-    std::queue<ioa::const_shared_ptr<message> > m_sendq;
+    std::queue<ioa::const_shared_ptr<message_buffer> > m_sendq;
     send_state_t m_send_state;
     timer_state_t m_fragment_timer_state;
     timer_state_t m_request_timer_state;
@@ -130,7 +130,7 @@ namespace mftp {
 
     ioa::udp_sender_automaton::send_arg send_effect () {
       ioa::inet_address a ("255.255.255.255", 54321);
-      ioa::const_shared_ptr<message> m = m_sendq.front ();
+      ioa::const_shared_ptr<message_buffer> m = m_sendq.front ();
       m_sendq.pop ();
       m_send_state = SEND_COMPLETE_WAIT;
       return ioa::udp_sender_automaton::send_arg (a, m);
@@ -235,7 +235,7 @@ namespace mftp {
 	--m_their_req_count;
 
 	// Get the fragment for that index.
-	m_sendq.push (ioa::const_shared_ptr<message> (convert_to_network (get_fragment (randy))));
+	m_sendq.push (ioa::const_shared_ptr<message_buffer> (convert_to_network (get_fragment (randy))));
       }
 
       m_fragment_timer_state = SET_READY;
@@ -272,7 +272,7 @@ namespace mftp {
 	  }
 	}
 
-	m_sendq.push (ioa::const_shared_ptr<message> (convert_to_network (new message (request_type (), m_fileid, sp_count, spans))));
+	m_sendq.push (ioa::const_shared_ptr<message_buffer> (convert_to_network (new message_buffer (request_type (), m_fileid, sp_count, spans))));
       }
 
       m_request_timer_state = SET_READY;
@@ -293,7 +293,7 @@ namespace mftp {
     
     void announcement_timer_interrupt_effect () {
       if (!m_file.empty () && m_sendq.empty()) {
-	m_sendq.push (ioa::const_shared_ptr<message> (convert_to_network (get_fragment (m_file.get_random_index ()))));
+	m_sendq.push (ioa::const_shared_ptr<message_buffer> (convert_to_network (get_fragment (m_file.get_random_index ()))));
       }
       m_announcement_timer_state = SET_READY;
     }
@@ -312,25 +312,25 @@ namespace mftp {
     V_UP_OUTPUT (mftp_automaton, download_complete, mftp::file);
 
   private:
-    message* convert_to_network (message* m) {
+    message_buffer* convert_to_network (message_buffer* m) {
       //std::cout << "converting to network byte order" << std::endl;
-      switch (m->header.message_type) {
+      switch (m->msg.header.message_type) {
       case FRAGMENT:
-        m->frag.fid.length = htonl (m->frag.fid.length);
-        m->frag.fid.type = htonl (m->frag.fid.type);
-        m->frag.offset = htonl (m->frag.offset);
+        m->msg.frag.fid.length = htonl (m->msg.frag.fid.length);
+        m->msg.frag.fid.type = htonl (m->msg.frag.fid.type);
+        m->msg.frag.offset = htonl (m->msg.frag.offset);
 	break;
       case REQUEST:
-        m->req.fid.length = htonl (m->req.fid.length);
-        m->req.fid.type = htonl (m->req.fid.type);
-	for (uint32_t i = 0; i < m->req.span_count; ++i){
-	  m->req.spans[i].start = htonl (m->req.spans[i].start);
-	  m->req.spans[i].stop = htonl (m->req.spans[i].stop);
+        m->msg.req.fid.length = htonl (m->msg.req.fid.length);
+        m->msg.req.fid.type = htonl (m->msg.req.fid.type);
+	for (uint32_t i = 0; i < m->msg.req.span_count; ++i){
+	  m->msg.req.spans[i].start = htonl (m->msg.req.spans[i].start);
+	  m->msg.req.spans[i].stop = htonl (m->msg.req.spans[i].stop);
 	}
-	m->req.span_count = htonl (m-> req.span_count);
+	m->msg.req.span_count = htonl (m->msg. req.span_count);
 	break;
       }
-      m->header.message_type = htonl (m->header.message_type);
+      m->msg.header.message_type = htonl (m->msg.header.message_type);
       return m;
     }
 
@@ -341,10 +341,9 @@ namespace mftp {
       return rf;
     }
 
-    message* get_fragment (uint32_t idx) {
+    message_buffer* get_fragment (uint32_t idx) {
       uint32_t offset = idx * FRAGMENT_SIZE;
-      message* mp = new message (fragment_type (), m_fileid, offset, m_file.get_data_ptr() + offset);
-      return mp;
+      return new message_buffer (fragment_type (), m_fileid, offset, m_file.get_data_ptr() + offset);
     }
 
   };

@@ -97,11 +97,13 @@ namespace ioa {
     }
 
     void reset (T* ptr = 0) {
-      decref ();
-      m_mutex = new mutex;
-      m_ptr = ptr;
-      m_ref_count = new size_t;
-      *m_ref_count = 1;
+      if (ptr != m_ptr) {
+	decref ();
+	m_mutex = new mutex;
+	m_ptr = ptr;
+	m_ref_count = new size_t;
+	*m_ref_count = 1;
+      }
     }
   };
   
