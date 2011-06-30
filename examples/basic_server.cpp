@@ -71,7 +71,6 @@ public:
     ioa::make_binding_manager (this,
 			       converter, &conversion_channel_automaton::pass_message,
 			       meta_server, &mftp::mftp_automaton::receive);    
-
   }
 };
 

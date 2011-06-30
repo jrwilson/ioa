@@ -41,7 +41,7 @@ namespace mftp {
     const fileid& m_fileid;
     std::vector<bool> m_their_req;
     uint32_t m_their_req_count;
-    std::queue<message*> m_sendq;
+    std::queue<ioa::const_shared_ptr<message> > m_sendq;
     send_state_t m_send_state;
     timer_state_t m_fragment_timer_state;
     timer_state_t m_request_timer_state;
@@ -105,13 +105,6 @@ namespace mftp {
       schedule ();
     }
 
-    ~mftp_automaton () {
-      while (!m_sendq.empty ()) {
-	delete m_sendq.front ();
-	m_sendq.pop ();
-      }
-    }
-
   private:
     void schedule () const {
       if (send_precondition ()) {
@@ -135,26 +128,14 @@ namespace mftp {
       return !m_sendq.empty () && m_send_state == SEND_READY;
     }
 
-    // message send_effect () {
-    //   std::auto_ptr<message> m (m_sendq.front ());
-    //   m_sendq.pop ();
-    //   convert_to_network (m.get ());
-    //   m_send_state = SEND_COMPLETE_WAIT;
-    //   return *m;
-    // }
-
-     ioa::udp_sender_automaton::send_arg send_effect () {
-       message * m = m_sendq.front ();
-       m_sendq.pop ();
-       convert_to_network(m);
-       m_send_state = SEND_COMPLETE_WAIT;
-
-       ioa::inet_address a ("255.255.255.255", 54321);
-       ioa::buffer* b = new ioa::buffer (m, sizeof (message));
-       delete m;
-       return ioa::udp_sender_automaton::send_arg (a, ioa::const_shared_ptr<ioa::buffer_interface> (b));
+    ioa::udp_sender_automaton::send_arg send_effect () {
+      ioa::inet_address a ("255.255.255.255", 54321);
+      ioa::const_shared_ptr<message> m = m_sendq.front ();
+      m_sendq.pop ();
+      m_send_state = SEND_COMPLETE_WAIT;
+      return ioa::udp_sender_automaton::send_arg (a, m);
     }
-
+    
   public:
     V_UP_OUTPUT (mftp_automaton, send, ioa::udp_sender_automaton::send_arg);
 
@@ -254,7 +235,7 @@ namespace mftp {
 	--m_their_req_count;
 
 	// Get the fragment for that index.
-	m_sendq.push (get_fragment (randy));
+	m_sendq.push (ioa::const_shared_ptr<message> (convert_to_network (get_fragment (randy))));
       }
 
       m_fragment_timer_state = SET_READY;
@@ -290,7 +271,8 @@ namespace mftp {
 	    ++sp_count;
 	  }
 	}
-	m_sendq.push (new message (request_type (), m_fileid, sp_count, spans));
+
+	m_sendq.push (ioa::const_shared_ptr<message> (convert_to_network (new message (request_type (), m_fileid, sp_count, spans))));
       }
 
       m_request_timer_state = SET_READY;
@@ -311,7 +293,7 @@ namespace mftp {
     
     void announcement_timer_interrupt_effect () {
       if (!m_file.empty () && m_sendq.empty()) {
-	m_sendq.push (get_fragment (m_file.get_random_index ()));
+	m_sendq.push (ioa::const_shared_ptr<message> (convert_to_network (get_fragment (m_file.get_random_index ()))));
       }
       m_announcement_timer_state = SET_READY;
     }
@@ -330,7 +312,7 @@ namespace mftp {
     V_UP_OUTPUT (mftp_automaton, download_complete, mftp::file);
 
   private:
-    void convert_to_network (message* m) {
+    message* convert_to_network (message* m) {
       //std::cout << "converting to network byte order" << std::endl;
       switch (m->header.message_type) {
       case FRAGMENT:
@@ -349,6 +331,7 @@ namespace mftp {
 	break;
       }
       m->header.message_type = htonl (m->header.message_type);
+      return m;
     }
 
     uint32_t get_random_request_index () {

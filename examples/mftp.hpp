@@ -7,6 +7,7 @@
 #include <math.h>
 #include <utility>
 #include <arpa/inet.h>
+#include <ioa/buffer.hpp>
 
 namespace mftp {
 
@@ -161,7 +162,8 @@ namespace mftp {
   struct fragment_type { };
   struct request_type { };
 
-  struct message
+  struct message :
+    public ioa::buffer_interface
   {
     message_header header;
     union {
@@ -169,7 +171,7 @@ namespace mftp {
       request req;
     };
 
-    message (){}
+    message () { }
 
     message (fragment_type /* */,
 	     const fileid& fileid,
@@ -195,6 +197,13 @@ namespace mftp {
       }
     }
 
+    const void* data () const {
+      return this;
+    }
+
+    size_t size () const {
+      return sizeof (message);
+    }
   };
 
 }
