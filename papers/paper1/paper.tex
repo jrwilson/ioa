@@ -1,0 +1,105 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{acronym}
+
+\begin{document}
+
+\title{The Input/Ouput Automata Library}
+\author{Justin R. Wilson \and Christopher D. Gill}
+\date{}
+
+\maketitle
+
+\begin{abstract}
+The abstract abstract.
+\end{abstract}
+
+\section{Introduction}
+
+Current abstractions for concurrency and asynchrony are suitable for a narrow set of application domains.
+In order to build the systems that we desire to build, we need better abstractions.
+
+Devices are asynchronous and concurrent.
+Networks are asynchronous and concurrent.
+Why not start with a model that is asynchronous and concurrent?
+
+What inspires us:
+\begin{itemize}
+  \item CORBA - Remote Method Invocation (Remote Procedure Call with a ``this'' pointer).
+    ``Let's make synchronous function calls over a network.''
+    Assumes a thread of control.
+    Asynchronous calls were added later (Did these result in obfuscation?)
+
+  \item Patterns for asynchronous concurrency in a synchronous, thread-based world: Active objects, Reactor, Proactor, etc.
+    Examples: X server, OS2 Presentation Manager, Java Swing
+
+  \item AJAX - The modern Web is built on JavaScript + \emph{asynchronous} web page requests = AJAX.
+
+  \item Michi Henning - ICE
+
+  \item Steve Vinoski - Toolbox of programming languages
+
+\end{itemize}
+
+We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+
+\section{System Model and Formalization}
+
+\begin{itemize}
+  \item State
+  \item Communication
+  \item Asynchrony
+  \item Concurrency
+\end{itemize}
+
+I/O Automata
+\begin{itemize}
+  \item Compare with UNITY
+  \item Compare with esterel
+  \item Compare with pi calculus
+  \item Compare with Ptolemy
+\end{itemize}
+
+\section{I/O Automata Representation and Programming Model\label{programming_model}}
+
+Conclude with our recommendations for programming, highlight need for exploration.
+
+\section{Design and Implementation}
+
+\begin{itemize}
+  \item Problem
+  \item Design forces
+  \item Solution
+  \item Consequences
+\end{itemize}
+
+\section{Evaluation and Discussion}
+
+\begin{itemize}
+\item Translation of automaton in \emph{Distributed Algorithms} to C++.
+\item Simulate a protocol then replace with network components
+\item Compare a protocol using: single-threaded event-based (select loop), multi-threaded, I/O automata
+\item Show a buggy program and then apply an invariant to find the bug.
+\end{itemize}
+
+Bring up style mentioned in section \ref{programming_model}.
+
+\section{Related Work}
+
+pthreads (?)
+Edward Lee - The Problem with Threads
+Herb Sutter - The Free Lunch is Over
+Early work on concurrency
+
+\section{Conclusion and Future Work}
+
+\begin{itemize}
+  \item We are going to use it to build the substrate.
+  \item Speculate on moving down into operating system (device drivers would be easy, IPC including filesystem replaced by automata)
+  \item Speculate on moving down into the hardware level (Local talent, Ivan Sutherland)
+  \item We can take advantage of multi-core in a very straight-forward way
+  \item New problems in scheduling (Pinning automata to processors to minimize actions that span two processors.  Maximum independent set.)
+  \item We are non-blocking all the way.  Combine this with a deterministic implementation of the scheduler and model and there are serious opportunities for real-time.
+\end{itemize}
+
+\end{document}
