@@ -2,7 +2,6 @@
 #define __asynch_lcr_automaton_hpp__
 
 #include <ioa/ioa.hpp>
-#include "uuid.hpp"
 #include <queue>
 
 /*
@@ -20,11 +19,45 @@ private:
     REPORTED
   } status_t;
 
-  uuid m_u;
-  std::queue<uuid> m_send;
+  ioa::aid_t m_u;
+  std::queue<ioa::aid_t> m_send;
   status_t m_status;
 
-  void receive_effect (const uuid& v) {
+public:
+  asynch_lcr_automaton () :
+    m_u (ioa::get_aid ()),
+    m_status (UNKNOWN)
+  {
+    m_send.push (m_u);
+    schedule ();
+  }
+
+private:
+  void schedule () const {
+    if (send_precondition ()) {
+      ioa::schedule (&asynch_lcr_automaton::send);
+    }
+
+    if (leader_precondition ()) {
+      ioa::schedule (&asynch_lcr_automaton::leader);
+    }
+  }
+
+  bool send_precondition () const {
+    return !m_send.empty () && ioa::binding_count (&asynch_lcr_automaton::send) != 0;
+  }
+
+  ioa::aid_t send_effect () {
+    ioa::aid_t retval = m_send.front ();
+    m_send.pop ();
+    return retval;
+  }
+
+public:
+  V_UP_OUTPUT (asynch_lcr_automaton, send, ioa::aid_t);
+
+private:
+  void receive_effect (const ioa::aid_t& v) {
     if (v > m_u) {
       m_send.push (v);
     }
@@ -36,16 +69,10 @@ private:
     }
   }
 
-  bool send_precondition () const {
-    return !m_send.empty () && ioa::binding_count (&asynch_lcr_automaton::send) != 0;
-  }
+public:
+  V_UP_INPUT (asynch_lcr_automaton, receive, ioa::aid_t);
 
-  uuid send_effect () {
-    uuid retval = m_send.front ();
-    m_send.pop ();
-    return retval;
-  }
-
+private:
   bool leader_precondition () const {
     return m_status == CHOSEN && ioa::binding_count (&asynch_lcr_automaton::leader) != 0;
   }
@@ -54,30 +81,8 @@ private:
     m_status = REPORTED;
   }
 
-  void schedule () const {
-    if (send_precondition ()) {
-      ioa::schedule (&asynch_lcr_automaton::send);
-    }
-
-    if (leader_precondition ()) {
-      ioa::schedule (&asynch_lcr_automaton::leader);
-    }
-  }
-
 public:
-
-  asynch_lcr_automaton () :
-    m_u (true),
-    m_status (UNKNOWN)
-  {
-    m_send.push (m_u);
-    schedule ();
-  }
-
-  V_UP_INPUT (asynch_lcr_automaton, receive, uuid);
-  V_UP_OUTPUT (asynch_lcr_automaton, send, uuid);
   UV_UP_OUTPUT (asynch_lcr_automaton, leader);
-
 };
 
 #endif

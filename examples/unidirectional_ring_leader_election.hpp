@@ -20,7 +20,7 @@ private:
 
   ioa::handle_manager<unidirectional_ring_leader_election> self;
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
-  std::vector<ioa::automaton_handle_interface<channel_automaton<uuid> >*> channel_automaton_managers;
+  std::vector<ioa::automaton_handle_interface<channel_automaton<ioa::aid_t> >*> channel_automaton_managers;
 
 public:
 
@@ -29,12 +29,12 @@ public:
   { 
     for (size_t i = 0; i < N; ++i) {
       T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> ()));
-      channel_automaton_managers.push_back (new ioa::automaton_manager<channel_automaton<uuid> > (this, ioa::make_generator<channel_automaton<uuid> > ()));
+      channel_automaton_managers.push_back (new ioa::automaton_manager<channel_automaton<ioa::aid_t> > (this, ioa::make_generator<channel_automaton<ioa::aid_t> > ()));
     }
     
     for (size_t i = 0; i < N; ++i) {
-      make_binding_manager (this, T_helpers[i], &T::send, channel_automaton_managers[i], &channel_automaton<uuid>::send);
-      make_binding_manager (this, channel_automaton_managers[i], &channel_automaton<uuid>::receive, T_helpers[(i + 1) % N], &T::receive);
+      make_binding_manager (this, T_helpers[i], &T::send, channel_automaton_managers[i], &channel_automaton<ioa::aid_t>::send);
+      make_binding_manager (this, channel_automaton_managers[i], &channel_automaton<ioa::aid_t>::receive, T_helpers[(i + 1) % N], &T::receive);
       make_binding_manager (this, T_helpers[i], &T::leader, &self, &unidirectional_ring_leader_election::leader, i);
     }
 

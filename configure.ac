@@ -28,7 +28,6 @@ AC_PROG_MAKE_SET
 # FIXME: Replace `main' with a function in `-ljpeg':
 #AC_CHECK_LIB([jpeg], [main])
 AC_SEARCH_LIBS([pthread_key_create], [pthread])
-AC_SEARCH_LIBS([uuid_clear], [uuid])
 #AC_SEARCH_LIBS([MD5], [crypto])
 #AC_SEARCH_LIBS([json_object_new_object], [json])
 
