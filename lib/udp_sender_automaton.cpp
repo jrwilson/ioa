@@ -143,32 +143,36 @@ namespace ioa {
   }
 
   void udp_sender_automaton::write_ready_effect () {
-    assert (!m_send_queue.empty ());
-    std::pair<aid_t, send_arg*> item = m_send_queue.front ();
-    m_send_queue.pop_front ();
-    m_send_set.erase (item.first);
+    if (!m_send_queue.empty ()) {
+      std::pair<aid_t, send_arg*> item = m_send_queue.front ();
+      m_send_queue.pop_front ();
+      m_send_set.erase (item.first);
       
-    if (sendto (m_fd, item.second->buffer->data (), item.second->buffer->size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ()) != -1) {
-      // Success.
-      add_to_complete_map (item.first, 0);
-    }
-    else {
-      // Fail.
-      m_errno = errno;
-      close (m_fd);
-      m_fd = -1;
-      add_to_complete_map (item.first, m_errno);
-      
-      // Drain the send queue.
-      for (std::list<std::pair<aid_t, send_arg*> >::const_iterator pos = m_send_queue.begin ();
-	   pos != m_send_queue.end ();
-	   ++pos) {
-	add_to_complete_map (pos->first, m_errno);
-	delete pos->second;
+      if (sendto (m_fd, item.second->buffer->data (), item.second->buffer->size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ()) != -1) {
+	// Success.
+	add_to_complete_map (item.first, 0);
       }
-      m_send_queue.clear ();
-    }
+      else {
+	// Fail.
+	m_errno = errno;
+	close (m_fd);
+	m_fd = -1;
+	add_to_complete_map (item.first, m_errno);
+	
+	// Drain the send queue.
+	for (std::list<std::pair<aid_t, send_arg*> >::const_iterator pos = m_send_queue.begin ();
+	     pos != m_send_queue.end ();
+	     ++pos) {
+	  add_to_complete_map (pos->first, m_errno);
+	  delete pos->second;
+	}
+	m_send_queue.clear ();
+	m_send_set.clear ();
+      }
 
+      delete item.second;
+    }
+      
     if (m_send_queue.empty ()) {
       // No more messages to send.
       m_state = SEND_WAIT;
@@ -177,8 +181,6 @@ namespace ioa {
       // Go again.
       m_state = SCHEDULE_WRITE_READY;
     }
-      
-    delete item.second;
   }
     
   bool udp_sender_automaton::send_complete_precondition (aid_t aid) const {

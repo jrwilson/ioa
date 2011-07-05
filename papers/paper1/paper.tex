@@ -1,6 +1,6 @@
 \documentclass[letterpaper]{article}
 
-\usepackage{acronym}
+\usepackage{outline}
 
 \begin{document}
 
@@ -15,6 +15,17 @@ The abstract abstract.
 \end{abstract}
 
 \section{Introduction}
+
+\begin{outline}
+\item We desire to build complex distributed systems
+\item These systems are characterized by asynchrony and concurrency at both the macroscopic and microscopic levels.
+  \begin{outline}
+  \item Macroscopic - Operate in a network where computation is naturally concurrent and asynchronous.
+  \item Microscopic - Individual devices perform more than one task and the physical world is asynchronous.
+  \end{outline}
+\item In spite of the importance of asynchrony and concurrency, we build these systems using the thread abstraction which is awkward and difficult.
+
+\end{outline}
 
 Current abstractions for concurrency and asynchrony are suitable for a narrow set of application domains.
 In order to build the systems that we desire to build, we need better abstractions.
