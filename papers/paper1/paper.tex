@@ -1,60 +1,111 @@
-\documentclass[letterpaper]{article}
+\documentclass[letterpaper, twocolumn]{article}
 
 \usepackage{outline}
 
 \begin{document}
 
-\title{The Input/Ouput Automata Library}
+\title{Threads Considered Harmful}
 \author{Justin R. Wilson \and Christopher D. Gill}
 \date{}
 
 \maketitle
 
 \begin{abstract}
-The abstract abstract.
+Our ability to realize sophisticated distributed systems such as those in cyber-physical systems and pervasive computing is predicated on a solid model and implementation of asynchrony and concurrency.
+Threads, the de facto standard in practice, are not a suitable foundation because 1) ad hoc communication among threads prohibits software reuse, 2) threads are difficult to treat formally and therefore \emph{very} difficult to treat informally, and 3) threads are ill-suited for the asynchronous semantics present in the systems we desire to build.
+In this paper, we outline the semantics necessary for building sophisticated distributed systems and connect these to the I/O automata formal model.
+We then describe an implementation of the I/O automata formal model and cover extensions to the model necessary for operating in a dynamic environment.
+Finally, we conclude with an evaluation of our I/O automata framework.
 \end{abstract}
 
 \section{Introduction}
 
-\begin{outline}
-\item We desire to build complex distributed systems
-\item These systems are characterized by asynchrony and concurrency at both the macroscopic and microscopic levels.
-  \begin{outline}
-  \item Macroscopic - Operate in a network where computation is naturally concurrent and asynchronous.
-  \item Microscopic - Individual devices perform more than one task and the physical world is asynchronous.
-  \end{outline}
-\item In spite of the importance of asynchrony and concurrency, we build these systems using the thread abstraction which is awkward and difficult.
+Advances in embedded systems and networking are paving the way for distributed systems of unprecedented sophistication.
+Cyber-physical systems go beyond the traditional embedded system paradigm by explicitly modeling the dynamics of the physical system and communication network in the computational task.
+The inclusion of wireless network interfaces in modern electronic devices is transforming our homes, offices, and hospitals into pervasive computing environments.
+The interactions these systems have with the physical environment and its community of users require a degree of interoperability, configurability, adaptability, scalability, robustness, and security not found in existing systems.
 
-\end{outline}
+One of the forces that prevents the development of any kind of sophisticated software system is accidental complexity~\cite{brooks_nsb}.
+In the context of distributed systems, a major source of accidental complexity is a mismatch between the conceptual model of the system and the technology used to implement the system.
+The mismatch between the conceptual model and implementation vehicle introduces defects due to translation errors, slows rapid prototyping, and retards iterative refinement.
+While there is no ``silver bullet''~\cite{brooks_nsb}, reducing the accidental complexity derived from the mismatch between concept and implementation will increase productivity and make new levels of sophistication possible with existing levels of effort.
 
-Current abstractions for concurrency and asynchrony are suitable for a narrow set of application domains.
-In order to build the systems that we desire to build, we need better abstractions.
+Threads are the de facto implementation vehicle for most of computing including distributed systems.
+Threads dominate because modern processors, programming languages, and operating systems were all developed to support the thread model.
+Furthermore, the widespread availability of thread libraries makes them a natural choice for system development.
+While threads dominate in practice, using threads to develop systems has a number of significant drawbacks.
 
-Devices are asynchronous and concurrent.
-Networks are asynchronous and concurrent.
-Why not start with a model that is asynchronous and concurrent?
+First, ad hoc communication among threads prohibits software reuse.
+To illustrate this problem consider the challenge of developing an application with a graphical user interface that also uses a multi-threaded middleware library.
+Graphical user interfaces often use a single-threaded event-based design, e.g., X, Swing.
+The system integrator must write glue code that bridges the single-threaded event-based semantics to multi-threaded semantics.
+Bridging between two thread models is achievable, however, the systems we desire to build will rely on many libraries each with their own thread model.
+The importance of a unified approach to concurrency becomes apparent when one considers bridging between different threading models, e.g., event-based, reactor, proactor, active objects, and their attributes, e.g., priority, thread-creation, blocking vs. non-blocking I/O.
 
-What inspires us:
-\begin{itemize}
-  \item CORBA - Remote Method Invocation (Remote Procedure Call with a ``this'' pointer).
-    ``Let's make synchronous function calls over a network.''
-    Assumes a thread of control.
-    Asynchronous calls were added later (Did these result in obfuscation?)
+Second, threads are difficult to treat formally and therefore \emph{very} difficult to treat informally.
+The correctness of programs is reasoned about either formally as part of formal software design and verification and/or informally during the debugging process.
+Since most programs will never be formally verified, the correctness of most programs hinges solely on the developers ability to reason about the program.
+Based on the historical example of structured programming~\cite{goto_considered_harmful}, there is a strong correlation between what is ``easy'' in the formal arena and what is ``easy'' in the informal arena, especially when the implementation mimics the formal model, e.g., structured programming languages.
+It is well known that a formal treatment of threads is difficult due to the arbitrary interleaving of critical sections and ability to define critical sections of arbitrary scope~\cite{lee_threads}.
+Thus, the correctness of most multi-threaded programs hinges on the developer's ability to explore arbitrary interleavings of critical sections, i.e., model checking, in their head.
 
-  \item Patterns for asynchronous concurrency in a synchronous, thread-based world: Active objects, Reactor, Proactor, etc.
-    Examples: X server, OS2 Presentation Manager, Java Swing
+Third, threads are ill-suited for the asynchronous semantics present in the systems we desire to build.
+The distributed systems we desire to build are asynchronous at both the device and network levels.
+Embedded devices must respond to asynchronous events in the environment.
+The interrupt-driven TinyOS operating system for wireless sensor network motes is an exemplar in this area.
+The fundamental communication primitive in real-world distributed systems is asynchronous message passing.
+Realizing asynchrony in a threaded program requires the use of signals (interrupts) and/or (a)synchronous I/O multiplexing.
+Signals are primitive, rigid, and difficult to use correctly.
+I/O multiplexing, e.g., a select loop, is limited to operating system abstractions, e.g., file descriptors, and induces a reactive state machine structure that is difficult to understand and maintain.
 
-  \item AJAX - The modern Web is built on JavaScript + \emph{asynchronous} web page requests = AJAX.
+Difficulties in developing asynchronous and concurrent software using threads has prompted a number of concurrent programming languages, e.g., Esterel, Erlang, Ptolemy, Autopipe, and language extensions, e.g., OpenMP, Cilk, Split-C.
+Solutions that involve creating a new language or extending an existing language suffer from two main problems.
+First, such solutions are often domain-specific and do not generalize to different applications, a necessity for heterogeneous distributed systems.
+Furthermore, solutions not connected to a general-purpose formal model lack the important property that the complete system including the environment can be modeled as another component.
+Second, such solutions often fail to become mainstream due to practical considerations.
+For example, the combination of C and pthreads is much more popular than Erlang due to the popularity of C-like languages and C's connection with UNIX operating system.
+Most language extensions are targeted at niche markets and therefore never standardized and implemented in mainstream compilers.
 
-  \item Michi Henning - ICE
+Thus, in order to build sophisticated distributed systems, we require a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+%% The model must be general to support the wide variety of devices and protocols necessary for cyber-physical and pervasive computing systems.
+%% The model must facilitate the development of concurrent modules that can be reused.
+%% The model must have a strong connection with a formal model to simplify the task of reasoning about individual components and complete systems.
+%% The model must be implemented in such a way that it is easily approachable.
+In section~\ref{system_model}, we expound upon the requirements of the model and connect the requirements with the I/O automata formal model.
+Section~\ref{representation} describes how I/O automata are represented in our I/O automata framework.
+In section~\ref{design}, we describe the design and implementation of our I/O automata framework.
+Section~\ref{evaluation} provides an evaluation and discussion of our framework.
+Section~\ref{related_work} contains an overview of related work and we offer our conclusions and thoughts for future work in section~\ref{conclusion}.
 
-  \item Steve Vinoski - Toolbox of programming languages
+%% We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
 
-\end{itemize}
+%%formal models, e.g., UNITY, I/O Automata,
 
-We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+%% Devices are asynchronous and concurrent.
+%% Networks are asynchronous and concurrent.
+%% Why not start with a model that is asynchronous and concurrent?
 
-\section{System Model and Formalization}
+%% What inspires us:
+%% \begin{itemize}
+%%   \item CORBA - Remote Method Invocation (Remote Procedure Call with a ``this'' pointer).
+%%     ``Let's make synchronous function calls over a network.''
+%%     Assumes a thread of control.
+%%     Asynchronous calls were added later (Did these result in obfuscation?)
+
+%%   \item Patterns for asynchronous concurrency in a synchronous, thread-based world: Active objects, Reactor, Proactor, etc.
+%%     Examples: X server, OS2 Presentation Manager, Java Swing
+
+%%   \item AJAX - The modern Web is built on JavaScript + \emph{asynchronous} web page requests = AJAX.
+
+%%   \item Michi Henning - ICE
+
+%%   \item Steve Vinoski - Toolbox of programming languages
+
+%% \end{itemize}
+
+%% We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+
+\section{System Model and Formalization\label{system_model}}
 
 \begin{itemize}
   \item State
@@ -71,11 +122,11 @@ I/O Automata
   \item Compare with Ptolemy
 \end{itemize}
 
-\section{I/O Automata Representation and Programming Model\label{programming_model}}
+\section{I/O Automata Representation and Programming Model\label{representation}}
 
 Conclude with our recommendations for programming, highlight need for exploration.
 
-\section{Design and Implementation}
+\section{Design and Implementation\label{design}}
 
 \begin{itemize}
   \item Problem
@@ -84,7 +135,7 @@ Conclude with our recommendations for programming, highlight need for exploratio
   \item Consequences
 \end{itemize}
 
-\section{Evaluation and Discussion}
+\section{Evaluation and Discussion\label{evaluation}}
 
 \begin{itemize}
 \item Translation of automaton in \emph{Distributed Algorithms} to C++.
@@ -93,16 +144,16 @@ Conclude with our recommendations for programming, highlight need for exploratio
 \item Show a buggy program and then apply an invariant to find the bug.
 \end{itemize}
 
-Bring up style mentioned in section \ref{programming_model}.
+Bring up style mentioned in section \ref{representation}.
 
-\section{Related Work}
+\section{Related Work\label{related_work}}
 
 pthreads (?)
 Edward Lee - The Problem with Threads
 Herb Sutter - The Free Lunch is Over
 Early work on concurrency
 
-\section{Conclusion and Future Work}
+\section{Conclusion and Future Work\label{conclusion}}
 
 \begin{itemize}
   \item We are going to use it to build the substrate.
