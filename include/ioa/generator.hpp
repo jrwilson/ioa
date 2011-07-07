@@ -123,6 +123,67 @@ namespace ioa {
     return const_shared_ptr<generator_interface> (new generator4<I, A0, A1, A2, A3> (a0, a1, a2, a3));
   }
 
+  template <class T, typename A0, typename A1, typename A2, typename A3, typename A4>
+  struct generator5 :
+    public generator_interface
+  {
+    typedef T result_type;
+    A0 m_a0;
+    A1 m_a1;
+    A2 m_a2;
+    A3 m_a3;
+    A4 m_a4;
+
+    generator5 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) :
+      m_a0 (a0),
+      m_a1 (a1),
+      m_a2 (a2),
+      m_a3 (a3),
+      m_a4 (a4)
+    { }
+
+    T* operator() () const {
+      return new T (m_a0, m_a1, m_a2, m_a3, m_a4);
+    }
+  };
+
+  template <class I, typename A0, typename A1, typename A2, typename A3, typename A4>
+  const_shared_ptr<generator_interface> make_generator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+    return const_shared_ptr<generator_interface> (new generator5<I, A0, A1, A2, A3, A4> (a0, a1, a2, a3, a4));
+  }
+
+
+  template <class T, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5>
+  struct generator6 :
+    public generator_interface
+  {
+    typedef T result_type;
+    A0 m_a0;
+    A1 m_a1;
+    A2 m_a2;
+    A3 m_a3;
+    A4 m_a4;
+    A5 m_a5;
+
+    generator6 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) :
+      m_a0 (a0),
+      m_a1 (a1),
+      m_a2 (a2),
+      m_a3 (a3),
+      m_a4 (a4),
+      m_a5 (a5)
+    { }
+
+    T* operator() () const {
+      return new T (m_a0, m_a1, m_a2, m_a3, m_a4, m_a5);
+    }
+  };
+
+  template <class I, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5>
+  const_shared_ptr<generator_interface> make_generator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) {
+    return const_shared_ptr<generator_interface> (new generator6<I, A0, A1, A2, A3, A4, A5> (a0, a1, a2, a3, a4, a5));
+  }
+
 
 
 }
