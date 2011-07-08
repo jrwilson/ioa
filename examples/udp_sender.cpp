@@ -1,7 +1,7 @@
+#include <config.hpp>
+
 #include <ioa/udp_sender_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
-
-#include <config.hpp>
 
 #include <iostream>
 
