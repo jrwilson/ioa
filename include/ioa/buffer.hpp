@@ -110,6 +110,19 @@ namespace ioa {
       append (buf.data (), buf.size ());
     }
 
+    void conume (const size_t nbytes) {
+      size_t new_size;
+      if (nbytes < m_size) {
+	new_size = m_size - nbytes;
+      }
+      else {
+	new_size = 0;
+      }
+
+      memmove (m_data, m_data + nbytes, new_size);
+      resize (new_size);
+    }
+
   };
 
 }
