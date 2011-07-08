@@ -110,7 +110,7 @@ namespace ioa {
       append (buf.data (), buf.size ());
     }
 
-    void conume (const size_t nbytes) {
+    void consume (const size_t nbytes) {
       size_t new_size;
       if (nbytes < m_size) {
 	new_size = m_size - nbytes;
