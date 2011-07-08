@@ -99,6 +99,17 @@ namespace ioa {
       m_size = 0;
     }
 
+    void append (const void* data,
+		 const size_t size) {
+      const size_t old_size = m_size;
+      resize (old_size + size);
+      memcpy (m_data + old_size, data, size);
+    }
+
+    void append (const buffer_interface& buf) {
+      append (buf.data (), buf.size ());
+    }
+
   };
 
 }
