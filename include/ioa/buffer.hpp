@@ -68,15 +68,8 @@ namespace ioa {
       delete[] m_data;
     }
 
-    void resize (const size_t new_size) {
-      if (new_size > m_capacity) {
-	m_capacity = new_size;
-	unsigned char* ptr = new unsigned char[m_capacity];
-	memcpy (ptr, m_data, m_size);
-	delete[] m_data;
-	m_data = ptr;
-      }
-      m_size = new_size;
+    bool empty () const {
+      return m_size == 0;
     }
 
     size_t size () const {
@@ -90,6 +83,22 @@ namespace ioa {
     const void* data () const {
       return m_data;
     }
+
+    void resize (const size_t new_size) {
+      if (new_size > m_capacity) {
+	m_capacity = new_size;
+	unsigned char* ptr = new unsigned char[m_capacity];
+	memcpy (ptr, m_data, m_size);
+	delete[] m_data;
+	m_data = ptr;
+      }
+      m_size = new_size;
+    }
+
+    void clear () {
+      m_size = 0;
+    }
+
   };
 
 }
