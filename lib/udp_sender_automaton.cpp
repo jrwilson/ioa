@@ -52,12 +52,6 @@ namespace ioa {
     if (m_fd != -1) {
       close (m_fd);
     }
-
-    for (std::list<std::pair<aid_t, send_arg*> >::const_iterator pos = m_send_queue.begin ();
-	 pos != m_send_queue.end ();
-	 ++pos) {
-      delete pos->second;
-    }
   }
 
   void udp_sender_automaton::schedule () const {
@@ -79,11 +73,10 @@ namespace ioa {
 
   void udp_sender_automaton::purge (const aid_t aid) {
     if (m_send_set.count (aid) != 0) {
-      std::list<std::pair<aid_t, send_arg*> >::iterator pos = std::find_if (m_send_queue.begin (),
-									    m_send_queue.end (),
-									    first_aid_equal (aid));
+      std::list<std::pair<aid_t, send_arg> >::iterator pos = std::find_if (m_send_queue.begin (),
+									   m_send_queue.end (),
+									   first_aid_equal (aid));
       assert (pos != m_send_queue.end ());
-      delete pos->second;
       m_send_queue.erase (pos);
       m_send_set.erase (aid);
     }
@@ -93,7 +86,7 @@ namespace ioa {
 
   void udp_sender_automaton::add_to_send_queue (const aid_t aid,
 						const send_arg& arg) {
-    m_send_queue.push_back (std::make_pair (aid, new send_arg (arg)));
+    m_send_queue.push_back (std::make_pair (aid, arg));
     m_send_set.insert (aid);
     if (m_state == SEND_WAIT) {
       m_state = SCHEDULE_WRITE_READY;
@@ -107,7 +100,8 @@ namespace ioa {
     ioa::schedule (&udp_sender_automaton::send_complete, aid);
   }
 
-  void udp_sender_automaton::send_effect (const send_arg& arg, aid_t aid) {
+  void udp_sender_automaton::send_effect (const send_arg& arg,
+					  aid_t aid) {
     // Ignore if aid has an outstanding send or send_complete.
     if (m_send_set.count (aid) == 0 && m_complete_map.count (aid) == 0) {
       if (m_fd == -1) {
@@ -144,11 +138,11 @@ namespace ioa {
 
   void udp_sender_automaton::write_ready_effect () {
     if (!m_send_queue.empty ()) {
-      std::pair<aid_t, send_arg*> item = m_send_queue.front ();
+      std::pair<aid_t, send_arg> item = m_send_queue.front ();
       m_send_queue.pop_front ();
       m_send_set.erase (item.first);
       
-      if (sendto (m_fd, item.second->buffer->data (), item.second->buffer->size (), 0, item.second->address.get_sockaddr (), item.second->address.get_socklen ()) != -1) {
+      if (sendto (m_fd, item.second.buffer->data (), item.second.buffer->size (), 0, item.second.address.get_sockaddr (), item.second.address.get_socklen ()) != -1) {
 	// Success.
 	add_to_complete_map (item.first, 0);
       }
@@ -160,17 +154,14 @@ namespace ioa {
 	add_to_complete_map (item.first, m_errno);
 	
 	// Drain the send queue.
-	for (std::list<std::pair<aid_t, send_arg*> >::const_iterator pos = m_send_queue.begin ();
+	for (std::list<std::pair<aid_t, send_arg> >::const_iterator pos = m_send_queue.begin ();
 	     pos != m_send_queue.end ();
 	     ++pos) {
 	  add_to_complete_map (pos->first, m_errno);
-	  delete pos->second;
 	}
 	m_send_queue.clear ();
 	m_send_set.clear ();
       }
-
-      delete item.second;
     }
       
     if (m_send_queue.empty ()) {

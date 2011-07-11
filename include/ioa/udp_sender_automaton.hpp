@@ -42,7 +42,7 @@ namespace ioa {
 	m_aid (aid)
       { }
 
-      bool operator() (const std::pair<aid_t, send_arg*>& o) const {
+      bool operator() (const std::pair<aid_t, send_arg>& o) const {
 	return m_aid == o.first;
       }
 
@@ -55,7 +55,7 @@ namespace ioa {
     int m_fd;
     int m_errno;
 
-    std::list<std::pair<aid_t, send_arg*> > m_send_queue;
+    std::list<std::pair<aid_t, send_arg> > m_send_queue;
     std::set<aid_t> m_send_set; // Set of aids in send_queue.
     
     std::map<aid_t, int> m_complete_map;
