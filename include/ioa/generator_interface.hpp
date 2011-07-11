@@ -17,6 +17,15 @@ namespace ioa {
     virtual automaton* operator() () const = 0;
   };
 
+  template <class I>
+  class typed_generator_interface :
+    public generator_interface
+  {
+  public:
+    virtual ~typed_generator_interface () { }
+    virtual I* operator() () const = 0;
+  };
+
 }
 
 #endif

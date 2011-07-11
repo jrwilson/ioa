@@ -16,12 +16,12 @@ namespace ioa {
 
   private:
     automaton* m_automaton;
-    const_shared_ptr<generator_interface> m_generator;
+    const_shared_ptr<typed_generator_interface<I> > m_generator;
     automaton_handle<I> m_handle;
 
   public:
     automaton_manager (automaton* automaton,
-		       const_shared_ptr<generator_interface> generator) :
+		       const_shared_ptr<typed_generator_interface<I> > generator) :
       m_automaton (automaton),
       m_generator (generator)
     {
