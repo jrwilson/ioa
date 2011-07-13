@@ -81,7 +81,7 @@ namespace ioa {
 
     if (m_records[creator_aid]->create_key_exists (key)) {
       // Create key already in use.
-      m_system_scheduler.create_key_exists (creator_aid, key);
+      m_system_scheduler.created (creator_aid, automaton::CREATE_KEY_EXISTS_RESULT, key, -1);
       return -1;
     }
     
@@ -101,7 +101,7 @@ namespace ioa {
     if (m_instances.count (instance) != 0) {
       // Return the aid and inform the automaton that the instance already exists.
       m_aids.replace (aid);
-      m_system_scheduler.instance_exists (creator_aid, key);
+      m_system_scheduler.created (creator_aid, automaton::INSTANCE_EXISTS_RESULT, key, -1);
       return -1;
     }
     
@@ -127,7 +127,7 @@ namespace ioa {
     
     if (m_records[binder]->bind_key_exists (key)) {
       // Bind key already in use.
-      m_system_scheduler.bind_key_exists (binder, key);
+      m_system_scheduler.bound (binder, automaton::BIND_KEY_EXISTS_RESULT, key);
       return -1;
     }
     
@@ -139,12 +139,12 @@ namespace ioa {
     input.set_parameter (output.get_aid ());
     
     if (!output.fetch_instance (*this)) {
-      m_system_scheduler.output_automaton_dne (binder, key);
+      m_system_scheduler.bound (binder, automaton::OUTPUT_AUTOMATON_DNE_RESULT, key);
       return -1;
     }
     
     if (!input.fetch_instance (*this)) {
-      m_system_scheduler.input_automaton_dne (binder, key);
+      m_system_scheduler.bound (binder, automaton::INPUT_AUTOMATON_DNE_RESULT, key);
       return -1;
     }
     
@@ -154,7 +154,7 @@ namespace ioa {
     
     if (pos != m_bindings.end ()) {
       // Bound.
-      m_system_scheduler.binding_exists (binder, key);
+      m_system_scheduler.bound (binder, automaton::BINDING_EXISTS_RESULT, key);
       return -1;
     }
     
@@ -164,7 +164,7 @@ namespace ioa {
     
     if (in_pos != m_bindings.end ()) {
       // Input unavailable.
-      m_system_scheduler.input_action_unavailable (binder, key);
+      m_system_scheduler.bound (binder, automaton::INPUT_ACTION_UNAVAILABLE_RESULT, key);
       return -1;
     }
     
@@ -175,7 +175,7 @@ namespace ioa {
     if (output.get_aid () == input.get_aid () ||
 	(out_pos != m_bindings.end () && (*out_pos)->involves_input_automaton (input.get_aid ()))) {
       // Output unavailable.
-      m_system_scheduler.output_action_unavailable (binder, key);
+      m_system_scheduler.bound (binder, automaton::OUTPUT_ACTION_UNAVAILABLE_RESULT, key);
       return -1;
     }
     
@@ -210,7 +210,7 @@ namespace ioa {
     
     if (pos == m_bindings.end ()) {
       // Not bound.
-      m_system_scheduler.bind_key_dne (binder, key);
+      m_system_scheduler.unbound (binder, automaton::BIND_KEY_DNE_RESULT, key);
       return -1;
     }
     
@@ -251,7 +251,7 @@ namespace ioa {
     }
 
     if (!m_records[automaton]->create_key_exists (key)) {
-      m_system_scheduler.create_key_dne (automaton, key);
+      m_system_scheduler.destroyed (automaton, automaton::CREATE_KEY_DNE_RESULT, key);
       return -1;
     }
 

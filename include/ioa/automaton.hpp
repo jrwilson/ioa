@@ -69,57 +69,94 @@ namespace ioa {
   private:
     void schedule () const;
 
+  private:
     bool sys_create_precondition () const;
     std::pair<const_shared_ptr<generator_interface>, void*> sys_create_effect ();
-
-    bool sys_bind_precondition () const;
-    std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_effect ();
-
-    bool sys_unbind_precondition () const;
-    void* sys_unbind_effect ();
-
-    bool sys_destroy_precondition () const;
-    void* sys_destroy_effect ();
-
-    bool sys_self_destruct_precondition () const;
-    void* sys_self_destruct_effect ();
-
-    void sys_create_key_exists_effect (void* const &);
-    void sys_instance_exists_effect (void* const &);
-    void sys_automaton_created_effect (std::pair<void* COMMA aid_t> const &);
-    void sys_bind_key_exists_effect (void* const &);
-    void sys_output_automaton_dne_effect (void* const &);
-    void sys_input_automaton_dne_effect (void* const &);
-    void sys_binding_exists_effect (void* const &);
-    void sys_output_action_unavailable_effect (void* const &);
-    void sys_input_action_unavailable_effect (void* const &);
-    void sys_bound_effect (void* const &);
-    void sys_bind_key_dne_effect (void* const &);
-    void sys_unbound_effect (void* const &);
-    void sys_create_key_dne_effect (void* const &);
-    void sys_automaton_destroyed_effect (void* const &);
-
   public:
     SYSTEM_OUTPUT (automaton, sys_create, std::pair<const_shared_ptr<generator_interface> COMMA void*>);
+
+  private:
+    bool sys_bind_precondition () const;
+    std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_effect ();
+  public:
     SYSTEM_OUTPUT (automaton, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
+
+  private:
+    bool sys_unbind_precondition () const;
+    void* sys_unbind_effect ();
+  public:
     SYSTEM_OUTPUT (automaton, sys_unbind, void*);
+
+  private:
+    bool sys_destroy_precondition () const;
+    void* sys_destroy_effect ();
+  public:
     SYSTEM_OUTPUT (automaton, sys_destroy, void*);
+
+  private:
+    bool sys_self_destruct_precondition () const;
+    void* sys_self_destruct_effect ();
+  public:
     SYSTEM_OUTPUT (automaton, sys_self_destruct, void*);
 
-    SYSTEM_INPUT (automaton, sys_create_key_exists, void*);
-    SYSTEM_INPUT (automaton, sys_instance_exists, void*);
-    SYSTEM_INPUT (automaton, sys_automaton_created, std::pair<void* COMMA aid_t>);
-    SYSTEM_INPUT (automaton, sys_bind_key_exists, void*);
-    SYSTEM_INPUT (automaton, sys_output_automaton_dne, void*);
-    SYSTEM_INPUT (automaton, sys_input_automaton_dne, void*);
-    SYSTEM_INPUT (automaton, sys_binding_exists, void*);
-    SYSTEM_INPUT (automaton, sys_output_action_unavailable, void*);
-    SYSTEM_INPUT (automaton, sys_input_action_unavailable, void*);
-    SYSTEM_INPUT (automaton, sys_bound, void*);
-    SYSTEM_INPUT (automaton, sys_bind_key_dne, void*);
-    SYSTEM_INPUT (automaton, sys_unbound, void*);
-    SYSTEM_INPUT (automaton, sys_create_key_dne, void*);
-    SYSTEM_INPUT (automaton, sys_automaton_destroyed, void*);
+  public:
+    enum created_t {
+      CREATE_KEY_EXISTS_RESULT,
+      INSTANCE_EXISTS_RESULT,
+      AUTOMATON_CREATED_RESULT,
+    };
+    struct created_arg_t {
+      const created_t type;
+      void* const key;
+      const aid_t aid;
+
+      created_arg_t (const created_t t,
+		     void* const k,
+		     const aid_t a) :
+	type (t),
+	key (k),
+	aid (a) { }
+    };
+  private:
+    void sys_created_effect (const created_arg_t &);
+  public:
+    SYSTEM_INPUT (automaton, sys_created, created_arg_t);
+
+  public:
+    enum bound_t {
+      BIND_KEY_EXISTS_RESULT,
+      OUTPUT_AUTOMATON_DNE_RESULT,
+      INPUT_AUTOMATON_DNE_RESULT,
+      BINDING_EXISTS_RESULT,
+      OUTPUT_ACTION_UNAVAILABLE_RESULT,
+      INPUT_ACTION_UNAVAILABLE_RESULT,
+      BOUND_RESULT,
+    };
+  private:
+    void sys_bound_effect (std::pair<bound_t COMMA void*> const &);
+  public:
+    SYSTEM_INPUT (automaton, sys_bound, std::pair<bound_t COMMA void*>);
+
+  public:
+    enum unbound_t {
+      BIND_KEY_DNE_RESULT,
+      UNBOUND_RESULT,
+    };
+  private:
+    void sys_unbound_effect (std::pair<unbound_t COMMA void*> const &);
+  public:
+    SYSTEM_INPUT (automaton, sys_unbound, std::pair<unbound_t COMMA void*>);
+    
+
+  public:
+    enum destroyed_t {
+      CREATE_KEY_DNE_RESULT,
+      AUTOMATON_DESTROYED_RESULT,
+    };
+  private:
+    void sys_destroyed_effect (std::pair<destroyed_t COMMA void*> const &);
+  public:
+    SYSTEM_INPUT (automaton, sys_destroyed, std::pair<destroyed_t COMMA void*>);
   };
 
 }

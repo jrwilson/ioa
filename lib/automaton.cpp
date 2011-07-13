@@ -256,160 +256,179 @@ namespace ioa {
     return 0;
   }
 
-  void automaton::sys_create_key_exists_effect (void* const &) {
-    // We prevent this in create.
-    assert (false);
-  }
-
-  void automaton::sys_instance_exists_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (t));
-    assert (pos != m_create_recv.end ());
-    (*pos)->instance_exists ();
-    // The creation failed so erase.
-    m_destroy_send.erase (*pos);
-    m_create_recv.erase (pos);
-  }
-
-  void automaton::sys_automaton_created_effect (std::pair<void*, aid_t> const & t) {
-    // Find the helper (sanity check).
-    std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (t.first));
-    assert (pos != m_create_recv.end ());
-    (*pos)->automaton_created (t.second);
-    // The create succeeded.  Move to done.
-    m_create_done.insert (*pos);
-    m_create_recv.erase (pos);
-  }
-
-  void automaton::sys_bind_key_exists_effect (void* const & t) {
-    // We prevent this in bind.
-    assert (false);
+  void automaton::sys_created_effect (const created_arg_t& arg) {
+    switch (arg.type) {
+    case CREATE_KEY_EXISTS_RESULT:
+      // We prevent this in create.
+      assert (false);
+      break;
+    case INSTANCE_EXISTS_RESULT:
+      {
+	// Find the helper (sanity check).
+	std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (arg.key));
+	assert (pos != m_create_recv.end ());
+	(*pos)->instance_exists ();
+	// The creation failed so erase.
+	m_destroy_send.erase (*pos);
+	m_create_recv.erase (pos);
+      }
+      break;
+    case AUTOMATON_CREATED_RESULT:
+      // Find the helper (sanity check).
+      std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (arg.key));
+      assert (pos != m_create_recv.end ());
+      (*pos)->automaton_created (arg.aid);
+      // The create succeeded.  Move to done.
+      m_create_done.insert (*pos);
+      m_create_recv.erase (pos);
+      break;
+    }
   }
   
-  void automaton::sys_output_automaton_dne_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
-    assert (pos != m_bind_recv.end ());
-    (*pos)->output_automaton_dne ();
-    // The bind failed so erase.
-    m_unbind_send.erase (*pos);
-    m_bind_recv.erase (pos);
-  }
-
-  void automaton::sys_input_automaton_dne_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
-    assert (pos != m_bind_recv.end ());
-    (*pos)->input_automaton_dne ();
-    // The bind failed so erase.
-    m_unbind_send.erase (*pos);
-    m_bind_recv.erase (pos);
-  }
-
-  void automaton::sys_binding_exists_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
-    assert (pos != m_bind_recv.end ());
-    (*pos)->binding_exists ();
-    // The bind failed so erase.
-    m_unbind_send.erase (*pos);
-    m_bind_recv.erase (pos);
-  }
-
-  void automaton::sys_output_action_unavailable_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
-    assert (pos != m_bind_recv.end ());
-    (*pos)->output_action_unavailable ();
-    // The bind failed so erase.
-    m_unbind_send.erase (*pos);
-    m_bind_recv.erase (pos);
-  }
-
-  void automaton::sys_input_action_unavailable_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
-    assert (pos != m_bind_recv.end ());
-    (*pos)->input_action_unavailable ();
-    // The bind failed so erase.
-    m_unbind_send.erase (*pos);
-    m_bind_recv.erase (pos);
-  }
-
-  void automaton::sys_bound_effect (void* const & t) {
-    // Find the helper (sanity check).
-    std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t));
-    assert (pos != m_bind_recv.end ());
-    (*pos)->bound ();
-    // The bind succeeded.  Move to done.
-    m_bind_done.insert (*pos);
-    m_bind_recv.erase (pos);
+  void automaton::sys_bound_effect (std::pair<bound_t, void*> const & t) {
+    switch (t.first) {
+    case BIND_KEY_EXISTS_RESULT:
+      // We prevent this in bind.
+      assert (false);
+      break;
+    case OUTPUT_AUTOMATON_DNE_RESULT:
+      {
+	// Find the helper (sanity check).
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	assert (pos != m_bind_recv.end ());
+	(*pos)->output_automaton_dne ();
+	// The bind failed so erase.
+	m_unbind_send.erase (*pos);
+	m_bind_recv.erase (pos);
+      }
+      break;
+    case INPUT_AUTOMATON_DNE_RESULT:
+      {
+	// Find the helper (sanity check).
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	assert (pos != m_bind_recv.end ());
+	(*pos)->input_automaton_dne ();
+	// The bind failed so erase.
+	m_unbind_send.erase (*pos);
+	m_bind_recv.erase (pos);
+      }
+      break;
+    case BINDING_EXISTS_RESULT:
+      {
+	// Find the helper (sanity check).
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	assert (pos != m_bind_recv.end ());
+	(*pos)->binding_exists ();
+	// The bind failed so erase.
+	m_unbind_send.erase (*pos);
+	m_bind_recv.erase (pos);
+      }
+      break;
+    case OUTPUT_ACTION_UNAVAILABLE_RESULT:
+      {
+	// Find the helper (sanity check).
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	assert (pos != m_bind_recv.end ());
+	(*pos)->output_action_unavailable ();
+	// The bind failed so erase.
+	m_unbind_send.erase (*pos);
+	m_bind_recv.erase (pos);
+      }
+      break;
+    case INPUT_ACTION_UNAVAILABLE_RESULT:
+      {
+	// Find the helper (sanity check).
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	assert (pos != m_bind_recv.end ());
+	(*pos)->input_action_unavailable ();
+	// The bind failed so erase.
+	m_unbind_send.erase (*pos);
+	m_bind_recv.erase (pos);
+      }
+      break;
+    case BOUND_RESULT:
+      // Find the helper (sanity check).
+      std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+      assert (pos != m_bind_recv.end ());
+      (*pos)->bound ();
+      // The bind succeeded.  Move to done.
+      m_bind_done.insert (*pos);
+      m_bind_recv.erase (pos);
+      break;
+    }
   }
   
-  void automaton::sys_bind_key_dne_effect (void* const & t) {
-    // We prevent this in unbind.
-    assert (false);
+  void automaton::sys_unbound_effect (std::pair<unbound_t, void*> const & t) {
+    switch (t.first) {
+    case BIND_KEY_DNE_RESULT:
+      // We prevent this in unbind.
+      assert (false);
+      break;
+    case UNBOUND_RESULT:
+      // Something was unbound.
+      // It can be in m_bind_recv or m_bind_done and also m_unbind_send or m_unbind_recv.
+      
+      system_binding_manager_interface* helper = static_cast<system_binding_manager_interface*> (t.second);
+      
+      assert ((m_bind_recv.count (helper) == 1 &&
+	       m_bind_done.count (helper) == 0) ||
+	      (m_bind_recv.count (helper) == 0 &&
+	       m_bind_done.count (helper) == 1));
+      
+      if (m_bind_recv.count (helper) != 0) {
+	m_bind_recv.erase (helper);
+      }
+      else if (m_bind_done.count (helper) != 0) {
+	m_bind_done.erase (helper);
+      }
+      
+      if (m_unbind_send.count (helper) != 0) {
+	m_unbind_send.erase (helper);
+      }
+      else if (m_unbind_recv.count (helper) != 0) {
+	m_unbind_recv.erase (helper);
+      }
+      
+      helper->unbound ();
+      break;
+    }
   }
   
-  void automaton::sys_unbound_effect (void* const & t) {
-    // Something was unbound.
-    // It can be in m_bind_recv or m_bind_done and also m_unbind_send or m_unbind_recv.
-    
-    system_binding_manager_interface* helper = static_cast<system_binding_manager_interface*> (t);
-  
-    assert ((m_bind_recv.count (helper) == 1 &&
-	     m_bind_done.count (helper) == 0) ||
-	    (m_bind_recv.count (helper) == 0 &&
-	     m_bind_done.count (helper) == 1));
-
-    if (m_bind_recv.count (helper) != 0) {
-      m_bind_recv.erase (helper);
+  void automaton::sys_destroyed_effect (std::pair<destroyed_t, void*> const & t) {
+    switch (t.first) {
+    case CREATE_KEY_DNE_RESULT:
+      // We prevent this in destroy.
+      assert (false);
+      break;
+    case AUTOMATON_DESTROYED_RESULT:
+      // An automaton was destroyed.
+      // It can be in m_create_recv or m_create_done and also m_destroy_send or m_destroy_recv.
+      
+      system_automaton_manager_interface* helper = static_cast<system_automaton_manager_interface*> (t.second);
+      
+      assert ((m_create_recv.count (helper) == 1 &&
+	       m_create_done.count (helper) == 0) ||
+	      (m_create_recv.count (helper) == 0 &&
+	       m_create_done.count (helper) == 1));
+      
+      if (m_create_recv.count (helper) != 0) {
+	m_create_recv.erase (helper);
+      }
+      else if (m_create_done.count (helper) != 0) {
+	m_create_done.erase (helper);
+      }
+      
+      if (m_destroy_send.count (helper) != 0) {
+	m_destroy_send.erase (helper);
+      }
+      else if (m_destroy_recv.count (helper) != 0) {
+	m_destroy_recv.erase (helper);
+      }
+      
+      helper->automaton_destroyed ();
+      
+      break;
     }
-    else if (m_bind_done.count (helper) != 0) {
-      m_bind_done.erase (helper);
-    }
-  
-    if (m_unbind_send.count (helper) != 0) {
-      m_unbind_send.erase (helper);
-    }
-    else if (m_unbind_recv.count (helper) != 0) {
-      m_unbind_recv.erase (helper);
-    }
-    
-    helper->unbound ();
-  }
-  
-  void automaton::sys_create_key_dne_effect (void* const & t) {
-    // We prevent this in destroy.
-    assert (false);
-  }
-
-  void automaton::sys_automaton_destroyed_effect (void* const & t) {
-    // An automaton was destroyed.
-    // It can be in m_create_recv or m_create_done and also m_destroy_send or m_destroy_recv.
-    
-    system_automaton_manager_interface* helper = static_cast<system_automaton_manager_interface*> (t);
-
-    assert ((m_create_recv.count (helper) == 1 &&
-	     m_create_done.count (helper) == 0) ||
-	    (m_create_recv.count (helper) == 0 &&
-	     m_create_done.count (helper) == 1));
-    
-    if (m_create_recv.count (helper) != 0) {
-      m_create_recv.erase (helper);
-    }
-    else if (m_create_done.count (helper) != 0) {
-      m_create_done.erase (helper);
-    }
-
-    if (m_destroy_send.count (helper) != 0) {
-      m_destroy_send.erase (helper);
-    }
-    else if (m_destroy_recv.count (helper) != 0) {
-      m_destroy_recv.erase (helper);
-    }
-    
-    helper->automaton_destroyed ();
   }
 
   void automaton::schedule () const {

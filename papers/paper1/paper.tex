@@ -119,27 +119,35 @@ Section~\ref{related_work} contains an overview of related work and we offer our
 
 \section{System Model and Formalization\label{system_model}}
 
-Our system model is influenced by the semantics of distributed systems, the semantics of devices, and the desire for conceptual integrity.
+\subsection{Requirements}
+
+Our system model is motivated by the semantics of devices, the semantics of distributed systems, and the desire for conceptual integrity.
+We adopt a recursive view that nodes, i.e., devices, in a distributed system may themselves be represented as a distributed system consisting of different sensors, actuators, and processes.
+We use the term \emph{node} to refer to a participant in a typical distributed system, i.e., one that uses standard network links.
+We use term \emph{module} to refer to a computational element within a node.
+Modules that reside on the same node are said to be \emph{collocated}.
 
 \paragraph{Local State.}
-First, we require that all modules manipulate local state only including modules that might be collocated on the same distributed node. 
+We require that all modules and by extension all nodes only manipulate local state.
 Said another way, there is no global or shared state.
 Computation designed around the manipulation of local state only is easily modularized and consequently, easier to distribute and execute concurrently.
 
-\paragraph{Message Passing.}
-Nodes in distributed systems interact by passing messages over communication links.
-Message passing can either be synchronous or asynchronous.
-In synchronous message passing, the events of message production and delivery are the same, i.e., atomic.
-In asynchronous message passing, the events of message production and delivery are logically distinct events subject to being interposed by other events.
-Synchronous message passing is most often used between modules on the same node while asynchronous message passing is most often used between nodes.
-Both synchronous and asynchronous message passing are required.
-Synchronous message passing is necessary for building composable systems because of it association with atomicity.
-Asynchronous message passing is necessary for building real distributed systems as this matches the semantics of the networks found in practice.
+%% \paragraph{Message Passing.}
+%% Nodes in distributed systems interact by passing messages over communication links.
+%% Message passing can either be synchronous or asynchronous.
+%% In synchronous message passing, the events of message production and delivery are the same, i.e., atomic.
+%% In asynchronous message passing, the events of message production and delivery are logically distinct events subject to being interposed by other events.
+%% Synchronous message passing is most often used between modules on the same node while asynchronous message passing is most often used between nodes.
+%% Both synchronous and asynchronous message passing are required.
+%% Synchronous message passing is necessary for building composable systems because of it association with atomicity.
+%% Asynchronous message passing is necessary for building real distributed systems as this matches the semantics of the networks found in practice.
 
-\paragraph{Asynchronous Events.}
+\paragraph{Asynchronous Atomic Events.}
 Events are natural way to deal with the asynchrony involved in receiving messages from the network or interacting with the physical environment.
-This implies the model that contains a general treatment of events, i.e., modules can both produce and consume events.
-Programs, therefore, are reactive and structured as a set of event produces and consumers.
+This implies that the model contains a general treatment of events, i.e., modules can both produce and consume events.
+Modules, therefore, are reactive and structured as a set of atomic event produces and consumers.
+The guarantee of atomicity obviates the need for concurrency control primitives and improves our ability to reason about the behavior of the module.
+Modules communicate using events according to a \emph{configuration} that determines which events are delivered to each module.
 
 %% Communicating with external resources such as the operating system or physical environment is foundational to writing useful programs.
 %% Consider the history of I/O in the C run-time library.
@@ -152,13 +160,91 @@ Programs, therefore, are reactive and structured as a set of event produces and 
 %% Interrupts are difficult to use correctly.
 
 \paragraph{Dynamics.}
-The sets of nodes and communication links are dynamic in real distributed systems.
-By extension, the number of modules in an individual node and the configuration governing the interaction of modules should also be allowed to vary.
-Our system model must support this reality.
+The set of nodes and communication links is dynamic in real distributed systems.
+Similarly, the set of modules and their configuration in real devices can change as the device may be re-purposed by users over time.
+In general, our system model must support a dynamic number of modules and, consequently, dynamic configuration of those modules.
 
 \paragraph{Reflection.}
-The ability to dynamically configure the set of modules and their interactions implies that modules can know the status of their configuration.
-For example, a module might require that a produced event be consumed.
+The ability to dynamically configure a module implies that a module must be able to know its configuration status to preserve certain properties.
+For example, consider a module for a reliable FIFO queue.
+Since the queue can be dynamically configured, the queue must be able to determine if the event produced by removing and returning an item from the queue will be delivered.
+Otherwise, the queue will lose data items and therefore not be reliable.
+
+\subsection{I/O Automata}
+
+The Input/Output (I/O) automata formal model developed by Lynch~\cite{distributed_algorithms} meets our requirements for local state and atomic asynchronous events.
+An I/O automaton consists of state variables and atomic actions that manipulate the state.
+The three action types are inputs, outputs, and internal actions.
+Input actions receive a signal or a value and output actions produce a signal or a value.
+Internal actions just manipulate the state of the automaton.
+Output and internal actions are \emph{locally controlled actions}~\cite{distributed_algorithms} consisting of a precondition and an effect.
+Input and output actions are \emph{external actions}~\cite{distributed_algorithms} because they allow an automaton to communicate with other automata.
+Automata may \emph{composed} by concatenating the state variables of the constituent automata and incorporating the effects of input actions into output actions with the same name.
+A useful operation in composite automata is \emph{hiding} which converts an output action to an internal action.
+Composing automata results in a static configuration, i.e., the set of automata and their interactions are fixed.
+Execution in the I/O automata model consists of repeatedly selecting a local action and then applying the effect if the precondition is true.
+The scheduler is assumed to be fair meaning that a local action is guaranteed to be selected (but not executed) infinitely often.
+
+\subsection{Extending I/O Automata for Dynamics}
+
+A standard technique for modeling dynamic modules in I/O automata is to assume they exist but are inactive.
+Dynamic automata can then be activated and deactivated using inputs.
+This approach relies on the static configuration produced by composition and is therefore not suitable for an implementation.
+
+We extend I/O automata for dynamic configuration by introducing a \emph{system automaton} that records the configuration of all automata in the system.
+We differentiate between automaton types and automaton instances.
+Every automaton instances has a unique \emph{automaton identifier (aid)}.
+The state of the system automaton consists of the set of aids $A$ indicating what automata exist and a set of binding records $B$ indicating the relationship between output and input actions.
+A binding record $(out, output, in, input)$ is tuple consisting of the aid of the output automaton $out$, the name of the output action $output$, the aid of the input automaton $in$, and the name of the input action $input$.
+
+The configuration contained in set of binding records must be a valid static configuration to ensure that the behavior of the complete system remains analyzable under the I/O automata model.
+TODO:  Output must exist.
+TODO:  Input must exist.
+TODO:  Binding must not exist.
+First, an input can only be bound to one output.
+Thus, a given $in$ and $input$ combination can appear at most once in $B$.
+Second, an output cannot be bound to an input in the same automaton.
+Thus, $out \neq in$ for every $(out, output, in, input)$ in $B$.
+Third, an output cannot be bound to two inputs in the same automaton.
+Thus, $in_1 \neq in_2$ for all $(out, output, in_1, input_1), (out, output, in_2, input_2)$ in $B$.
+
+The system automaton contains input actions for creating an automaton, binding an output to an input, unbinding an output and an input, and destroying an automaton and output actions that indicate the result of a create, bind, unbind, or destroy.
+All automata are composed with (not bound to) the system automaton and contain outputs for creating, binding, unbinding, and destroying and inputs for receiving results.
+Systems calls (create, bind, unbind, destroy) resemble a request-response protocol where an automaton sends a request, the system automaton receives the request, the system automaton then sends the result, and the automaton receives the result.
+This has the important consequence that \emph{configuration is asynchronous}.
+Destroying an automaton has the effect of removing all of its bindings.
+An automaton that destroys itself can therefore cause the system to deliver of unbound and destroyed events without a corresponding unbind or destroy.
+
+\subsection{Extending I/O Automata for Reflection}
+
+Automata are endowed with additional inputs driven by system outputs indicating when an action has been bound and unbound.
+Automata might use the bound input to enable processing, i.e., someone is listening so I'll start producing data.
+The unbound input is useful for cleaning data structures and inhibiting further processing, i.e., no one is listening so I'll stop producing data.
+The bound and unbound inputs are useful but they are also asynchronous, thus, an automaton cannot trust the status reported by the last bound or unbound for use in, for example, a precondition.
+
+The asynchronous nature of bound and unbound requires a primitive that can examine the contents of $B$ instantaneously.
+Thus, we make one exception to the rule of local state that says automata can examine the contents of $B$ to determine their current configuration.
+This is permissible so long as concurrent implementations provide multiple-reader/single-writer semantics to $B$.
+
+\subsection{Equivalence}
+
+Extending the I/O automata model for dynamics and reflection is useless unless we can relate the extensions back to the original model or establish equivalence.
+To do this, we will take advantage of the fair traces (?) property of I/O automata~\cite{distributed_algorithms}.
+%% We accept an execution trace in the dynamic setting if it is a fair trace of the static model.
+
+%% Modeling a system with I/O automata implies a fixed set of automata given by $A_0$ and set of binding records $B_0$.
+
+Start with a trace of dynamic $T_d$.
+Remove system actions from $T_d$ so $T_d'$.
+We accept $T_d'$ if it is a fair trace of the static model.
+
+Let $A_0$ be the set of automata and $B_0$ be the set of binding records in the static model.
+If you want to prove correspondence, you must prove that eventually $A = A_0$ and $B = B_0$.
+We also need to show that no output is executed before it is fully bound.
+
+%% supports the actions of creating an automaton, binding an output to an input, unbinding an output and an input, and destroying an automaton.
+%% Upon creation, All automata are bound
+%% The four operations necessary for dynamic configuration are \emph{create}, \emph{bind}, \emph{unbind}, and \emph{destroy}.
 
 %% \begin{outline}
 %% \item State

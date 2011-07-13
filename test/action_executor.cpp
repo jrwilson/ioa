@@ -66,56 +66,30 @@ struct test_system_scheduler :
 
   void self_destruct (const ioa::aid_t automaton) { }
 
-  void create_key_exists (const ioa::aid_t automaton,
-			  void* const key) { }
-    
-  void instance_exists (const ioa::aid_t automaton,
-			void* const key) { }
-    
-  void automaton_created (const ioa::aid_t automaton,
-			  void* const key,
-			  const ioa::aid_t child) { }
-    
-  void bind_key_exists (const ioa::aid_t automaton,
-			void* const key) { }
-    
-  void output_automaton_dne (const ioa::aid_t automaton,
-			     void* const key) { }
-    
-  void input_automaton_dne (const ioa::aid_t automaton,
-			    void* const key) { }
-    
-  void binding_exists (const ioa::aid_t automaton,
-		       void* const key) { }
-    
-  void input_action_unavailable (const ioa::aid_t automaton,
-				 void* const key) { }
-    
-  void output_action_unavailable (const ioa::aid_t automaton,
-				  void* const key) { }
+  void created (const ioa::aid_t automaton,
+		const ioa::automaton::created_t,
+		void* const key,
+		const ioa::aid_t) { }
     
   void bound (const ioa::aid_t automaton,
+	      const ioa::automaton::bound_t,
 	      void* const key) { }
     
   void output_bound (const ioa::output_executor_interface&) { }
     
   void input_bound (const ioa::input_executor_interface&) { }
     
-  void bind_key_dne (const ioa::aid_t automaton,
-		     void* const key) { }
-    
   void unbound (const ioa::aid_t automaton,
+		const ioa::automaton::unbound_t,
 		void* const key) { }
     
   void output_unbound (const ioa::output_executor_interface&) { }
     
   void input_unbound (const ioa::input_executor_interface&) { }
     
-  void create_key_dne (const ioa::aid_t automaton,
-		       void* const key) { }
-    
-  void automaton_destroyed (const ioa::aid_t automaton,
-			    void* const key) { }
+  void destroyed (const ioa::aid_t automaton,
+		  const ioa::automaton::destroyed_t,
+		  void* const key) { }
 };
 
 static const char*

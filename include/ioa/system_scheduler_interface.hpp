@@ -1,6 +1,8 @@
 #ifndef __system_scheduler_interface_hpp__
 #define __system_scheduler_interface_hpp__
 
+#include <ioa/automaton.hpp>
+
 namespace ioa {
 
   /*
@@ -31,57 +33,30 @@ namespace ioa {
 
     virtual void self_destruct (const aid_t automaton) = 0;
     
-    virtual void create_key_exists (const aid_t automaton,
-				    void* const key) = 0;
-    
-    virtual void instance_exists (const aid_t automaton,
-				  void* const key) = 0;
-    
-    virtual void automaton_created (const aid_t automaton,
-				    void* const key,
-				    const aid_t child) = 0;
-    
-    virtual void bind_key_exists (const aid_t automaton,
-				  void* const key) = 0;
-    
-    virtual void output_automaton_dne (const aid_t automaton,
-				       void* const key) = 0;
-    
-    virtual void input_automaton_dne (const aid_t automaton,
-				      void* const key) = 0;
-    
-    virtual void binding_exists (const aid_t automaton,
-				 void* const key) = 0;
-    
-    virtual void input_action_unavailable (const aid_t automaton,
-					   void* const key) = 0;
-    
-    virtual void output_action_unavailable (const aid_t automaton,
-					    void* const key) = 0;
+    virtual void created (const aid_t automaton,
+			  const automaton::created_t,
+			  void* const key,
+			  const aid_t child) = 0;
     
     virtual void bound (const aid_t automaton,
+			const automaton::bound_t,
 			void* const key) = 0;
     
     virtual void output_bound (const output_executor_interface&) = 0;
     
     virtual void input_bound (const input_executor_interface&) = 0;
     
-    virtual void bind_key_dne (const aid_t automaton,
-			       void* const key) = 0;
-    
     virtual void unbound (const aid_t automaton,
+			  const automaton::unbound_t,
 			  void* const key) = 0;
     
     virtual void output_unbound (const output_executor_interface&) = 0;
     
     virtual void input_unbound (const input_executor_interface&) = 0;
     
-    virtual void create_key_dne (const aid_t automaton,
-				 void* const key) = 0;
-    
-    virtual void automaton_destroyed (const aid_t automaton,
-				      void* const key) = 0;
-    
+    virtual void destroyed (const aid_t automaton,
+			    const automaton::destroyed_t,
+			    void* const key) = 0;
   };
 
 }
