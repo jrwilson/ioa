@@ -1,0 +1,16 @@
+\begin{abstract}
+In an effort to be portable, system developers often favor existing architectures, languages, operating systems, and standard libraries.
+The dominant abstraction in established computing technologies for concurrency and therefore distributed system development is threads.
+Consequently, distributed system developers are locked into using threads and experience the difficulties of thread-based development including obscure race conditions, poor support for the semantics of distributed systems, and difficulties integrating software developed using different thread models.
+Furthermore, the demand for portability and generality dismisses many of the techniques proposed in research that involve new programming languages, language extensions, or domain-specific solutions.
+This paper presents a development framework based on the I/O automata formal model implemented in C++.
+The I/O automata model is a proven technique for distributed system design because its semantics match those found in distributed systems.
+With the framework, developers can reason about correctness directly from the program text using the I/O automata formalism.
+The I/O  automata model also provides a common abstraction for concurrency which facilitates software integration and promotes reuse.
+TODO:  What are we doing for evaluation?
+%% Our ability to realize sophisticated distributed systems such as those in cyber-physical systems and pervasive computing is predicated on a solid model and implementation of asynchrony and concurrency.
+%% Threads, the de facto standard in practice, are not a suitable foundation because 1) ad hoc communication among threads prohibits software reuse, 2) threads are difficult to treat formally and therefore \emph{very} difficult to treat informally, and 3) threads are ill-suited for the asynchronous semantics present in the systems we desire to build.
+%% In this paper, we outline the semantics necessary for building sophisticated distributed systems and connect these to the I/O automata formal model.
+%% We then describe an implementation of the I/O automata formal model and cover extensions to the model necessary for operating in a dynamic environment.
+%% Finally, we conclude with an evaluation of our I/O automata framework.
+\end{abstract}
