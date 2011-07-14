@@ -173,13 +173,7 @@ namespace ioa {
     }
 
     void schedule_timerq (action_runnable_interface* r, const time& offset) {
-      struct timeval now;
-      int s = gettimeofday (&now, 0);
-      assert (s == 0);
-      time release_time (now);
-      release_time += offset;
-
-      if (m_timerq.push (std::make_pair (release_time, r)) == 1) {
+      if (m_timerq.push (std::make_pair (time::now () + offset, r)) == 1) {
 	wakeup_io_thread ();
       }
     }
@@ -269,10 +263,7 @@ namespace ioa {
 	  test_timeout = 0;
 	}
 	else {
-	  struct timeval n;
-	  int r = gettimeofday (&n, 0);
-	  assert (r == 0);
-	  time now (n);
+	  time now = time::now ();
 
 	  if (timer_queue.top ().first > now) {
 	    // Timer is some time in future.
@@ -341,10 +332,7 @@ namespace ioa {
       
 	// Process timers.
 	{
-	  struct timeval n;
-	  int r = gettimeofday (&n, 0);
-	  assert (r == 0);
-	  time now (n);
+	  time now = time::now ();
 	
 	  while (!timer_queue.empty () && timer_queue.top ().first < now) {
 	    schedule_execq (timer_queue.top ().second);

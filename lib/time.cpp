@@ -78,6 +78,14 @@ namespace ioa {
     normalize ();
     return *this;
   }
+
+  time time::operator+ (const time& o) const {
+    time result;
+    result.sec = sec + o.sec;
+    result.usec = usec + o.usec;
+    result.normalize ();
+    return result;
+  }
   
   time time::operator- (const time& o) const {
     time result;
@@ -109,4 +117,10 @@ namespace ioa {
     return retval;
   }
 
+  time time::now () {
+    timeval tv;
+    int result = gettimeofday (&tv, 0);
+    assert (result == 0);
+    return time (tv);
+  }
 }

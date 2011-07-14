@@ -28,10 +28,12 @@ namespace ioa {
     time& operator= (const time& o);
     bool operator== (const time& o) const;
     time& operator+= (const time& o);
+    time operator+ (const time& o) const;
     time operator- (const time& o) const;
     bool operator< (const time& o) const;
     bool operator> (const time& o) const;
     operator struct timeval () const;
+    static time now ();
   };
 
 }
