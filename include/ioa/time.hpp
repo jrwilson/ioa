@@ -11,11 +11,12 @@ namespace ioa {
   {
   private:
     // These should either both be positive or both be negative.
-    long sec;
-    long usec;
+    long m_sec;
+    long m_usec;
     
     void check ();
     void normalize ();
+    long long compare (const time& o) const;
 
   public:
     time ();
@@ -23,15 +24,19 @@ namespace ioa {
 	  long usec);
     time (const time& o);
     time (const struct timeval& t);
-    long get_sec () const;
-    long get_usec () const;
+    long sec () const;
+    long usec () const;
     time& operator= (const time& o);
-    bool operator== (const time& o) const;
-    time& operator+= (const time& o);
     time operator+ (const time& o) const;
     time operator- (const time& o) const;
-    bool operator< (const time& o) const;
+    time& operator+= (const time& o);
+    time& operator-= (const time& o);
+    bool operator== (const time& o) const;
+    bool operator!= (const time& o) const;
     bool operator> (const time& o) const;
+    bool operator< (const time& o) const;
+    bool operator>= (const time& o) const;
+    bool operator<= (const time& o) const;
     operator struct timeval () const;
     static time now ();
   };

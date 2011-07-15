@@ -1,119 +1,139 @@
 #include <ioa/time.hpp>
 #include <cassert>
 
+#define MILLION 1000000
+
 namespace ioa {
 
   void time::check () {
-    assert ((sec <= 0 && usec <= 0 && usec > -1000000) ||
-	    (sec >= 0 && usec >= 0 && usec < 1000000));
+    assert ((m_sec <= 0 && m_usec <= 0 && m_usec > -MILLION) ||
+	    (m_sec >= 0 && m_usec >= 0 && m_usec < MILLION));
   }
   
   void time::normalize () {
-    if (usec <= -1000000 || usec >= 1000000) {
-      sec += usec / 1000000;
-      usec = usec % 1000000;
+    if (m_usec <= -MILLION || m_usec >= MILLION) {
+      m_sec += m_usec / MILLION;
+      m_usec = m_usec % MILLION;
     }
     
-    if (sec > 0 && usec < 0) {
-      sec -= 1;
-      usec += 1000000;
+    if (m_sec > 0 && m_usec < 0) {
+      m_sec -= 1;
+      m_usec += MILLION;
     }
-    else if (sec < 0 && usec > 0) {
-      sec += 1;
-      usec -= 1000000;
+    else if (m_sec < 0 && m_usec > 0) {
+      m_sec += 1;
+      m_usec -= MILLION;
     }
     check ();
   }
 
+  long long time::compare (const time& o) const {
+    return ((long long)(m_sec) * (long long)(MILLION) + (long long)(m_usec)) -
+      ((long long)(o.m_sec) * (long long)(MILLION) + (long long)(o.m_usec));
+  }
+
   time::time () :
-    sec (0),
-    usec (0)
+    m_sec (0),
+    m_usec (0)
   { }
   
   time::time (long sec,
 	      long usec) :
-    sec (sec),
-    usec (usec)
+    m_sec (sec),
+    m_usec (usec)
   {
     normalize ();
   }
   
   time::time (const time& o) {
-    sec = o.sec;
-    usec = o.usec;
+    m_sec = o.m_sec;
+    m_usec = o.m_usec;
   }
   
   time::time (const struct timeval& t) :
-    sec (t.tv_sec),
-    usec (t.tv_usec)
+    m_sec (t.tv_sec),
+    m_usec (t.tv_usec)
   {
     check ();
   }
   
-  long time::get_sec () const {
-    return sec;
+  long time::sec () const {
+    return m_sec;
   }
 
   
-  long time::get_usec () const {
-    return usec;
+  long time::usec () const {
+    return m_usec;
   }
 
   time& time::operator= (const time& o) {
     if (this != &o) {
-      sec = o.sec;
-      usec = o.usec;
+      m_sec = o.m_sec;
+      m_usec = o.m_usec;
       check ();
     }
-    return *this;
-  }
-  
-  bool time::operator== (const time& o) const {
-    return sec == o.sec && usec == o.usec;
-  }
-  
-  time& time::operator+= (const time& o) {
-    sec += o.sec;
-    usec += o.usec;
-    normalize ();
     return *this;
   }
 
   time time::operator+ (const time& o) const {
     time result;
-    result.sec = sec + o.sec;
-    result.usec = usec + o.usec;
+    result.m_sec = m_sec + o.m_sec;
+    result.m_usec = m_usec + o.m_usec;
     result.normalize ();
     return result;
   }
   
   time time::operator- (const time& o) const {
     time result;
-    result.sec = sec - o.sec;
-    result.usec = usec - o.usec;
+    result.m_sec = m_sec - o.m_sec;
+    result.m_usec = m_usec - o.m_usec;
     result.normalize ();
     return result;
   }
-  
-  bool time::operator< (const time& o) const {
-    if (sec != o.sec) {
-      return sec < o.sec;
-    }
-    return usec < o.usec;
+
+  time& time::operator+= (const time& o) {
+    m_sec += o.m_sec;
+    m_usec += o.m_usec;
+    normalize ();
+    return *this;
+  }
+
+  time& time::operator-= (const time& o) {
+    m_sec -= o.m_sec;
+    m_usec -= o.m_usec;
+    normalize ();
+    return *this;
+  }
+
+  bool time::operator== (const time& o) const {
+    return compare (o) == 0;
+  }
+
+  bool time::operator!= (const time& o) const {
+    return compare (o) != 0;
   }
 
   bool time::operator> (const time& o) const {
-    if (sec != o.sec) {
-      return sec > o.sec;
-    }
-    return usec > o.usec;
+    return compare (o) > 0;
   }
-  
+
+  bool time::operator< (const time& o) const {
+    return compare (o) < 0;
+  }
+
+  bool time::operator>= (const time& o) const {
+    return compare (o) >= 0;
+  }
+
+  bool time::operator<= (const time& o) const {
+    return compare (o) <= 0;
+  }
+    
   time::operator struct timeval () const {
-    assert (sec >= 0 && usec >= 0);
+    assert (m_sec >= 0 && m_usec >= 0);
     struct timeval retval;
-    retval.tv_sec = sec;
-    retval.tv_usec = usec;
+    retval.tv_sec = m_sec;
+    retval.tv_usec = m_usec;
     return retval;
   }
 
@@ -123,4 +143,5 @@ namespace ioa {
     assert (result == 0);
     return time (tv);
   }
+
 }

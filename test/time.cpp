@@ -10,8 +10,8 @@ default_ctor ()
 
   ioa::time t;
 
-  mu_assert (t.get_sec () == 0);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == 0);
+  mu_assert (t.usec () == 0);
 
   return 0;
 }
@@ -22,36 +22,36 @@ ctor ()
   std::cout << __func__ << std::endl;
 
   ioa::time t1 (1, 500000);
-  mu_assert (t1.get_sec () == 1);
-  mu_assert (t1.get_usec () == 500000);
+  mu_assert (t1.sec () == 1);
+  mu_assert (t1.usec () == 500000);
 
   ioa::time t2 (-1, 500000);
-  mu_assert (t2.get_sec () == 0);
-  mu_assert (t2.get_usec () == -500000);
+  mu_assert (t2.sec () == 0);
+  mu_assert (t2.usec () == -500000);
 
   ioa::time t3 (1, -500000);
-  mu_assert (t3.get_sec () == 0);
-  mu_assert (t3.get_usec () == 500000);
+  mu_assert (t3.sec () == 0);
+  mu_assert (t3.usec () == 500000);
 
   ioa::time t4 (-1, -500000);
-  mu_assert (t4.get_sec () == -1);
-  mu_assert (t4.get_usec () == -500000);
+  mu_assert (t4.sec () == -1);
+  mu_assert (t4.usec () == -500000);
 
   ioa::time t5 (1, 5000000);
-  mu_assert (t5.get_sec () == 6);
-  mu_assert (t5.get_usec () == 0);
+  mu_assert (t5.sec () == 6);
+  mu_assert (t5.usec () == 0);
 
   ioa::time t6 (-1, 5000000);
-  mu_assert (t6.get_sec () == 4);
-  mu_assert (t6.get_usec () == 0);
+  mu_assert (t6.sec () == 4);
+  mu_assert (t6.usec () == 0);
 
   ioa::time t7 (1, -5000000);
-  mu_assert (t7.get_sec () == -4);
-  mu_assert (t7.get_usec () == 0);
+  mu_assert (t7.sec () == -4);
+  mu_assert (t7.usec () == 0);
 
   ioa::time t8 (-1, -5000000);
-  mu_assert (t8.get_sec () == -6);
-  mu_assert (t8.get_usec () == 0);
+  mu_assert (t8.sec () == -6);
+  mu_assert (t8.usec () == 0);
 
   return 0;
 }
@@ -63,8 +63,8 @@ copy_ctor ()
 
   ioa::time t1 (1, 500000);
   ioa::time t2 (t1);
-  mu_assert (t2.get_sec () == 1);
-  mu_assert (t2.get_usec () == 500000);
+  mu_assert (t2.sec () == 1);
+  mu_assert (t2.usec () == 500000);
 
   return 0;
 }
@@ -78,8 +78,8 @@ copy_struct ()
   t1.tv_sec = 1;
   t1.tv_usec = 500000;
   ioa::time t2 (t1);
-  mu_assert (t2.get_sec () == 1);
-  mu_assert (t2.get_usec () == 500000);
+  mu_assert (t2.sec () == 1);
+  mu_assert (t2.usec () == 500000);
 
   return 0;
 }
@@ -92,8 +92,8 @@ op_assign ()
   ioa::time t1 (1, 500000);
   ioa::time t2 (2, 300000);
   t2 = t1;
-  mu_assert (t2.get_sec () == 1);
-  mu_assert (t2.get_usec () == 500000);
+  mu_assert (t2.sec () == 1);
+  mu_assert (t2.usec () == 500000);
 
   return 0;
 }
@@ -122,24 +122,24 @@ op_plus_equal ()
 
   ioa::time t3 (t1);
   t3 += t1;
-  mu_assert (t3.get_sec () == 3);
-  mu_assert (t3.get_usec () == 1000);
+  mu_assert (t3.sec () == 3);
+  mu_assert (t3.usec () == 1000);
 
   ioa::time t4 (t1);
   t4 += t2;
 
-  mu_assert (t4.get_sec () == 0);
-  mu_assert (t4.get_usec () == -799800);
+  mu_assert (t4.sec () == 0);
+  mu_assert (t4.usec () == -799800);
 
   ioa::time t5 (t2);
   t5 += t1;
-  mu_assert (t5.get_sec () == 0);
-  mu_assert (t5.get_usec () == -799800);
+  mu_assert (t5.sec () == 0);
+  mu_assert (t5.usec () == -799800);
 
   ioa::time t6 (t2);
   t6 += t2;
-  mu_assert (t6.get_sec () == -4);
-  mu_assert (t6.get_usec () == -600600);
+  mu_assert (t6.sec () == -4);
+  mu_assert (t6.usec () == -600600);
 
   return 0;
 }
@@ -157,68 +157,68 @@ op_minus ()
   ioa::time t;
 
   t = t1 - t1;
-  mu_assert (t.get_sec () == 0);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == 0);
+  mu_assert (t.usec () == 0);
 
   t = t1 - t2;
-  mu_assert (t.get_sec () == 4);
-  mu_assert (t.get_usec () == 289999);
+  mu_assert (t.sec () == 4);
+  mu_assert (t.usec () == 289999);
 
   t = t1 - t3;
-  mu_assert (t.get_sec () == 7);
-  mu_assert (t.get_usec () == 289999);
+  mu_assert (t.sec () == 7);
+  mu_assert (t.usec () == 289999);
 
   t = t1 - t4;
-  mu_assert (t.get_sec () == 9);
-  mu_assert (t.get_usec () == 589999);
+  mu_assert (t.sec () == 9);
+  mu_assert (t.usec () == 589999);
 
   t = t2 - t1;
-  mu_assert (t.get_sec () == -4);
-  mu_assert (t.get_usec () == -289999);
+  mu_assert (t.sec () == -4);
+  mu_assert (t.usec () == -289999);
 
   t = t2 - t2;
-  mu_assert (t.get_sec () == 0);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == 0);
+  mu_assert (t.usec () == 0);
 
   t = t2 - t3;
-  mu_assert (t.get_sec () == 3);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == 3);
+  mu_assert (t.usec () == 0);
 
   t = t2 - t4;
-  mu_assert (t.get_sec () == 5);
-  mu_assert (t.get_usec () == 300000);
+  mu_assert (t.sec () == 5);
+  mu_assert (t.usec () == 300000);
 
   t = t3 - t1;
-  mu_assert (t.get_sec () == -7);
-  mu_assert (t.get_usec () == -289999);
+  mu_assert (t.sec () == -7);
+  mu_assert (t.usec () == -289999);
 
   t = t3 - t2;
-  mu_assert (t.get_sec () == -3);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == -3);
+  mu_assert (t.usec () == 0);
 
   t = t3 - t3;
-  mu_assert (t.get_sec () == 0);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == 0);
+  mu_assert (t.usec () == 0);
 
   t = t3 - t4;
-  mu_assert (t.get_sec () == 2);
-  mu_assert (t.get_usec () == 300000);
+  mu_assert (t.sec () == 2);
+  mu_assert (t.usec () == 300000);
 
   t = t4 - t1;
-  mu_assert (t.get_sec () == -9);
-  mu_assert (t.get_usec () == -589999);
+  mu_assert (t.sec () == -9);
+  mu_assert (t.usec () == -589999);
 
   t = t4 - t2;
-  mu_assert (t.get_sec () == -5);
-  mu_assert (t.get_usec () == -300000);
+  mu_assert (t.sec () == -5);
+  mu_assert (t.usec () == -300000);
 
   t = t4 - t3;
-  mu_assert (t.get_sec () == -2);
-  mu_assert (t.get_usec () == -300000);
+  mu_assert (t.sec () == -2);
+  mu_assert (t.usec () == -300000);
 
   t = t4 - t4;
-  mu_assert (t.get_sec () == 0);
-  mu_assert (t.get_usec () == 0);
+  mu_assert (t.sec () == 0);
+  mu_assert (t.usec () == 0);
 
   return 0;
 }
