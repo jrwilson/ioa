@@ -61,7 +61,7 @@ namespace ioa {
     std::map<aid_t, int> m_complete_map;
 
   public:
-    udp_sender_automaton ();
+    udp_sender_automaton (const size_t send_buf_size = 0);
     ~udp_sender_automaton ();
 
   private:

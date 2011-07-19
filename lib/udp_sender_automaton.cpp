@@ -1,8 +1,10 @@
 #include <ioa/udp_sender_automaton.hpp>
 
+#include <iostream>
+
 namespace ioa {
 
-  udp_sender_automaton::udp_sender_automaton () :
+  udp_sender_automaton::udp_sender_automaton (const size_t send_buf_size) :
     m_state (SEND_WAIT),
     m_errno (0)
   {
@@ -45,6 +47,15 @@ namespace ioa {
       close (m_fd);
       m_fd = -1;
       return;
+    }
+
+    if (send_buf_size != 0) {
+      if (setsockopt (m_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof (send_buf_size)) == -1) {
+	m_errno = errno;
+	close (m_fd);
+	m_fd = -1;
+	return;
+      }
     }
   }
 
