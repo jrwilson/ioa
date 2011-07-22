@@ -1,53 +1,96 @@
 \section{Introduction}
 
-Advances in embedded systems and networking are paving the way for distributed systems of unprecedented sophistication.
-Cyber-physical systems go beyond the traditional embedded system paradigm by explicitly modeling the dynamics of the physical system and communication network in the computational task.
+% Motivation
+Advances in platforms and networks are paving the way for distributed systems of unprecedented sophistication.
+Cyber-physical systems go beyond the traditional embedded system paradigm by explicitly integrating the dynamics of the physical system and communication network in the computational task.
 The inclusion of wireless network interfaces in modern electronic devices is transforming our homes, offices, and hospitals into pervasive computing environments.
 The interactions these systems have with the physical environment and its community of users require a degree of interoperability, configurability, adaptability, scalability, robustness, and security not found in existing systems.
 
+% Core Issues
 One of the forces that prevents the development of any kind of sophisticated software system is accidental complexity~\cite{brooks_nsb}.
-In the context of distributed systems, a major source of accidental complexity is a mismatch between the conceptual model of the system and the technology used to implement the system.
-The mismatch between the conceptual model and implementation method introduces defects due to translation errors, slows rapid prototyping, and retards iterative refinement.
-While there is no ``silver bullet''~\cite{brooks_nsb}, reducing the accidental complexity derived from the mismatch between concept and implementation will increase productivity and make new levels of sophistication possible with existing levels of effort.
+Accidental complexity derived from a mismatch between the semantics of the conceptual model and semantics of the implementation method introduces errors and slows development as developers are constantly switching from one set of semantics to the other.
+While there is no ``silver bullet''~\cite{brooks_nsb}, reducing accidental complexity increases productivity and makes new levels of sophistication possible with existing levels of effort.
 
-Threads are the de facto implementation vehicle for most of computing including distributed systems.
-Threads dominate because modern processors, programming languages, and operating systems were all developed to support the thread model.
+In the context of distributed systems, a major source of accidental complexity is the mismatch between the asynchronous semantics of distributed systems and the synchronous techniques used to implement them.
+Threads are the standard in concurrency for most of computing including distributed systems.
+Threads dominate because they are a seemingly straightforward extension of the synchronous sequential processing model supported by all modern processors, programming languages, and operating systems.
 Furthermore, the widespread availability of thread libraries makes them a natural choice for system development.
-While threads dominate in practice, using threads to develop systems has a number of significant drawbacks.
+While threads dominate in practice, using threads to develop distributed systems has significant drawbacks.
 
-First, ad hoc communication among threads prohibits software reuse.
-To illustrate this problem consider the challenge of developing an application with a graphical user interface that also uses a multi-threaded middleware library.
-Graphical user interfaces often use a single-threaded event-based design, e.g., X, Swing.
-The system integrator must write glue code that bridges the single-threaded event-based semantics to multi-threaded semantics.
-Bridging between two thread models is achievable, however, the systems we desire to build will rely on many libraries each with their own thread model.
-The importance of a unified approach to concurrency becomes apparent when one considers bridging between different threading models, e.g., event-based, reactor, proactor, active objects, and their attributes, e.g., priority, thread-creation, blocking vs. non-blocking I/O.
+% Illustrate the problem
 
-Second, threads are difficult to treat formally and therefore \emph{very} difficult to treat informally.
-The correctness of programs is reasoned about either formally as part of formal software design and verification and/or informally during the debugging process.
-Since most programs will never be formally verified, the correctness of most programs hinges solely on the developers ability to reason about the program.
-Based on the historical example of structured programming~\cite{goto_considered_harmful}, there is a strong correlation between what is ``easy'' in the formal arena and what is ``easy'' in the informal arena, especially when the implementation mimics the formal model, e.g., structured programming languages.
-It is well known that a formal treatment of threads is difficult due to the arbitrary interleaving of critical sections and ability to define critical sections of arbitrary scope~\cite{lee_threads}.
-Thus, the correctness of most multi-threaded programs hinges on the developer's ability to explore arbitrary interleavings of critical sections, i.e., model checking, in their head.
+First, developing concurrent programs with threads is difficult.
+Lee~\cite{lee_threads} identifies the source of this difficulty as the pairing of shared state with the non-deterministic interleaving of machine instructions.
+The properties that make the synchronous sequential model of computation useful for developing programs, i.e., ``understandability, predictability, and determinism'', are lost with the immediate application of non-determinism.
+After introducing non-deterministic execution with threads, programmers must immediately ``prune'' certain execution sequences that result in bad states.
+Identifying all possible paths to bad states is an activity that is difficult for most programmers.
+\comment{I think this might be an understatement.}
+%% [Additional fodder.]
+%% First, threads are difficult to treat formally and therefore \emph{very} difficult to treat informally.
+%% The correctness of programs is reasoned about either formally as part of formal software design and verification and/or informally during the debugging process.
+%% Since most programs will never be formally verified, the correctness of most programs hinges solely on the developers ability to reason about the program.
+%% Based on the historical example of structured programming~\cite{goto_considered_harmful}, there is a strong correlation between what is ``easy'' in the formal arena and what is ``easy'' in the informal arena, especially when the implementation mimics the formal model, e.g., structured programming languages.
+%% It is well known that a formal treatment of threads is difficult due to the arbitrary interleaving of critical sections and the ability to define critical sections of arbitrary scope~\cite{lee_threads}.
+%% Thus, the correctness of most multi-threaded programs hinges on the developer's ability to explore arbitrary interleavings of critical sections, i.e., model checking, in their head.
 
-Third, threads are ill-suited for the asynchronous semantics present in the systems we desire to build.
-The distributed systems we desire to build are asynchronous at both the device and network levels.
-Embedded devices must respond to asynchronous events in the environment.
-The interrupt-driven TinyOS operating system for wireless sensor network motes is an exemplar in this area.
-The fundamental communication primitive in real-world distributed systems is asynchronous message passing.
-Realizing asynchrony in a threaded program requires the use of signals (interrupts) and/or (a)synchronous I/O multiplexing.
-Signals are primitive, rigid, and difficult to use correctly.
-Synchronous I/O multiplexing, e.g., a select loop, is limited to operating system abstractions, e.g., file descriptors, and induces a reactive state machine structure that is difficult to understand and maintain.
-Asynchronous I/O improves efficiency by avoiding the dispatching necessary to determine the I/O operation but are subject to the same limitations of shared-state thread-based programming.
+Second, the lack of a standard calculus for controlling access to shared state prevents developing re-usable software modules.
+Applications using threads are often structured using the object-oriented paradigm where independent modules use other independent modules to accomplish the computational task and locks are used to control concurrent access to the same module.
+One way to avoid deadlock when using multiple shared resources is for the threads to acquire the locks in order~\cite{lee_cites_this}.
+To remain deadlock free in an multi-threaded environment, all paths through the graph of interacting modules must acquire locks for shared resources in the same order.
+Consequently, programmers must break encapsulation, one of the motivations for using the object-oriented paradigm, because they need to recursively know the locking requirements for any used module.
+The inability to communicate and understand the behavior and requirements of concurrent modules prevents the construction of reusable concurrent modules.
+%% [Additional fodder.]
+%% Second, the lack of a standard calculus for threads prevents developing re-usable software modules.
+%% To illustrate this problem consider the challenge of developing an application with a graphical user interface that also uses a multi-threaded middleware library.
+%% Graphical user interfaces often use a single-threaded event-based design, e.g., X, Swing.
+%% The system integrator must write glue code that bridges the single-threaded event-based semantics to multi-threaded semantics.
+%% Bridging between two thread models is achievable, however, the systems we desire to build will rely on many libraries each with their own thread model.
+%% The importance of a unified approach to concurrency becomes apparent when one considers bridging between different threading models, e.g., event-based, reactor, proactor, active objects, and their attributes, e.g., thread creation, blocking vs. non-blocking I/O.
 
-Difficulties in developing asynchronous and concurrent software using threads has prompted a number of concurrent programming languages, e.g., Esterel, Erlang, Ptolemy, Autopipe, and language extensions, e.g., OpenMP, Cilk, Split-C.
-Solutions that involve creating a new language or extending an existing language suffer from two main problems.
-First, such solutions are often domain-specific and do not generalize to different applications, a necessity for heterogeneous distributed systems.
-Furthermore, solutions not connected to a general-purpose formal model lack the important property that the complete system including the environment can be modeled as another component.
-Second, such solutions often fail to become mainstream due to practical considerations.
-For example, the combination of C and pthreads is much more popular than Erlang due to the popularity of C-like languages and C's connection with UNIX operating system.
-Most language extensions are targeted at niche markets and therefore never standardized and implemented in mainstream compilers.
+The decision to use threads stems from a desire to support multiple concurrent activities.
+Threads are a good choice if the problem is embarrassingly parallel and necessary if one wishes to achieve true CPU concurrency, e.g., high performance computing.
+To support multiple concurrent activities without threads, the different tasks are encoded as event handlers.
+A single thread then waits for the events and dispatches the appropriate handler.
+The illusion of concurrency, then, is accomplished by interleaving event handlers for different tasks.
 
+Events are a good choice for developing distributed systems due to their reactive semantics and support for asynchrony.
+A node in a distributed system senses and actuates its environment and sends and receives messages to communicate with other nodes.
+The input activities, sensing and receiving, are naturally asynchronous, i.e., they can come from the environment at any time.
+The output activities, actuating and sending, in their most general form are also asynchronous as the environment might not be able to immediately consume data produced by a node.
+Distributed systems are usually specified as reactive state transition systems which map cleanly into events; transitions are encoded as event handlers and conditions which trigger a transition are encoded as events.
+
+While events more closely match the semantics of distributed system, the lack of a standard calculus for events prevents developing re-usable software.
+To illustrate consider the problem of providing a graphical user interface using Java Swing for a middleware based on the Reactor or Proactor design pattern.
+One solution involves running both event loops in independent threads and thus facing all of the challenges associated with multiple threads.
+The alternative is to either convert Java Swing to use the middleware's event loop or convert the middleware to use Java Swing's event loop.
+Composing two event systems requires a common definition of events and agreement upon how events are generated, distributed, and consumed.
+% Continuous vs. halting. (search reactive systems, Amir Pnueli, Zohar Manna)
+
+% Can we give an example?
+%% Third, threads are ill-suited for the asynchronous semantics present in the systems we desire to build.
+%% The distributed systems we desire to build are asynchronous at both the device and network levels.
+%% Embedded devices must respond to asynchronous events in the environment.
+%% The interrupt-driven TinyOS operating system for wireless sensor network motes is an exemplar in this area.
+%% The fundamental communication primitive in real-world distributed systems is asynchronous message passing.
+%% Realizing asynchrony in a threaded program requires the use of signals (interrupts) and/or (a)synchronous I/O multiplexing.
+%% Signals are primitive, rigid, and difficult to use correctly.
+%% Synchronous I/O multiplexing, e.g., a select loop, is limited to operating system abstractions, e.g., file descriptors, and induces a reactive state machine structure that is difficult to understand and maintain.
+%% Asynchronous I/O improves efficiency by avoiding the dispatching necessary to determine the I/O operation but are subject to the same limitations of shared-state thread-based programming.
+
+% This starts to got a bit far afield from the core points you're making, and probably should be (1) moved to the related work section and (2) replaced with a brief transition (a sentence or 2) in part D which outlines the contributions of the work.
+%% Difficulties in developing asynchronous and concurrent software using threads has prompted a number of concurrent programming languages, e.g., Esterel, Erlang, Ptolemy, Autopipe, and language extensions, e.g., OpenMP, Cilk, Split-C.
+%% Solutions that involve creating a new language or extending an existing language suffer from two main problems.
+%% First, such solutions are often domain-specific and do not generalize to different applications, a necessity for heterogeneous distributed systems.
+%% Furthermore, solutions not connected to a general-purpose formal model lack the important property that the complete system including the environment can be modeled as another component.
+%% Second, such solutions often fail to become mainstream due to practical considerations.
+%% For example, the combination of C and pthreads is much more popular than Erlang due to the popularity of C-like languages and C's connection with UNIX operating system.
+%% Most language extensions are targeted at niche markets and therefore never standardized and implemented in mainstream compilers.
+
+% Before giving the paper structure, needs to say (1) what the main contributions of the paper are, and (2) how the help address the challenges raised earlier in the intro
 Thus, in order to build sophisticated distributed systems, we require a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+This paper presents a framework for building distributed systems that is based on the I/O automata formal model; a reactive model that has been proven effective in the formal design and verification of real world distributed systems.
+The I/O automata model prohibits shared state and avoids the problems stemming from it.
+Furthermore, precise semantics for composition facilitate the creation of re-usable event-based modules and admit possibilities for concurrent execution
 %% The model must be general to support the wide variety of devices and protocols necessary for cyber-physical and pervasive computing systems.
 %% The model must facilitate the development of concurrent modules that can be reused.
 %% The model must have a strong connection with a formal model to simplify the task of reasoning about individual components and complete systems.
@@ -55,7 +98,7 @@ Thus, in order to build sophisticated distributed systems, we require a common s
 In section~\ref{system_model}, we expound upon the requirements of the model and connect the requirements with the I/O automata formal model.
 Section~\ref{representation} describes how I/O automata are represented in our I/O automata framework.
 In section~\ref{design}, we describe the design and implementation of our I/O automata framework.
-Section~\ref{evaluation} provides an evaluation and discussion of our framework.
+In, section~\ref{evaluation} we develop and evaluate a number of systems using our framework.
 Section~\ref{related_work} contains an overview of related work and we offer our conclusions and thoughts for future work in section~\ref{conclusion}.
 
 %% We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
