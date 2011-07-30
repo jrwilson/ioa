@@ -20,6 +20,19 @@ namespace ioa {
     size_t m_size;
     size_t m_capacity;
 
+  private:
+    void ensure (const size_t new_capacity) {
+      if (new_capacity > m_capacity) {
+	// Double it.
+	new_capacity *= 2;
+	m_capacity = new_capacity;
+	unsigned char* ptr = new unsigned char[m_capacity];
+	memcpy (ptr, m_data, m_size);
+	delete[] m_data;
+	m_data = ptr;
+      }
+    }
+
   public:
     buffer () :
       m_data (0),
@@ -85,13 +98,7 @@ namespace ioa {
     }
 
     void resize (const size_t new_size) {
-      if (new_size > m_capacity) {
-	m_capacity = new_size;
-	unsigned char* ptr = new unsigned char[m_capacity];
-	memcpy (ptr, m_data, m_size);
-	delete[] m_data;
-	m_data = ptr;
-      }
+      ensure (new_size);
       m_size = new_size;
     }
 
@@ -101,26 +108,13 @@ namespace ioa {
 
     void append (const void* data,
 		 const size_t size) {
-      const size_t old_size = m_size;
-      resize (old_size + size);
-      memcpy (m_data + old_size, data, size);
+      ensure (m_size + size);
+      memcpy (m_data + m_size, data, size);
+      m_size += size;
     }
-
+    
     void append (const buffer_interface& buf) {
       append (buf.data (), buf.size ());
-    }
-
-    void consume (const size_t nbytes) {
-      size_t new_size;
-      if (nbytes < m_size) {
-	new_size = m_size - nbytes;
-      }
-      else {
-	new_size = 0;
-      }
-
-      memmove (m_data, m_data + nbytes, new_size);
-      resize (new_size);
     }
 
   };
