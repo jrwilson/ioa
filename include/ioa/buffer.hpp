@@ -21,7 +21,7 @@ namespace ioa {
     size_t m_capacity;
 
   private:
-    void ensure (const size_t new_capacity) {
+    void ensure (size_t new_capacity) {
       if (new_capacity > m_capacity) {
 	// Double it.
 	new_capacity *= 2;
