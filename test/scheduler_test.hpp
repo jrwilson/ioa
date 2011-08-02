@@ -387,9 +387,13 @@ private:
       delete this;
     }
 
-    void observe (ioa::observable*) {
-      m_output_handle = m_output_helper->get_handle ();
-      m_input_handle = m_input_helper->get_handle ();
+    void observe (ioa::observable* o) {
+      if (o == m_output_helper) {
+	m_output_handle = m_output_helper->get_handle ();
+      }
+      else if (o == m_input_helper) {
+	m_input_handle = m_input_helper->get_handle ();
+      }
       if (m_output_handle != -1 && m_input_handle != -1) {
 	m_automaton.bind (this);
       }
@@ -500,9 +504,13 @@ private:
       delete this;
     }
 
-    void observe (ioa::observable*) {
-      m_output_handle = m_output_helper->get_handle ();
-      m_input_handle = m_input_helper->get_handle ();
+    void observe (ioa::observable* o) {
+      if (o == m_output_helper) {
+	m_output_handle = m_output_helper->get_handle ();
+      }
+      else if (o == m_input_helper) {
+	m_input_handle = m_input_helper->get_handle ();
+      }
       if (m_output_handle != -1 && m_input_handle != -1) {
 	m_automaton.bind (this);
       }
@@ -614,9 +622,13 @@ private:
       delete this;
     }
 
-    void observe (ioa::observable*) {
-      m_output_handle = m_output_helper->get_handle ();
-      m_input_handle = m_input_helper->get_handle ();
+    void observe (ioa::observable* o) {
+      if (o == m_output_helper) {
+	m_output_handle = m_output_helper->get_handle ();
+      }
+      else if (o == m_input_helper) {
+	m_input_handle = m_input_helper->get_handle ();
+      }
       if (m_output_handle != -1 && m_input_handle != -1) {
 	m_automaton.bind (this);
       }
@@ -726,9 +738,13 @@ private:
       delete this;
     }
 
-    void observe (ioa::observable*) {
-      m_output_handle = m_output_helper->get_handle ();
-      m_input_handle = m_input_helper->get_handle ();
+    void observe (ioa::observable* o) {
+      if (o == m_output_helper) {
+	m_output_handle = m_output_helper->get_handle ();
+      }
+      else if (o == m_input_helper) {
+	m_input_handle = m_input_helper->get_handle ();
+      }
       if (m_output_handle != -1 && m_input_handle != -1) {
 	m_automaton.bind (this);
       }

@@ -20,6 +20,11 @@ namespace ioa {
   public:
     virtual ~model_interface () { }
 
+    virtual void add_bind_key (const aid_t binder,
+			       void* const key) = 0;
+    virtual void remove_bind_key (const aid_t binder,
+				  void* const key) = 0;
+    
     // Executing user actions.
     virtual automaton* get_instance (const aid_t aid) = 0;
     virtual void lock_automaton (const aid_t aid) = 0;

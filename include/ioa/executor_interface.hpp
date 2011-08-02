@@ -94,6 +94,7 @@ namespace ioa {
     virtual bool empty () const = 0;
     virtual size_t size () const = 0;
     virtual void bind (system_scheduler_interface&,
+		       model_interface&,
 		       const input_executor_interface&,
 		       const aid_t,
 		       void* const) = 0;

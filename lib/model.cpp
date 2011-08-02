@@ -19,6 +19,16 @@ namespace ioa {
     clear ();
   }
 
+  void model::add_bind_key (const aid_t binder,
+			    void* const key) {
+    m_records[binder]->add_bind_key (key);
+  }
+
+  void model::remove_bind_key (const aid_t binder,
+			       void* const key) {
+    m_records[binder]->remove_bind_key (key);
+  }
+
   void model::clear (void) {
    // Delete all root automata.
     while (!m_records.empty ()) {
@@ -116,8 +126,8 @@ namespace ioa {
   }
 
   int model::bind (const aid_t binder,
-		    shared_ptr<bind_executor_interface> bind_exec,
-		    void* const key) {
+		   shared_ptr<bind_executor_interface> bind_exec,
+		   void* const key) {
     unique_lock lock (m_mutex);
     
     if (!m_aids.contains (binder)) {
@@ -190,8 +200,7 @@ namespace ioa {
     }
     
     // Bind.
-    c->bind (m_system_scheduler, input, binder, key);
-    m_records[binder]->add_bind_key (key);
+    c->bind (m_system_scheduler, *this, input, binder, key);
     
     return 0;
   }    
@@ -218,7 +227,6 @@ namespace ioa {
     
     // Unbind.
     c->unbind (binder, key);
-    m_records[binder]->remove_bind_key (key);
     
     if (c->empty ()) {
       delete c;

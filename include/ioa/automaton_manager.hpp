@@ -43,6 +43,8 @@ namespace ioa {
     }
 
     void instance_exists () {
+      m_handle = -1;
+      this->notify_observers ();
       delete this;
     }
 
@@ -52,6 +54,8 @@ namespace ioa {
     }
 
     void automaton_destroyed () {
+      m_handle = -1;
+      this->notify_observers ();
       delete this;
     }
   

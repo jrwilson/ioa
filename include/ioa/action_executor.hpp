@@ -492,28 +492,33 @@ namespace ioa {
     struct record
     {
       system_scheduler_interface& m_system_scheduler;
+      model_interface& m_model;
       const OE& m_output;
       std::auto_ptr<IE> m_input;
       const aid_t m_binder;
       void* const m_key;
       
       record (system_scheduler_interface& system_scheduler,
+	      model_interface& model,
 	      const OE& output,
 	      const input_executor_interface& input,
 	      const aid_t binder,
 	      void* const key) :
 	m_system_scheduler (system_scheduler),
+	m_model (model),
 	m_output (output),
 	m_input (dynamic_cast<IE*> (input.clone ())),
 	m_binder (binder),
 	m_key (key)
       {
+	m_model.add_bind_key (m_binder, m_key);
 	m_system_scheduler.bound (m_binder, automaton::BOUND_RESULT, m_key);
 	m_system_scheduler.output_bound (m_output);
 	m_system_scheduler.input_bound (*m_input.get ());
       }
       
       ~record () {
+	m_model.remove_bind_key (m_binder, m_key);
 	m_system_scheduler.unbound (m_binder, automaton::UNBOUND_RESULT, m_key);
 	m_system_scheduler.output_unbound (m_output);
 	m_system_scheduler.input_unbound (*m_input.get ());
@@ -623,11 +628,12 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const OE& output,
 	       const input_executor_interface& input,
 	       const aid_t binder,
 	       void* const key) {
-      m_records.insert (std::make_pair (input.get_aid (), new record (system_scheduler, output, input, binder, key)));
+      m_records.insert (std::make_pair (input.get_aid (), new record (system_scheduler, model, output, input, binder, key)));
     }
 
     void unbind (const aid_t binder,
@@ -796,10 +802,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, *this, input, aid, key);
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, model, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -937,10 +944,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, *this, input, aid, key);
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, model, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1087,10 +1095,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, *this, input, aid, key);
+      output_core<I, M, unvalued_output_executor_interface, unvalued_input_executor_interface>::bind (system_scheduler, model, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1225,10 +1234,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, *this, input, aid, key);
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, model, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1367,10 +1377,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, *this, input, aid, key);
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, model, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,
@@ -1518,10 +1529,11 @@ namespace ioa {
     }
 
     void bind (system_scheduler_interface& system_scheduler,
+	       model_interface& model,
 	       const input_executor_interface& input,
 	       const aid_t aid,
 	       void* const key) {
-      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, *this, input, aid, key);
+      output_core<I, M, valued_output_executor_interface<VT>, valued_input_executor_interface<VT> >::bind (system_scheduler, model, *this, input, aid, key);
     }
 
     void unbind (const aid_t aid,

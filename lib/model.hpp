@@ -104,6 +104,11 @@ namespace ioa {
     model (system_scheduler_interface&);
     ~model ();
 
+    void add_bind_key (const aid_t,
+		       void* const key);
+    void remove_bind_key (const aid_t,
+			  void* const key);
+
     void clear (void);
     aid_t create (const_shared_ptr<generator_interface> generator);
     aid_t create (const aid_t automaton,

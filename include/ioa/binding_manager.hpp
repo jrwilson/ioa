@@ -157,22 +157,32 @@ namespace ioa {
     }
 
     void output_automaton_dne () {
+      m_bind_status = false;
+      notify_observers ();
       delete this;
     }
 
     void input_automaton_dne () {
+      m_bind_status = false;
+      notify_observers ();
       delete this;
     }
 
     void binding_exists () {
+      m_bind_status = false;
+      notify_observers ();
       delete this;
     }
 
     void input_action_unavailable () {
+      m_bind_status = false;
+      notify_observers ();
       delete this;
     }
 
     void output_action_unavailable () {
+      m_bind_status = false;
+      notify_observers ();
       delete this;
     }
 
@@ -182,6 +192,8 @@ namespace ioa {
     }
 
     void unbound () {
+      m_bind_status = false;
+      notify_observers ();
       delete this;
     }
 

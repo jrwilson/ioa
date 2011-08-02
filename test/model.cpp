@@ -925,12 +925,7 @@ all_tests ()
   mu_run_test (execute_automaton_dne);
   mu_run_test (execute_output);
   mu_run_test (execute_internal);
-
   // mu_run_test (execute_system_input);
-  // mu_run_test (execute_create);
-  // mu_run_test (execute_bind);
-  // mu_run_test (execute_unbind);
-  // mu_run_test (execute_destroy);
 
   return 0;
 }

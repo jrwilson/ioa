@@ -9,6 +9,11 @@ struct test_model :
 {
   automaton1 instance;
 
+  void add_bind_key (const ioa::aid_t aid,
+		     void* const key) { }
+  void remove_bind_key (const ioa::aid_t aid,
+			void* const key) { }
+
   // Executing user actions.
   ioa::automaton* get_instance (const ioa::aid_t aid) { return &instance; }
   void lock_automaton (const ioa::aid_t aid) { }
@@ -321,7 +326,7 @@ unvalued_unparameterized_output_action ()
   // Always set parameter before binding.
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 1);
   mu_assert (action.involves_input (input1));
@@ -331,7 +336,7 @@ unvalued_unparameterized_output_action ()
 
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 2);
   mu_assert (action.involves_input (input2));
@@ -341,7 +346,7 @@ unvalued_unparameterized_output_action ()
 
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
   mu_assert (action.involves_input (input3));
@@ -387,13 +392,13 @@ unvalued_unparameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
 
@@ -453,7 +458,7 @@ unvalued_parameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 1);
   mu_assert (action.involves_input (input1));
@@ -463,7 +468,7 @@ unvalued_parameterized_output_action ()
 
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 2);
   mu_assert (action.involves_input (input2));
@@ -473,7 +478,7 @@ unvalued_parameterized_output_action ()
 
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
   mu_assert (action.involves_input (input3));
@@ -522,13 +527,13 @@ unvalued_parameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
 
@@ -581,7 +586,7 @@ unvalued_auto_parameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 1);
   mu_assert (action.involves_input (input1));
@@ -652,7 +657,7 @@ valued_unparameterized_output_action ()
   // Always set parameter before binding.
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 1);
   mu_assert (action.involves_input (input1));
@@ -662,7 +667,7 @@ valued_unparameterized_output_action ()
 
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 2);
   mu_assert (action.involves_input (input2));
@@ -672,7 +677,7 @@ valued_unparameterized_output_action ()
 
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
   mu_assert (action.involves_input (input3));
@@ -718,13 +723,13 @@ valued_unparameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
 
@@ -784,7 +789,7 @@ valued_parameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 1);
   mu_assert (action.involves_input (input1));
@@ -794,7 +799,7 @@ valued_parameterized_output_action ()
 
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 2);
   mu_assert (action.involves_input (input2));
@@ -804,7 +809,7 @@ valued_parameterized_output_action ()
 
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
   mu_assert (action.involves_input (input3));
@@ -853,13 +858,13 @@ valued_parameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   action.set_parameter (input2_handle);
   input2.set_parameter (h);
-  action.bind (tss, input2, binder_handle, &input2);
+  action.bind (tss, tm, input2, binder_handle, &input2);
   action.set_parameter (input3_handle);
   input3.set_parameter (h);
-  action.bind (tss, input3, binder_handle, &input3);
+  action.bind (tss, tm, input3, binder_handle, &input3);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 3);
 
@@ -912,7 +917,7 @@ valued_auto_parameterized_output_action ()
 
   action.set_parameter (input1_handle);
   input1.set_parameter (h);
-  action.bind (tss, input1, binder_handle, &input1);
+  action.bind (tss, tm, input1, binder_handle, &input1);
   mu_assert (!action.empty ());
   mu_assert (action.size () == 1);
   mu_assert (action.involves_input (input1));
