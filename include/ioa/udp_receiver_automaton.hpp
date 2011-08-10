@@ -2,7 +2,6 @@
 #define __udp_receiver_automaton_hpp__
 
 #include <ioa/ioa.hpp>
-#include <ioa/buffer.hpp>
 #include <ioa/inet_address.hpp>
 
 #include <fcntl.h>
@@ -10,6 +9,7 @@
 
 #include <queue>
 #include <algorithm>
+#include <string>
 
 namespace ioa {
 
@@ -21,11 +21,11 @@ namespace ioa {
     struct receive_val {
       int err;
       inet_address address;
-      const_shared_ptr<ioa::buffer> buffer;
+      const_shared_ptr<std::string> buffer;
 
       receive_val (const int e,
 		   const inet_address& a,
-		   const const_shared_ptr<ioa::buffer>& b) :
+		   const const_shared_ptr<std::string>& b) :
 	err (e),
 	address (a),
 	buffer (b)
@@ -42,7 +42,9 @@ namespace ioa {
     int m_fd;
     int m_errno;
     inet_address m_address;
-    const_shared_ptr<buffer> m_buffer;
+    const_shared_ptr<std::string> m_buffer;
+    char* m_buf;
+    ssize_t m_buf_size;
 
   private:
     void prepare_socket (const inet_address& address);

@@ -2,10 +2,10 @@
 #define __tcp_connection_automaton_hpp__
 
 #include <ioa/ioa.hpp>
-#include <ioa/buffer.hpp>
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string>
 
 namespace ioa {
   
@@ -17,10 +17,10 @@ namespace ioa {
     struct receive_val
     {
       int err;
-      const_shared_ptr<ioa::buffer> buffer;
+      const_shared_ptr<std::string> buffer;
       
       receive_val (const int e,
-		   const const_shared_ptr<ioa::buffer>& b) :
+		   const const_shared_ptr<std::string>& b) :
 	err (e),
 	buffer (b)
       { }
@@ -43,11 +43,13 @@ namespace ioa {
     int m_fd;
     send_state_t m_send_state;
     int m_send_errno;
-    const_shared_ptr<buffer_interface> m_send_buffer;
+    const_shared_ptr<std::string> m_send_buffer;
     ssize_t m_bytes_written;
     receive_state_t m_receive_state;
     int m_receive_errno;
-    const_shared_ptr<buffer> m_receive_buffer;
+    const_shared_ptr<std::string> m_receive_buffer;
+    char* m_buffer;
+    ssize_t m_buffer_size;
 
   public:
     tcp_connection_automaton (const int fd);
@@ -58,9 +60,9 @@ namespace ioa {
     void observe (observable* o);
 
   private:
-    void send_effect (const const_shared_ptr<buffer_interface>& buf);
+    void send_effect (const const_shared_ptr<std::string>& buf);
   public:
-    V_UP_INPUT (tcp_connection_automaton, send, const_shared_ptr<buffer_interface>);
+    V_UP_INPUT (tcp_connection_automaton, send, const_shared_ptr<std::string>);
 
   private:
     bool schedule_write_precondition () const;

@@ -2,13 +2,13 @@
 #define __udp_sender_automaton_hpp__
 
 #include <ioa/ioa.hpp>
-#include <ioa/buffer.hpp>
 #include <ioa/inet_address.hpp>
 
 #include <fcntl.h>
 
 #include <list>
 #include <algorithm>
+#include <string>
 
 namespace ioa {
 
@@ -19,10 +19,10 @@ namespace ioa {
   public:
     struct send_arg {
       inet_address address;
-      const_shared_ptr<buffer_interface> buffer;
+      const_shared_ptr<std::string> buffer;
 
       send_arg (const inet_address& a,
-		const const_shared_ptr<buffer_interface>& b) :
+		const const_shared_ptr<std::string>& b) :
 	address (a),
 	buffer (b)
       { }

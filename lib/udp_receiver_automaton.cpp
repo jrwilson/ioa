@@ -61,7 +61,9 @@ namespace ioa {
 
   udp_receiver_automaton::udp_receiver_automaton (const inet_address& address) :
     m_state (SCHEDULE_READ_READY),
-    m_errno (0)
+    m_errno (0),
+    m_buf (0),
+    m_buf_size (0)
   {
     add_observable (&receive);
     prepare_socket (address);
@@ -137,14 +139,17 @@ namespace ioa {
       return;
     }
 
-    // Create a buffer.
-    std::auto_ptr<buffer> buf (new buffer (expect_bytes));
+    // Resize the buffer.
+    if (m_buf_size < expect_bytes) {
+      delete[] m_buf;
+      m_buf = new char[expect_bytes];
+      m_buf_size = expect_bytes;
+    }
 
-    ssize_t actual_bytes = recvfrom (m_fd, buf->data (), expect_bytes, 0, m_address.get_sockaddr_ptr (), m_address.get_socklen_ptr ());
+    ssize_t actual_bytes = recvfrom (m_fd, m_buf, expect_bytes, 0, m_address.get_sockaddr_ptr (), m_address.get_socklen_ptr ());
     if (actual_bytes != -1) {
       // Success.
-      buf->resize (actual_bytes);
-      m_buffer.reset (buf.release ());
+      m_buffer.reset (new std::string (m_buf, actual_bytes));
       m_state = RECEIVE_READY;
       return;
     }

@@ -11,7 +11,6 @@ ioa/automaton_handle.hpp \
 ioa/automaton_manager.hpp \
 ioa/automaton_manager_interface.hpp \
 ioa/binding_manager.hpp \
-ioa/buffer.hpp \
 ioa/const_shared_ptr.hpp \
 ioa/environment.hpp \
 ioa/executor_interface.hpp \

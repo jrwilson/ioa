@@ -94,14 +94,14 @@ private:
     return m_state == SEND_READY && ioa::binding_count (&echo_client_automaton::send) != 0;
   }
 
-  ioa::const_shared_ptr<ioa::buffer_interface> send_effect () {
+  ioa::const_shared_ptr<std::string> send_effect () {
     m_state = RECEIVE_WAIT;
-    std::string s ("Hello World!!");
-    std::cout << "Sent:\t\t" << s << std::endl;
-    return ioa::const_shared_ptr<ioa::buffer_interface> (new ioa::buffer (s.c_str (), s.size ()));
+    std::string* s = new std::string ("Hello World!!");
+    std::cout << "Sent:\t\t" << *s << std::endl;
+    return ioa::const_shared_ptr<std::string> (s);
   }
 
-  V_UP_OUTPUT (echo_client_automaton, send, ioa::const_shared_ptr<ioa::buffer_interface>);
+  V_UP_OUTPUT (echo_client_automaton, send, ioa::const_shared_ptr<std::string>);
 
   void send_complete_effect (const int& err) {
     if (err != 0) {

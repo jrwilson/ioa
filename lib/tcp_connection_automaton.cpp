@@ -7,7 +7,9 @@ namespace ioa {
     m_send_state (SEND_WAIT),
     m_send_errno (0),
     m_receive_state (SCHEDULE_READ_READY),
-    m_receive_errno (0)
+    m_receive_errno (0),
+    m_buffer (0),
+    m_buffer_size (0)
   {
     assert (m_fd != -1);
     add_observable (&send_complete);
@@ -19,6 +21,7 @@ namespace ioa {
     if (m_fd != -1) {
       close (m_fd);
     }
+    delete[] m_buffer;
   }
 
   void tcp_connection_automaton::schedule () const {
@@ -51,7 +54,7 @@ namespace ioa {
     }
   }
 
-  void tcp_connection_automaton::send_effect (const const_shared_ptr<buffer_interface>& buf) {
+  void tcp_connection_automaton::send_effect (const const_shared_ptr<std::string>& buf) {
     if (m_send_state == SEND_WAIT) {
       if (m_fd == -1) {
 	m_send_state = SEND_COMPLETE_READY;
@@ -162,9 +165,13 @@ namespace ioa {
       return;
     }
 
-    // Create a buffer capable of holding num_bytes and fill it.
-    std::auto_ptr<buffer> buf (new buffer (num_bytes));
-    ssize_t bytes_read = read (m_fd, buf->data (), num_bytes);
+    // Resize the buffer to hold num_bytes.
+    if (m_buffer_size < num_bytes) {
+      delete[] m_buffer;
+      m_buffer = new char[num_bytes];
+      m_buffer_size = num_bytes;
+    }
+    ssize_t bytes_read = read (m_fd, m_buffer, num_bytes);
     if (bytes_read == -1) {
       m_send_errno = errno;
       m_receive_errno = errno;
@@ -184,8 +191,7 @@ namespace ioa {
       return;
     }
 
-    buf->resize (bytes_read);
-    m_receive_buffer.reset (buf.release ());
+    m_receive_buffer.reset (new std::string (m_buffer, bytes_read));
     m_receive_state = RECEIVE_READY;      
   }
 

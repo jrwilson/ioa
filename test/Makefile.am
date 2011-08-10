@@ -3,17 +3,15 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/libioa.la
 
 TESTS = \
-reuse_bind_key \
 time \
 action_executor \
 model \
 global_fifo_scheduler \
 simple_scheduler \
-binding_manager
+binding_manager \
+reuse_bind_key
 
 check_PROGRAMS = $(TESTS)
-
-reuse_bind_key_SOURCES = minunit.h reuse_bind_key.cpp test_main.cpp
 
 time_SOURCES = minunit.h time.cpp test_main.cpp
 
@@ -32,3 +30,5 @@ simple_scheduler_SOURCES = minunit.h automaton2.hpp simple_scheduler.cpp schedul
 binding_manager_SOURCES = minunit.h automaton2.hpp binding_manager.cpp test_main.cpp
 
 # TODO:  Incorporate configuration.cpp
+
+reuse_bind_key_SOURCES = minunit.h reuse_bind_key.cpp test_main.cpp
