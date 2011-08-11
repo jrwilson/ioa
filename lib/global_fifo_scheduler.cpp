@@ -159,7 +159,7 @@ namespace ioa {
       schedule_writeq (r, fd);
     }
 
-    void run (const_shared_ptr<generator_interface> generator) {
+    void run (std::auto_ptr<generator_interface> generator) {
       assert (m_configq.empty ());
       assert (m_userq.empty ());
       assert (runnable_interface::count () == 0);
@@ -410,7 +410,7 @@ namespace ioa {
     }
 
     void create (const aid_t automaton,
-		 const_shared_ptr<generator_interface> generator,
+		 std::auto_ptr<generator_interface> generator,
 		 void* const key) {
       schedule_configq (new create_runnable (automaton, generator, key));
     }
@@ -538,7 +538,7 @@ namespace ioa {
     m_impl->close (fd);
   }
   
-  void global_fifo_scheduler::run (const_shared_ptr<generator_interface> generator) {
+  void global_fifo_scheduler::run (std::auto_ptr<generator_interface> generator) {
     m_impl->run (generator);
   }
   

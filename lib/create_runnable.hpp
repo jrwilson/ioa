@@ -10,11 +10,11 @@ namespace ioa {
   {
   private:
     const aid_t m_automaton;
-    const_shared_ptr<generator_interface> m_generator;
+    std::auto_ptr<generator_interface> m_generator;
     void* const m_key;
   public:
     create_runnable (const aid_t automaton,
-		     const_shared_ptr<generator_interface> generator,
+		     std::auto_ptr<generator_interface> generator,
 		     void* const key) :
       m_automaton (automaton),
       m_generator (generator),

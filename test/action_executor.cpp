@@ -30,7 +30,7 @@ struct test_model :
 
   // Executing configuation actions.
   ioa::aid_t create (const ioa::aid_t automaton,
-		     ioa::const_shared_ptr<ioa::generator_interface> generator,
+		     std::auto_ptr<ioa::generator_interface> generator,
 		     void* const key) { return -1; }
   int bind (const ioa::aid_t automaton,
 	    ioa::shared_ptr<ioa::bind_executor_interface> exec,
@@ -56,7 +56,7 @@ struct test_system_scheduler :
   void clear_current_aid () { }
     
   void create (const ioa::aid_t automaton,
-	       ioa::const_shared_ptr<ioa::generator_interface> generator,
+	       std::auto_ptr<ioa::generator_interface> generator,
 	       void* const key) { }
     
   void bind (const ioa::aid_t automaton,

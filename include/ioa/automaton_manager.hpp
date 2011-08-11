@@ -16,12 +16,12 @@ namespace ioa {
 
   private:
     automaton* m_automaton;
-    const_shared_ptr<typed_generator_interface<I> > m_generator;
+    std::auto_ptr<typed_generator_interface<I> > m_generator;
     automaton_handle<I> m_handle;
 
   public:
     automaton_manager (automaton* automaton,
-		       const_shared_ptr<typed_generator_interface<I> > generator) :
+		       std::auto_ptr<typed_generator_interface<I> > generator) :
       m_automaton (automaton),
       m_generator (generator)
     {
@@ -38,8 +38,8 @@ namespace ioa {
       m_automaton->destroy (this);
     }
 
-    const_shared_ptr<generator_interface> get_generator () const {
-      return m_generator;
+    std::auto_ptr<generator_interface> get_generator () {
+      return std::auto_ptr<generator_interface> (m_generator);
     }
 
     void instance_exists () {

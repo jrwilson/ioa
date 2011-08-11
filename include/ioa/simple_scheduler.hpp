@@ -47,7 +47,7 @@ namespace ioa {
 
     void close (int fd);
 
-    void run (const_shared_ptr<generator_interface> generator);
+    void run (std::auto_ptr<generator_interface> generator);
   };
 
 }

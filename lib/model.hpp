@@ -110,9 +110,9 @@ namespace ioa {
 			  void* const key);
 
     void clear (void);
-    aid_t create (const_shared_ptr<generator_interface> generator);
+    aid_t create (std::auto_ptr<generator_interface> generator);
     aid_t create (const aid_t automaton,
-		  const_shared_ptr<generator_interface> generator,
+		  std::auto_ptr<generator_interface> generator,
 		  void* const key);
     int bind (const aid_t automaton,
 	      shared_ptr<bind_executor_interface> exec,

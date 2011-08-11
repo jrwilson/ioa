@@ -8,6 +8,7 @@
 #include <ioa/generator_interface.hpp>
 #include <ioa/executor_interface.hpp>
 #include <ioa/action_wrapper.hpp>
+#include <memory>
 
 #define COMMA ,
 
@@ -17,7 +18,7 @@ namespace ioa {
   {
   public:
     virtual ~system_automaton_manager_interface () { }
-    virtual const_shared_ptr<generator_interface> get_generator () const = 0;
+    virtual std::auto_ptr<generator_interface> get_generator () = 0;
     virtual void instance_exists () = 0;
     virtual void automaton_created (const aid_t aid) = 0;
     virtual void automaton_destroyed () = 0;
@@ -69,11 +70,11 @@ namespace ioa {
   private:
     void schedule () const;
 
-  private:
+  private:    
     bool sys_create_precondition () const;
-    std::pair<const_shared_ptr<generator_interface>, void*> sys_create_effect ();
+    std::pair<generator_interface*, void*> sys_create_effect ();
   public:
-    SYSTEM_OUTPUT (automaton, sys_create, std::pair<const_shared_ptr<generator_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton, sys_create, std::pair<generator_interface* COMMA void*>);
 
   private:
     bool sys_bind_precondition () const;

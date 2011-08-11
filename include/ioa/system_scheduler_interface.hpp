@@ -2,6 +2,7 @@
 #define __system_scheduler_interface_hpp__
 
 #include <ioa/automaton.hpp>
+#include <memory>
 
 namespace ioa {
 
@@ -18,7 +19,7 @@ namespace ioa {
     virtual void clear_current_aid () = 0;
     
     virtual void create (const aid_t automaton,
-			 const_shared_ptr<generator_interface> generator,
+			 std::auto_ptr<generator_interface> generator,
 			 void* const key) = 0;
     
     virtual void bind (const aid_t automaton,

@@ -38,7 +38,8 @@ private:
 
 int main () {
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<count_to_ten_automaton> ());
+  std::auto_ptr<ioa::typed_generator_interface<count_to_ten_automaton> > x = ioa::make_generator<count_to_ten_automaton> ();
+  ioa::run (sched, x);
   return 0; 
 }
 

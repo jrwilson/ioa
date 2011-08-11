@@ -2,6 +2,7 @@
 #define __global_fifo_scheduler_hpp__
 
 #include <ioa/scheduler_interface.hpp>
+#include <memory>
 
 namespace ioa {
 
@@ -47,7 +48,7 @@ namespace ioa {
 
     void close (int fd);
     
-    void run (const_shared_ptr<generator_interface> generator);
+    void run (std::auto_ptr<generator_interface> generator);
   };
 
 }

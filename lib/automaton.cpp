@@ -167,12 +167,14 @@ namespace ioa {
     return !m_create_send.empty ();
   }
 
-  std::pair<const_shared_ptr<generator_interface>, void*> automaton::sys_create_effect () {
+  std::pair<generator_interface*, void*> automaton::sys_create_effect () {
     std::set<system_automaton_manager_interface*>::iterator pos = m_create_send.begin ();
     system_automaton_manager_interface* helper = *pos;
     m_create_send.erase (pos);
     m_create_recv.insert (helper);
-    return std::make_pair (helper->get_generator (), helper);
+    // I really don't like return the raw pointer but I haven't found a better solution.
+    // Some type of smart pointer would be nice.
+    return std::make_pair (helper->get_generator ().release (), helper);
   }
 
   bool automaton::sys_bind_precondition () const {

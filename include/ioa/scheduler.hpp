@@ -96,8 +96,12 @@ namespace ioa {
     return scheduler->binding_count (action);
   }
   
+  template <class T>
   void run (scheduler_interface& s,
-	    const_shared_ptr<generator_interface> generator);
+	    std::auto_ptr<typed_generator_interface<T> > generator) {
+    scheduler = &s;
+    scheduler->run (std::auto_ptr<generator_interface> (generator));
+  }
   
 }
 

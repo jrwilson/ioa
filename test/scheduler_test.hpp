@@ -27,8 +27,8 @@ private:
       m_instance (instance)
     { }
 
-    ioa::const_shared_ptr<ioa::generator_interface> get_generator () const {
-      return ioa::const_shared_ptr<ioa::generator_interface> (new instance_holder<automaton2> (m_instance));
+    std::auto_ptr<ioa::generator_interface> get_generator () {
+      return std::auto_ptr<ioa::generator_interface> (new instance_holder<automaton2> (m_instance));
     }
 
     void instance_exists () {
@@ -75,8 +75,8 @@ private:
   struct helper :
     public ioa::system_automaton_manager_interface
   {
-    ioa::const_shared_ptr<ioa::generator_interface> get_generator () const {
-      return ioa::make_generator<automaton2> ();
+    std::auto_ptr<ioa::generator_interface> get_generator () {
+      return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
     }
 
     void instance_exists () {
@@ -1035,8 +1035,8 @@ private:
       created (false)
     { }
 
-    ioa::const_shared_ptr<ioa::generator_interface> get_generator () const {
-      return ioa::make_generator<automaton2> ();
+    std::auto_ptr<ioa::generator_interface> get_generator () {
+      return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
     }
 
     void instance_exists () {
@@ -1102,8 +1102,8 @@ private:
   struct helper :
     public ioa::system_automaton_manager_interface
   {
-    ioa::const_shared_ptr<ioa::generator_interface> get_generator () const {
-      return ioa::make_generator<automaton2> ();
+    std::auto_ptr<ioa::generator_interface> get_generator () {
+      return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
     }
 
     void instance_exists () {

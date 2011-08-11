@@ -6,6 +6,7 @@ namespace ioa {
   /*
     A generator produces an automaton when invoked.
     The result should be delete'able.
+    Generators are owned by exactly one object at a time and will only be invoked once.  
   */
 
   class automaton;
@@ -14,7 +15,7 @@ namespace ioa {
   {
   public:
     virtual ~generator_interface () { }
-    virtual automaton* operator() () const = 0;
+    virtual automaton* operator() () = 0;
   };
 
   template <class I>
@@ -23,7 +24,7 @@ namespace ioa {
   {
   public:
     virtual ~typed_generator_interface () { }
-    virtual I* operator() () const = 0;
+    virtual I* operator() () = 0;
   };
 
 }
