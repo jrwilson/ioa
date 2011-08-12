@@ -57,16 +57,10 @@ class producer_consumer_automaton :
 public:
   producer_consumer_automaton () {
     ioa::automaton_manager<producer_automaton>* producer =
-      new ioa::automaton_manager<producer_automaton> (
-	this,
-	ioa::make_generator<producer_automaton> ()
-      );
+      ioa::make_automaton_manager (this, ioa::make_generator<producer_automaton> ());
 
     ioa::automaton_manager<consumer_automaton>* consumer =
-      new ioa::automaton_manager<consumer_automaton> (
-        this,
-	ioa::make_generator<consumer_automaton> ()
-      );
+      ioa::make_automaton_manager (this, ioa::make_generator<consumer_automaton> ());
 
     ioa::make_binding_manager (this,
 			       producer, &producer_automaton::produce,

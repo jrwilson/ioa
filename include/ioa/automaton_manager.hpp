@@ -65,6 +65,12 @@ namespace ioa {
 
   };
 
+  template <typename I>
+  automaton_manager<I>* make_automaton_manager (automaton* automaton,
+						std::auto_ptr<typed_generator_interface<I> > generator) {
+    return new automaton_manager<I> (automaton, generator);
+  }
+
 }
 
 #endif

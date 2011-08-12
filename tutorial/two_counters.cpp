@@ -42,15 +42,8 @@ class two_counter_automaton :
 {
 public:
   two_counter_automaton () {
-    new ioa::automaton_manager<count_to_ten_automaton> (
-      this,
-      ioa::make_generator<count_to_ten_automaton> ()
-    );
-
-    new ioa::automaton_manager<count_to_ten_automaton> (
-      this,
-      ioa::make_generator<count_to_ten_automaton> ()
-    );
+    ioa::make_automaton_manager (this, ioa::make_generator<count_to_ten_automaton> ());
+    ioa::make_automaton_manager (this, ioa::make_generator<count_to_ten_automaton> ());
   }
 
 };

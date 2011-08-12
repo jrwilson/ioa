@@ -58,6 +58,10 @@ namespace ioa {
 
     bool m_self_destruct;
 
+    // Automata can't be copied.
+    automaton (const automaton&);
+    automaton& operator= (const automaton&);
+
   public:
     automaton ();
     virtual ~automaton ();
