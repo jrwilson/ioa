@@ -512,14 +512,14 @@ namespace ioa {
 	m_key (key)
       {
 	m_model.add_bind_key (m_binder, m_key);
-	m_system_scheduler.bound (m_binder, automaton::BOUND_RESULT, m_key);
+	m_system_scheduler.bound (m_binder, BOUND_RESULT, m_key);
 	m_system_scheduler.output_bound (m_output);
 	m_system_scheduler.input_bound (*m_input.get ());
       }
       
       ~record () {
 	m_model.remove_bind_key (m_binder, m_key);
-	m_system_scheduler.unbound (m_binder, automaton::UNBOUND_RESULT, m_key);
+	m_system_scheduler.unbound (m_binder, UNBOUND_RESULT, m_key);
 	m_system_scheduler.output_unbound (m_output);
 	m_system_scheduler.input_unbound (*m_input.get ());
       }

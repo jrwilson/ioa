@@ -15,15 +15,23 @@ namespace ioa {
     typedef I instance;
 
   private:
+    enum state_t {
+      START,
+      INSTANCE_EXISTS,
+      CREATED,
+      DESTROYED
+    };
     automaton* m_automaton;
     std::auto_ptr<typed_generator_interface<I> > m_generator;
+    state_t m_state;
     automaton_handle<I> m_handle;
 
   public:
     automaton_manager (automaton* automaton,
 		       std::auto_ptr<typed_generator_interface<I> > generator) :
       m_automaton (automaton),
-      m_generator (generator)
+      m_generator (generator),
+      m_state (START)
     {
       m_automaton->create (this);
     }
@@ -42,23 +50,45 @@ namespace ioa {
       return std::auto_ptr<generator_interface> (m_generator);
     }
 
-    void instance_exists () {
-      m_handle = -1;
-      this->notify_observers ();
-      delete this;
+    void created (const created_t result,
+		  const aid_t aid) {
+      switch (result) {
+      case CREATE_KEY_EXISTS_RESULT:
+	// System is not correct.
+	assert (false);
+	break;
+      case INSTANCE_EXISTS_RESULT:
+	m_state = INSTANCE_EXISTS;
+	m_handle = -1;
+	this->notify_observers ();
+	delete this;
+	break;
+      case AUTOMATON_CREATED_RESULT:
+	m_state = CREATED;
+	m_handle = aid;
+	this->notify_observers ();
+	break;
+      }
     }
 
-    void automaton_created (const aid_t aid) {
-      m_handle = aid;
-      this->notify_observers ();
-    }
-
-    void automaton_destroyed () {
-      m_handle = -1;
-      this->notify_observers ();
-      delete this;
+    void destroyed (const destroyed_t result) {
+      switch (result) {
+      case CREATE_KEY_DNE_RESULT:
+	// System is not correct.
+	assert (false);
+	break;	
+      case AUTOMATON_DESTROYED_RESULT:
+	m_state = DESTROYED;
+	m_handle = -1;
+	this->notify_observers ();
+	delete this;
+      }
     }
   
+    state_t get_state () const {
+      return m_state;
+    }
+
     automaton_handle<I> get_handle () const {
       return m_handle;
     }

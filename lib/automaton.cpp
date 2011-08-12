@@ -13,52 +13,52 @@ namespace ioa {
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_send.begin ();
 	 pos != m_create_send.end ();
 	 ++pos) {
-      (*pos)->automaton_destroyed ();
+      (*pos)->destroyed (AUTOMATON_DESTROYED_RESULT);
     }
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.begin ();
 	 pos != m_create_recv.end ();
 	 ++pos) {
-      (*pos)->automaton_destroyed ();
+      (*pos)->destroyed (AUTOMATON_DESTROYED_RESULT);
     }
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_done.begin ();
 	 pos != m_create_done.end ();
 	 ++pos) {
-      (*pos)->automaton_destroyed ();
+      (*pos)->destroyed (AUTOMATON_DESTROYED_RESULT);
     }
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_destroy_send.begin ();
 	 pos != m_destroy_send.end ();
 	 ++pos) {
-      (*pos)->automaton_destroyed ();
+      (*pos)->destroyed (AUTOMATON_DESTROYED_RESULT);
     }
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_destroy_recv.begin ();
 	 pos != m_destroy_recv.end ();
 	 ++pos) {
-      (*pos)->automaton_destroyed ();
+      (*pos)->destroyed (AUTOMATON_DESTROYED_RESULT);
     }
     for (std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_send.begin ();
 	 pos != m_bind_send.end ();
 	 ++pos) {
-      (*pos)->unbound ();
+      (*pos)->unbound (UNBOUND_RESULT);
     }
     for (std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.begin ();
 	 pos != m_bind_recv.end ();
 	 ++pos) {
-      (*pos)->unbound ();
+      (*pos)->unbound (UNBOUND_RESULT);
     }
     for (std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_done.begin ();
 	 pos != m_bind_done.end ();
 	 ++pos) {
-      (*pos)->unbound ();
+      (*pos)->unbound (UNBOUND_RESULT);
     }
     for (std::set<system_binding_manager_interface*>::const_iterator pos = m_unbind_send.begin ();
 	 pos != m_unbind_send.end ();
 	 ++pos) {
-      (*pos)->unbound ();
+      (*pos)->unbound (UNBOUND_RESULT);
     }
     for (std::set<system_binding_manager_interface*>::const_iterator pos = m_unbind_recv.begin ();
 	 pos != m_unbind_recv.end ();
 	 ++pos) {
-      (*pos)->unbound ();
+      (*pos)->unbound (UNBOUND_RESULT);
     }
   }
 
@@ -113,7 +113,7 @@ namespace ioa {
     if (send_iter != m_bind_send.end ()) {
       // We haven't sent the bind request yet.  We can just remove and send it unbound.
       m_bind_send.erase (send_iter);
-      helper->unbound ();
+      helper->unbound (UNBOUND_RESULT);
     }
     else {
       // Unbind it.
@@ -148,7 +148,7 @@ namespace ioa {
     if (send_iter != m_create_send.end ()) {
       // We haven't sent the create request yet.  We can just remove and send it destroyed.
       m_create_send.erase (send_iter);
-      helper->automaton_destroyed ();
+      helper->destroyed (AUTOMATON_DESTROYED_RESULT);
     }
     else {
       // Destroy it.
@@ -269,7 +269,7 @@ namespace ioa {
 	// Find the helper (sanity check).
 	std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (arg.key));
 	assert (pos != m_create_recv.end ());
-	(*pos)->instance_exists ();
+	(*pos)->created (INSTANCE_EXISTS_RESULT, -1);
 	// The creation failed so erase.
 	m_destroy_send.erase (*pos);
 	m_create_recv.erase (pos);
@@ -279,7 +279,7 @@ namespace ioa {
       // Find the helper (sanity check).
       std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (arg.key));
       assert (pos != m_create_recv.end ());
-      (*pos)->automaton_created (arg.aid);
+      (*pos)->created (AUTOMATON_CREATED_RESULT, arg.aid);
       // The create succeeded.  Move to done.
       m_create_done.insert (*pos);
       m_create_recv.erase (pos);
@@ -298,7 +298,7 @@ namespace ioa {
 	// Find the helper (sanity check).
 	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
 	assert (pos != m_bind_recv.end ());
-	(*pos)->output_automaton_dne ();
+	(*pos)->bound (OUTPUT_AUTOMATON_DNE_RESULT);
 	// The bind failed so erase.
 	m_unbind_send.erase (*pos);
 	m_bind_recv.erase (pos);
@@ -309,7 +309,7 @@ namespace ioa {
 	// Find the helper (sanity check).
 	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
 	assert (pos != m_bind_recv.end ());
-	(*pos)->input_automaton_dne ();
+	(*pos)->bound (INPUT_AUTOMATON_DNE_RESULT);
 	// The bind failed so erase.
 	m_unbind_send.erase (*pos);
 	m_bind_recv.erase (pos);
@@ -320,7 +320,7 @@ namespace ioa {
 	// Find the helper (sanity check).
 	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
 	assert (pos != m_bind_recv.end ());
-	(*pos)->binding_exists ();
+	(*pos)->bound (BINDING_EXISTS_RESULT);
 	// The bind failed so erase.
 	m_unbind_send.erase (*pos);
 	m_bind_recv.erase (pos);
@@ -331,7 +331,7 @@ namespace ioa {
 	// Find the helper (sanity check).
 	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
 	assert (pos != m_bind_recv.end ());
-	(*pos)->output_action_unavailable ();
+	(*pos)->bound (OUTPUT_ACTION_UNAVAILABLE_RESULT);
 	// The bind failed so erase.
 	m_unbind_send.erase (*pos);
 	m_bind_recv.erase (pos);
@@ -342,7 +342,7 @@ namespace ioa {
 	// Find the helper (sanity check).
 	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
 	assert (pos != m_bind_recv.end ());
-	(*pos)->input_action_unavailable ();
+	(*pos)->bound (INPUT_ACTION_UNAVAILABLE_RESULT);
 	// The bind failed so erase.
 	m_unbind_send.erase (*pos);
 	m_bind_recv.erase (pos);
@@ -352,7 +352,7 @@ namespace ioa {
       // Find the helper (sanity check).
       std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
       assert (pos != m_bind_recv.end ());
-      (*pos)->bound ();
+      (*pos)->bound (BOUND_RESULT);
       // The bind succeeded.  Move to done.
       m_bind_done.insert (*pos);
       m_bind_recv.erase (pos);
@@ -391,7 +391,7 @@ namespace ioa {
 	m_unbind_recv.erase (helper);
       }
       
-      helper->unbound ();
+      helper->unbound (UNBOUND_RESULT);
       break;
     }
   }
@@ -427,7 +427,7 @@ namespace ioa {
 	m_destroy_recv.erase (helper);
       }
       
-      helper->automaton_destroyed ();
+      helper->destroyed (AUTOMATON_DESTROYED_RESULT);
       
       break;
     }

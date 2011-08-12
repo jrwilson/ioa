@@ -35,12 +35,12 @@ namespace ioa {
     virtual void self_destruct (const aid_t automaton) = 0;
     
     virtual void created (const aid_t automaton,
-			  const automaton::created_t,
+			  const created_t,
 			  void* const key,
 			  const aid_t child) = 0;
     
     virtual void bound (const aid_t automaton,
-			const automaton::bound_t,
+			const bound_t,
 			void* const key) = 0;
     
     virtual void output_bound (const output_executor_interface&) = 0;
@@ -48,7 +48,7 @@ namespace ioa {
     virtual void input_bound (const input_executor_interface&) = 0;
     
     virtual void unbound (const aid_t automaton,
-			  const automaton::unbound_t,
+			  const unbound_t,
 			  void* const key) = 0;
     
     virtual void output_unbound (const output_executor_interface&) = 0;
@@ -56,7 +56,7 @@ namespace ioa {
     virtual void input_unbound (const input_executor_interface&) = 0;
     
     virtual void destroyed (const aid_t automaton,
-			    const automaton::destroyed_t,
+			    const destroyed_t,
 			    void* const key) = 0;
   };
 

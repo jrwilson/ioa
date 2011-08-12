@@ -545,14 +545,14 @@ namespace ioa {
     }
 
     void created (const aid_t aid,
-		  const automaton::created_t t,
+		  const created_t t,
 		  void* const key,
 		  const aid_t child) {
       schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_created, automaton::created_arg_t (t, key, child), system_input_category ()));
     }
   
     void bound (const aid_t aid,
-		const automaton::bound_t t,
+		const bound_t t,
 		void* const key) {
       schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_bound, std::make_pair (t, key), system_input_category ()));
     }
@@ -568,7 +568,7 @@ namespace ioa {
     }
 
     void unbound (const aid_t aid,
-		  const automaton::unbound_t t,
+		  const unbound_t t,
 		  void* const key) {
       schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_unbound, std::make_pair (t, key), system_input_category ()));
     }
@@ -582,7 +582,7 @@ namespace ioa {
     }
 
     void destroyed (const aid_t aid,
-		    const automaton::destroyed_t t,
+		    const destroyed_t t,
 		    void* const key) {
       schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_destroyed, std::make_pair (t, key), system_input_category ()));
     }

@@ -12,9 +12,19 @@ namespace ioa {
     public observable
   {
   public:
+    enum state_t {
+      START,
+      OUTPUT_AUTOMATON_DNE,
+      INPUT_AUTOMATON_DNE,
+      BINDING_EXISTS,
+      INPUT_ACTION_UNAVAILABLE,
+      OUTPUT_ACTION_UNAVAILABLE,
+      BOUND,
+      UNBOUND
+    };
     virtual ~binding_manager_interface () { }
     virtual void unbind () = 0;
-    virtual bool is_bound () const = 0;
+    virtual state_t get_state () const = 0;
   };
 
   template <class OI, class OM, class OPS, class II, class IM, class IPS> class binding_manager_impl;
@@ -108,7 +118,7 @@ namespace ioa {
     output_observer m_output_observer;
     input_observer m_input_observer;
 
-    bool m_bind_status;
+    state_t m_state;
 
     void set_output_handle (const automaton_handle<OI>& output_handle) {
       m_output_handle = output_handle;
@@ -138,7 +148,7 @@ namespace ioa {
       // This need to be initialized after the handles because they might set the handle.
       m_output_observer (this, output),
       m_input_observer (this, input),
-      m_bind_status (false)
+      m_state (START)
     { }
 
   protected:
@@ -156,51 +166,60 @@ namespace ioa {
       }
     }
 
-    void output_automaton_dne () {
-      m_bind_status = false;
-      notify_observers ();
-      delete this;
+    void bound (const bound_t result) {
+      switch (result) {
+      case BIND_KEY_EXISTS_RESULT:
+	// System is incorrect.
+	assert (false);
+	break;
+      case OUTPUT_AUTOMATON_DNE_RESULT:
+	m_state = OUTPUT_AUTOMATON_DNE;
+	notify_observers ();
+	delete this;
+	break;
+      case INPUT_AUTOMATON_DNE_RESULT:
+	m_state = INPUT_AUTOMATON_DNE;
+	notify_observers ();
+	delete this;
+	break;
+      case BINDING_EXISTS_RESULT:
+	m_state = BINDING_EXISTS;
+	notify_observers ();
+	delete this;
+	break;
+      case INPUT_ACTION_UNAVAILABLE_RESULT:
+	m_state = INPUT_ACTION_UNAVAILABLE;
+	notify_observers ();
+	delete this;
+	break;
+      case OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	m_state = OUTPUT_ACTION_UNAVAILABLE;
+	notify_observers ();
+	delete this;
+	break;
+      case BOUND:
+	m_state = BOUND;
+	notify_observers ();
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      m_bind_status = false;
-      notify_observers ();
-      delete this;
+    void unbound (const unbound_t result) {
+      switch (result) {
+      case BIND_KEY_DNE_RESULT:
+	// System is incorrect.
+	assert (false);
+	break;
+      case UNBOUND_RESULT:
+	m_state = UNBOUND;
+	notify_observers ();
+	delete this;
+      }
     }
 
-    void binding_exists () {
-      m_bind_status = false;
-      notify_observers ();
-      delete this;
+    state_t get_state () const {
+      return m_state;
     }
-
-    void input_action_unavailable () {
-      m_bind_status = false;
-      notify_observers ();
-      delete this;
-    }
-
-    void output_action_unavailable () {
-      m_bind_status = false;
-      notify_observers ();
-      delete this;
-    }
-
-    void bound () {
-      m_bind_status = true;
-      notify_observers ();
-    }
-
-    void unbound () {
-      m_bind_status = false;
-      notify_observers ();
-      delete this;
-    }
-
-    bool is_bound () const {
-      return m_bind_status;
-    }
-
   };
 
   // no no.

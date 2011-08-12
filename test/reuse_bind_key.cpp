@@ -69,37 +69,45 @@ private:
 			       this->m_input_handle, this->m_input_member_ptr);
   }
 
-  void output_automaton_dne () {
-    assert (false);
+  void bound (const ioa::bound_t result) {
+    switch (result) {
+    case ioa::BIND_KEY_EXISTS_RESULT:
+      assert (false);
+    case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+      assert (false);
+      break;
+    case ioa::INPUT_AUTOMATON_DNE_RESULT:
+      assert (false);
+      break;
+    case ioa::BINDING_EXISTS_RESULT:
+      assert (false);
+      break;
+    case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+      assert (false);
+      break;
+    case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+      assert (false);
+      break;
+    case ioa::BOUND_RESULT:
+      // Okay.
+      m_bound = true;
+      break;
+    }
   }
 
-  void input_automaton_dne () {
-    assert (false);
-  }
-
-  void binding_exists () {
-    assert (false);
-  }
-
-  void output_action_unavailable () {
-    assert (false);
-  }
-
-  void input_action_unavailable () {
-    assert (false);
-  }
-
-  void bound () {
-    // Okay.
-    m_bound = true;
-  }
-
-  void unbound () {
-    // Okay.
-    m_bound = false;
-    ++m_unbound_count;
-    if (m_unbound_count == 2) {
-      delete this;
+  void unbound (const ioa::unbound_t result) {
+    switch (result) {
+    case ioa::BIND_KEY_DNE_RESULT:
+      assert (false);
+      break;
+    case ioa::UNBOUND_RESULT:
+      // Okay.
+      m_bound = false;
+      ++m_unbound_count;
+      if (m_unbound_count == 2) {
+	delete this;
+      }
+      break;
     }
   }
 

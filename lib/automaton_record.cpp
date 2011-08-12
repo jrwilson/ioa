@@ -37,13 +37,13 @@ namespace ioa {
 				    automaton_record* child) {
     m_children.insert (std::make_pair (key, child));
     // Tell the parent that the child was created.
-    m_system_scheduler.created (m_aid, automaton::AUTOMATON_CREATED_RESULT, key, child->m_aid);
+    m_system_scheduler.created (m_aid, AUTOMATON_CREATED_RESULT, key, child->m_aid);
   }
 
   void automaton_record::remove_child (void* const key) {
     m_children.erase (key);
     // Tell the parent that the child was destroyed.
-    m_system_scheduler.destroyed (m_aid, automaton::AUTOMATON_DESTROYED_RESULT, key);
+    m_system_scheduler.destroyed (m_aid, AUTOMATON_DESTROYED_RESULT, key);
   }
 
   automaton_record* automaton_record::get_child (void* const key) const {

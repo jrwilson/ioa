@@ -72,12 +72,12 @@ struct test_system_scheduler :
   void self_destruct (const ioa::aid_t automaton) { }
 
   void created (const ioa::aid_t automaton,
-		const ioa::automaton::created_t,
+		const ioa::created_t,
 		void* const key,
 		const ioa::aid_t) { }
     
   void bound (const ioa::aid_t automaton,
-	      const ioa::automaton::bound_t,
+	      const ioa::bound_t,
 	      void* const key) { }
     
   void output_bound (const ioa::output_executor_interface&) { }
@@ -85,7 +85,7 @@ struct test_system_scheduler :
   void input_bound (const ioa::input_executor_interface&) { }
     
   void unbound (const ioa::aid_t automaton,
-		const ioa::automaton::unbound_t,
+		const ioa::unbound_t,
 		void* const key) { }
     
   void output_unbound (const ioa::output_executor_interface&) { }
@@ -93,7 +93,7 @@ struct test_system_scheduler :
   void input_unbound (const ioa::input_executor_interface&) { }
     
   void destroyed (const ioa::aid_t automaton,
-		  const ioa::automaton::destroyed_t,
+		  const ioa::destroyed_t,
 		  void* const key) { }
 };
 

@@ -10,11 +10,11 @@
 
 struct unbound_t {
   const ioa::aid_t aid;
-  const ioa::automaton::unbound_t type;
+  const ioa::unbound_t type;
   void* const key;
 
   unbound_t (const ioa::aid_t a,
-	     const ioa::automaton::unbound_t t,
+	     const ioa::unbound_t t,
 	     void* const k) :
     aid (a),
     type (t),
@@ -57,11 +57,11 @@ struct unbound_record
 
 struct destroyed_t {
   const ioa::aid_t aid;
-  const ioa::automaton::destroyed_t type;
+  const ioa::destroyed_t type;
   void* const key;
 
   destroyed_t (const ioa::aid_t a,
-	       const ioa::automaton::destroyed_t t,
+	       const ioa::destroyed_t t,
 	       void* const k) :
     aid (a),
     type (t),
@@ -83,12 +83,12 @@ struct test_system_scheduler :
   public ioa::system_scheduler_interface
 {
   ioa::aid_t m_created_automaton;
-  ioa::automaton::created_t m_created_type;
+  ioa::created_t m_created_type;
   void* m_created_key;
   ioa::aid_t m_created_aid;
 
   ioa::aid_t m_bound_automaton;
-  ioa::automaton::bound_t m_bound_type;
+  ioa::bound_t m_bound_type;
   void* m_bound_key;
 
   ioa::aid_t m_output_bound_aid;
@@ -166,7 +166,7 @@ struct test_system_scheduler :
   }
 
   void created (const ioa::aid_t automaton,
-		const ioa::automaton::created_t type,
+		const ioa::created_t type,
 		void* const key,
 		const ioa::aid_t aid) {
     m_created_automaton = automaton;
@@ -176,7 +176,7 @@ struct test_system_scheduler :
   }
 
   void bound (const ioa::aid_t automaton,
-	      const ioa::automaton::bound_t type,
+	      const ioa::bound_t type,
 	      void* const key) {
     m_bound_automaton = automaton;
     m_bound_type = type;
@@ -196,7 +196,7 @@ struct test_system_scheduler :
   }
 
   void unbound (const ioa::aid_t automaton,
-		const ioa::automaton::unbound_t type,
+		const ioa::unbound_t type,
 		void* const key) {
     m_unbound.insert (unbound_t (automaton, type, key));
   }
@@ -210,7 +210,7 @@ struct test_system_scheduler :
   }
   
   void destroyed (const ioa::aid_t automaton,
-		  const ioa::automaton::destroyed_t type,
+		  const ioa::destroyed_t type,
 		  void* const key) {
     m_automaton_destroyed.insert (destroyed_t (automaton, type, key));
   }
@@ -235,7 +235,7 @@ ioa::aid_t create (ioa::model& model,
   ioa::aid_t handle = model.create (creator, generator, key);
   assert (handle != -1);
   assert (tss.m_created_automaton == creator);
-  assert (tss.m_created_type == ioa::automaton::AUTOMATON_CREATED_RESULT);
+  assert (tss.m_created_type == ioa::AUTOMATON_CREATED_RESULT);
   assert (tss.m_created_key == key);
   assert (tss.m_created_aid == handle);
 
@@ -302,7 +302,7 @@ create_key_exists ()
   ioa::aid_t handle = model.create (creator_handle, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
   mu_assert (handle == -1);
   mu_assert (tss.m_created_automaton == creator_handle);
-  mu_assert (tss.m_created_type == ioa::automaton::CREATE_KEY_EXISTS_RESULT);
+  mu_assert (tss.m_created_type == ioa::CREATE_KEY_EXISTS_RESULT);
   mu_assert (tss.m_created_key == &key);
   
   return 0;
@@ -329,7 +329,7 @@ instance_exists ()
   ioa::aid_t h2 = model.create (creator, holder3, &key2);
   mu_assert (h2 == -1);
   mu_assert (tss.m_created_automaton == creator);
-  mu_assert (tss.m_created_type == ioa::automaton::INSTANCE_EXISTS_RESULT);
+  mu_assert (tss.m_created_type == ioa::INSTANCE_EXISTS_RESULT);
   mu_assert (tss.m_created_key == &key2);
 
   return 0;
@@ -348,7 +348,7 @@ automaton_created ()
   ioa::aid_t handle = model.create (creator, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
   mu_assert (handle != -1);
   mu_assert (tss.m_created_automaton == creator);
-  mu_assert (tss.m_created_type == ioa::automaton::AUTOMATON_CREATED_RESULT);
+  mu_assert (tss.m_created_type == ioa::AUTOMATON_CREATED_RESULT);
   mu_assert (tss.m_created_key == &key);
   mu_assert (tss.m_created_aid == handle);
 
@@ -407,7 +407,7 @@ bind_key_exists ()
   						  input2, &automaton1::uv_up_input),
   			 &key) == -1);
   mu_assert (tss.m_bound_automaton == binder);
-  mu_assert (tss.m_bound_type == ioa::automaton::BIND_KEY_EXISTS_RESULT);
+  mu_assert (tss.m_bound_type == ioa::BIND_KEY_EXISTS_RESULT);
   mu_assert (tss.m_bound_key == &key);
   
   return 0;
@@ -434,7 +434,7 @@ output_automaton_dne ()
 						  input, &automaton1::uv_up_input),
 			 &key) == -1);
   mu_assert (tss.m_bound_automaton == binder);
-  mu_assert (tss.m_bound_type == ioa::automaton::OUTPUT_AUTOMATON_DNE_RESULT);
+  mu_assert (tss.m_bound_type == ioa::OUTPUT_AUTOMATON_DNE_RESULT);
   mu_assert (tss.m_bound_key == &key);
   
   return 0;
@@ -463,7 +463,7 @@ input_automaton_dne ()
 						  input, &automaton1::uv_up_input),
 			 &key) == -1);
   mu_assert (tss.m_bound_automaton == binder);
-  mu_assert (tss.m_bound_type == ioa::automaton::INPUT_AUTOMATON_DNE_RESULT);
+  mu_assert (tss.m_bound_type == ioa::INPUT_AUTOMATON_DNE_RESULT);
   mu_assert (tss.m_bound_key == &key);
   
   return 0;
@@ -496,7 +496,7 @@ binding_exists ()
 						  input, &automaton1::uv_up_input),
 			 &key2) == -1);
   mu_assert (tss.m_bound_automaton == binder);
-  mu_assert (tss.m_bound_type == ioa::automaton::BINDING_EXISTS_RESULT);
+  mu_assert (tss.m_bound_type == ioa::BINDING_EXISTS_RESULT);
   mu_assert (tss.m_bound_key == &key2);
 
   return 0;
@@ -530,7 +530,7 @@ input_action_unavailable ()
 						  input, &automaton1::uv_up_input),
 			 &key2) == -1);
   mu_assert (tss.m_bound_automaton == binder);
-  mu_assert (tss.m_bound_type == ioa::automaton::INPUT_ACTION_UNAVAILABLE_RESULT);
+  mu_assert (tss.m_bound_type == ioa::INPUT_ACTION_UNAVAILABLE_RESULT);
   mu_assert (tss.m_bound_key == &key2);
 
   return 0;
@@ -564,7 +564,7 @@ output_action_unavailable ()
 						  input, &automaton1::uv_p_input, parameter),
 			 &key2) == -1);
   mu_assert (tss.m_bound_automaton == input);
-  mu_assert (tss.m_bound_type == ioa::automaton::OUTPUT_ACTION_UNAVAILABLE_RESULT);
+  mu_assert (tss.m_bound_type == ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT);
   mu_assert (tss.m_bound_key == &key2);
 
   return 0;
@@ -654,13 +654,13 @@ bind_key_dne ()
   tss.reset ();
   mu_assert (model.unbind (binder,
 			   &key) == 0);
-  mu_assert (tss.m_unbound.count (unbound_t (binder, ioa::automaton::UNBOUND_RESULT, &key)) == 1);
+  mu_assert (tss.m_unbound.count (unbound_t (binder, ioa::UNBOUND_RESULT, &key)) == 1);
 
   tss.reset ();
   mu_assert (model.unbind (binder,
 			   &key) == -1);
 
-  mu_assert (tss.m_unbound.count (unbound_t (binder, ioa::automaton::BIND_KEY_DNE_RESULT, &key)) == 1);
+  mu_assert (tss.m_unbound.count (unbound_t (binder, ioa::BIND_KEY_DNE_RESULT, &key)) == 1);
 
   return 0;
 }
@@ -688,7 +688,7 @@ unbound ()
   tss.reset ();
   mu_assert (model.unbind (output,
 			   &key) == 0);
-  mu_assert (tss.m_unbound.count (unbound_t (output, ioa::automaton::UNBOUND_RESULT, &key)) == 1);
+  mu_assert (tss.m_unbound.count (unbound_t (output, ioa::UNBOUND_RESULT, &key)) == 1);
   mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec->get_output ())) == 1);
   mu_assert (tss.m_input_unbound.count (unbound_record (bind_exec->get_input ())) == 1);
 
@@ -727,11 +727,11 @@ create_key_dne ()
   
   tss.reset ();
   mu_assert (model.destroy (parent_handle, &key) == 0);
-  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (parent_handle, ioa::automaton::AUTOMATON_DESTROYED_RESULT, &key)) == 1);
+  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (parent_handle, ioa::AUTOMATON_DESTROYED_RESULT, &key)) == 1);
 
   tss.reset ();
   mu_assert (model.destroy (parent_handle, &key) == -1);
-  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (parent_handle, ioa::automaton::CREATE_KEY_DNE_RESULT, &key)) == 1);
+  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (parent_handle, ioa::CREATE_KEY_DNE_RESULT, &key)) == 1);
 
   return 0;
 }
@@ -780,11 +780,11 @@ automaton_destroyed ()
 
   tss.reset ();
   mu_assert (model.destroy (beta) == 0);
-  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (alpha, ioa::automaton::AUTOMATON_DESTROYED_RESULT, &beta_key)) == 1);
-  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (beta, ioa::automaton::AUTOMATON_DESTROYED_RESULT, &gamma_key)) == 1);
-  mu_assert (tss.m_unbound.count (unbound_t (alpha, ioa::automaton::UNBOUND_RESULT, &bind1)) == 1);
-  mu_assert (tss.m_unbound.count (unbound_t (beta, ioa::automaton::UNBOUND_RESULT, &bind2)) == 1);
-  mu_assert (tss.m_unbound.count (unbound_t (beta, ioa::automaton::UNBOUND_RESULT, &bind3)) == 1);
+  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (alpha, ioa::AUTOMATON_DESTROYED_RESULT, &beta_key)) == 1);
+  mu_assert (tss.m_automaton_destroyed.count (destroyed_t (beta, ioa::AUTOMATON_DESTROYED_RESULT, &gamma_key)) == 1);
+  mu_assert (tss.m_unbound.count (unbound_t (alpha, ioa::UNBOUND_RESULT, &bind1)) == 1);
+  mu_assert (tss.m_unbound.count (unbound_t (beta, ioa::UNBOUND_RESULT, &bind2)) == 1);
+  mu_assert (tss.m_unbound.count (unbound_t (beta, ioa::UNBOUND_RESULT, &bind3)) == 1);
   
   mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec1->get_output ())) == 1);
   mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec2->get_output ())) == 1);

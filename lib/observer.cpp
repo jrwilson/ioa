@@ -14,6 +14,7 @@ namespace ioa {
   }
 
   void observer::stop_observing_dispatcher (observable* o) {
+    assert (o != 0);
     // Observable is going away.
     if (m_observables.count (o) != 0) {
       m_observables.erase (o);
@@ -82,6 +83,7 @@ namespace ioa {
   }
   
   void observable::remove_observer (observer* o) {
+    assert (o != 0);
     if (m_notify) {
       m_remove.insert (o);
       m_add.erase (o);

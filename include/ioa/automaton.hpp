@@ -14,14 +14,39 @@
 
 namespace ioa {
 
+  enum created_t {
+    CREATE_KEY_EXISTS_RESULT,
+    INSTANCE_EXISTS_RESULT,
+    AUTOMATON_CREATED_RESULT,
+  };
+
+  enum bound_t {
+    BIND_KEY_EXISTS_RESULT,
+    OUTPUT_AUTOMATON_DNE_RESULT,
+    INPUT_AUTOMATON_DNE_RESULT,
+    BINDING_EXISTS_RESULT,
+    OUTPUT_ACTION_UNAVAILABLE_RESULT,
+    INPUT_ACTION_UNAVAILABLE_RESULT,
+    BOUND_RESULT,
+  };
+
+  enum unbound_t {
+    BIND_KEY_DNE_RESULT,
+    UNBOUND_RESULT,
+  };
+
+  enum destroyed_t {
+    CREATE_KEY_DNE_RESULT,
+    AUTOMATON_DESTROYED_RESULT,
+  };
+
   class system_automaton_manager_interface
   {
   public:
     virtual ~system_automaton_manager_interface () { }
     virtual std::auto_ptr<generator_interface> get_generator () = 0;
-    virtual void instance_exists () = 0;
-    virtual void automaton_created (const aid_t aid) = 0;
-    virtual void automaton_destroyed () = 0;
+    virtual void created (const created_t result, const aid_t aid) = 0;
+    virtual void destroyed (const destroyed_t result) = 0;
   };
 
   class system_binding_manager_interface
@@ -29,13 +54,8 @@ namespace ioa {
   public:
     virtual ~system_binding_manager_interface () { }
     virtual shared_ptr<bind_executor_interface> get_executor () const = 0;
-    virtual void output_automaton_dne () = 0;
-    virtual void input_automaton_dne () = 0;
-    virtual void binding_exists () = 0;
-    virtual void output_action_unavailable () = 0;
-    virtual void input_action_unavailable () = 0;
-    virtual void bound () = 0;
-    virtual void unbound () = 0;
+    virtual void bound (const bound_t result) = 0;
+    virtual void unbound (const unbound_t result) = 0;
   };
 
   class automaton {
@@ -105,11 +125,6 @@ namespace ioa {
     SYSTEM_OUTPUT (automaton, sys_self_destruct, void*);
 
   public:
-    enum created_t {
-      CREATE_KEY_EXISTS_RESULT,
-      INSTANCE_EXISTS_RESULT,
-      AUTOMATON_CREATED_RESULT,
-    };
     struct created_arg_t {
       const created_t type;
       void* const key;
@@ -127,37 +142,16 @@ namespace ioa {
   public:
     SYSTEM_INPUT (automaton, sys_created, created_arg_t);
 
-  public:
-    enum bound_t {
-      BIND_KEY_EXISTS_RESULT,
-      OUTPUT_AUTOMATON_DNE_RESULT,
-      INPUT_AUTOMATON_DNE_RESULT,
-      BINDING_EXISTS_RESULT,
-      OUTPUT_ACTION_UNAVAILABLE_RESULT,
-      INPUT_ACTION_UNAVAILABLE_RESULT,
-      BOUND_RESULT,
-    };
   private:
     void sys_bound_effect (std::pair<bound_t COMMA void*> const &);
   public:
     SYSTEM_INPUT (automaton, sys_bound, std::pair<bound_t COMMA void*>);
 
-  public:
-    enum unbound_t {
-      BIND_KEY_DNE_RESULT,
-      UNBOUND_RESULT,
-    };
   private:
     void sys_unbound_effect (std::pair<unbound_t COMMA void*> const &);
   public:
     SYSTEM_INPUT (automaton, sys_unbound, std::pair<unbound_t COMMA void*>);
     
-
-  public:
-    enum destroyed_t {
-      CREATE_KEY_DNE_RESULT,
-      AUTOMATON_DESTROYED_RESULT,
-    };
   private:
     void sys_destroyed_effect (std::pair<destroyed_t COMMA void*> const &);
   public:

@@ -31,19 +31,33 @@ private:
       return std::auto_ptr<ioa::generator_interface> (new instance_holder<automaton2> (m_instance));
     }
 
-    void instance_exists () {
-      goal_reached = true;
-      // Clean up.
-      delete this;
+    void created (const ioa::created_t result,
+		  const ioa::aid_t aid) {
+      switch (result) {
+      case ioa::CREATE_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::INSTANCE_EXISTS_RESULT:
+	goal_reached = true;
+	// Clean up.
+	delete this;
+	break;
+      case ioa::AUTOMATON_CREATED_RESULT:
+	// Okay.
+	break;	
+      }
     }
     
-    void automaton_created (const ioa::aid_t aid) {
-      // Okay.
-    }
-
-    void automaton_destroyed () {
-      // Clean up.
-      delete this;
+    void destroyed (const ioa::destroyed_t result) {
+      switch (result) {
+      case ioa::CREATE_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_DESTROYED_RESULT:
+	// Clean up.
+	delete this;
+	break;
+      }
     }
   };
   
@@ -79,17 +93,31 @@ private:
       return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
     }
 
-    void instance_exists () {
-      assert (false);
+    void created (const ioa::created_t result,
+		  const ioa::aid_t aid) {
+      switch (result) {
+      case ioa::CREATE_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::INSTANCE_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_CREATED_RESULT:
+	goal_reached = true;
+	break;	
+      }
     }
-
-    void automaton_created (const ioa::aid_t aid) {
-      goal_reached = true;
-    }
-
-    void automaton_destroyed () {
-      // Clean up.
-      delete this;
+    
+    void destroyed (const ioa::destroyed_t result) {
+      switch (result) {
+      case ioa::CREATE_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_DESTROYED_RESULT:
+	// Clean up.
+	delete this;
+	break;
+      }
     }
   };
 
@@ -153,33 +181,42 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      goal_reached = true;
-      delete this;
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	goal_reached = true;
+	delete this;
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	assert (false);
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      assert (false);
-    }
-
-    void unbound () {
-      assert (false);
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	assert (false);
+	break;
+      }
     }
 
     void observe (ioa::observable*) {
@@ -250,33 +287,42 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	goal_reached = true;
+	delete this;
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	assert (false);
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      goal_reached = true;
-      delete this;
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      assert (false);
-    }
-
-    void unbound () {
-      assert (false);
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	assert (false);
+	break;
+      }
     }
 
     void observe (ioa::observable*) {
@@ -357,34 +403,43 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	goal_reached = true;
+	delete this;
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	// Okay.
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      goal_reached = true;
-      delete this;
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      // Okay.
-    }
-
-    void unbound () {
-      // Cleanup.
-      delete this;
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	// Cleanup.
+	delete this;
+	break;
+      }
     }
 
     void observe (ioa::observable* o) {
@@ -474,34 +529,42 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	goal_reached = true;
+	delete this;
+      case ioa::BOUND_RESULT:
+	// Okay.
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      goal_reached = true;
-      delete this;
-    }
-
-    void bound () {
-      // Okay.
-    }
-
-    void unbound () {
-      // Cleanup.
-      delete this;
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	// Cleanup.
+	delete this;
+	break;
+      }
     }
 
     void observe (ioa::observable* o) {
@@ -592,34 +655,43 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	goal_reached = true;
+	delete this;
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	// Okay.
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      goal_reached = true;
-      delete this;
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      // Okay.
-    }
-
-    void unbound () {
-      // Cleanup.
-      delete this;
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	// Cleanup.
+	delete this;
+	break;
+      }
     }
 
     void observe (ioa::observable* o) {
@@ -709,33 +781,42 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	goal_reached = true;
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      goal_reached = true;
-    }
-
-    void unbound () {
-      // Cleanup.
-      delete this;
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	// Cleanup.
+	delete this;
+	break;
+      }
     }
 
     void observe (ioa::observable* o) {
@@ -826,34 +907,43 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	is_bound = true;
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      is_bound = true;
-    }
-
-    void unbound () {
-      // Cleanup.
-      goal_reached = true;
-      delete this;
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	// Cleanup.
+	goal_reached = true;
+	delete this;
+	break;
+      }
     }
 
     void observe (ioa::observable*) {
@@ -960,34 +1050,43 @@ private:
 				      m_input_handle, m_input_member_ptr);
     }
 
-    void output_automaton_dne () {
-      assert (false);
+    void bound (const ioa::bound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_AUTOMATON_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::BINDING_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::OUTPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::INPUT_ACTION_UNAVAILABLE_RESULT:
+	assert (false);
+	break;
+      case ioa::BOUND_RESULT:
+	assert (false);
+	break;
+      }
     }
 
-    void input_automaton_dne () {
-      assert (false);
-    }
-
-    void binding_exists () {
-      assert (false);
-    }
-
-    void output_action_unavailable () {
-      assert (false);
-    }
-
-    void input_action_unavailable () {
-      assert (false);
-    }
-
-    void bound () {
-      assert (false);
-    }
-
-    void unbound () {
-      // Cleanup.
-      goal_reached = true;
-      delete this;
+    void unbound (const ioa::unbound_t result) {
+      switch (result) {
+      case ioa::BIND_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::UNBOUND_RESULT:
+	// Cleanup.
+	goal_reached = true;
+	delete this;
+	break;
+      }
     }
 
     void observe (ioa::observable*) {
@@ -1029,28 +1128,42 @@ private:
   struct helper :
     public ioa::system_automaton_manager_interface
   {
-    bool created;
+    bool m_created;
 
     helper () :
-      created (false)
+      m_created (false)
     { }
 
     std::auto_ptr<ioa::generator_interface> get_generator () {
       return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
     }
 
-    void instance_exists () {
-      assert (false);
+    void created (const ioa::created_t result,
+		  const ioa::aid_t aid) {
+      switch (result) {
+      case ioa::CREATE_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::INSTANCE_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_CREATED_RESULT:
+	m_created = true;
+	break;	
+      }
     }
-
-    void automaton_created (const ioa::aid_t aid) {
-      created = true;
-    }
-
-    void automaton_destroyed () {
-      goal_reached = true;
-      // Clean up.
-      delete this;
+    
+    void destroyed (const ioa::destroyed_t result) {
+      switch (result) {
+      case ioa::CREATE_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_DESTROYED_RESULT:
+	goal_reached = true;
+	// Clean up.
+	delete this;
+	break;
+      }
     }
   };
 
@@ -1064,7 +1177,7 @@ private:
 
   void poll_effect () {
     // We poll until the automaton is created.  Then we destroy it.
-    if (!m_helper->created) {
+    if (!m_helper->m_created) {
       ioa::schedule (&destroy_automaton_destroyed::poll);
     }
     else {
@@ -1106,18 +1219,32 @@ private:
       return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
     }
 
-    void instance_exists () {
-      assert (false);
+    void created (const ioa::created_t result,
+		  const ioa::aid_t aid) {
+      switch (result) {
+      case ioa::CREATE_KEY_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::INSTANCE_EXISTS_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_CREATED_RESULT:
+	assert (false);
+	break;	
+      }
     }
-
-    void automaton_created (const ioa::aid_t aid) {
-      assert (false);
-    }
-
-    void automaton_destroyed () {
-      goal_reached = true;
-      // Clean up.
-      delete this;
+    
+    void destroyed (const ioa::destroyed_t result) {
+      switch (result) {
+      case ioa::CREATE_KEY_DNE_RESULT:
+	assert (false);
+	break;
+      case ioa::AUTOMATON_DESTROYED_RESULT:
+	goal_reached = true;
+	// Clean up.
+	delete this;
+	break;
+      }
     }
   };
 

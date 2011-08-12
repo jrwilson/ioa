@@ -16,7 +16,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -50,7 +50,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -84,7 +84,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -118,7 +118,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -152,7 +152,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -186,7 +186,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -220,7 +220,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -254,7 +254,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -288,7 +288,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -322,7 +322,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -356,7 +356,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -390,7 +390,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -424,7 +424,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -458,7 +458,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -492,7 +492,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -526,7 +526,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -560,7 +560,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
@@ -594,7 +594,7 @@ private:
 
   void observe (ioa::observable* o) {
     assert (o == m_helper);
-    if (m_helper->is_bound ()) {
+    if (m_helper->get_state () == ioa::binding_manager_interface::BOUND) {
       goal_reached = true;
     }
   }
