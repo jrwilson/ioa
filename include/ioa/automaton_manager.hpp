@@ -15,12 +15,6 @@ namespace ioa {
     typedef I instance;
 
   private:
-    enum state_t {
-      START,
-      INSTANCE_EXISTS,
-      CREATED,
-      DESTROYED
-    };
     automaton* m_automaton;
     std::auto_ptr<typed_generator_interface<I> > m_generator;
     state_t m_state;

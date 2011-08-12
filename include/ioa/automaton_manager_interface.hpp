@@ -8,8 +8,15 @@ namespace ioa {
   class automaton_manager_interface
   {
   public:
+    enum state_t {
+      START,
+      INSTANCE_EXISTS,
+      CREATED,
+      DESTROYED
+    };
     virtual ~automaton_manager_interface () { }
     virtual void destroy () = 0;
+    virtual state_t get_state () const = 0;
   };
   
   template <class I>
