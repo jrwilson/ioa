@@ -1,22 +1,9 @@
 \begin{abstract}
 
-% What is asynchrony?
 The ability to realize sophisticated distributed systems such as those found in cyber-physical systems, pervasive computing, and enterprise computing is predicated on a suitable model and implementation of asynchrony and concurrency.
 The size and complexity of these systems implies that software re-use in their development, maintenance, and evaluation is also essential.
 Taken together, these requirements demand appropriate programming abstractions through which different forms of asynchrony and concurrency can be realized in reusable software.
-% By different forms we meen single-threaded, multi-threaded, time triggered, event triggered, etc.
-
-% What is a thread model?
-However, existing concurrency abstractions are inadequate to the needs of many sophisticated distributed systems, and new approaches must be pursued.
-While threads match the semantics of widely available synchronous processors, thread-based development may introduce hazards for the distributed system developer including obscure race conditions, poor support for asynchrony, and difficulties integrating software developed using different thread models.
-Events, while matching the semantics of distributed systems more closely, are often inflexible, ad hoc, and lack a standard calculus to facilitate the creation of re-usable event-based modules.
-Alternative concurrency abstractions that more closely match the semantics of distributed systems \emph{and} facilitate software re-use are therefore needed.
-% We aren't saying I/O automata are the best, just better than threads.
-
-The reactive semantics of the I/O automata model match the asynchronous and concurrent semantics of distributed systems well and has been proven effective in the formal design and verification of real world distributed systems.
-However, there is to date insufficient experience \emph{building} and \emph{evaluating} real distributed systems directly atop I/O automata.
-Previous efforts in this area have focused mainly on formal software development, i.e., automata are described in a language suitable for theorem proving and simulation and aftward are translated into a production language for deployment.
-The translation from modeling language to production language complicates interfacing with system facilities and makes developing low-level protocols difficult, an area which could greatly benefit from the direct application of I/O automata.
+% By ``different forms'' we mean single-threaded, multi-threaded, time triggered, event triggered, etc.
 
 To this end, this paper presents the \emph{ioa++ framework} for developing distributed systems, which is the primary contribution of this research.
 We outline a system model for distributed systems and connect these requirements to the I/O automata formal model.
@@ -24,6 +11,6 @@ We then describe how ioa++ is implemented in C++ and offer a number of examples 
 
 Our evalutations show that ioa++ can help simplify developing distributed systems.
 Ioa++ allows developers to reason about asynchronous and concurrent programs directly from the source code using the I/O automata formal model.
-Where reasoning about the correctness of a module in a threaded program requires considering interactions among the various threads, reasoning about the correctness of a module in ioa++ is limited to the module itself.
+Where reasoning about the correctness of modules in a threaded program requires considering interactions among the various threads, reasoning about the correctness of modules in ioa++ is limited to the modules themselves and a well-defined set of composition rules.
 Common concurrency and interaction semantics allow simple modules to be aggregated into complex systems without building adapters that convert from one thread model or event system to another.
 \end{abstract}

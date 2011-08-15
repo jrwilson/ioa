@@ -1,45 +1,41 @@
-\section{System Model and Formalization\label{system_model}}
+\section{Component Model and Formalization\label{system_model}}
 
-\subsection{Component Architecture}
+\subsection{Component Model}
 
-Components are the basis of any re-usable concurrent software systems.
-We adopt Szyperski's definition of components~\cite{component_software}:
-\begin{quote}
-  A software component is a unit of composition with contractually specified interfaces and explicit context dependencies only.
-  A software component can be deployed independently and is subject to composition by third parties. 
-\end{quote}
-A component architecture defines components and how they execute and interact.
-For example, a component in a multi-threaded component architecture consists of private state that is accessed through synchronous function call.
-Components can be configured to use one another and can execute concurrently.
-This section outlines a component model and architecture for an event-based system.
+Modularity, well-defined interfaces, and composition are properties of reusable software.
+Modularity implies that a unit of software can be deployed independently of other units.
+Well-defined interfaces and interactions allow modules to expose their functionality in a regular way that facilitates manual and automated reasoning about interactions with the module.
+Composition allows a group of interacting modules to be repackaged and understood as a single module.
+A unit of software that exhibits these properties is called a \emph{component}~\cite{szyperski2002component}.
+This section outlines the component model for our event-based system.
 
 \paragraph{Components.}
-A \emph{component} consists of state variables and a set of event handlers.
+A \emph{component} in our system consists of state variables and a set of event handlers.
 Each event handler is only allowed to modify the state of the component to which it belongs.
 The absence of shared state ensures that each component can be deployed independently.
-Event handlers can either be an \emph{output} that produces a signal or value, an \emph{input} that consumes a signal or value, or an \emph{internal} that neither produces nor consumes a signal or value.
-Components can be created and destroyed at run-time.
+An event handler can either be an \emph{output} that produces a signal or value, an \emph{input} that consumes a signal or value, or an \emph{internal} that neither produces nor consumes a signal or value.
+% Components can be created and destroyed at run-time.
 
 \paragraph{Binding.}
 A \emph{binding} is an association between an output and an input.
 An output can be \emph{bound} to zero or more inputs subject to type compatibility.
 An input can be bound at most once.
-Outputs and inputs can either be \emph{public}, available for binding by external components, or \emph{private}, only available for binding by the containing component.
+Outputs and inputs can either be \emph{public}, available for binding by external components, or \emph{private}, only available for binding by the component that contains them.
 Internals are always private.
-Events can be bound and unbound at run-time.
-The component requesting that an output be bound to and input is said to be the \emph{owner} of the binding.
-Private outputs and inputs can only be bound by the containing component.
+%Events can be bound and unbound at run-time.
+The component requesting that an output be bound to an input is said to be the \emph{owner} of the binding.
+Private outputs and inputs can only be bound by the component that contains them.
 
 \paragraph{Execution.}
-Execution proceeds by randomly selecting and atomically executing outputs and internals.
-When an output is executed, both the output all bound inputs are executed in one atomic step receiving the value produced by the output if applicable.
+Execution proceeds by non-deterministically selecting and atomically executing outputs and internals.
+When an output is executed, both the output and all bound inputs are executed in one atomic step receiving the value produced by the output if applicable.
 Two events can be executed concurrently if the set of components implied by each event are disjoint.
-All components have outputs for creating, binding, unbinding, and destroying and inputs for receive results that are permanently bound to ``the system.''
-System calls follow a request-reply system where a component sends a request for a create, bind, unbind, or destroy, the system receives the request, the system processes the request, the system sends a reply, and the component receives the reply.
+%% All components have outputs for creating, binding, unbinding, and destroying and inputs for receiving results that are permanently bound to ``the system.''
+%% System calls follow a request-reply system where a component sends a request for a create, bind, unbind, or destroy, the system receives the request, the system processes the request, the system sends a reply, and the component receives the reply.
 
 \paragraph{Composition.}
-Binding, atomic execution, and the absence of shared state allows components to be composed, i.e., combined in such a way as to yield a valid component.
-Components can be composed by 1) concatenating their state variables, 2) renaming events so every event's name is unique, and 3) folding input events into the output events to which they are bound.
+Binding, atomic execution, and the absence of shared state allows components to be composed.
+Components are composed by 1) concatenating their state variables, 2) renaming events so every event's name is unique, and 3) folding input events into the output events to which they are bound.
 Composition allows the programmer to reason about a constellation of components as a single component.
 Often, the properties of the resulting component can be reasoned about using the properties of the constituent components.
 Components can be composed at compile time using the process outlined above, however, it is often better to preserve component boundaries to take advantage of concurrent execution.
@@ -72,7 +68,7 @@ The output \emph{Foo!} is bound to input \emph{Frob?} and shows how an output in
 
 Opportunities for concurrent execution exist for the system depicted in figure~\ref{sys_model}.
 The set of components implied by \emph{Blitz!} is \{Component3\} while the set of components implied by \emph{Foo!} is \{Component1, Component2\}.
-Since the sets are disjoint, \emph{Blitz!} and \emph{Foo!} can be executed concurrently.
+Since the sets and therefore set of state variables are disjoint, \emph{Blitz!} and \emph{Foo!} can be executed concurrently.
 The set of components implied by \emph{boom!(t1)} is \{Component1, Component2, Component3\}.
 Consequently, \emph{boom!(t1)} cannot be executed concurrently with any other event.
 
@@ -127,22 +123,27 @@ Consequently, \emph{boom!(t1)} cannot be executed concurrently with any other ev
 %% Since the queue can be dynamically configured, the queue must be able to determine if the event produced by removing and returning an item from the queue will be delivered.
 %% Otherwise, the queue will lose data items and therefore not be reliable.
 
-\subsection{I/O Automata}
+\subsection{Formalization}
 
-The Input/Output (I/O) automata model was developed by Lynch~\cite{distributed_algorithms} to model reactive concurrent and asynchronous systems.
+The Input/Output (I/O) automata model was developed by Lynch~\cite{lynch1996distributed} to model reactive concurrent and asynchronous systems.
 An I/O automaton consists of state variables and atomic actions that manipulate the state.
 The three action types are inputs, outputs, and internal actions.
 Input actions receive a signal or a value and output actions produce a signal or a value.
 Internal actions just manipulate the state of the automaton.
-Output and internal actions are \emph{locally controlled actions}~\cite{distributed_algorithms} are often presented as precondition and an effect.
-Input and output actions are \emph{external actions}~\cite{distributed_algorithms} because they allow an automaton to communicate with other automata.
+Output and internal actions are \emph{locally controlled actions}~\cite{lynch1996distributed} are often presented as precondition and an effect.
+The precondition is a predicate over the state variables that enables the effect when selected.
+The effect is a function that computes the next state of the automaton from the current state.
+Input and output actions are \emph{external actions}~\cite{lynch1996distributed} because they allow an automaton to communicate with other automata.
 Automata may \emph{composed} by concatenating the state variables of the constituent automata and incorporating the effects of input actions into output actions with the same name.
-A useful operation in composite automata is \emph{hiding} which converts an output action to an internal action.
+A useful operation in composite automata is \emph{hiding}~\cite{lynch1996distributed} which converts an output action to an internal action.
 Composing automata results in a static configuration, i.e., the set of automata and their interactions are fixed.
 Execution in the I/O automata model consists of repeatedly selecting a local action and then applying the effect if the precondition is true.
 The scheduler is assumed to be fair meaning that a local action is guaranteed to be selected (but not executed) infinitely often.
 
 The proposed system has a straightforward mapping to the I/O automata model: components are automata and events are actions.
+
+\section{Dynamics}
+
 However, the I/O automata model assumes a static configuration while the proposed system requires the ability to deal with dynamic configurations, i.e., creating, binding, unbinding, and destroying.
 
 \subsection{I/O Automata and Dynamic Configuration}
