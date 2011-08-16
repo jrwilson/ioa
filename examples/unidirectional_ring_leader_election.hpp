@@ -16,6 +16,10 @@ private:
     std::cout << i << " is the leader." << std::endl;
   }
 
+  void leader_schedule (size_t) const {
+    schedule ();
+  }
+
   UV_P_INPUT (unidirectional_ring_leader_election, leader, size_t);
 
   ioa::handle_manager<unidirectional_ring_leader_election> self;

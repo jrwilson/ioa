@@ -53,6 +53,10 @@ private:
     return retval;
   }
 
+  void send_schedule () const {
+    schedule ();
+  }
+
 public:
   V_UP_OUTPUT (asynch_lcr_automaton, send, ioa::aid_t);
 
@@ -69,6 +73,10 @@ private:
     }
   }
 
+  void receive_schedule () const {
+    schedule ();
+  }
+
 public:
   V_UP_INPUT (asynch_lcr_automaton, receive, ioa::aid_t);
 
@@ -79,6 +87,10 @@ private:
 
   void leader_effect () {
     m_status = REPORTED;
+  }
+
+  void leader_schedule () const {
+    schedule ();
   }
 
 public:

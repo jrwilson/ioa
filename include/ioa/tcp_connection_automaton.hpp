@@ -61,36 +61,43 @@ namespace ioa {
 
   private:
     void send_effect (const const_shared_ptr<std::string>& buf);
+    void send_schedule () const { schedule (); }
   public:
     V_UP_INPUT (tcp_connection_automaton, send, const_shared_ptr<std::string>);
 
   private:
     bool schedule_write_precondition () const;
     void schedule_write_effect ();
+    void schedule_write_schedule () const { schedule (); }
     UP_INTERNAL (tcp_connection_automaton, schedule_write);
 
     bool write_ready_precondition () const;
     void write_ready_effect ();
+    void write_ready_schedule () const { schedule (); }
     UP_INTERNAL (tcp_connection_automaton, write_ready);
 
   private:
     bool send_complete_precondition () const;
     int send_complete_effect ();
+    void send_complete_schedule () const { schedule (); }
   public:
     V_UP_OUTPUT (tcp_connection_automaton, send_complete, int);
 
   private:
     bool schedule_read_precondition () const;
     void schedule_read_effect ();
+    void schedule_read_schedule () const { schedule (); }
     UP_INTERNAL (tcp_connection_automaton, schedule_read);
 
     bool read_ready_precondition () const;
     void read_ready_effect ();
+    void read_ready_schedule () const { schedule (); }
     UP_INTERNAL (tcp_connection_automaton, read_ready);
 
   private:
     bool receive_precondition () const;
     receive_val receive_effect ();
+    void receive_schedule () const { schedule (); }
   public:
     V_UP_OUTPUT (tcp_connection_automaton, receive, receive_val);
   };

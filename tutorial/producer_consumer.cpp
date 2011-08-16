@@ -33,6 +33,10 @@ private:
     return retval;
   }
 
+  void produce_schedule () const {
+    schedule ();
+  }
+
 public:
   V_UP_OUTPUT (producer_automaton, produce, int);
 };
@@ -41,11 +45,11 @@ class consumer_automaton :
   public ioa::automaton
 {
 private:
-  void schedule () const { }
-
   void consume_effect (const int& val) {
     std::cout << "consuming " << val << std::endl;
   }
+
+  void consume_schedule () const { }
 
 public:
   V_UP_INPUT (consumer_automaton, consume, int);

@@ -26,6 +26,10 @@ private:
     }
   }
 
+  void increment_schedule () const {
+    schedule ();
+  }
+
   UP_INTERNAL (count_to_ten, increment);
 
 public:

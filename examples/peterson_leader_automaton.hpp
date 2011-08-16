@@ -81,12 +81,20 @@ private:
     return retval;
   }
 
+  void send_schedule () const {
+    schedule ();
+  }
+
 public:
   V_UP_OUTPUT (peterson_leader_automaton, send, ioa::aid_t);
 
 private:
   void receive_effect (const ioa::aid_t& v) {
     m_receive.push (v);
+  }
+
+  void receive_schedule () const {
+    schedule ();
   }
 
 public:
@@ -99,6 +107,10 @@ private:
 
   void leader_effect () {
     m_status = REPORTED;
+  }
+
+  void leader_schedule () const {
+    schedule ();
   }
 
 public:
@@ -118,6 +130,10 @@ private:
     }
   }
   
+  void get_second_uid_schedule () const {
+    schedule ();
+  }
+
   UP_INTERNAL (peterson_leader_automaton, get_second_uid);
 
   bool get_third_uid_precondition () const {
@@ -127,6 +143,10 @@ private:
   void get_third_uid_effect () {
     m_uid[2] = m_receive.front ();
     m_receive.pop ();
+  }
+
+  void get_third_uid_schedule () const {
+    schedule ();
   }
 
   UP_INTERNAL (peterson_leader_automaton, get_third_uid);
@@ -142,6 +162,10 @@ private:
     m_send.push (m_uid[0]);
   }
 
+  void advance_phase_schedule () const {
+    schedule ();
+  }
+
   UP_INTERNAL (peterson_leader_automaton, advance_phase);
 
   bool become_relay_precondition () const {
@@ -150,6 +174,10 @@ private:
 
   void become_relay_effect () {
     m_mode = RELAY;
+  }
+
+  void become_relay_schedule () const {
+    schedule ();
   }
 
   UP_INTERNAL (peterson_leader_automaton, become_relay);
@@ -161,6 +189,10 @@ private:
   void relay_effect () {
     m_send.push (m_receive.front ());
     m_receive.pop ();
+  }
+
+  void relay_schedule () const {
+    schedule ();
   }
 
   UP_INTERNAL (peterson_leader_automaton, relay);

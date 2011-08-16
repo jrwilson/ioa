@@ -97,30 +97,35 @@ namespace ioa {
   private:    
     bool sys_create_precondition () const;
     std::pair<generator_interface*, void*> sys_create_effect ();
+    void sys_create_schedule () const { schedule (); }
   public:
     SYSTEM_OUTPUT (automaton, sys_create, std::pair<generator_interface* COMMA void*>);
 
   private:
     bool sys_bind_precondition () const;
     std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_effect ();
+    void sys_bind_schedule () const { schedule (); }
   public:
     SYSTEM_OUTPUT (automaton, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
 
   private:
     bool sys_unbind_precondition () const;
     void* sys_unbind_effect ();
+    void sys_unbind_schedule () const { schedule (); }
   public:
     SYSTEM_OUTPUT (automaton, sys_unbind, void*);
 
   private:
     bool sys_destroy_precondition () const;
     void* sys_destroy_effect ();
+    void sys_destroy_schedule () const { schedule (); }
   public:
     SYSTEM_OUTPUT (automaton, sys_destroy, void*);
 
   private:
     bool sys_self_destruct_precondition () const;
     void* sys_self_destruct_effect ();
+    void sys_self_destruct_schedule () const { schedule (); }
   public:
     SYSTEM_OUTPUT (automaton, sys_self_destruct, void*);
 
@@ -139,21 +144,25 @@ namespace ioa {
     };
   private:
     void sys_created_effect (const created_arg_t &);
+    void sys_created_schedule () const { schedule (); }
   public:
     SYSTEM_INPUT (automaton, sys_created, created_arg_t);
 
   private:
     void sys_bound_effect (std::pair<bound_t COMMA void*> const &);
+    void sys_bound_schedule () const { schedule (); }
   public:
     SYSTEM_INPUT (automaton, sys_bound, std::pair<bound_t COMMA void*>);
 
   private:
     void sys_unbound_effect (std::pair<unbound_t COMMA void*> const &);
+    void sys_unbound_schedule () const { schedule (); }
   public:
     SYSTEM_INPUT (automaton, sys_unbound, std::pair<unbound_t COMMA void*>);
     
   private:
     void sys_destroyed_effect (std::pair<destroyed_t COMMA void*> const &);
+    void sys_destroyed_schedule () const { schedule (); }
   public:
     SYSTEM_INPUT (automaton, sys_destroyed, std::pair<destroyed_t COMMA void*>);
   };

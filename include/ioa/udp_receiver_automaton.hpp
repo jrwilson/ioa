@@ -60,15 +60,18 @@ namespace ioa {
   private:
     bool schedule_read_ready_precondition () const;
     void schedule_read_ready_effect ();
+    void schedule_read_ready_schedule () const { schedule (); }
     UP_INTERNAL (udp_receiver_automaton, schedule_read_ready);
 
     bool read_ready_precondition () const;
     void read_ready_effect ();
+    void read_ready_schedule () const { schedule (); }
     UP_INTERNAL (udp_receiver_automaton, read_ready);
 
   private:
     bool receive_precondition () const;
     receive_val receive_effect ();
+    void receive_schedule () const { schedule (); }
 
   public:
     V_UP_OUTPUT (udp_receiver_automaton, receive, receive_val);

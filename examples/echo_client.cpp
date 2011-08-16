@@ -57,6 +57,10 @@ private:
     return ioa::inet_address ("127.0.0.1", 54321);
   }
 
+  void connect_schedule () const {
+    schedule ();
+  }
+
   V_UP_OUTPUT (echo_client_automaton, connect, ioa::inet_address);  
 
   void connect_complete_effect (const ioa::tcp_connector_automaton::connect_val& val) {
@@ -88,6 +92,10 @@ private:
     }
   }
 
+  void connect_complete_schedule () const {
+    schedule ();
+  }
+
   V_UP_INPUT (echo_client_automaton, connect_complete, ioa::tcp_connector_automaton::connect_val);
 
   bool send_precondition () const {
@@ -99,6 +107,10 @@ private:
     std::string* s = new std::string ("Hello World!!");
     std::cout << "Sent:\t\t" << *s << std::endl;
     return ioa::const_shared_ptr<std::string> (s);
+  }
+
+  void send_schedule () const {
+    schedule ();
   }
 
   V_UP_OUTPUT (echo_client_automaton, send, ioa::const_shared_ptr<std::string>);
@@ -114,6 +126,10 @@ private:
 #endif
       self_destruct ();
     }
+  }
+
+  void send_complete_schedule () const {
+    schedule ();
   }
 
   V_UP_INPUT (echo_client_automaton, send_complete, int);
@@ -137,6 +153,10 @@ private:
     }
   }
   
+  void receive_schedule () const {
+    schedule ();
+  }
+
   V_UP_INPUT (echo_client_automaton, receive, ioa::tcp_connection_automaton::receive_val);
 };
 

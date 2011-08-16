@@ -57,11 +57,19 @@ private:
     return buf;
   }
 
+  void send_schedule () const {
+    schedule ();
+  }
+
   V_UP_OUTPUT (client_handler_automaton, send, ioa::const_shared_ptr<std::string>);
 
   void send_complete_effect (const int& err) {
     assert (m_state == SEND_COMPLETE_WAIT);
     m_state = SEND_READY;
+  }
+
+  void send_complete_schedule () const {
+    schedule ();
   }
 
   V_UP_INPUT (client_handler_automaton, send_complete, int);
@@ -74,6 +82,10 @@ private:
       // Done.
       self_destruct ();
     }
+  }
+
+  void receive_schedule () const {
+    schedule ();
   }
 
   V_UP_INPUT (client_handler_automaton, receive, ioa::tcp_connection_automaton::receive_val);
@@ -113,6 +125,10 @@ private:
 #endif
       self_destruct ();
     }
+  }
+
+  void accept_schedule () const {
+    schedule ();
   }
 
   V_UP_INPUT (echo_server_automaton, accept, ioa::tcp_acceptor_automaton::accept_val);

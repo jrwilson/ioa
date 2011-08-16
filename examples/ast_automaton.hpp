@@ -36,6 +36,10 @@ private:
     return retval;
   }
 
+  void parent_schedule () const {
+    schedule ();
+  }
+
   bool send_precondition (size_t j) const {
     //might be a different syntax than binding_count (j)
     return m_send.find (j)->second == SEARCH && ioa::binding_count (&ast_automaton::send, j) != 0;
@@ -45,6 +49,10 @@ private:
     m_send[j] = NOSEARCH;
     search_t retval = SEARCH_MESSAGE;
     return retval;
+  }
+
+  void send_schedule (size_t) const {
+    schedule ();
   }
 
   void receive_effect (const search_t& ignored, size_t j) {
@@ -59,6 +67,10 @@ private:
         }
       }
     }
+  }
+
+  void receive_schedule (size_t) const {
+    schedule ();
   }
 
   void schedule () const {

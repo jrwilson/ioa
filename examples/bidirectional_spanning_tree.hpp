@@ -21,6 +21,10 @@ private:
     std::cout << "The parent of " << i << " is " << j << std::endl;
   }
 
+  void parent_schedule (size_t) const {
+    schedule ();
+  }
+
   V_P_INPUT (bidirectional_spanning_tree, parent, size_t, size_t);
 
   ioa::handle_manager<bidirectional_spanning_tree> self;

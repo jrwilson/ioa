@@ -152,6 +152,10 @@ private:
   void input_effect () {
     self_destruct ();
   }
+  void input_schedule () const {
+    schedule ();
+  }
+
 public:
   UV_UP_INPUT (automaton_B, input);
 };
@@ -187,6 +191,7 @@ private:
     return m_b1 != 0 && ioa::binding_count (&automaton_A::output) != 0;
   }
   void output_effect () { }
+  void output_schedule () const { schedule (); }
   UV_UP_OUTPUT (automaton_A, output);
 
   bool rebind_precondition () const {
@@ -197,6 +202,9 @@ private:
     m_binding->set_output (&m_self, &automaton_A::output);
     m_binding->set_input (b2, &automaton_B::input);
     m_rebind_flag = true;
+  }
+  void rebind_schedule () const {
+    schedule ();
   }
   UP_INTERNAL (automaton_A, rebind);
 

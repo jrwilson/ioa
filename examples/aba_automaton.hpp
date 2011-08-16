@@ -88,6 +88,10 @@ private:
     return retm;
   }
 
+  void send_schedule (size_t) const {
+    schedule ();
+  }
+
 public:
   V_P_OUTPUT (aba_automaton, send, message_t, size_t);             //MANUAL NEEDS TO SAY WHAT THESE ARE
 
@@ -110,6 +114,10 @@ private:
     else {
       m_acked.insert (j);
     }
+  }
+
+  void receive_schedule (size_t) const {
+    schedule ();
   }
 
 public:
@@ -140,6 +148,10 @@ private:
       m_reported = true;
       std::cout << "We are done" << std::endl;
     }
+  }
+
+  void report_schedule () const {
+    schedule ();
   }
 
   UP_INTERNAL (aba_automaton, report);

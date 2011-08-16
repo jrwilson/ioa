@@ -61,6 +61,10 @@ private:
     return ioa::udp_sender_automaton::send_arg (m_address, m_buffer);
   }
 
+  void send_schedule () const {
+    schedule ();
+  }
+
   V_UP_OUTPUT (broadcast_sender, send, ioa::udp_sender_automaton::send_arg);
 
   void send_complete_effect (const int& result) {
@@ -79,6 +83,10 @@ private:
     else {
       m_state = SEND_COMPLETE;
     }
+  }
+
+  void send_complete_schedule () const {
+    schedule ();
   }
 
   V_UP_INPUT (broadcast_sender, send_complete, int);

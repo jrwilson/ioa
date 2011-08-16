@@ -42,17 +42,20 @@ namespace ioa {
   private:
     void connect_effect (const inet_address& address,
 			 aid_t aid);
+    void connect_schedule (aid_t aid) const { schedule (); }
   public:
     V_AP_INPUT (tcp_connector_automaton, connect, inet_address);
 
   private:
     bool write_ready_precondition (aid_t aid) const;
     void write_ready_effect (aid_t aid);
+    void write_ready_schedule (aid_t) const { schedule (); }
     P_INTERNAL (tcp_connector_automaton, write_ready, aid_t);
 
   private:
     bool connect_complete_precondition (aid_t aid) const;
     connect_val connect_complete_effect (aid_t aid);
+    void connect_complete_schedule (aid_t aid) const { schedule (); }
   public:
     V_AP_OUTPUT (tcp_connector_automaton, connect_complete, connect_val);
   };

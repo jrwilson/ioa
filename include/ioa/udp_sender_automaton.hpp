@@ -75,21 +75,25 @@ namespace ioa {
 
   private:
     void send_effect (const send_arg& arg, aid_t aid);
+    void send_schedule (aid_t) const { schedule (); }
   public:
     V_AP_INPUT (udp_sender_automaton, send, send_arg);
 
   private:
     bool schedule_write_ready_precondition () const;
     void schedule_write_ready_effect ();
+    void schedule_write_ready_schedule () const { schedule (); }
     UP_INTERNAL (udp_sender_automaton, schedule_write_ready);
 
     bool write_ready_precondition () const;
     void write_ready_effect ();
+    void write_ready_schedule () const { schedule (); }
     UP_INTERNAL (udp_sender_automaton, write_ready);
 
   private:
     bool send_complete_precondition (aid_t aid) const;
     int send_complete_effect (aid_t aid);
+    void send_complete_schedule (aid_t) const { schedule (); }
   public:
     V_AP_OUTPUT (udp_sender_automaton, send_complete, int);
   };

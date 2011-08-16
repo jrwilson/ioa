@@ -58,6 +58,10 @@ private:
     }
   }
   
+  void receive_schedule () const {
+    schedule ();
+  }
+
   V_UP_INPUT (udp_receiver, receive, ioa::udp_receiver_automaton::receive_val);
 
 };

@@ -32,6 +32,10 @@ private:
     return retval;
   }
 
+  void send_schedule (size_t) const {
+    schedule ();
+  }
+
   void receive_effect (const size_t& w, size_t j) {
     size_t wght = m_weight.find(j)->second;
     if (w + wght < m_dist) {
@@ -47,6 +51,10 @@ private:
 	}
       }  
     }
+  }
+
+  void receive_schedule (size_t) const {
+    schedule ();
   }
 
   void schedule () const {

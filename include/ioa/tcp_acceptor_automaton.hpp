@@ -57,19 +57,23 @@ namespace ioa {
   private:
     bool schedule_read_ready_precondition () const;
     void schedule_read_ready_effect ();
+    void schedule_read_ready_schedule () const { schedule (); }
     UP_INTERNAL (tcp_acceptor_automaton, schedule_read_ready);
 
     bool read_ready_precondition () const;
     void read_ready_effect ();
+    void read_ready_schedule () const { schedule (); }
     UP_INTERNAL (tcp_acceptor_automaton, read_ready);
 
     bool create_precondition () const;
     void create_effect ();
+    void create_schedule () const { schedule (); }
     UP_INTERNAL (tcp_acceptor_automaton, create);
 
   private:
     bool accept_precondition () const;
     accept_val accept_effect ();
+    void accept_schedule () const { schedule (); }
   public:
     V_UP_OUTPUT (tcp_acceptor_automaton, accept, accept_val);
   };

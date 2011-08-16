@@ -20,6 +20,10 @@ private:
     m_queue.push (t);
   }
   
+  void send_schedule () const {
+    schedule ();
+  }
+
   bool receive_precondition () const {
     return !m_queue.empty () && ioa::binding_count (&channel_automaton::receive) != 0;
   }
@@ -28,6 +32,10 @@ private:
     T retval =  m_queue.front ();
     m_queue.pop ();
     return retval;
+  }
+
+  void receive_schedule () const {
+    schedule ();
   }
 
   void schedule () const {

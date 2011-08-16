@@ -34,6 +34,10 @@ private:
     return retval;
   }
 
+  void send_schedule (size_t) const {
+    schedule ();
+  }
+
   void receive_effect (const size_t& m, size_t j){
     if (m+1 < m_dist){
       std::cerr << "Node " << m_i << "'s old dist: " << m_dist << " and new dist: " << (m+1) << std::endl;
@@ -46,6 +50,10 @@ private:
 	}
       }
     }
+  }
+
+  void receive_schedule (size_t) const {
+    schedule ();
   }
 
   void schedule () const {

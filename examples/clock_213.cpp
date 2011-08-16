@@ -14,7 +14,11 @@ private:
   
   void request_effect () {
   }
-  
+
+  void request_schedule () const {
+    schedule ();
+  }
+
   void schedule () const {
     if (request_precondition ()) {
       ioa::schedule (&trigger::request);
@@ -65,6 +69,10 @@ private:
     m_flag = true;
   }
 
+  void request_schedule () const {
+    schedule ();
+  }
+
 public:
   UV_UP_INPUT (clock_automaton, request);
 
@@ -75,6 +83,10 @@ private:
   
   void tick_effect () {
     m_counter = m_counter + 1;
+  }
+
+  void tick_schedule () const {
+    schedule ();
   }
 
 public:
@@ -90,6 +102,10 @@ private:
     return m_counter;
   }
 
+  void clock_schedule () const {
+    schedule ();
+  }
+
 public:
   V_UP_OUTPUT (clock_automaton, clock, int);
 };
@@ -103,6 +119,10 @@ private:
 
   void clock_effect (int const & t) {
     std::cout << "t = " << t << std::endl;
+  }
+
+  void clock_schedule () const {
+    schedule ();
   }
 
 public:

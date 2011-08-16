@@ -973,6 +973,10 @@ private:
     }
   }
 
+  void poll_schedule () const {
+    schedule ();
+  }
+
   UP_INTERNAL (bind_unbound, poll);
 
 public:
@@ -1185,6 +1189,10 @@ private:
     }
   }
 
+  void poll_schedule () const {
+    schedule ();
+  }
+
   UP_INTERNAL (destroy_automaton_destroyed, poll);
 
 public:  
@@ -1282,6 +1290,10 @@ private:
     goal_reached = true;
   }
 
+  void action_schedule () const {
+    schedule ();
+  }
+
   UV_UP_OUTPUT (schedule_automaton, action);
 
 public:
@@ -1316,6 +1328,10 @@ private:
   void action_effect (int param) {
     assert (param == 18887235);
     goal_reached = true;
+  }
+
+  void action_schedule (int) const {
+    schedule ();
   }
 
   UV_P_OUTPUT (schedule_automatonp, action, int);
@@ -1360,6 +1376,10 @@ private:
     m_state = ACTION2_WAIT;
   }
 
+  void action1_schedule () const {
+    schedule ();
+  }
+
   UV_UP_OUTPUT (schedule_after_automaton, action1);
 
   bool action2_precondition () const {
@@ -1368,6 +1388,10 @@ private:
 
   void action2_effect () {
     m_state = ACTION3_WAIT;
+  }
+
+  void action2_schedule () const {
+    schedule ();
   }
 
   UV_UP_OUTPUT (schedule_after_automaton, action2);
@@ -1380,6 +1404,10 @@ private:
     time_t execute_time = time (0);
     // Should be within three seconds of each other.
     goal_reached = (execute_time - (m_schedule_time + 5)) <= 3;
+  }
+
+  void action3_schedule () const {
+    schedule ();
   }
 
   UV_UP_OUTPUT (schedule_after_automaton, action3);
@@ -1430,6 +1458,10 @@ private:
     m_state = ACTION2_WAIT;
   }
 
+  void action1_schedule (int) const {
+    schedule ();
+  }
+
   UV_P_OUTPUT (schedule_afterp_automaton, action1, int);
 
   bool action2_precondition (int param) const {
@@ -1440,6 +1472,10 @@ private:
   void action2_effect (int param) {
     assert (param == 513);
     m_state = ACTION3_WAIT;
+  }
+
+  void action2_schedule (int) const {
+    schedule ();
   }
 
   UV_P_OUTPUT (schedule_afterp_automaton, action2, int);
@@ -1454,6 +1490,10 @@ private:
     time_t execute_time = time (0);
     // Should be within three seconds of each other.
     goal_reached = (execute_time - (m_schedule_time + 5)) <= 3;
+  }
+
+  void action3_schedule (int) const {
+    schedule ();
   }
 
   UV_P_OUTPUT (schedule_afterp_automaton, action3, int);
@@ -1494,6 +1534,10 @@ private:
 
   void action_effect () {
     goal_reached = true;
+  }
+
+  void action_schedule () const {
+    schedule ();
   }
 
   UV_UP_OUTPUT (schedule_read_ready_automaton, action);
@@ -1546,6 +1590,10 @@ private:
     goal_reached = true;
   }
 
+  void action_schedule (int) const {
+    schedule ();
+  }
+
   UV_P_OUTPUT (schedule_read_readyp_automaton, action, int);
 
 public:
@@ -1596,6 +1644,10 @@ private:
     goal_reached = true;
   }
 
+  void action_schedule () const {
+    schedule ();
+  }
+
   UV_UP_OUTPUT (schedule_write_ready_automaton, action);
 
 public:
@@ -1638,6 +1690,10 @@ private:
   void action_effect (int fd) {
     assert (fd == m_fd[1]);
     goal_reached = true;
+  }
+
+  void action_schedule (int) const {
+    schedule ();
   }
 
   UV_P_OUTPUT (schedule_write_readyp_automaton, action, int);
