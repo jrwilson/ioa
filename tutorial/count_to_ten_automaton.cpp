@@ -12,18 +12,11 @@ private:
 
 public:
   count_to_ten_automaton () :
-    m_count (1)
-  {
-    schedule ();
+    m_count (1) {
+    increment_schedule ();
   }
   
 private:
-  void schedule () const {
-    if (increment_precondition ()) {
-      ioa::schedule (&count_to_ten_automaton::increment);
-    }
-  }
-
   bool increment_precondition () const {
     return m_count <= 10;
   }
@@ -34,7 +27,9 @@ private:
   }
 
   void increment_schedule () const {
-    schedule ();
+    if (increment_precondition ()) {
+      ioa::schedule (&count_to_ten_automaton::increment);
+    }
   }
 
   UP_INTERNAL (count_to_ten_automaton, increment);
@@ -42,8 +37,7 @@ private:
 
 int main () {
   ioa::global_fifo_scheduler sched;
-  std::auto_ptr<ioa::typed_generator_interface<count_to_ten_automaton> > x = ioa::make_generator<count_to_ten_automaton> ();
-  ioa::run (sched, x);
+  ioa::run (sched, ioa::make_generator<count_to_ten_automaton> ());
   return 0; 
 }
 

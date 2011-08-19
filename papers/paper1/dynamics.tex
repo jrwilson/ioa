@@ -1,4 +1,11 @@
-\section{Dynamics}
+\section{Dynamics\label{dynamics}}
+
+%% All components have outputs for creating, binding, unbinding, and destroying and inputs for receiving results that are permanently bound to ``the system.''
+%% System calls follow a request-reply system where a component sends a request for a create, bind, unbind, or destroy, the system receives the request, the system processes the request, the system sends a reply, and the component receives the reply.
+
+%Events can be bound and unbound at run-time.
+%% The I/O automata model is static, i.e., the set of automata and their interactions are fixed.
+% Components can be created and destroyed at run-time.
 
 However, the I/O automata model assumes a static configuration while the proposed system requires the ability to deal with dynamic configurations, i.e., creating, binding, unbinding, and destroying.
 

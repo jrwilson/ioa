@@ -1,7 +1,7 @@
 \input texinfo  @c -*-texinfo-*-
 @c %** Start of header
 @setfilename ioa.info
-@settitle The I/O Automata Library
+@settitle IOA++
 @setchapternewpage odd
 @c %** End of header
 
@@ -15,7 +15,7 @@ This work is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unport
 @end copying
 
 @titlepage
-@title The I/O Automata Library
+@title IOA++
 @author Justin R. Wilson
 
 @c The following two commands start the copyright page.
@@ -30,89 +30,164 @@ This work is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unport
 
 @ifnottex
 @node Top
-@top The I/O Automata Library
+@top IOA++
 
-This manual describes version @value{VERSION} of the I/O Automata Library.
+This manual describes version @value{VERSION} of IOA++.
 
 @insertcopying
 
 @end ifnottex
 
 @menu
-* Introduction::	Motivation and the I/O automata formal model.
-* Tutorials::		Tutorials introduction the framework.
+* Introduction::                Tutorial sections:
+* Concepts::                    
+* Examples::                    Reference sections:
 @end menu
 
 @node Introduction
 @chapter Introduction
 
-A number of formal models have been developed that make reasoning about concurrent and distributed computation easier than reasoning about the same systems using the thread model.
-In practice, however, threads dominate due to processor architectures, programming languages, operating system support, and the widespread availability of thread libraries.
-Other approaches to concurrency focus on domain specific problems and tend to be ad hoc.
-The I/O Automata Library (@acronym{IOA}) is a framework for concurrent and distributed systems based on the I/O automata formal model.
-The goal of @acronym{IOA} is to bring the reasoning power of the I/O automata model to the programmer.
-@acronym{IOA} seeks to be an eventual replacement for threads---starting at the application layer and working down to the operating system or beyond.
+IOA++ is a general-purpose framework for developing asynchronous and concurrent programs based on the I/O automata model.
+Developers using IOA++ construct programs by defining and assembling event-based modules.
+As suggested by the name, IOA++ is implemented in C++.
 
-@menu
-* I/O Automata::	The I/O automata formal model.
-* Considerations::	Implementation requisites.
-@end menu
+@node Concepts
+@chapter Concepts
 
-@node I/O Automata
-@section I/O Automata
+@section The I/O Automata Model
 
-The I/O automata model was developed by Nancy Lynch and is described in Chapter 8 of @cite{Distributed Algorithms}.
-An I/O automaton consists of state and a set of atomic input, output, and internal actions.
+I/O automata is a model for asynchronous and concurrent systems.
+The I/O automata model was developed by Nancy Lynch and described in Chapter 8 of @cite{Distributed Algorithms}.
+I/O automata have been used to model and verify a number of real-world systems and protocols.
+
+An I/O automaton consists of state variables and a set of atomic input, output, and internal actions.
 The set of actions in an automaton is known as its @dfn{signature}.
 Output and internal actions are under the control of the automaton and are known as @dfn{local actions}.
-Execution proceeds by repeatedly selecting a local action, evaluating its precondition, and then applying the action body if the precondition is true.
-The model admits non-determinism by allowing the scheduler to pick actions in any order so long as it is fair, i.e., every action is selected (but not necessary executed) infinitely often.
-I/O automata can be composed to form a new automaton by matching names and consolidating input and output actions.
 Input and output actions are known as @dfn{external actions}.
-Whereas output and internal actions can selectively be enabled or disabled using a precondition, input actions are executed whenever their corresponding output is executed.
+
+I/O automata can be composed to form a new automaton by concatenating state variables and folding input actions into similarly named output actions.
+Whereas output and internal actions can selectively be enabled or disabled, input actions are executed whenever their associated output is executed.
 This property is known as being @dfn{input enabled}.
 
-@node Considerations
-@section Implementation Considerations
+Execution proceeds by repeatedly selecting a local action and executing it if enabled.
+The model admits non-determinism by allowing the scheduler to pick actions in any order.
+The scheduler must select (but not necessarily execute) every action infinitely often.
+Schedulers that meet this criteria are said to be @dfn{fair}.
 
-@subsection Dynamics
+@section Representing I/O Automata
 
-The I/O automata model assumes that the automata in a system are @emph{static}.
-By static I mean that all automata exist in their initial states before the first action is executed.
-This also means that outputs and inputs that are composed can be consolidated and treated as one action.
+I/O Automata are encoded directly in the C++ programming language as classes that inherit from @code{ioa::automaton}.
+The state variables of the I/O automaton are naturally encoded as member variables of the class.
+The actions of the I/O automaton are encoded as a combination of member functions and member variables.
+A suite of templates and macros exist to simplify the definition of actions.
 
-Real systems, on the other hand, are @emph{dynamic}.
-Consider an operating system where processes are created, run, and then possibly exit.
-Processes can interact with one another but the exact nature of the interaction is dependent on time since the set of existing processes in dependent on time.
-For I/O automata, this means that we require the ability to create new automata, destroy existing automata, and change which outputs and inputs are composed.
-We use the term @dfn{binding} to refer to the act of dynamically associating an output with an input.
-We use the term @dfn{configuration} to refer to the actions of creating and destroying automata and binding and unbinding external actions.
+@section Dynamics
 
-@subsection Scheduling
+The I/O automata model assumes that systems consist of a static set of automata.
+Often, the size of the set is infinitely countable meaning that it can be represented by an integer variable @var{N}.
+A model specified in this way is capable of capturing any real system since there is a countable number of participants in all real systems.
+Within an infinitely countable set, a dynamic set of automata is simulated by associating a flag with each automaton indicating if it is active or inactive and defining appropriate ``wake-up'' and ``sleep'' actions.
+A direct implementation of this strategy does not work for real systems because an implementation must specify a concrete value for @var{N}.
+Computing with a fixed number of automata is either unduly prohibitive if resources exist for additional automata or unduly wasteful if the number of active automata is much less than @var{N}.
 
-The only requirement that the I/O automata model places on the scheduler is fairness.
-This is intentional as it reduces the number of assumptions that one needs to make about the environment.
-The scheduler is assumed to be omniscient, i.e., it knows all of the actions and can find an action with a true precondition.
-While implementing an omniscient scheduler is possible, it hinders the development of an efficient scheduler, i.e., one that avoids selecting actions whose precondition are false.
-Consequently, the decision was made that the user is responsible for telling the scheduler which actions to consider.
-The scheduler can implement different scheduling policies that influence the order in which actions are selected.
-Again, the only requirement is that the scheduler is fair.
+Consequently, we require the ability to dynamically create and destroy automata.
+Since we can dynamically create and destroy automata, we also require the ability to dynamically compose and decompose.
+@dfn{Binding} and @dfn{unbinding} refer to the act of dynamically composing and decomposing, respectively.
+For simplicity, binding and unbinding is limited to a single output action-input action pair.
+Dynamic binding allows us to drop the requirement that the actions have the same name.
 
-The act of telling the scheduler to consider an action for selection and execution is called @dfn{scheduling}.
-If a user decides to schedule all actions all the time, then the scheduler degenerates into a brute-force omniscient scheduler.
-A better approach has the user test the precondition of all actions and schedules those that are true.
-The best approach has the user perform a dependency analysis to determine which actions could possibly enable other actions and then schedule the enabled actions.
-Notice that this optimization is not possible unless users schedule the actions.
-All of the examples in this document use the middle approach.
+@section Run-time System
 
-@node Tutorials
-@chapter Tutorials
+The IOA++ run-time system consists of a model, a scheduler, and a user-space library.
+
+The @dfn{model} contains the set of automata and bindings and has methods for creating, binding, unbinding, destroying, and executing local actions.
+Creating, binding, unbinding, and destroying are called @dfn{system actions}.
+Users do not interact directly with the model and should only be concerned with the guarantees it provides.
+The model enforces atomic execution according to the I/O automata model.
+Internal actions are executed atomically.
+Output actions are executed by executing the output and all bound input actions in one atomic step.
+
+The @dfn{scheduler} invokes the model with selected local and system actions.
+Conceptually, the scheduler contains a set of actions that are submitted to the model according to some policy.
+Users, in turn, are responsible for submitting actions that should be considered by the scheduler.
+Users are required to choose a scheduler implementation before execution begins thereby facilitating different scheduling policies.
+
+The user-space library is designed to help users write actions, submit actions to the scheduler, and execute system actions.
+Local actions consist of a coordinating object and three functions: a precondition, an effect, and a scheduling function.
+Input actions consists of a coordinating object and two functions: an effect and a scheduling function.
+The precondition determines if the effect of the output or internal action will be evaluated.
+The scheduling function is invoked after the effect of all actions and is intended as a place to submit actions to the scheduler.
+
+System actions in IOA++ are asynchronous and resemble a request-response protocol.
+Conceptually, the model is permanently bound to every automaton and contains input actions for receiving system action requests and output actions for delivering system action results.
+The user-space library contains classes that hide the complexities of creating and binding asynchronously.
+Synchronous system actions were considered and rejected because they break the semantics of the I/O automata model.
+For example, it is not clear how to execute an output that bindings itself to an input as part of its execution.
+
+@section Concurrency
+
+Each local action involves a set of automata.
+For internal actions, this is just the automaton that contains the internal actions.
+For output actions, the set consists of the output action and the automata that contain the input actions bound to the output action.
+The semantics of I/O automata are such that two actions can be executed concurrently if their respective sets of involved automata are disjoint.
+An important consequence is that two actions belonging to the same automaton will never execute concurrently.
+To truly execute actions concurrently, the scheduler must concurrently invoke the model with independent actions.
+
+@section Actions and Values
+
+Recall that there are three types of actions: output actions, input actions, and internal actions.
+Output actions produce a signal or value, input actions consume a signal or value, and internal actions neither produce nor consume signals or values.
+Actions that produce or consume signals are said to be @dfn{unvalued} while signals that produce and consume values are said to be @dfn{valued}.
+External actions can only be bound together if they agree on the signal or type of value to be produced.
+Any input that consumes a signal can be bound to any output producing a signal.
+An input that consumes values of type @var{T} can only be bound to an output that produces a value of type @var{T}.
+
+@section Parameters and Automatic Parameters
+
+A common technique in the I/O automata model is to associate a parameter with an action.
+For example, actions that receive messages are often parameterized with communication endpoints.
+Parameters are distinct from values because they are constant under composition.
+All actions types, outputs, inputs, and internals, can be parameterized.
+Actions requiring a parameter are said to be @dfn{parameterized} while actions that don't require parameters are said to be @dfn{unparameterized}.
+Parameters must be used to identify parameterized actions.
+For example, the parameter for a parameterized output must specified when scheduling and binding.
+Similarly, a parameter for a parameterized input must specified when binding and a parameter for a parameterized internal must be specified when scheduling.
+
+Parameters allow users to implement fan-in by associating a different parameter with each bind to an input.
+More generally, parameters can be used to implement a session by associating the same parameter with all bindings related to some automaton.
+Each automaton has a unique identifier called an @dfn{automaton identfier} or @dfn{aid}.
+Often, the parameter for a session is the aid of another automaton.
+To prevent errors and make sessions easier to implement, we introduce the concept of an automatic parameter.
+An @dfn{automatic parameter} or @dfn{auto parameter} is a parameter that represents the automaton on the opposite side of a binding.
+For example, an auto parameterized input receives the identifier of the output automaton to which it is bound.
+An auto parameterized output receives the identifier of the input automaton to which it is bound.
+According to the binding rules below, auto parameterized outputs can only be bound once.
+
+@section Binding Rules
+
+To enforce the semantics of I/O automata, certain attempts to bind will fail.
+The automaton requesting a binding is called the @dfn{owner}.
+A binding is a tuple (output automaton, output action, output parameter, input automaton, input action, input parameter, owner).
+Unparameterized actions have a null parameter.
+A binding will fail if any of the follow is true:
+@enumerate
+@item The owner does not exist.
+@item The output automaton does not exist.
+@item The input automaton does not exist.
+@item The binding already exists.  (This is only reported to the owner.)
+@item The (input automaton, input action, input parameter) is already bound.
+@item The (output automaton, output action, output parameter) is already bound to some input action in the input automaton.
+@item The output automaton and input automaton are the same.
+@end enumerate
+
+@node Examples
+@chapter Examples
 
 @menu
-* Compiling and Linking::
-* Internal Actions::
-* Creating Automata::
-* External Actions::
+* Compiling and Linking::       
+* Internal Actions::            
+* Creating Automata::           
+* External Actions::            
 @end menu
 
 @node Compiling and Linking
@@ -190,11 +265,11 @@ In general, an automaton will have the following structure:
 
 @item State declarations --- Declare the state variables of the automaton.
 
-@item Constructors/Destructors --- Declare/defined constructors to initialize the state variables and destructors to perform any required clean-up.
+@item Constructors/Destructors --- Declare/define constructors to initialize the state variables and destructors to perform any required clean-up.
 
-@item @code{schedule} and other member functions --- Declare/define the function for scheduling actions and other useful functions.
+@item Non-action member functions --- Declare/define useful functions.
 
-@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, a action body, and a member variable.  Input actions consist only of an action body.
+@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, an effect, a scheduling function, and a member variable.  Input actions consist of an effect, a scheduling function, and a member variable.
 
 @end itemize
 
@@ -710,5 +785,64 @@ We address this topic in the next tutorial.
 @c - scheduling actions
 @c - creation caveats = type safety
 @c - Why is "this" everywhere?
+
+@c @node Why I Created IOA++
+@c @section Why I Created IOA++
+
+@c IOA++ is a framework for asynchronous and concurrent computation based on the I/O automata model.
+@c An I/O automaton is a set of state variables and atomic actions that manipulate the state variables.
+@c I/O automata interact by associating an action in one automaton with an action in another.
+@c The semantics of I/O automata are such that a set of interacting automata can analyzed as a single I/O automaton.
+@c Consequently, IOA++ makes it possible to develop reusable modules for asynchronous and concurrent computation and assemble them to create complex systems.
+
+
+@c The thread paradigm, a common approach to concurrency, is based on multiple concurrent threads of execution communicating via shared state.
+@c Developing ``thread-safe'' software is difficult because developers must consider all possible interleavings of instructions and use locks to prevent bad program states.
+@c (See @cite{The Problem with Threads} by Edward Lee for more information.)
+@c Furthermore, assembling complex systems from thread-based modules can easily introduce concurrency hazards, e.g., creating a cycle in the graph of resource locks resulting in deadlock.
+
+@c IOA++ is an alternative to threads.
+@c The absence of shared state and the atomicity of each action obviate the need for locks and other concurrency control mechanisms in IOA++.
+
+
+@c  and ad hoc event systems.
+
+@c I created IOA++ so I could build distributed systems by assembling reusable concurrent and asynchronous modules.
+
+@c Threads are an obvious first choice due to their widespread
+
+@c I rejected threads because it is difficult to write thread-safe objects and assemble them into a working system.
+@c Developing a thread-safe object is difficult because one must consider all possible interleavings of instructions.
+@c The paper @cite{The Problem with Threads} by Edward Lee is a deeper exploration of this issue.
+@c Assembling thread-safe objects can introduce concurrency hazards by, for example, creating a cycle in the graph of resource locks.
+
+@c Events are 
+
+@c The difficulties of thread-based development often 
+
+@c Second, events, while matching the semantics of distributed systems, 
+
+@c The difficulties with threads 
+
+
+@c @node Considerations
+@c @section Implementation Considerations
+
+@c @subsection Scheduling
+
+@c The only requirement that the I/O automata model places on the scheduler is fairness.
+@c This is intentional as it reduces the number of assumptions that one needs to make about the environment.
+@c The scheduler is assumed to be omniscient, i.e., it knows all of the actions and can find an action with a true precondition.
+@c While implementing an omniscient scheduler is possible, it hinders the development of an efficient scheduler, i.e., one that avoids selecting actions whose precondition are false.
+@c Consequently, the decision was made that the user is responsible for telling the scheduler which actions to consider.
+@c The scheduler can implement different scheduling policies that influence the order in which actions are selected.
+@c Again, the only requirement is that the scheduler is fair.
+
+@c The act of telling the scheduler to consider an action for selection and execution is called @dfn{scheduling}.
+@c If a user decides to schedule all actions all the time, then the scheduler degenerates into a brute-force omniscient scheduler.
+@c A better approach has the user test the precondition of all actions and schedules those that are true.
+@c The best approach has the user perform a dependency analysis to determine which actions could possibly enable other actions and then schedule the enabled actions.
+@c Notice that this optimization is not possible unless users schedule the actions.
+@c All of the examples in this document use the middle approach.
 
 @bye
