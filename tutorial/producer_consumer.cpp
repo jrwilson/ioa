@@ -11,18 +11,11 @@ private:
 
 public:
   producer_automaton () :
-    m_count (1)
-  {
-    schedule ();
+    m_count (1) {
+    produce_schedule ();
   }
   
 private:
-  void schedule () const {
-    if (produce_precondition ()) {
-      ioa::schedule (&producer_automaton::produce);
-    }
-  }
-
   bool produce_precondition () const {
     return m_count <= 10;
   }
@@ -34,7 +27,9 @@ private:
   }
 
   void produce_schedule () const {
-    schedule ();
+    if (produce_precondition ()) {
+      ioa::schedule (&producer_automaton::produce);
+    }
   }
 
 public:
@@ -61,10 +56,12 @@ class producer_consumer_automaton :
 public:
   producer_consumer_automaton () {
     ioa::automaton_manager<producer_automaton>* producer =
-      ioa::make_automaton_manager (this, ioa::make_generator<producer_automaton> ());
+      ioa::make_automaton_manager (this,
+	  ioa::make_generator<producer_automaton> ());
 
     ioa::automaton_manager<consumer_automaton>* consumer =
-      ioa::make_automaton_manager (this, ioa::make_generator<consumer_automaton> ());
+      ioa::make_automaton_manager (this,
+          ioa::make_generator<consumer_automaton> ());
 
     ioa::make_binding_manager (this,
 			       producer, &producer_automaton::produce,

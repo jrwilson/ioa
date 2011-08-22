@@ -42,6 +42,7 @@ This manual describes version @value{VERSION} of IOA++.
 * Introduction::                Tutorial sections:
 * Concepts::                    
 * Examples::                    Reference sections:
+* Reference::                   
 @end menu
 
 @node Introduction
@@ -188,12 +189,13 @@ A binding will fail if any of the follow is true:
 * Internal Actions::            
 * Creating Automata::           
 * External Actions::            
+* Fan-out and Binding Count::   
 @end menu
 
 @node Compiling and Linking
 @section Compiling and Linking
 
-The purpose of this tutorial is to introduce the necessary machinery for compiling programs with @acronym{IOA}.
+The purpose of this tutorial is to introduce the necessary machinery for compiling programs with IOA++.
 The following program contains the null automaton---an automaton with no actions.
 The source can be found in @file{tutorial/null_automaton.cpp}.
 
@@ -218,10 +220,10 @@ class null_automaton :
 { };
 @end verbatim
 @end example
-declares a new automaton type called @code{null_automaton}.
+declare a new automaton type called @code{null_automaton}.
 All automata must inherit from @code{ioa::automaton}.
-Also note that all @acronym{IOA} types and functions are in the @code{ioa} namespace.
-The definition of the main function
+Also note that all IOA++ types and functions are in the @code{ioa} namespace.
+The main function
 @example
 @verbatim
 int main () {
@@ -244,7 +246,7 @@ $ ./null_automaton
 @end verbatim
 @end example
 Notice that we needed to link against the I/O automata library (@option{-lioa}) and pthreads library (@option{-lpthread}).
-Some environments, e.g., Mac OSX, include pthreads in the standard C library.
+Some environments, e.g., Mac OS X, include pthreads in the standard C library.
 If you have such an environment, omit the @option{-lpthread} part of the command.
 
 @node Internal Actions
@@ -267,7 +269,7 @@ In general, an automaton will have the following structure:
 
 @item Constructors/Destructors --- Declare/define constructors to initialize the state variables and destructors to perform any required clean-up.
 
-@item Non-action member functions --- Declare/define useful functions.
+@item Private member functions --- Declare/define useful functions.
 
 @item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, an effect, a scheduling function, and a member variable.  Input actions consist of an effect, a scheduling function, and a member variable.
 
@@ -284,35 +286,18 @@ private:
 In this case, the state of the automaton consists of a single integer @code{m_count}.
 State variables should always be declared @code{private}.
 
-The construction initializes the count to 1 and calls the @code{schedule ()} member function:
+The constructor initializes the count to 1 and calls the @code{increment_schedule} member function to tell the scheduler to select the @code{increment} action:
 @example
 @verbatim
 public:
   count_to_ten_automaton () :
-    m_count (1)
-  {
-    schedule ();
+    m_count (1) {
+    increment_schedule ();
   }
 @end verbatim
 @end example
 
-The @code{schedule ()} member function informs the scheduler what local actions to consider:
-@example
-@verbatim
-private:
-  void schedule () const {
-    if (increment_precondition ()) {
-      ioa::schedule (&count_to_ten_automaton::increment);
-    }
-  }
-@end verbatim
-@end example
-The @code{schedule ()} member function evaluates the precondition for the increment action and then schedules the increment action if the precondition is true.
-A common source of errors is to either omit a local action from the @code{schedule ()} function or forget to call @code{schedule ()} in a constructor.
-As an exercise, comment out the call to @code{schedule ()} in the constructor and see what happens.
-The @code{schedule ()} member function should always be declared @code{private}.
-
-The next section defines the precondition and effect for an unparameterized internal action named @code{increment}:
+The next section defines the precondition, effect, and scheduling function for an unparameterized internal action named @code{increment}:
 @example
 @verbatim
   bool increment_precondition () const {
@@ -323,9 +308,14 @@ The next section defines the precondition and effect for an unparameterized inte
     std::cout << m_count << std::endl;
     ++m_count;
   }
+
+  void increment_schedule () const {
+    if (increment_precondition ()) {
+      ioa::schedule (&count_to_ten_automaton::increment);
+    }
+  }
 @end verbatim
 @end example
-Parameters and parameterized actions are discussed in (TODO).
 Following the style in @cite{Distributed Algorithms}, internal actions are divided into a @dfn{precondition} and @dfn{effect}.
 The precondition returns a @code{bool} indicating if the action can be executed.
 In this example, the precondition returns true so long as the count is less than or equal to ten.
@@ -334,9 +324,12 @@ Note that preconditions have the @code{const} modifier as they should not change
 The effect changes the state of the automaton.
 In this example, the effect prints the current value of the count and increments the count.
 The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ();}.
-Preconditions and effects should be declared @code{private}.
+The scheduling function is called after the effect and it used to tell the scheduler about actions that should be selected.
+In this example, the @code{increment} action is scheduled if its precondition is true.
+The pattern for declaring a scheduling fuctions is @code{void @var{action-name}_schedule () const;}.
+Preconditions, effects, and scheduling functions should always be declared @code{private}.
 
-The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition and effect and also contains appropriate typedefs for the scheduler.
+The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition, effect, and scheduling function and also contains appropriate typedefs for the scheduler.
 This is tedious so a set of a macros is defined to simplify declaring the members.
 The code
 @example
@@ -345,10 +338,8 @@ The code
 @end verbatim
 @end example
 uses the @code{UP_INTERNAL} macro to declare an action member variable @code{increment}.
-The @code{UP_INTERNAL} macro and similar macros rely on the @code{*_precondition} and @code{*_action} naming convention described earlier.
-The macros also require that the @code{schedule ()} member function be declared before the macro and has the signature @code{void schedule () const}.
-The macro arranges for the @code{schedule () } member function to be called after each action effect.
-This frees the programmer from remembering to call schedule in every action effect.
+The @code{UP_INTERNAL} macro and similar macros rely on the @code{*_precondition}, @code{*_action}, and @code{*_schedule} naming convention described earlier.
+The macro arranges for the @code{*_schedule} member function to be called after each action effect.
 Internal actions, i.e., the scope where @code{UP_INTERNAL} appears, should be @code{private}.
 External actions can either be @code{private}, @code{protected}, or @code{public} depending on their intended use.
 
@@ -365,6 +356,10 @@ To declare a effect for an unparameterized internal action:
 @example
 @code{void @var{action-name}_effect ();}
 @end example
+To declare a scheduling function:
+@example
+@code{void @var{action-name}_schedule () const;}
+@end example
 To declare an unparameterized internal action:
 @example
 @code{UP_INTERNAL (@var{automaton-name}, @var{action-name});}
@@ -373,6 +368,11 @@ To schedule an unparameterized local action:
 @example
 @code{ioa::schedule (&@var{automaton-name}::@var{action-name});}
 @end example
+
+@strong{Programming Tip:}
+Forgetting to schedule is common source of problems when programming with IOA++.
+Remember to call @code{ioa::schedule} for all enabled local actions in the constructor and scheduling functions (or effects).
+As an exercise, experiment with commenting out the call to @code{increment_schedule} in the constructor and the call to @code{ioa::schedule} in @code{increment_schedule}.
 
 @node Creating Automata
 @section Creating Automata
@@ -394,36 +394,32 @@ Of primary interest is the constructor of the @code{two_counter_automaton}.
 @example
 @verbatim
   two_counter_automaton () {
-    new ioa::automaton_manager<count_to_ten_automaton> (
-      this,
-      ioa::make_generator<count_to_ten_automaton> ()
-    );
-
-    new ioa::automaton_manager<count_to_ten_automaton> (
-      this,
-      ioa::make_generator<count_to_ten_automaton> ()
-    );
+    ioa::make_automaton_manager (this,
+        ioa::make_generator<count_to_ten_automaton> ());
+    ioa::make_automaton_manager (this,
+	ioa::make_generator<count_to_ten_automaton> ());
   }
 @end verbatim
 @end example
+The function @code{ioa::make_automaton_manager} creates a dynamically allocated @code{ioa::automaton_manager}.
 An @code{ioa::automaton_manager} uses an @code{ioa::automaton} object and generator to @emph{asynchronously} create a new automaton.
-@emph{Automaton creation and destruction are asynchronous in @acronym{IOA}.}
-A pointer to an @code{ioa::automaton} object is specified by the first argument to the @code{ioa::automaton_manager} constructor.
+@emph{Automaton creation and destruction are asynchronous in IOA++.}
+A pointer to an @code{ioa::automaton} object is specified by the first argument to the @code{ioa::make_automaton_manager} function.
 This should always be the @code{this} pointer of the automaton that is creating a new automaton.
 The second argument is a generator that returns an instance of the automaton to be created.
 In this example, each generator returns a @code{count_to_ten} automaton.
 
 If automaton A creates automaton B then A is the @dfn{parent} of B and B is the @dfn{child} of A.
-Thus, automata in @acronym{IOA} form a tree with the automaton generated by @code{ioa::run} being the root.
+Thus, automata in IOA++ form a tree with the automaton generated by @code{ioa::run} being the root.
 When an automaton is destroyed, so are all of its children.
 
-Something that might concern you is that fact that the automaton managers are dynamically allocated with @code{new} but we neither save their address nor @code{delete} them in a destructor.
+Something that might concern you is that fact that the automaton managers are dynamically allocated but we neither save their address nor @code{delete} them in a destructor.
 Upon construction, the @code{ioa::automaton} object takes ownership of the automaton manager.
-An parent automaton can request that one of its children be destroyed using its @code{destroy ()} method and can detected child automata that have been destroyed by observing the automaton manager.
-Note that a child automaton might voluntarily destroy itself, say, when it has no more work to do.
+A parent automaton can request that one of its children be destroyed using its @code{destroy} method and can detect child automata that have been destroyed by observing the automaton manager.
+Note that a child automaton might voluntarily destroy itself, i.e., self destruct, when it has no more work to do.
 A parent automaton should forget the automaton manager of any child that has been destroyed.
 
-To distinguish the output of the two @code{count_to_ten_automaton}s, we use the @code{ioa::get_aid ()} function.
+To distinguish the output of the two @code{count_to_ten_automaton}s, we use the @code{ioa::get_aid} function.
 @example
 @verbatim
     std::cout <<
@@ -431,12 +427,12 @@ To distinguish the output of the two @code{count_to_ten_automaton}s, we use the 
       " count: " << m_count << std::endl;
 @end verbatim
 @end example
-Associated with each instance of an automaton is an @dfn{automaton identifier (aid)} of type @code{aid_t} that can be retrieved with @code{ioa::get_aid ()}.
+Associated with each instance of an automaton is an @dfn{automaton identifier (aid)} of type @code{aid_t} that can be retrieved with @code{ioa::get_aid}.
 
 @node External Actions
 @section External Actions
 
-In this tutorial, we introduce external actions, input and output actions, and the concept of binding using a simple producer-consumer problem.
+In this tutorial, we introduce input and output actions and the concept of binding using a simple producer-consumer problem.
 We split the @code{count_to_ten_automaton} in previous tutorials into an automaton that produces numbers and another automaton that prints numbers.
 The source is given below and can be found in @file{tutorial/producer_consumer.cpp}.
 
@@ -461,7 +457,7 @@ public:
 The @code{produce_effect} increments the counter and returns the old value of the counter.
 The macro @code{V_UP_OUTPUT} declares a valued unparameterized output action named @code{produce} that produces a value of type @code{int}.
 The @code{V_UP_OUTPUT} macro relies on the same naming conventions as the @code{UP_INTERNAL} action seen in preceding tutorials.
-As an exercise, make the type given to @code{V_UP_OUTPUT} different from the type returned by @code{produce_effect}.
+As an exercise, make the type given to @code{V_UP_OUTPUT} different from the type returned by @code{produce_effect}, e.g., change @code{int} to @code{float}, and recompile.
 Note that @code{V_UP_OUTPUT} appears in a @code{public} section.
 This is necessary because we want to allow other automata to bind to this action.
 
@@ -471,6 +467,8 @@ The @code{consumer_automaton} is quite simple and only contains a single valued 
   void consume_effect (const int& val) {
     std::cout << "consuming " << val << std::endl;
   }
+
+  void consume_schedule () const { }
 
 public:
   V_UP_INPUT (consumer_automaton, consume, int);
@@ -483,24 +481,20 @@ The effect used by @code{V_UP_INPUT} must take a single argument declared as a c
 Compare this with @code{consume_effect}.
 Again, note that @code{V_UP_INPUT} appears in a @code{public} section so we can bind to it.
 
-The @code{consumer_automaton} contains no local actions but still requires a @code{schedule ()} member function before the invocation of @code{V_UP_INPUT}.
-As an exercise, comment out the @code{schedule ()} function to become familiar with the compilation error caused by omitting it.
+The @code{consume_schedule} function is required even though it is empty.
+As an exercise, comment out the @code{consume_schedule} function and recompile to become familiar with the compilation error caused by omitting it.
 
 The constructor of the @code{producer_consumer_automaton} creates a @code{producer_automaton} and a @code{consumer_automaton} and then binds the @code{produce} and @code{consume} actions of the respective automatons together:
 @example
 @verbatim
   producer_consumer_automaton () {
     ioa::automaton_manager<producer_automaton>* producer =
-      new ioa::automaton_manager<producer_automaton> (
-	this,
-	ioa::make_generator<producer_automaton> ()
-      );
+      ioa::make_automaton_manager (this,
+	  ioa::make_generator<producer_automaton> ());
 
     ioa::automaton_manager<consumer_automaton>* consumer =
-      new ioa::automaton_manager<consumer_automaton> (
-        this,
-	ioa::make_generator<consumer_automaton> ()
-      );
+      ioa::make_automaton_manager (this,
+          ioa::make_generator<consumer_automaton> ());
 
     ioa::make_binding_manager (this,
 			       producer, &producer_automaton::produce,
@@ -508,11 +502,11 @@ The constructor of the @code{producer_consumer_automaton} creates a @code{produc
   }
 @end verbatim
 @end example
-The child automata are created in the same way as in the preceding tutorials only we save the pointer to the new manager so we can pass it to the @code{make_binding_manager} function.
-This version of @code{make_binding_manager} takes a pointer to an @code{ioa::automaton} (@pxref{Creating Automata}), a pointer to an @code{automaton_handle_interface} for the output automaton, a pointer to a member for the output action, a pointer to an @code{automaton_handle_interface} for the input automaton, and a pointer to a member for the input action.
-The @code{automaton_handle_interface} is unimportant save to say that @code{automaton_manager} implements @code{automaton_handle_interface}.
-The @code{make_binding_manager} function creates a new @code{binding_manager} that binds the output and input actions once the output and input automata have been created.
-Note that like automata creation, binding is asynchronous in @acronym{IOA}.
+The child automata are created in the same way as in the preceding tutorials only we save the pointer to the new manager so we can pass it to the @code{ioa::make_binding_manager} function.
+This version of @code{ioa::make_binding_manager} takes a pointer to an @code{ioa::automaton} (@pxref{Creating Automata}), a pointer to an @code{ioa::automaton_handle_interface} for the output automaton, a pointer to a member for the output action, a pointer to an @code{ioa::automaton_handle_interface} for the input automaton, and a pointer to a member for the input action.
+The @code{ioa::automaton_handle_interface} is unimportant save to say that @code{ioa::automaton_manager} implements @code{ioa::automaton_handle_interface}.
+The @code{ioa;:make_binding_manager} function creates a new @code{ioa::binding_manager} that binds the output and input actions once the output and input automata have been created.
+Note that like automata creation, binding is asynchronous in IOA++.
 
 @subsection Binding Rules
 
@@ -521,7 +515,7 @@ The first set of rules are checked at compile time.
 @enumerate
 @item One Output, One Input --- The first automaton/action pair must be an output and the second automaton/action pair must be an input.
 
-@item Access --- The output and input must be accessible from the scope where @code{make_binding_helper} is invoked.  For example, if automaton C is binding an output action in automaton O to an input action in automaton I, then both of the actions must be declared @code{public}.  As another example, if automaton C is binding one of its own output actions to an input in automaton I, then C can (and probably should) declare the output to be @code{private}.
+@item Access --- The output and input must be accessible from the scope where @code{ioa::make_binding_helper} is invoked.  For example, if automaton C is binding an output action in automaton O to an input action in automaton I, then both of the actions must be declared @code{public}.  As another example, if automaton C is binding one of its own output actions to an input in automaton I, then C can (and probably should) declare the output to be @code{private}.
 
 @item Value Status Agreement --- External actions need not produce/consume values.  External actions that don't produce/consume values are called @dfn{unvalued} while external action that do produce/consume values are called @dfn{valued}.  When binding, both the output and the input action must have the same value status.
 
@@ -566,7 +560,117 @@ In this example, the producer was allowed to @code{produce} six times before @co
 The @code{produce} action is a @dfn{lossy output} or an output whose values might be lost because no input is bound to receive them.
 We address this topic in the next tutorial.
 
-@c Bind count and multiple bindings
+@node Fan-out and Binding Count
+@section Fan-out and Binding Count
+
+In this tutorial, we bind an output action to multiple input actions (fan-out) and prevent lost outputs by counting the number of bindings associated with an action.
+The source is given below and can be found in @file{tutorial/producer_consumer2.cpp}.
+
+@example
+@verbatiminclude tutorial/producer_consumer2.cpp
+@end example
+
+The constructor of the @code{producer_consumer_automaton} creates a @code{producer_automaton} and two @code{consumer_automaton}s and then binds the @code{produce} and @code{consume} actions of the respective automatons together:
+@example
+@verbatim
+  producer_consumer_automaton () {
+    ioa::automaton_manager<producer_automaton>* producer =
+      ioa::make_automaton_manager (this,
+	  ioa::make_generator<producer_automaton> ());
+
+    ioa::automaton_manager<consumer_automaton>* consumer1 =
+      ioa::make_automaton_manager (this,
+          ioa::make_generator<consumer_automaton> ());
+
+    ioa::automaton_manager<consumer_automaton>* consumer2 =
+      ioa::make_automaton_manager (this,
+          ioa::make_generator<consumer_automaton> ());
+
+    ioa::make_binding_manager (this,
+			       producer, &producer_automaton::produce,
+			       consumer1, &consumer_automaton::consume);
+
+    ioa::make_binding_manager (this,
+			       producer, &producer_automaton::produce,
+			       consumer2, &consumer_automaton::consume);
+  }
+@end verbatim
+@end example
+We changed the @code{consume_effect} of the @code{consumer_automaton} to print out the aid to distinguish between the two consumers:
+@example
+@verbatim
+  void consume_effect (const int& val) {
+    std::cout << ioa::get_aid () << " consuming " << val << std::endl;
+  }
+@end verbatim
+@end example
+We also removed the call to @code{produce_schedule} in the @code{producer_automaton} constructor:
+@example
+@verbatim
+  producer_automaton () :
+    m_count (1) { }
+@end verbatim
+@end example
+More on this later.
+
+The most important change is the addition of an @code{ioa::binding_count} to the @code{produce_precondition} of the @code{producer} automaton:
+@example
+@verbatim
+  bool produce_precondition () const {
+    return m_count <= 10 &&
+      ioa::binding_count (&producer_automaton::produce) == 2;
+  }
+@end verbatim
+@end example
+The @code{ioa::binding_count} returns the number of actions to which the given action is bound.
+The binding count of an internal action will always be 0.
+The binding count of an output action is a non-negative integer.
+The binding count of an input action is either 0 or 1.
+In this example, the @code{produce_effect} is not executed until the two consumers have been bound.
+
+You might be wondering, ``If we don't schedule the @code{produce} action in the constructor, how does it get executed?''
+The answer is that scheduler automatically schedules output actions when they are bound.
+Thus, whenever the second automaton binds to @code{produce}, @code{produce} is scheduled.
+Since the binding count is now 2, the @code{produce_precondition} becomes true, and @code{produce_effect} and @code{produce_schedule} are evaluated.
+Scheduling output actions in this way takes advantage of the concept of a fair scheduler in the I/O automata model and seems to be a graceful way of handling the common case where an output must be bound before it is executed.
+
+When I execute @code{producer_consumer2}, I get the following output:
+@example
+@verbatim
+$ ./producer_consumer2
+producing 1
+3 consuming 1
+4 consuming 1
+producing 2
+3 consuming 2
+4 consuming 2
+producing 3
+3 consuming 3
+4 consuming 3
+producing 4
+3 consuming 4
+4 consuming 4
+producing 5
+3 consuming 5
+4 consuming 5
+producing 6
+3 consuming 6
+4 consuming 6
+producing 7
+3 consuming 7
+4 consuming 7
+producing 8
+3 consuming 8
+4 consuming 8
+producing 9
+3 consuming 9
+4 consuming 9
+producing 10
+3 consuming 10
+4 consuming 10
+@end verbatim
+@end example
+which shows that both consumers receive the values produced by the producer.
 
 @c Expected bind count in parameter
 
@@ -578,6 +682,23 @@ We address this topic in the next tutorial.
 
 @c destroy
 
+@node Reference
+@chapter Reference
+
+@itemize
+@item ioa::automaton
+@item ioa::global_fifo_scheduler
+@item ioa::run
+@item ioa::make_generator
+@item ioa::schedule
+@item ioa::make_automaton_manager
+@item ioa::automaton_manager
+@item ioa::get_aid
+@item ioa::aid_t
+@item ioa::make_binding_manager
+@item ioa::automaton_handle_interface
+@item ioa::binding_manager
+@end itemize
 
 @c @node Index
 @c @unnumbered Index

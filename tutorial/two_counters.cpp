@@ -13,16 +13,10 @@ public:
   count_to_ten_automaton () :
     m_count (1)
   {
-    schedule ();
+    increment_schedule ();
   }
   
 private:
-  void schedule () const {
-    if (increment_precondition ()) {
-      ioa::schedule (&count_to_ten_automaton::increment);
-    }
-  }
-
   bool increment_precondition () const {
     return m_count <= 10;
   }
@@ -35,7 +29,9 @@ private:
   }
 
   void increment_schedule () const {
-    schedule ();
+    if (increment_precondition ()) {
+      ioa::schedule (&count_to_ten_automaton::increment);
+    }
   }
 
   UP_INTERNAL (count_to_ten_automaton, increment);
@@ -46,8 +42,10 @@ class two_counter_automaton :
 {
 public:
   two_counter_automaton () {
-    ioa::make_automaton_manager (this, ioa::make_generator<count_to_ten_automaton> ());
-    ioa::make_automaton_manager (this, ioa::make_generator<count_to_ten_automaton> ());
+    ioa::make_automaton_manager (this,
+        ioa::make_generator<count_to_ten_automaton> ());
+    ioa::make_automaton_manager (this,
+	ioa::make_generator<count_to_ten_automaton> ());
   }
 
 };
@@ -57,4 +55,3 @@ int main () {
   ioa::run (sched, ioa::make_generator<two_counter_automaton> ());
   return 0; 
 }
-

@@ -40,4 +40,3 @@ int main () {
   ioa::run (sched, ioa::make_generator<count_to_ten_automaton> ());
   return 0; 
 }
-
