@@ -1,13 +1,13 @@
 #ifndef __asynch_lcr_automaton_hpp__
 #define __asynch_lcr_automaton_hpp__
 
-#include <ioa/ioa.hpp>
-#include <queue>
-
 /*
   AsyncLCR Automaton
   Distributed Algorithms, p. 477.
 */
+
+#include "UID.hpp"
+#include <queue>
 
 class asynch_lcr_automaton :
   public ioa::automaton
@@ -19,13 +19,13 @@ private:
     REPORTED
   } status_t;
 
-  ioa::aid_t m_u;
-  std::queue<ioa::aid_t> m_send;
+  UID_t m_u;
+  std::queue<UID_t> m_send;
   status_t m_status;
 
 public:
   asynch_lcr_automaton () :
-    m_u (ioa::get_aid ()),
+    m_u (rand (), ioa::get_aid ()),
     m_status (UNKNOWN)
   {
     m_send.push (m_u);
@@ -47,8 +47,8 @@ private:
     return !m_send.empty () && ioa::binding_count (&asynch_lcr_automaton::send) != 0;
   }
 
-  ioa::aid_t send_effect () {
-    ioa::aid_t retval = m_send.front ();
+  UID_t send_effect () {
+    UID_t retval = m_send.front ();
     m_send.pop ();
     return retval;
   }
@@ -58,10 +58,10 @@ private:
   }
 
 public:
-  V_UP_OUTPUT (asynch_lcr_automaton, send, ioa::aid_t);
+  V_UP_OUTPUT (asynch_lcr_automaton, send, UID_t);
 
 private:
-  void receive_effect (const ioa::aid_t& v) {
+  void receive_effect (const UID_t& v) {
     if (v > m_u) {
       m_send.push (v);
     }
@@ -78,7 +78,7 @@ private:
   }
 
 public:
-  V_UP_INPUT (asynch_lcr_automaton, receive, ioa::aid_t);
+  V_UP_INPUT (asynch_lcr_automaton, receive, UID_t);
 
 private:
   bool leader_precondition () const {

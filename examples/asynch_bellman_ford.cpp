@@ -1,5 +1,5 @@
-#include "asynch_bfs_automaton.hpp"
-#include "bidirectional_network.hpp"
+#include "weighted_bidirectional_network.hpp"
+#include "asynch_bellman_ford_automaton.hpp"
 
 #include <ioa/global_fifo_scheduler.hpp>
 
@@ -7,10 +7,10 @@
 #define DEFAULT_LINK_PROBABILITY .05
 
 int main (int argc,
-	  char *argv[]) {
+	  char* argv[]) {
 
   if (!(argc == 1 || argc == 3)) {
-    std::cerr << "Usage: asynch_bfs [NODE_COUNT LINK_PROBABILITY]" << std::endl;
+    std::cerr << "Usage: asynch_bellman_ford [NODE_COUNT LINK_PROBABILITY]" << std::endl;
     exit (EXIT_FAILURE);
   }
 
@@ -25,6 +25,6 @@ int main (int argc,
   srand (time (0));
 
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<bidirectional_network<asynch_bfs_automaton, size_t> > (node_count, rho));
+  ioa::run (sched, ioa::make_generator<weighted_bidirectional_network<asynch_bellman_ford_automaton, size_t> > (node_count, rho));
   return 0;
 }

@@ -1,6 +1,11 @@
 #ifndef __aba_automaton_hpp__
 #define __aba_automaton_hpp__
 
+/*
+  AsynchBcastAck Automaton
+  Distributed Algorithms, p. 499-500.
+*/
+
 #include <ioa/ioa.hpp>
 #include <cstdlib>
 #include <iostream>
@@ -15,7 +20,7 @@ enum message_type_t {
 
 typedef std::pair<message_type_t, size_t> message_t;
 
-class aba_automaton:
+class asynch_bcast_ack_automaton:
   public ioa::automaton {
 
 private:
@@ -33,7 +38,7 @@ private:
   std::map<size_t, msgq *> m_send;	//set of message queues; if i=i0 then each queue initially contains the single elt. ("bcast",w); otherwise each queue is empty
 
 public:
-  aba_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
+  asynch_bcast_ack_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
     m_i(i),
     m_i0(i0),
     m_nbrs(nbrs),
@@ -58,7 +63,7 @@ public:
     schedule ();
   }
 
-  ~aba_automaton ()
+  ~asynch_bcast_ack_automaton ()
   {
      for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
        delete m_send[*pos];
@@ -69,16 +74,16 @@ private:
   void schedule () const {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
       if (send_precondition (*pos)) {
-        ioa::schedule (&aba_automaton::send, *pos);
+        ioa::schedule (&asynch_bcast_ack_automaton::send, *pos);
       }
     }
 
-    if (report_precondition()) ioa::schedule(&aba_automaton::report);
+    if (report_precondition()) ioa::schedule(&asynch_bcast_ack_automaton::report);
   }
 
   bool send_precondition (size_t j) const {
     msgq* q = m_send.find(j)->second;
-    bool b =  (ioa::binding_count (&aba_automaton::send, j) != 0) && !q->empty ();
+    bool b =  (ioa::binding_count (&asynch_bcast_ack_automaton::send, j) != 0) && !q->empty ();
     return b;
   }
 
@@ -93,14 +98,17 @@ private:
   }
 
 public:
-  V_P_OUTPUT (aba_automaton, send, message_t, size_t);             //MANUAL NEEDS TO SAY WHAT THESE ARE
+  V_P_OUTPUT (asynch_bcast_ack_automaton, send, message_t, size_t);             //MANUAL NEEDS TO SAY WHAT THESE ARE
 
 private:
   void receive_effect (const message_t& m, size_t j) {
-    if(m.first == BCAST){          //if receiving a broadcast:
+
+    if (m.first == BCAST) {          //if receiving a broadcast:
+
       if (m_val == static_cast<size_t> (-1)) {
 	m_val = m.second;
 	m_parent = j;
+	std::cout << m_i << " received BCAST from new parent " << j << std::endl;
 	for (std::set<size_t>::const_iterator pos = m_nbrs.begin (); pos != m_nbrs.end (); ++pos) {
 	  if (*pos != j) {
 	    m_send[*pos]->push (message_t (BCAST, m_val));
@@ -108,10 +116,12 @@ private:
 	}
       }
       else {
+	std::cout << m_i << " received BCAST from non-parent " << j << std::endl;
 	m_send[j]->push (message_t (ACK, 0));
       }
     }
     else {
+      std::cout << m_i << " received ACK from " << j << std::endl;
       m_acked.insert (j);
     }
   }
@@ -121,7 +131,7 @@ private:
   }
 
 public:
-  V_P_INPUT (aba_automaton, receive, message_t, size_t);
+  V_P_INPUT (asynch_bcast_ack_automaton, receive, message_t, size_t);
 
 private:
   bool report_precondition () const {
@@ -146,7 +156,6 @@ private:
     }
     else {
       m_reported = true;
-      std::cout << "We are done" << std::endl;
     }
   }
 
@@ -154,7 +163,7 @@ private:
     schedule ();
   }
 
-  UP_INTERNAL (aba_automaton, report);
+  UP_INTERNAL (asynch_bcast_ack_automaton, report);
 };
 
 #endif

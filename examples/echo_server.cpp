@@ -109,8 +109,6 @@ public:
   }
 
 private:
-  void schedule () const { }
-
   void accept_effect (const ioa::tcp_acceptor_automaton::accept_val& val) {
     if (val.err != 0) {
       new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (val.handle));
@@ -127,9 +125,7 @@ private:
     }
   }
 
-  void accept_schedule () const {
-    schedule ();
-  }
+  void accept_schedule () const { }
 
   V_UP_INPUT (echo_server_automaton, accept, ioa::tcp_acceptor_automaton::accept_val);
 };

@@ -11,7 +11,7 @@
 #include <utility>
 
 
-template <class T, typename M, size_t N, unsigned long NUMERATOR, unsigned long DENOMINATOR>
+template <class T, typename M>
 class weighted_bidirectional_network :
   public ioa::automaton
 {
@@ -23,17 +23,14 @@ private:
   std::vector<std::map<size_t, size_t> > wghts;
 
 public:
-  weighted_bidirectional_network():
-    nbrhd(N),
-    wghts(N)
+  weighted_bidirectional_network (const size_t N,
+				  const double rho):
+    nbrhd (N),
+    wghts (N)
   {
-    srand ((unsigned)time(0));   //initializes RNG for later calls to rand
+    // Pick the root.
     size_t i0 = rand() %N;
-    std::cout << "The root is " << i0 << std::endl;
-
-    assert(DENOMINATOR != 0);
-    assert(NUMERATOR <= DENOMINATOR);
-    double rho = double(NUMERATOR) / double(DENOMINATOR);
+    std::cout << "Root: " << i0 << std::endl;
 
     //Randomly create links between nodes:
     for (size_t i=0; i<N-1; i++){
@@ -47,7 +44,7 @@ public:
           wghts[i].insert(std::make_pair(j,w));
           wghts[j].insert(std::make_pair(i,w));
 
-          std::cout << "Node " << i << " and node " << j << " are connected with weight " << w << std::endl;
+          std::cout << "Link (" << i << "," << j << ") has weight " << w << std::endl;
         }
       }
     }

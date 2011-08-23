@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <ioa/ioa.hpp>
-#include <ioa/simple_scheduler.hpp>
+#include <ioa/global_fifo_scheduler.hpp>
 
 class trigger :
   public ioa::automaton
@@ -12,23 +12,17 @@ private:
     return true;
   }
   
-  void request_effect () {
-  }
+  void request_effect () { }
 
   void request_schedule () const {
-    schedule ();
-  }
-
-  void schedule () const {
     if (request_precondition ()) {
       ioa::schedule (&trigger::request);
     }
   }
 
 public:
-  trigger ()
-  {
-    schedule ();
+  trigger () {
+    request_schedule ();
   }
 
   UV_UP_OUTPUT (trigger, request);
@@ -115,15 +109,11 @@ class display :
   public ioa::automaton
 {
 private:
-  void schedule () const { }
-
   void clock_effect (int const & t) {
     std::cout << "t = " << t << std::endl;
   }
 
-  void clock_schedule () const {
-    schedule ();
-  }
+  void clock_schedule () const { }
 
 public:
   V_UP_INPUT (display, clock, int);
@@ -148,7 +138,7 @@ public:
 
 int
 main () {
-  ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<composer> ());
+  ioa::global_fifo_scheduler sched;
+  ioa::run (sched, ioa::make_generator<composer> ());
   return 0; 
 }

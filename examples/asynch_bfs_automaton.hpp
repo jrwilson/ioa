@@ -1,6 +1,11 @@
 #ifndef __bfs_automaton_hpp__
 #define __bfs_automaton_hpp__
 
+/*
+  AsynchBFS Automaton
+  Distributed Algorithms, p. 502.
+*/
+
 #include <ioa/ioa.hpp>
 
 #include <iostream>
@@ -8,7 +13,7 @@
 #include <map>
 #include <queue>
 
-class bfs_automaton:
+class asynch_bfs_automaton:
   public ioa::automaton {
 
 private:
@@ -25,7 +30,7 @@ private:
 
   bool send_precondition(size_t j) const {
     distq * q = m_send.find(j)->second;
-    return (ioa::binding_count (&bfs_automaton::send, j) != 0) && !q->empty();
+    return (ioa::binding_count (&asynch_bfs_automaton::send, j) != 0) && !q->empty();
   }
 
   size_t send_effect (size_t j) {
@@ -40,10 +45,10 @@ private:
 
   void receive_effect (const size_t& m, size_t j){
     if (m+1 < m_dist){
-      std::cerr << "Node " << m_i << "'s old dist: " << m_dist << " and new dist: " << (m+1) << std::endl;
+      std::cout << m_i << ": (parent=" << m_parent << ",dist=" << m_dist << ") -> ";
       m_dist = m+1;
-      std::cerr << "Node " << m_i << "'s old parent: " << m_parent << " and new parent: " << j << std::endl;
       m_parent = j;
+      std::cout << "(parent=" << m_parent << ",dist=" << m_dist << ")" << std::endl;
       for (std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos!= m_nbrs.end(); pos++){
 	if (*pos != j){
 	  m_send[*pos]->push(m_dist);
@@ -59,13 +64,13 @@ private:
   void schedule () const {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); pos++){
       if (send_precondition (*pos)) {
-	ioa::schedule(&bfs_automaton::send, *pos);
+	ioa::schedule(&asynch_bfs_automaton::send, *pos);
       }
     }
   }
 
 public:
-  bfs_automaton (size_t i, size_t i0, const std::set<size_t> &nbrs) :
+  asynch_bfs_automaton (size_t i, size_t i0, const std::set<size_t> &nbrs) :
     m_i(i),
     m_i0(i0),
     m_nbrs(nbrs),
@@ -83,15 +88,15 @@ public:
     schedule ();
   }
 
-  ~bfs_automaton()
+  ~asynch_bfs_automaton()
   {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); pos++){
       delete m_send[*pos];
     }
   }
 
-  V_P_OUTPUT (bfs_automaton, send, size_t, size_t);
-  V_P_INPUT (bfs_automaton, receive, size_t, size_t);
+  V_P_OUTPUT (asynch_bfs_automaton, send, size_t, size_t);
+  V_P_INPUT (asynch_bfs_automaton, receive, size_t, size_t);
 
 };
 

@@ -2,3 +2,6 @@ Evaluate schedule_after.
 Should we provide a mechanism for cancelling?
 Should a subsequent schedule replace or add to an existing one?
 Should a schedule at an earlier time replace a later one?
+
+Split the execution interface of the model based on valued/unvalued.
+I don't remember why I was thinking about this but it might reduce code bloat.

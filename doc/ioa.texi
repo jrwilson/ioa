@@ -676,11 +676,15 @@ which shows that both consumers receive the values produced by the producer.
 
 @c automatic parameters
 
-@c self helper
+@c self helper and binding
 
 @c unbind
 
 @c destroy
+
+@c Show how to observe
+
+@c Show how to self-destruct
 
 @node Reference
 @chapter Reference
@@ -698,6 +702,22 @@ which shows that both consumers receive the values produced by the producer.
 @item ioa::make_binding_manager
 @item ioa::automaton_handle_interface
 @item ioa::binding_manager
+@item UV_UP_INPUT
+@item UV_P_INPUT
+@item UV_AP_INPUT
+@item V_UP_INPUT
+@item V_P_INPUT
+@item V_AP_INPUT
+@item UV_UP_OUTPUT
+@item UV_P_OUTPUT
+@item UV_AP_OUTPUT
+@item V_UP_OUTPUT
+@item V_P_OUTPUT
+@item V_AP_OUTPUT
+@item UP_INTERNAL
+@item P_INTERNAL
+@item SYSTEM_INPUT
+@item SYSTEM_OUTPUT
 @end itemize
 
 @c @node Index

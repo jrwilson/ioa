@@ -9,11 +9,9 @@
 #include <fstream>
 #include <vector>
 
-
-template <class T, typename M, size_t N, unsigned long NUMERATOR, unsigned long DENOMINATOR>
+template <class T, typename M>
 class bidirectional_network :
   public ioa::automaton
-
 {
 private:
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;
@@ -21,16 +19,13 @@ private:
   std::vector<std::set<size_t> > nbrhd;
 
 public:
-  bidirectional_network():
-    nbrhd(N)
+  bidirectional_network (const size_t N,
+			 const double rho):
+    nbrhd (N)
   {
-    srand ((unsigned)time(0));   //initializes RNG for later calls to rand
-    size_t i0 = rand() %N;
-    std::cout << "The root is " << i0 << std::endl;
-
-    assert(DENOMINATOR != 0);
-    assert(NUMERATOR <= DENOMINATOR);
-    double rho = double(NUMERATOR) / double(DENOMINATOR);
+    // Pick the root.
+    const size_t i0 = rand() % N;
+    std::cout << "Root: " << i0 << std::endl;
 
     //Randomly create links between nodes:
     for (size_t i=0; i<N-1; i++){

@@ -1,6 +1,11 @@
 #ifndef __ast_automaton_hpp__
 #define __ast_automaton_hpp__
 
+/*
+  AsynchSpanningTree Automaton
+  Distributed Algorithms, p. 496-497.
+*/
+
 #include <ioa/ioa.hpp>
 
 #include <set>
@@ -10,7 +15,7 @@ typedef enum {
   SEARCH_MESSAGE
 } search_t;
 
-class ast_automaton :
+class asynch_spanning_tree_automaton :
   public ioa::automaton
 {
 
@@ -27,7 +32,7 @@ private:
   size_t m_i0;
 
   bool parent_precondition () const {
-    return m_parent != size_t(-1) && !m_reported && ioa::binding_count (&ast_automaton::parent) != 0;
+    return m_parent != size_t(-1) && !m_reported && ioa::binding_count (&asynch_spanning_tree_automaton::parent) != 0;
   }
 
   size_t parent_effect () {
@@ -42,7 +47,7 @@ private:
 
   bool send_precondition (size_t j) const {
     //might be a different syntax than binding_count (j)
-    return m_send.find (j)->second == SEARCH && ioa::binding_count (&ast_automaton::send, j) != 0;
+    return m_send.find (j)->second == SEARCH && ioa::binding_count (&asynch_spanning_tree_automaton::send, j) != 0;
   }
 
   search_t send_effect (size_t j) {
@@ -75,19 +80,19 @@ private:
 
   void schedule () const {
     if (parent_precondition ()) {
-      ioa::schedule (&ast_automaton::parent);
+      ioa::schedule (&asynch_spanning_tree_automaton::parent);
     }
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin();
         pos != m_nbrs.end();
         ++pos) {
       if (send_precondition (*pos)) {
-        ioa::schedule (&ast_automaton::send, *pos);
+        ioa::schedule (&asynch_spanning_tree_automaton::send, *pos);
       }
     }
   }
 
 public:
-  ast_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
+  asynch_spanning_tree_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs) :
     m_parent(-1),
     m_reported(false),
     m_nbrs(nbrs),
@@ -108,9 +113,9 @@ public:
     schedule ();
   }
 
-  V_UP_OUTPUT (ast_automaton, parent, size_t);
-  V_P_OUTPUT (ast_automaton, send, search_t, size_t);
-  V_P_INPUT (ast_automaton, receive, search_t, size_t);
+  V_UP_OUTPUT (asynch_spanning_tree_automaton, parent, size_t);
+  V_P_OUTPUT (asynch_spanning_tree_automaton, send, search_t, size_t);
+  V_P_INPUT (asynch_spanning_tree_automaton, receive, search_t, size_t);
 
 };
 

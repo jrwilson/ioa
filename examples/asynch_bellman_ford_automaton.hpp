@@ -1,12 +1,17 @@
 #ifndef __bf_automaton_hpp__
 #define __bf_automaton_hpp__
 
+/*
+  AsynchBellmanFord Automaton
+  Distributed Algorithms, p. 507.
+*/
+
 #include <ioa/ioa.hpp>
 
 #include <queue>
 #include <map>
 
-class bf_automaton :
+class asynch_bellman_ford_automaton :
   public ioa::automaton {
 private:
   typedef std::queue<size_t> distq;
@@ -22,7 +27,7 @@ private:
 
   bool send_precondition (size_t j) const {
     distq* q = m_send.find(j)->second;
-    bool b =  (ioa::binding_count (&bf_automaton::send, j) != 0) && !q->empty ();
+    bool b =  (ioa::binding_count (&asynch_bellman_ford_automaton::send, j) != 0) && !q->empty ();
     return b;
   }
 
@@ -39,14 +44,13 @@ private:
   void receive_effect (const size_t& w, size_t j) {
     size_t wght = m_weight.find(j)->second;
     if (w + wght < m_dist) {
-      std::cout << "Node " << m_i << "'s old parent is " << m_parent << " and old dist is " << m_dist << std::endl;
+      std::cout << m_i << ": (parent=" << m_parent << ",dist=" << m_dist << ") -> ";
       m_dist = w + wght;
       m_parent = j;
-      std::cout << "Node " << m_i << "'s new parent is " << j << " and new dist is " << m_dist << std::endl;
+      std::cout << "(parent=" << m_parent << ",dist=" << m_dist << ")" << std::endl;
       
       for (std::set<size_t>::const_iterator pos = m_nbrs.begin (); pos != m_nbrs.end (); ++pos) {
 	if (*pos != j) {
-	  //std::cout << "Node " << m_i << " queue length " << m_send[*pos]->size() << std::endl;
 	  m_send[*pos]->push (m_dist);
 	}
       }  
@@ -60,13 +64,13 @@ private:
   void schedule () const {
     for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
       if (send_precondition (*pos)) {
-        ioa::schedule (&bf_automaton::send, *pos);
+        ioa::schedule (&asynch_bellman_ford_automaton::send, *pos);
       }
     }
   }
 
 public:
-  bf_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs, const std::map<size_t, size_t>& weight) :
+  asynch_bellman_ford_automaton (size_t i, size_t i0, const std::set<size_t>& nbrs, const std::map<size_t, size_t>& weight) :
     m_i(i),
     m_i0(i0),
     m_nbrs(nbrs),
@@ -89,15 +93,15 @@ public:
     schedule ();
   }
 
-  ~bf_automaton () {
+  ~asynch_bellman_ford_automaton () {
      for(std::set<size_t>::const_iterator pos = m_nbrs.begin(); pos != m_nbrs.end(); ++pos) {
        delete m_send[*pos];
     }
   }
 
 
-  V_P_OUTPUT (bf_automaton, send, size_t, size_t);
-  V_P_INPUT (bf_automaton, receive, size_t, size_t);
+  V_P_OUTPUT (asynch_bellman_ford_automaton, send, size_t, size_t);
+  V_P_INPUT (asynch_bellman_ford_automaton, receive, size_t, size_t);
 };
 
 #endif

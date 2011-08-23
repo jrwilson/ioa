@@ -39,8 +39,6 @@ public:
   }
 
 private:
-  void schedule () const { }
-
   void receive_effect (const ioa::udp_receiver_automaton::receive_val& v) {
     if (v.err != 0) {
       char buf[256];
@@ -58,9 +56,7 @@ private:
     }
   }
   
-  void receive_schedule () const {
-    schedule ();
-  }
+  void receive_schedule () const { }
 
   V_UP_INPUT (udp_receiver, receive, ioa::udp_receiver_automaton::receive_val);
 
