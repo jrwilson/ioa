@@ -29,11 +29,6 @@ namespace ioa {
     scheduler->schedule (ptr);
   }
 
-  void schedule (automaton::sys_self_destruct_type automaton::*ptr) {
-    assert (scheduler != 0);
-    scheduler->schedule (ptr);
-  }
-
   void close (int fd) {
     assert (scheduler != 0);
     scheduler->close (fd);

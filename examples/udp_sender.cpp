@@ -78,7 +78,7 @@ private:
       strerror_r (result, buf, 256);
       std::cerr << "Couldn't send udp_sender_automaton: " << buf << std::endl;
 #endif
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
     else {
       m_state = SEND_COMPLETE;

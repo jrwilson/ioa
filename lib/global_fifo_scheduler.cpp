@@ -14,13 +14,11 @@
 #include "sys_bind_runnable.hpp"
 #include "sys_unbind_runnable.hpp"
 #include "sys_destroy_runnable.hpp"
-#include "sys_self_destruct_runnable.hpp"
 
 #include "create_runnable.hpp"
 #include "bind_runnable.hpp"
 #include "unbind_runnable.hpp"
 #include "destroy_runnable.hpp"
-#include "self_destruct_runnable.hpp"
 
 #include "output_exec_runnable.hpp"
 #include "output_bound_runnable.hpp"
@@ -134,10 +132,6 @@ namespace ioa {
   
     void schedule (automaton::sys_destroy_type automaton::*member_ptr) {
       schedule_configq (new sys_destroy_runnable (get_current_aid ()));
-    }
-
-    void schedule (automaton::sys_self_destruct_type automaton::*member_ptr) {
-      schedule_configq (new sys_self_destruct_runnable (get_current_aid ()));
     }
 
     void schedule (action_runnable_interface* r) {
@@ -431,10 +425,6 @@ namespace ioa {
       schedule_configq (new destroy_runnable (automaton, key));
     }
 
-    void self_destruct (const aid_t automaton) {
-      schedule_configq (new self_destruct_runnable (automaton));
-    }
-
     void created (const aid_t aid,
 		  const created_t t,
 		  void* const key,
@@ -508,10 +498,6 @@ namespace ioa {
   }
   
   void global_fifo_scheduler::schedule (automaton::sys_destroy_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-
-  void global_fifo_scheduler::schedule (automaton::sys_self_destruct_type automaton::*ptr) {
     m_impl->schedule (ptr);
   }
 

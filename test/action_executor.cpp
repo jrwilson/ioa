@@ -26,7 +26,6 @@ struct test_model :
   int execute_sys_bind (const ioa::aid_t automaton) { return -1; }
   int execute_sys_unbind (const ioa::aid_t automaton) { return -1; }
   int execute_sys_destroy (const ioa::aid_t automaton) { return -1; }
-  int execute_sys_self_destruct (const ioa::aid_t automaton) { return -1; }
 
   // Executing configuation actions.
   ioa::aid_t create (const ioa::aid_t automaton,
@@ -68,8 +67,6 @@ struct test_system_scheduler :
     
   void destroy (const ioa::aid_t automaton,
 		void* const key) { }
-
-  void self_destruct (const ioa::aid_t automaton) { }
 
   void created (const ioa::aid_t automaton,
 		const ioa::created_t,

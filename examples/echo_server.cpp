@@ -80,7 +80,7 @@ private:
     }
     else {
       // Done.
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
   }
 
@@ -121,7 +121,7 @@ private:
       strerror_r (val.err, buf, 256);
       std::cerr << "Couldn't accept: " << buf << std::endl;
 #endif
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
   }
 

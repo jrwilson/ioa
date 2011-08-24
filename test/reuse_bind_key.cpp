@@ -33,7 +33,8 @@
 template <class OI, class OM, class II, class IM>
 class static_binding :
   private ioa::observer,
-  private ioa::system_binding_manager_interface
+  private ioa::system_binding_manager_interface,
+  public ioa::observable
 {
 private:
   bool m_bound;
@@ -91,6 +92,7 @@ private:
     case ioa::BOUND_RESULT:
       // Okay.
       m_bound = true;
+      notify_observers ();
       break;
     }
   }
@@ -104,6 +106,7 @@ private:
       // Okay.
       m_bound = false;
       ++m_unbound_count;
+      notify_observers ();
       if (m_unbound_count == 2) {
 	delete this;
       }
@@ -148,13 +151,8 @@ class automaton_B :
   public ioa::automaton
 {
 private:
-  void schedule () const { }
-  void input_effect () {
-    self_destruct ();
-  }
-  void input_schedule () const {
-    schedule ();
-  }
+  void input_effect () { }
+  void input_schedule () const { }
 
 public:
   UV_UP_INPUT (automaton_B, input);
@@ -170,11 +168,17 @@ private:
   bool m_rebind_flag;
 
   void observe (ioa::observable* o) {
-    if (o == m_b1) {
-      if (-1 == m_b1->get_handle ()) {
-	m_b1 = 0;
+    if (o == m_binding) {
+      if (!m_binding->is_bound ()) {
+	m_b1->destroy ();
       }
     }
+    else if (o == m_b1) {
+      if (-1 == m_b1->get_handle ()) {
+      	m_b1 = 0;
+      }
+    }
+
     schedule ();
   }
 
@@ -187,9 +191,7 @@ private:
     }
   }
   
-  bool output_precondition () const {
-    return m_b1 != 0 && ioa::binding_count (&automaton_A::output) != 0;
-  }
+  bool output_precondition () const { return false; }
   void output_effect () { }
   void output_schedule () const { schedule (); }
   UV_UP_OUTPUT (automaton_A, output);
@@ -215,6 +217,7 @@ public:
     m_self (ioa::get_aid ()),
     m_rebind_flag (false) {
     m_binding = new static_binding<automaton_A, output_type, automaton_B, automaton_B::input_type> (this);
+    add_observable (m_binding);
     m_b1 = new ioa::automaton_manager<automaton_B> (this, ioa::make_generator<automaton_B> ());
     add_observable (m_b1);
     m_binding->set_output (&m_self, &automaton_A::output);

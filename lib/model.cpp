@@ -452,32 +452,6 @@ namespace ioa {
     return 0;
   }
 
-  int model::execute_sys_self_destruct (const aid_t aid) {
-    shared_lock lock (m_mutex);
-
-    if (!m_aids.contains (aid)) {
-      // Automaton does not exists.
-      return -1;
-    }
-
-    automaton* instance = get_instance (automaton_handle<automaton> (aid));
-
-    lock_automaton (aid);
-    m_system_scheduler.set_current_aid (aid);
-    if (instance->sys_self_destruct.precondition (*instance)) {
-      instance->sys_self_destruct (*instance);
-      m_system_scheduler.clear_current_aid ();
-      unlock_automaton (aid);
-      m_system_scheduler.self_destruct (aid);
-    }
-    else {
-      m_system_scheduler.clear_current_aid ();
-      unlock_automaton (aid);
-    }
-
-    return 0;
-  }
-
   int model::execute_output_bound (output_executor_interface& exec) {
     shared_lock lock (m_mutex);
     

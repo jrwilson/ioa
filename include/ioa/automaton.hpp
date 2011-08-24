@@ -76,8 +76,6 @@ namespace ioa {
     std::set<system_binding_manager_interface*> m_unbind_send;
     std::set<system_binding_manager_interface*> m_unbind_recv;
 
-    bool m_self_destruct;
-
     // Automata can't be copied.
     automaton (const automaton&);
     automaton& operator= (const automaton&);
@@ -89,7 +87,6 @@ namespace ioa {
     void bind (system_binding_manager_interface* helper);
     void unbind (system_binding_manager_interface* helper);
     void destroy (system_automaton_manager_interface* helper);
-    void self_destruct ();
 
   private:
     void schedule () const;
@@ -121,13 +118,6 @@ namespace ioa {
     void sys_destroy_schedule () const { schedule (); }
   public:
     SYSTEM_OUTPUT (automaton, sys_destroy, void*);
-
-  private:
-    bool sys_self_destruct_precondition () const;
-    void* sys_self_destruct_effect ();
-    void sys_self_destruct_schedule () const { schedule (); }
-  public:
-    SYSTEM_OUTPUT (automaton, sys_self_destruct, void*);
 
   public:
     struct created_arg_t {

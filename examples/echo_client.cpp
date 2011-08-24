@@ -72,7 +72,7 @@ private:
       strerror_r (val.err, buf, 256);
       std::cerr << "Couldn't connect: " << buf << std::endl;
 #endif
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
     else {
       m_connection = val.handle;
@@ -124,7 +124,7 @@ private:
       strerror_r (err, buf, 256);
       std::cerr << "Couldn't send: " << buf << std::endl;
 #endif
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
   }
 
@@ -143,13 +143,13 @@ private:
       strerror_r (val.err, buf, 256);
       std::cerr << "Couldn't receive: " << buf << std::endl;
 #endif
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
     else {
       assert (val.buffer.get () != 0);
       std::string s (static_cast<const char*> (val.buffer->data ()), val.buffer->size ());
       std::cout << "Received:\t" << s << std::endl;
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
   }
   

@@ -161,10 +161,6 @@ struct test_system_scheduler :
     assert (false);
   }
 
-  void self_destruct (const ioa::aid_t automaton) {
-    assert (false);
-  }
-
   void created (const ioa::aid_t automaton,
 		const ioa::created_t type,
 		void* const key,

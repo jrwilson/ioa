@@ -32,8 +32,6 @@ namespace ioa {
     
     void schedule (automaton::sys_destroy_type automaton::*ptr);
 
-    void schedule (automaton::sys_self_destruct_type automaton::*ptr);
-    
     void schedule (action_runnable_interface*);
     
     void schedule_after (action_runnable_interface*,

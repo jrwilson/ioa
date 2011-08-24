@@ -43,7 +43,7 @@ namespace ioa {
     if ((o == &send_complete && send_complete.recent_op == UNBOUND) ||
 	(o == &receive && receive.recent_op == UNBOUND)) {
       // User is unbinding.  Time to die.
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
     else if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive_state == SCHEDULE_READ_READY) {
       // An automaton has bound to receive but we will never receive because m_fd is bad.

@@ -129,7 +129,6 @@ namespace ioa {
     int execute_sys_bind (const aid_t automaton);
     int execute_sys_unbind (const aid_t automaton);
     int execute_sys_destroy (const aid_t automaton);
-    int execute_sys_self_destruct (const aid_t automaton);
     int execute_output_bound (output_executor_interface& exec);
     int execute_input_bound (input_executor_interface& exec);
     int execute_output_unbound (output_executor_interface& exec);

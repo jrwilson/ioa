@@ -38,7 +38,6 @@ namespace ioa {
     virtual int execute_sys_bind (const aid_t automaton) = 0;
     virtual int execute_sys_unbind (const aid_t automaton) = 0;
     virtual int execute_sys_destroy (const aid_t automaton) = 0;
-    virtual int execute_sys_self_destruct (const aid_t automaton) = 0;
 
     // Executing configuation actions.
     virtual aid_t create (const aid_t automaton,

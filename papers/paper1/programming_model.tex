@@ -1,3 +1,52 @@
 \section{I/O Automata Representation and Programming Model\label{representation}}
 
 Conclude with our recommendations for programming, highlight need for exploration.
+
+%% \begin{outline}
+%% \item State
+%%   \begin{outline}
+%%   \item There is no shared state in a 
+%%   \item Local state only
+%%   \item Shared state
+%%     \begin{outline}
+%%       \item Impossible in distributed systems
+%%       \item Dangerous in local systems
+%%     \end{outline}
+%%   \end{outline}
+%% \item Communication
+%%   \begin{outline}
+%%   \item Atomic asynchronous message passing
+%%   \item Network sets size of atom (UDP)
+%%   \item Can build reliable streams (TCP)
+%%   \item Local equivalent is passing a value
+%%   \item Model should lend itself to writing protocols
+%%   \end{outline}
+%% \item Asynchrony
+%%   \begin{outline}
+%%     \item Model must have natural support for asynchrony, i.e., event-based
+%%     \item Leads to a more efficient implementation because changed state and enabled actions become obvious
+%%   \end{outline}
+%% \item Concurrency
+%%   \begin{outline}
+%%     \item Reason about systems using non-deterministic interleaving of atomic actions
+%%     \item Model should admit implementations that execute concurrently
+%%   \end{outline}
+%% \item Dynamics
+%%   \begin{outline}
+%%     \item Configuration - Edges in graph of communicating components can change at run-time.
+%%       \begin{outline}
+%%       \item Already required in distributed settings
+%%       \item Not addressed in formal models
+%%       \end{outline}
+%%     \item Extension - Nodes in graph of communicating components can change at run-time.
+%%   \end{outline}
+%%   \item Reflection
+%% \end{outline}
+
+%% I/O Automata
+%% \begin{itemize}
+%%   \item Compare with UNITY
+%%   \item Compare with esterel
+%%   \item Compare with pi calculus
+%%   \item Compare with Ptolemy
+%% \end{itemize}

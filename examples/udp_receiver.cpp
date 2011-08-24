@@ -48,7 +48,7 @@ private:
       strerror_r (v.err, buf, 256);
       std::cerr << "Couldn't receive udp_receiver_automaton: " << buf << std::endl;
 #endif
-      self_destruct ();
+      // TODO:  self_destruct ();
     }
     else {
       assert (v.buffer.get () != 0);

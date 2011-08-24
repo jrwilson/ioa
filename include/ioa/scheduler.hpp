@@ -19,7 +19,6 @@ namespace ioa {
   void schedule (automaton::sys_bind_type automaton::*ptr);
   void schedule (automaton::sys_unbind_type automaton::*ptr);
   void schedule (automaton::sys_destroy_type automaton::*ptr);
-  void schedule (automaton::sys_self_destruct_type automaton::*ptr);
 
   template <class I, class M>
   void schedule (M I::*member_ptr) {
