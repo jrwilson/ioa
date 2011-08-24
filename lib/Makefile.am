@@ -3,7 +3,6 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libioa.la
 
 libioa_la_SOURCES = \
-alarm_automaton.cpp \
 automaton.cpp \
 automaton_record.hpp \
 automaton_record.cpp \
