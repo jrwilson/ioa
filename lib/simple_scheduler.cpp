@@ -191,8 +191,8 @@ namespace ioa {
     void process_ioq () {
       clear_current_aid ();
     
-      std::priority_queue<time_action, std::vector<time_action>, std::greater<time_action> > timer_queue;
-      std::set<action_runnable_interface*, compare_action_runnable> timer_set;
+      std::multimap<time, action_runnable_interface*> time_to_action;
+      std::map<action_runnable_interface*, time, compare_action_runnable> action_to_time;
       std::map<int, action_runnable_interface*> read_actions;
       std::map<int, action_runnable_interface*> write_actions;
     
@@ -211,12 +211,31 @@ namespace ioa {
 	    time_action a = m_timerq.list.front ();
 	    m_timerq.list.pop_front ();
 
-	    if (timer_set.find (a.second) == timer_set.end ()) {
-	      timer_queue.push (a);
-	      timer_set.insert (a.second);
+	    std::map<action_runnable_interface*, time, compare_action_runnable>::iterator pos = action_to_time.find (a.second);
+	    
+	    if (pos == action_to_time.end ()) {
+	      // Insert new action.
+	      time_to_action.insert (a);
+	      action_to_time.insert (std::make_pair (a.second, a.first));
+	    }
+	    else if (a.first < pos->second) {
+	      // Action already has a time but new time is earlier.
+	      
+	      // Remove old action.
+	      delete pos->first;
+	      std::multimap<time, action_runnable_interface*>::iterator pos2;
+	      for (pos2 = time_to_action.find (pos->second);
+		   pos2 != time_to_action.end () && pos2->second != pos->first;
+		   ++pos2) ;;
+	      time_to_action.erase (pos2);
+	      action_to_time.erase (pos);
+	      
+	      // Insert new action.
+	      time_to_action.insert (a);
+	      action_to_time.insert (std::make_pair (a.second, a.first));
 	    }
 	    else {
-	      // Duplicate.
+	      // Action will execute after existing action.
 	      delete a.second;
 	    }
 	  }
@@ -257,15 +276,15 @@ namespace ioa {
 	struct timeval* test_timeout;
 	struct timeval timeout;
       
-	if (timer_queue.empty ()) {
+	if (time_to_action.empty ()) {
 	  test_timeout = 0;
 	}
 	else {
 	  time now = time::now ();
 
-	  if (timer_queue.top ().first > now) {
+	  if (time_to_action.begin ()->first > now) {
 	    // Timer is some time in future.
-	    timeout = timer_queue.top ().first - now;
+	    timeout = time_to_action.begin ()->first - now;
 	  }
 	  else {
 	    // Timer is in the past.  Return immediately.
@@ -331,10 +350,12 @@ namespace ioa {
 	// Process timers.
 	{
 	  time now = time::now ();
-	
-	  while (!timer_queue.empty () && timer_queue.top ().first < now) {
-	    schedule_execq (timer_queue.top ().second);
-	    timer_queue.pop ();
+
+	  while (!time_to_action.empty () && time_to_action.begin ()->first < now) {
+	    action_runnable_interface* a = time_to_action.begin ()->second;
+	    time_to_action.erase (time_to_action.begin ());
+	    action_to_time.erase (a);
+	    schedule_execq (a);
 	  }
 	}
 
