@@ -3,11 +3,7 @@
 
 #include <ioa/ioa.hpp>
 #include <ioa/inet_address.hpp>
-
-#include <fcntl.h>
-
 #include <list>
-#include <algorithm>
 #include <string>
 
 namespace ioa {
@@ -30,7 +26,6 @@ namespace ioa {
 
   private:
     enum state_t {
-      SEND_WAIT,
       SCHEDULE_WRITE_READY,
       WRITE_READY_WAIT,
     };
@@ -45,57 +40,56 @@ namespace ioa {
       bool operator() (const std::pair<aid_t, send_arg>& o) const {
 	return m_aid == o.first;
       }
-
-      bool operator() (const std::pair<aid_t, int>& o) const {
-	return m_aid == o.first;
-      }
     };
+
+    std::list<std::pair<aid_t, send_arg> > m_send_queue;
+    std::set<aid_t> m_send_set; // Set of aids in send_queue.
+    std::set<aid_t> m_complete_set;
 
     state_t m_state;
     int m_fd;
     int m_errno;
+    bool m_error_reported;
 
-    std::list<std::pair<aid_t, send_arg> > m_send_queue;
-    std::set<aid_t> m_send_set; // Set of aids in send_queue.
-    
-    std::map<aid_t, int> m_complete_map;
+    void schedule () const;
+    void observe (observable* o);
+    void purge (const aid_t aid);
+    void add_to_complete_set (const aid_t aid);
 
   public:
     udp_sender_automaton (const size_t send_buf_size = 0);
     ~udp_sender_automaton ();
 
   private:
-    void schedule () const;
-    void observe (observable* o);
-    void purge (const aid_t aid);
-    void add_to_send_queue (const aid_t aid,
-			    const send_arg& arg);
-    void add_to_complete_map (const aid_t aid,
-			      const int err_no);
-
-  private:
     void send_effect (const send_arg& arg, aid_t aid);
-    void send_schedule (aid_t) const { schedule (); }
+    void send_schedule (aid_t) const;
   public:
     V_AP_INPUT (udp_sender_automaton, send, send_arg);
 
   private:
+    bool send_complete_precondition (aid_t aid) const;
+    void send_complete_effect (aid_t aid);
+    void send_complete_schedule (aid_t) const;
+  public:
+    UV_AP_OUTPUT (udp_sender_automaton, send_complete);
+
+  private:
+    bool error_precondition () const;
+    int error_effect ();
+    void error_schedule () const;
+  public:
+    V_UP_OUTPUT (udp_sender_automaton, error, int);
+
+  private:
     bool schedule_write_ready_precondition () const;
     void schedule_write_ready_effect ();
-    void schedule_write_ready_schedule () const { schedule (); }
+    void schedule_write_ready_schedule () const;
     UP_INTERNAL (udp_sender_automaton, schedule_write_ready);
 
     bool write_ready_precondition () const;
     void write_ready_effect ();
-    void write_ready_schedule () const { schedule (); }
+    void write_ready_schedule () const;
     UP_INTERNAL (udp_sender_automaton, write_ready);
-
-  private:
-    bool send_complete_precondition (aid_t aid) const;
-    int send_complete_effect (aid_t aid);
-    void send_complete_schedule (aid_t) const { schedule (); }
-  public:
-    V_AP_OUTPUT (udp_sender_automaton, send_complete, int);
   };
 
 }
