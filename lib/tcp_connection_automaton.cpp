@@ -2,6 +2,21 @@
 
 namespace ioa {
 
+  void tcp_connection_automaton::observe (observable* o) {
+    if ((o == &send_complete && send_complete.recent_op == UNBOUND) ||
+	(o == &receive && receive.recent_op == UNBOUND)) {
+      // User is unbinding.  Time to die.
+      // TODO:  self_destruct ();
+    }
+    else if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive_state == SCHEDULE_READ_READY) {
+      // An automaton has bound to receive but we will never receive because m_fd is bad.
+      // Generate an error.
+      m_receive_buffer.reset ();
+      m_receive_state = RECEIVE_READY;
+      schedule ();
+    }
+  }
+
   tcp_connection_automaton::tcp_connection_automaton (const int fd) :
     m_fd (fd),
     m_send_state (SEND_WAIT),
@@ -36,21 +51,6 @@ namespace ioa {
     }
     if (receive_precondition ()) {
       ioa::schedule (&tcp_connection_automaton::receive);
-    }
-  }
-
-  void tcp_connection_automaton::observe (observable* o) {
-    if ((o == &send_complete && send_complete.recent_op == UNBOUND) ||
-	(o == &receive && receive.recent_op == UNBOUND)) {
-      // User is unbinding.  Time to die.
-      // TODO:  self_destruct ();
-    }
-    else if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive_state == SCHEDULE_READ_READY) {
-      // An automaton has bound to receive but we will never receive because m_fd is bad.
-      // Generate an error.
-      m_receive_buffer.reset ();
-      m_receive_state = RECEIVE_READY;
-      schedule ();
     }
   }
 
@@ -202,6 +202,19 @@ namespace ioa {
   tcp_connection_automaton::receive_val tcp_connection_automaton::receive_effect () {
     m_receive_state = SCHEDULE_READ_READY;
     return receive_val (m_receive_errno, m_receive_buffer);
+  }
+
+  bool tcp_connection_automaton::closed_precondition () const {
+    // TODO
+    return false;
+  }
+
+  void tcp_connection_automaton::closed_effect () {
+    // TODO
+  }
+  
+  void tcp_connection_automaton::closed_schedule () const {
+    schedule ();
   }
 
 }

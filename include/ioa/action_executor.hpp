@@ -113,7 +113,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
 
@@ -187,8 +187,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
   };
@@ -263,8 +263,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
   };
@@ -331,7 +331,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
 
@@ -404,8 +404,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
   };
@@ -479,8 +479,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
   };
@@ -766,7 +766,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
 
@@ -908,8 +908,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
     bool involves_output (const action_executor_interface& exec) const {
@@ -1059,8 +1059,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
     bool involves_output (const action_executor_interface& exec) const {
@@ -1198,7 +1198,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
 
@@ -1341,8 +1341,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
     bool involves_output (const action_executor_interface& exec) const {
@@ -1493,8 +1493,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
 
     bool involves_output (const action_executor_interface& exec) const {
@@ -1587,7 +1587,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
       
@@ -1638,8 +1638,8 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
-      return static_cast<size_t> (m_parameter);
+    void* get_pid () const {
+      return reinterpret_cast<void*> (m_parameter);
     }
       
   };
@@ -1691,7 +1691,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
       
@@ -1724,7 +1724,7 @@ namespace ioa {
       return action_executor_core<I,M>::get_member_ptr ();
     }
 
-    size_t get_pid () const {
+    void* get_pid () const {
       return 0;
     }
   };

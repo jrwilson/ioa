@@ -100,6 +100,13 @@ namespace ioa {
     void receive_schedule () const { schedule (); }
   public:
     V_UP_OUTPUT (tcp_connection_automaton, receive, receive_val);
+
+  private:
+    bool closed_precondition () const;
+    void closed_effect ();
+    void closed_schedule () const;
+  public:
+    UV_UP_OUTPUT (tcp_connection_automaton, closed);
   };
 
 }

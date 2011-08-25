@@ -59,39 +59,41 @@ namespace ioa {
     int flags;
 
     // Open a socket.
-    m_fd = socket (AF_INET, SOCK_DGRAM, 0);
-    if (m_fd == -1) {
-      m_errno = errno;
-      return;
-    }
-      
-    // Get the flags.
-    flags = fcntl (m_fd, F_GETFL, 0);
-    if (flags < 0) {
-      m_errno = errno;
-      return;
-    }
-      
-    // Set non-blocking.
-    flags |= O_NONBLOCK;
-    res = fcntl (m_fd, F_SETFL, flags);
-    if (res < 0) {
-      m_errno = errno;
-      return;
-    }
-      
-    // Set broadcasting.
-    if (setsockopt (m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof (val)) == -1) {
-      m_errno = errno;
-      return;
-    }
-      
-    if (send_buf_size != 0) {
-      if (setsockopt (m_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof (send_buf_size)) == -1) {
+    try {
+      m_fd = socket (AF_INET, SOCK_DGRAM, 0);
+      if (m_fd == -1) {
 	m_errno = errno;
-	return;
+	throw;
       }
-    }
+      
+      // Get the flags.
+      flags = fcntl (m_fd, F_GETFL, 0);
+      if (flags < 0) {
+	m_errno = errno;
+	throw;
+      }
+      
+      // Set non-blocking.
+      flags |= O_NONBLOCK;
+      res = fcntl (m_fd, F_SETFL, flags);
+      if (res < 0) {
+	m_errno = errno;
+	throw;
+      }
+      
+      // Set broadcasting.
+      if (setsockopt (m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof (val)) == -1) {
+	m_errno = errno;
+	throw;
+      }
+      
+      if (send_buf_size != 0) {
+	if (setsockopt (m_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof (send_buf_size)) == -1) {
+	  m_errno = errno;
+	  throw;
+	}
+      }
+    } catch (...) { }
 
     schedule ();
   }

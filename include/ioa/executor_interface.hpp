@@ -16,7 +16,7 @@ namespace ioa {
     virtual bool fetch_instance (model_interface&) = 0;
     virtual aid_t get_aid () const = 0;
     virtual void* get_member_ptr () const = 0;
-    virtual size_t get_pid () const = 0;
+    virtual void* get_pid () const = 0;
 
     virtual bool operator== (const action_executor_interface& x) const {
       return

@@ -132,7 +132,7 @@ unvalued_parameterized_input_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::uv_p_input)) == action.get_member_ptr ());
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   test_model tm;
@@ -164,9 +164,9 @@ unvalued_auto_parameterized_input_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::uv_ap_input)) == action.get_member_ptr ());
-  mu_assert (size_t (-1) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
   action.set_parameter (parameter);
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   test_model tm;
@@ -226,7 +226,7 @@ valued_parameterized_input_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::v_p_input)) == action.get_member_ptr ());
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   test_model tm;
@@ -258,9 +258,9 @@ valued_auto_parameterized_input_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::v_ap_input)) == action.get_member_ptr ());
-  mu_assert (size_t (-1) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
   action.set_parameter (parameter);
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   test_model tm;
@@ -429,7 +429,7 @@ unvalued_parameterized_output_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::uv_p_output)) == action.get_member_ptr ());
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   mu_assert (action.involves_output (action));
@@ -544,7 +544,7 @@ unvalued_parameterized_output_action ()
   mu_assert (action.size () == 0);
 
   // Parameter didn't actually change.
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
 
   return 0;
 }
@@ -563,7 +563,7 @@ unvalued_auto_parameterized_output_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::uv_ap_output)) == action.get_member_ptr ());
-  mu_assert (size_t (-1) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
   mu_assert (action == action);
 
   mu_assert (action.involves_output (action));
@@ -591,7 +591,7 @@ unvalued_auto_parameterized_output_action ()
   mu_assert (action.involves_binding (action, input1, binder_handle));
   mu_assert (action.involves_aid_key (binder_handle, &input1));
 
-  mu_assert (size_t (input1_handle) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (ioa::aid_t (input1_handle)) == action.get_pid ());
 
   mu_assert (action.fetch_instance (tm));
   action (tm, tss);
@@ -760,7 +760,7 @@ valued_parameterized_output_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::v_p_output)) == action.get_member_ptr ());
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   mu_assert (action.involves_output (action));
@@ -875,7 +875,7 @@ valued_parameterized_output_action ()
   mu_assert (action.size () == 0);
 
   // Parameter didn't actually change.
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
 
   return 0;
 }
@@ -894,7 +894,7 @@ valued_auto_parameterized_output_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::v_ap_output)) == action.get_member_ptr ());
-  mu_assert (size_t (-1) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
   mu_assert (action == action);
 
   mu_assert (action.involves_output (action));
@@ -922,7 +922,7 @@ valued_auto_parameterized_output_action ()
   mu_assert (action.involves_binding (action, input1, binder_handle));
   mu_assert (action.involves_aid_key (binder_handle, &input1));
 
-  mu_assert (size_t (input1_handle) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (ioa::aid_t (input1_handle)) == action.get_pid ());
 
   mu_assert (action.fetch_instance (tm));
   action (tm, tss);
@@ -975,7 +975,7 @@ parameterized_internal_action ()
   mu_assert (action.get_aid () == h);
   automaton1* i = 0;
   mu_assert (&((*i).*(&automaton1::p_internal)) == action.get_member_ptr ());
-  mu_assert (size_t (parameter) == action.get_pid ());
+  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
   test_model tm;

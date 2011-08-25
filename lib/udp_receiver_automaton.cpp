@@ -66,14 +66,12 @@ namespace ioa {
     }
   }
 
-  udp_receiver_automaton::udp_receiver_automaton (const inet_address& address,
-						  const size_t max_queue_size) :
+  udp_receiver_automaton::udp_receiver_automaton (const inet_address& address) :
     m_state (SCHEDULE_READ_READY),
     m_fd (-1),
     m_errno (0),
     m_buf (0),
     m_buf_size (0),
-    m_max_queue_size (max_queue_size),
     m_error_reported (false)
   {
     prepare_socket (address);
@@ -81,14 +79,12 @@ namespace ioa {
   }
 
   udp_receiver_automaton::udp_receiver_automaton (const inet_address& group_addr,
-						  const inet_address& local_addr,
-						  const size_t max_queue_size) :
+						  const inet_address& local_addr) :
     m_state (SCHEDULE_READ_READY),
     m_fd (-1),
     m_errno (0),
     m_buf (0),
     m_buf_size (0),
-    m_max_queue_size (max_queue_size),
     m_error_reported (false)
   {
     prepare_socket (local_addr);
@@ -175,9 +171,7 @@ namespace ioa {
 
     if (actual_bytes != -1) {
       // Success.
-      if (m_max_queue_size == 0 || m_recv_queue.size () < m_max_queue_size) {
-	m_recv_queue.push (receive_val (address, const_shared_ptr<std::string> (new std::string (m_buf, actual_bytes))));
-      }
+      m_recv_queue.push (receive_val (address, const_shared_ptr<std::string> (new std::string (m_buf, actual_bytes))));
     }
     else {
       m_errno = errno;

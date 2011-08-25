@@ -110,19 +110,15 @@ public:
 
 private:
   void accept_effect (const ioa::tcp_acceptor_automaton::accept_val& val) {
-    if (val.err != 0) {
-      new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (val.handle));
-    }
-    else {
-      char buf[256];
-#ifdef STRERROR_R_CHAR_P
-      std::cerr << "Couldn't accept: " << strerror_r (val.err, buf, 256) << std::endl;
-#else
-      strerror_r (val.err, buf, 256);
-      std::cerr << "Couldn't accept: " << buf << std::endl;
-#endif
-      // TODO:  self_destruct ();
-    }
+    new ioa::automaton_manager<client_handler_automaton> (this, ioa::make_generator<client_handler_automaton> (val.handle));
+//       char buf[256];
+// #ifdef STRERROR_R_CHAR_P
+//       std::cerr << "Couldn't accept: " << strerror_r (val.err, buf, 256) << std::endl;
+// #else
+//       strerror_r (val.err, buf, 256);
+//       std::cerr << "Couldn't accept: " << buf << std::endl;
+// #endif
+//       // TODO:  self_destruct ();
   }
 
   void accept_schedule () const { }

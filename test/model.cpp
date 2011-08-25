@@ -36,7 +36,7 @@ struct unbound_record
 {
   ioa::aid_t m_aid;
   const void* m_member_ptr;
-  size_t m_pid;
+  void* m_pid;
 
   unbound_record (const ioa::action_executor_interface& ac) :
     m_aid (ac.get_aid ()),
@@ -93,11 +93,11 @@ struct test_system_scheduler :
 
   ioa::aid_t m_output_bound_aid;
   const void* m_output_bound_member_ptr;
-  size_t m_output_bound_pid;
+  void* m_output_bound_pid;
 
   ioa::aid_t m_input_bound_aid;
   const void* m_input_bound_member_ptr;
-  size_t m_input_bound_pid;
+  void* m_input_bound_pid;
 
   std::set<unbound_t> m_unbound;
 

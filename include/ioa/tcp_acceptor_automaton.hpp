@@ -3,10 +3,7 @@
 
 #include <ioa/tcp_connection_automaton.hpp>
 #include <ioa/inet_address.hpp>
-#include <fcntl.h>
 #include <queue>
-
-#define BACKLOG 5
 
 namespace ioa {
   
@@ -17,14 +14,11 @@ namespace ioa {
   public:
     struct accept_val
     {
-      int err;
       inet_address address;
       automaton_handle<tcp_connection_automaton> handle;
 
-      accept_val (const int e,
-		  const inet_address& a,
+      accept_val (const inet_address& a,
 		  const automaton_handle<tcp_connection_automaton>& h) :
-	err (e),
 	address (a),
 	handle (h)
       { }
@@ -34,48 +28,51 @@ namespace ioa {
     enum state_t {
       SCHEDULE_READ_READY,
       READ_READY_WAIT,
-      CREATE_READY,
-      CREATED_WAIT,
-      ACCEPT_READY,
     };
     state_t m_state;
     int m_fd;
     int m_errno;
-    inet_address m_address;
-    int m_connection_fd;
-    automaton_manager<tcp_connection_automaton>* m_connection;
-    automaton_handle<tcp_connection_automaton> m_handle;
+    bool m_error_reported;
+    handle_manager<tcp_acceptor_automaton> m_self;
+    std::map<automaton_manager<tcp_connection_automaton>*, inet_address> m_address_map;
+    std::queue<std::pair<inet_address, automaton_manager<tcp_connection_automaton>*> > m_accept_queue;
 
-  public:
-    tcp_acceptor_automaton (const ioa::inet_address& address);
-    ~tcp_acceptor_automaton ();
-
-  private:
     void schedule () const;
     void observe (observable* o);
 
-  private:
-    bool schedule_read_ready_precondition () const;
-    void schedule_read_ready_effect ();
-    void schedule_read_ready_schedule () const { schedule (); }
-    UP_INTERNAL (tcp_acceptor_automaton, schedule_read_ready);
-
-    bool read_ready_precondition () const;
-    void read_ready_effect ();
-    void read_ready_schedule () const { schedule (); }
-    UP_INTERNAL (tcp_acceptor_automaton, read_ready);
-
-    bool create_precondition () const;
-    void create_effect ();
-    void create_schedule () const { schedule (); }
-    UP_INTERNAL (tcp_acceptor_automaton, create);
+  public:
+    tcp_acceptor_automaton (const ioa::inet_address& address,
+			    const int backlog = 5);
+    ~tcp_acceptor_automaton ();
 
   private:
     bool accept_precondition () const;
     accept_val accept_effect ();
-    void accept_schedule () const { schedule (); }
+    void accept_schedule () const;
   public:
     V_UP_OUTPUT (tcp_acceptor_automaton, accept, accept_val);
+
+  private:
+    bool error_precondition () const;
+    int error_effect ();
+    void error_schedule () const;
+  public:
+    V_UP_OUTPUT (tcp_acceptor_automaton, error, int);
+
+  private:
+    bool schedule_read_ready_precondition () const;
+    void schedule_read_ready_effect ();
+    void schedule_read_ready_schedule () const;
+    UP_INTERNAL (tcp_acceptor_automaton, schedule_read_ready);
+
+    bool read_ready_precondition () const;
+    void read_ready_effect ();
+    void read_ready_schedule () const;
+    UP_INTERNAL (tcp_acceptor_automaton, read_ready);
+
+    void closed_effect (automaton_manager<tcp_connection_automaton>*);
+    void closed_schedule (automaton_manager<tcp_connection_automaton>*) const;
+    UV_P_INPUT (tcp_acceptor_automaton, closed, automaton_manager<tcp_connection_automaton>*);
   };
 
 }

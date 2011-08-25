@@ -34,7 +34,6 @@ namespace ioa {
     int m_errno;
     char* m_buf;
     ssize_t m_buf_size;
-    size_t m_max_queue_size;
     std::queue<receive_val> m_recv_queue;
     bool m_error_reported;
 
@@ -43,11 +42,9 @@ namespace ioa {
     void schedule () const;
 
   public:
-    udp_receiver_automaton (const inet_address& address,
-			    const size_t max_queue_size = 8);
+    udp_receiver_automaton (const inet_address& address);
     udp_receiver_automaton (const inet_address& group_addr,
-			    const inet_address& local_addr,
-			    const size_t max_queue_size = 8);
+			    const inet_address& local_addr);
     ~udp_receiver_automaton ();
 
   private:
