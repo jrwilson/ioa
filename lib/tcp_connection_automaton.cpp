@@ -1,43 +1,11 @@
 #include <ioa/tcp_connection_automaton.hpp>
 
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/socket.h>
+
 namespace ioa {
-
-  void tcp_connection_automaton::observe (observable* o) {
-    if ((o == &send_complete && send_complete.recent_op == UNBOUND) ||
-	(o == &receive && receive.recent_op == UNBOUND)) {
-      // User is unbinding.  Time to die.
-      // TODO:  self_destruct ();
-    }
-    else if (o == &receive && receive.recent_op == BOUND && m_fd == -1 && m_receive_state == SCHEDULE_READ_READY) {
-      // An automaton has bound to receive but we will never receive because m_fd is bad.
-      // Generate an error.
-      m_receive_buffer.reset ();
-      m_receive_state = RECEIVE_READY;
-      schedule ();
-    }
-  }
-
-  tcp_connection_automaton::tcp_connection_automaton (const int fd) :
-    m_fd (fd),
-    m_send_state (SEND_WAIT),
-    m_send_errno (0),
-    m_receive_state (SCHEDULE_READ_READY),
-    m_receive_errno (0),
-    m_buffer (0),
-    m_buffer_size (0)
-  {
-    assert (m_fd != -1);
-    add_observable (&send_complete);
-    add_observable (&receive);
-    schedule ();
-  }
-
-  tcp_connection_automaton::~tcp_connection_automaton () {
-    if (m_fd != -1) {
-      close (m_fd);
-    }
-    delete[] m_buffer;
-  }
 
   void tcp_connection_automaton::schedule () const {
     if (schedule_write_precondition ()) {
@@ -52,58 +20,70 @@ namespace ioa {
     if (receive_precondition ()) {
       ioa::schedule (&tcp_connection_automaton::receive);
     }
+    if (error_precondition ()) {
+      ioa::schedule (&tcp_connection_automaton::error);
+    }
+  }
+
+  tcp_connection_automaton::tcp_connection_automaton () :
+    m_fd (-1),
+    m_errno (0),
+    m_connected_reported (false),
+    m_error_reported (false),
+    m_send_state (SEND_WAIT),
+    m_receive_state (SCHEDULE_READ_READY),
+    m_buffer (0),
+    m_buffer_size (0)
+  { }
+
+  tcp_connection_automaton::~tcp_connection_automaton () {
+    if (m_fd != -1) {
+      ioa::close (m_fd);
+    }
+    delete[] m_buffer;
   }
 
   void tcp_connection_automaton::send_effect (const const_shared_ptr<std::string>& buf) {
-    if (m_send_state == SEND_WAIT) {
-      if (m_fd == -1) {
-	m_send_state = SEND_COMPLETE_READY;
-      }
-      else if (buf.get () == 0) {
-	// No buffer.  Go straight to complete.
-	m_send_state = SEND_COMPLETE_READY;
-      }
-      else {
+    if (m_errno == 0 && m_send_state == SEND_WAIT) {
+      if (buf.get () != 0) {
 	m_send_buffer = buf;
 	m_bytes_written = 0;
 	m_send_state = SCHEDULE_WRITE_READY;
       }
+      else {
+	// No buffer.  Go straight to complete.  User should have checked.
+	m_send_state = SEND_COMPLETE_READY;
+      }
     }
+  }
+
+  void tcp_connection_automaton::send_schedule () const {
+    schedule ();
   }
 
   bool tcp_connection_automaton::schedule_write_precondition () const {
-    return m_send_state == SCHEDULE_WRITE_READY;
+    return m_fd != -1 && m_errno == 0 && m_send_state == SCHEDULE_WRITE_READY;
   }
 
   void tcp_connection_automaton::schedule_write_effect () {
-    if (m_fd != -1) {
-      ioa::schedule_write_ready (&tcp_connection_automaton::write_ready, m_fd);
-      m_send_state = WRITE_READY_WAIT;
-    }
-    else {
-      m_send_state = SEND_COMPLETE_READY;
-    }
+    m_send_state = WRITE_READY_WAIT;
+    ioa::schedule_write_ready (&tcp_connection_automaton::write_ready, m_fd);
   }
 
+  void tcp_connection_automaton::schedule_write_schedule () const {
+    schedule ();
+  }
+  
   bool tcp_connection_automaton::write_ready_precondition () const {
-    return m_send_state == WRITE_READY_WAIT;
+    return m_fd != -1 && m_errno == 0 && m_send_state == WRITE_READY_WAIT;
   }
 
   void tcp_connection_automaton::write_ready_effect () {
-    if (m_fd == -1) {
-      m_send_state = SEND_COMPLETE_READY;
-      return;
-    }
-
     // Write to the socket.
     ssize_t bytes_written = write (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written);
     
     if (bytes_written == -1) {
-      m_send_errno = errno;
-      m_receive_errno = errno;
-      close (m_fd);
-      m_fd = -1;
-      m_send_state = SEND_COMPLETE_READY;
+      m_errno = errno;
     }
     else {
       // We have made progress.
@@ -120,48 +100,44 @@ namespace ioa {
     }
   }
 
+  void tcp_connection_automaton::write_ready_schedule () const {
+    schedule ();
+  }
+  
   bool tcp_connection_automaton::send_complete_precondition () const {
     return m_send_state == SEND_COMPLETE_READY && binding_count (&tcp_connection_automaton::send_complete) != 0;
   }
 
-  int tcp_connection_automaton::send_complete_effect () {
+  void tcp_connection_automaton::send_complete_effect () {
     m_send_state = SEND_WAIT;
-    return m_send_errno;
   }
 
+  void tcp_connection_automaton::send_complete_schedule () const {
+    schedule ();
+  }
+  
   bool tcp_connection_automaton::schedule_read_precondition () const {
-    return m_receive_state == SCHEDULE_READ_READY && m_fd != -1;
+    return m_fd != -1 && m_errno == 0 && m_receive_state == SCHEDULE_READ_READY;
   }
 
   void tcp_connection_automaton::schedule_read_effect () {
-    if (m_fd != -1) {
-      ioa::schedule_read_ready (&tcp_connection_automaton::read_ready, m_fd);
-      m_receive_state = READ_READY_WAIT;
-    }
-    else {
-      m_receive_state = RECEIVE_READY;
-    }
+    m_receive_state = READ_READY_WAIT;
+    ioa::schedule_read_ready (&tcp_connection_automaton::read_ready, m_fd);
   }
 
+  void tcp_connection_automaton::schedule_read_schedule () const {
+    schedule ();
+  }
+  
   bool tcp_connection_automaton::read_ready_precondition () const {
-    return m_receive_state == READ_READY_WAIT;
+    return m_fd != -1 && m_errno == 0 && m_receive_state == READ_READY_WAIT;
   }
 
   void tcp_connection_automaton::read_ready_effect () {
-    if (m_fd == -1) {
-      m_receive_state = RECEIVE_READY;
-      return;
-    }
-
     // Determine the number of bytes we can read without blocking.
     int num_bytes;
     if (ioctl (m_fd, FIONREAD, &num_bytes) == -1) {
-      m_send_errno = errno;
-      m_receive_errno = errno;
-      m_receive_buffer.reset ();
-      close (m_fd);
-      m_fd = -1;
-      m_receive_state = RECEIVE_READY;
+      m_errno = errno;
       return;
     }
 
@@ -173,21 +149,11 @@ namespace ioa {
     }
     ssize_t bytes_read = read (m_fd, m_buffer, num_bytes);
     if (bytes_read == -1) {
-      m_send_errno = errno;
-      m_receive_errno = errno;
-      m_receive_buffer.reset ();
-      close (m_fd);
-      m_fd = -1;
-      m_receive_state = RECEIVE_READY;      
+      m_errno = errno;
       return;
     }
     else if (bytes_read == 0) {
-      m_send_errno = ECONNRESET;
-      m_receive_errno = ECONNRESET;
-      m_receive_buffer.reset ();
-      close (m_fd);
-      m_fd = -1;
-      m_receive_state = RECEIVE_READY;
+      m_errno = ECONNRESET;
       return;
     }
 
@@ -195,25 +161,137 @@ namespace ioa {
     m_receive_state = RECEIVE_READY;      
   }
 
+  void tcp_connection_automaton::read_ready_schedule () const {
+    schedule ();
+  }
+  
   bool tcp_connection_automaton::receive_precondition () const {
     return m_receive_state == RECEIVE_READY && binding_count (&tcp_connection_automaton::receive) != 0;
   }
 
-  tcp_connection_automaton::receive_val tcp_connection_automaton::receive_effect () {
+  const_shared_ptr<std::string> tcp_connection_automaton::receive_effect () {
     m_receive_state = SCHEDULE_READ_READY;
-    return receive_val (m_receive_errno, m_receive_buffer);
+    return m_receive_buffer;
   }
 
-  bool tcp_connection_automaton::closed_precondition () const {
-    // TODO
-    return false;
+  void tcp_connection_automaton::receive_schedule () const {
+    schedule ();
   }
 
-  void tcp_connection_automaton::closed_effect () {
-    // TODO
+  void tcp_connection_automaton::init_effect (const int& fd) {
+    if (m_fd == -1) {
+      m_fd = fd;
+    }
+  }
+
+  void tcp_connection_automaton::init_schedule () const {
+    schedule ();
+  }
+
+  bool tcp_connection_automaton::connected_precondition () const {
+    return m_fd != -1 && !m_connected_reported && binding_count (&tcp_connection_automaton::connected) != 0;
+  }
+
+  void tcp_connection_automaton::connected_effect () {
+    m_connected_reported = true;
   }
   
-  void tcp_connection_automaton::closed_schedule () const {
+  void tcp_connection_automaton::connected_schedule () const {
+    schedule ();
+  }
+
+  bool tcp_connection_automaton::error_precondition () const {
+    return m_errno != 0 && !m_error_reported && binding_count (&tcp_connection_automaton::error) != 0;
+  }
+
+  int tcp_connection_automaton::error_effect () {
+    m_error_reported = true;
+    return m_errno;
+  }
+  
+  void tcp_connection_automaton::error_schedule () const {
+    schedule ();
+  }
+
+  connection_init_automaton::connection_init_automaton (const automaton_handle<tcp_connection_automaton>& conn,
+							int fd) :
+    m_state (START),
+    m_self (get_aid ()),
+    m_conn (conn),
+    m_fd (fd) {
+    add_observable (make_binding_manager (this,
+					  &m_self, &connection_init_automaton::init,
+					  &m_conn, &tcp_connection_automaton::init));
+  }
+
+  void connection_init_automaton::observe (observable* o) {
+    binding_manager_interface* bmi = static_cast<binding_manager_interface*> (o);
+    switch (bmi->get_state ()) {
+    case binding_manager_interface::START:
+      // Do nothing.
+      break;
+    case binding_manager_interface::OUTPUT_AUTOMATON_DNE:
+    case binding_manager_interface::INPUT_AUTOMATON_DNE:
+    case binding_manager_interface::BINDING_EXISTS:
+    case binding_manager_interface::INPUT_ACTION_UNAVAILABLE:
+    case binding_manager_interface::OUTPUT_ACTION_UNAVAILABLE:
+      // Fail.
+      m_state = FAIL;
+      break;
+    case binding_manager_interface::BOUND:
+      break;
+    case binding_manager_interface::UNBOUND:
+      break;
+    }
+    
+    schedule ();
+  }
+
+  void connection_init_automaton::schedule () const {
+    if (init_precondition ()) {
+      ioa::schedule (&connection_init_automaton::init);
+    }
+    if (done_precondition ()) {
+      ioa::schedule (&connection_init_automaton::done);
+    }
+  }
+
+  bool connection_init_automaton::init_precondition () const {
+    return m_state == START && binding_count (&connection_init_automaton::init) != 0;
+  }
+
+  int connection_init_automaton::init_effect () {
+    m_state = SUCCESS;
+    return m_fd;
+  }
+
+  void connection_init_automaton::init_schedule () const {
+    schedule ();
+  }
+
+  bool connection_init_automaton::done_precondition () const {
+    return (m_state == SUCCESS || m_state == FAIL) && binding_count (&connection_init_automaton::done) != 0;
+  }
+
+  int connection_init_automaton::done_effect () {
+    int retval;
+    switch (m_state) {
+    case SUCCESS:
+      retval = -1;
+      break;
+    case FAIL:
+      retval = m_fd;
+      break;
+    default:
+      assert (false);
+      break;
+    }
+    m_state = STOP;
+
+    return retval;
+  }
+
+  void connection_init_automaton::done_schedule () const {
     schedule ();
   }
 

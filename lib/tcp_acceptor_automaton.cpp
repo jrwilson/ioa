@@ -4,42 +4,10 @@
 
 namespace ioa {
 
-  void tcp_acceptor_automaton::schedule () const {
-    if (accept_precondition ()) {
-      ioa::schedule (&tcp_acceptor_automaton::accept);
-    }
-    if (error_precondition ()) {
-      ioa::schedule (&tcp_acceptor_automaton::error);
-    }
-    if (schedule_read_ready_precondition ()) {
-      ioa::schedule (&tcp_acceptor_automaton::schedule_read_ready);
-    }
-  }
-
-  void tcp_acceptor_automaton::observe (observable* o) {
-    automaton_manager<tcp_connection_automaton>* connection = static_cast<automaton_manager<tcp_connection_automaton>* > (o);
-
-    switch (connection->get_state ()) {
-    case automaton_manager_interface::CREATED:
-      {
-	inet_address address = m_address_map[connection];
-	m_address_map.erase (connection);
-	m_accept_queue.push (std::make_pair (address, connection));
-	remove_observable (connection);
-      }
-      break;
-    default:
-      // Do nothing.
-      break;
-    }
-    
-    schedule ();
-  }
-
   tcp_acceptor_automaton::tcp_acceptor_automaton (const ioa::inet_address& address,
 						  const int backlog) :
+    m_address (address),
     m_state (SCHEDULE_READ_READY),
-    m_fd (-1),
     m_errno (0),
     m_error_reported (false),
     m_self (get_aid ())
@@ -49,50 +17,50 @@ namespace ioa {
       m_fd = socket (AF_INET, SOCK_STREAM, 0);
       if (m_fd == -1) {
 	m_errno = errno;
-	return;
+	throw;
       }
       
       // Get the flags.
       int flags = fcntl (m_fd, F_GETFL, 0);
       if (flags < 0) {
 	m_errno = errno;
-	return;
+	throw;
       }
       
       // Set non-blocking.
       flags |= O_NONBLOCK;
       if (fcntl (m_fd, F_SETFL, flags) == -1) {
 	m_errno = errno;
-	return;
+	throw;
       }
       
-      const int val = 1;
-#ifdef SO_REUSEADDR
-      // Set reuse.
-      if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val)) == -1) {
-	m_errno = errno;
-	return;
-      }
-#endif
+      //       const int val = 1;
+      // #ifdef SO_REUSEADDR
+      //       // Set reuse.
+      //       if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val)) == -1) {
+      // 	m_errno = errno;
+      // 	throw;
+      //       }
+      // #endif
       
-#ifdef SO_REUSEPORT
-      // Set reuse.
-      if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
-	m_errno = errno;
-	return;
-      }
-#endif
+      // #ifdef SO_REUSEPORT
+      //       // Set reuse.
+      //       if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
+      // 	m_errno = errno;
+      // 	throw;
+      //       }
+      // #endif
 
       // Bind.
       if (::bind (m_fd, address.get_sockaddr (), address.get_socklen ()) == -1) {
 	m_errno = errno;
-	return;
+	throw;
       }
 
       // Listen.
       if (listen (m_fd, backlog) == -1) {
 	m_errno = errno;
-	return;
+	throw;
       }
     } catch (...) { }
 
@@ -103,25 +71,31 @@ namespace ioa {
     if (m_fd != -1) {
       close (m_fd);
     }
-  }
-
-  bool tcp_acceptor_automaton::accept_precondition () const {
-    return !m_accept_queue.empty ();
-  }
-    
-  tcp_acceptor_automaton::accept_val tcp_acceptor_automaton::accept_effect () {
-    std::pair<inet_address, automaton_manager<tcp_connection_automaton>*> val = m_accept_queue.front ();
-    m_accept_queue.pop ();
-
-    if (binding_count (&tcp_acceptor_automaton::accept) == 0) {
-      // No will ever see this connection so destroy it.
-      val.second->destroy ();
+    while (!m_fd_queue.empty ()) {
+      close (m_fd_queue.front ());
+      m_fd_queue.pop ();
     }
-
-    return accept_val (val.first, val.second->get_handle ());
   }
 
-  void tcp_acceptor_automaton::accept_schedule () const {
+  void tcp_acceptor_automaton::schedule () const {
+    if (error_precondition ()) {
+      ioa::schedule (&tcp_acceptor_automaton::error);
+    }
+    if (schedule_read_ready_precondition ()) {
+      ioa::schedule (&tcp_acceptor_automaton::schedule_read_ready);
+    }
+    if (create_helper_precondition ()) {
+      ioa::schedule (&tcp_acceptor_automaton::create_helper);
+    }
+  }
+
+  void tcp_acceptor_automaton::accept_effect (const automaton_handle<tcp_connection_automaton>& conn,
+					      aid_t) {
+    // Add the connection to the queue.
+    m_connection_queue.push (conn);
+  }
+
+  void tcp_acceptor_automaton::accept_schedule (aid_t) const {
     schedule ();
   }
 
@@ -139,7 +113,7 @@ namespace ioa {
   }
 
   bool tcp_acceptor_automaton::schedule_read_ready_precondition () const {
-    return m_errno == 0 && m_state == SCHEDULE_READ_READY;
+    return  m_state == SCHEDULE_READ_READY && m_errno == 0 && !m_connection_queue.empty () && m_fd_queue.empty ();
   }
 
   void tcp_acceptor_automaton::schedule_read_ready_effect () {
@@ -152,7 +126,8 @@ namespace ioa {
   }
 
   bool tcp_acceptor_automaton::read_ready_precondition () const {
-    return m_state == READ_READY_WAIT;
+    // This should finish.
+    return m_state == READ_READY_WAIT && m_errno == 0;
   }
 
   void tcp_acceptor_automaton::read_ready_effect () {
@@ -161,16 +136,7 @@ namespace ioa {
     inet_address address;
     int connection_fd = ::accept (m_fd, address.get_sockaddr_ptr (), address.get_socklen_ptr ());
     if (connection_fd != -1) {
-      // Create a new connection.
-      automaton_manager<tcp_connection_automaton>* connection = new automaton_manager<tcp_connection_automaton> (this, make_generator<tcp_connection_automaton> (connection_fd));
-      // Save the address.
-      m_address_map.insert (std::make_pair (connection, address));
-      // Observe it so we know when its created.
-      add_observable (connection);
-
-      make_binding_manager (this,
-			    connection, &tcp_connection_automaton::closed,
-			    &m_self, &tcp_acceptor_automaton::closed, connection);
+      m_fd_queue.push (connection_fd);
     }
     else {
       m_errno = errno;
@@ -181,11 +147,33 @@ namespace ioa {
     schedule ();
   }
 
-  void tcp_acceptor_automaton::closed_effect (automaton_manager<tcp_connection_automaton>* connection) {
-    connection->destroy ();
+  bool tcp_acceptor_automaton::create_helper_precondition () const {
+    return !m_connection_queue.empty () && !m_fd_queue.empty ();
   }
 
-  void tcp_acceptor_automaton::closed_schedule (automaton_manager<tcp_connection_automaton>*) const {
+  void tcp_acceptor_automaton::create_helper_effect () {
+    automaton_manager<connection_init_automaton>* helper = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection_queue.front (), m_fd_queue.front ()));
+    m_connection_queue.pop ();
+    m_fd_queue.pop ();
+    make_binding_manager (this,
+			  helper, &connection_init_automaton::done,
+			  &m_self, &tcp_acceptor_automaton::done, helper);
+  }
+
+  void tcp_acceptor_automaton::create_helper_schedule () const {
+    schedule ();
+  }
+
+  void tcp_acceptor_automaton::done_effect (const int& fd,
+					    automaton_manager<connection_init_automaton>* helper) {
+    if (fd != -1) {
+      // Recycle.
+      m_fd_queue.push (fd);
+    }
+    helper->destroy ();
+  }
+
+  void tcp_acceptor_automaton::done_schedule (automaton_manager<connection_init_automaton>*) const {
     schedule ();
   }
 

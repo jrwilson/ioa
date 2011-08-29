@@ -24,6 +24,7 @@ namespace ioa {
     else if (o == &send_complete && send_complete.recent_op == UNBOUND) {
       purge (send_complete.recent_parameter);
     }
+    // Don't need to schedule.
   }
 
   void udp_sender_automaton::purge (const aid_t aid) {
@@ -59,43 +60,41 @@ namespace ioa {
     int flags;
 
     // Open a socket.
-    try {
-      m_fd = socket (AF_INET, SOCK_DGRAM, 0);
-      if (m_fd == -1) {
-	m_errno = errno;
-	throw;
-      }
+    m_fd = socket (AF_INET, SOCK_DGRAM, 0);
+    if (m_fd == -1) {
+      m_errno = errno;
+      return;
+    }
       
-      // Get the flags.
-      flags = fcntl (m_fd, F_GETFL, 0);
-      if (flags < 0) {
-	m_errno = errno;
-	throw;
-      }
+    // Get the flags.
+    flags = fcntl (m_fd, F_GETFL, 0);
+    if (flags < 0) {
+      m_errno = errno;
+      return;
+    }
       
-      // Set non-blocking.
-      flags |= O_NONBLOCK;
-      res = fcntl (m_fd, F_SETFL, flags);
-      if (res < 0) {
-	m_errno = errno;
-	throw;
-      }
+    // Set non-blocking.
+    flags |= O_NONBLOCK;
+    res = fcntl (m_fd, F_SETFL, flags);
+    if (res < 0) {
+      m_errno = errno;
+      return;
+    }
       
-      // Set broadcasting.
-      if (setsockopt (m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof (val)) == -1) {
-	m_errno = errno;
-	throw;
-      }
+    // Set broadcasting.
+    if (setsockopt (m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof (val)) == -1) {
+      m_errno = errno;
+      return;
+    }
       
-      if (send_buf_size != 0) {
-	if (setsockopt (m_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof (send_buf_size)) == -1) {
-	  m_errno = errno;
-	  throw;
-	}
+    if (send_buf_size != 0) {
+      if (setsockopt (m_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof (send_buf_size)) == -1) {
+	m_errno = errno;
+	return;
       }
-    } catch (...) { }
+    }
 
-    schedule ();
+    // No need to schedule.
   }
 
   udp_sender_automaton::~udp_sender_automaton () {
@@ -110,15 +109,16 @@ namespace ioa {
     if (m_errno == 0 &&
 	m_send_set.count (aid) == 0 &&
 	m_complete_set.count (aid) == 0) {
-      // Succeed immediately for a bad address or no data.
-      // Both of these can be prevented by the user.
-      if (arg.address.get_errno () != 0 || arg.buffer.get () == 0) {
-	add_to_complete_set (aid);
-      }
-      else {
-	// No error.  Add to the send queue and set.
+      // Good address and data.
+      if (arg.address.get_errno () == 0 && arg.buffer.get () != 0) {
+	// Add to the send queue and set.
 	m_send_queue.push_back (std::make_pair (aid, arg));
 	m_send_set.insert (aid);
+      }
+      else {
+	// Succeed immediately for a bad address or no data.
+	// Both of these can be prevented by the user.
+	add_to_complete_set (aid);
       }
     }
   }
@@ -141,7 +141,7 @@ namespace ioa {
   }
 
   bool udp_sender_automaton::error_precondition () const {
-    return m_errno != 0 && m_error_reported == false && binding_count (&udp_sender_automaton::error) != 0;
+    return m_errno != 0 && !m_error_reported && binding_count (&udp_sender_automaton::error) != 0;
   }
 
   int udp_sender_automaton::error_effect () {
@@ -155,7 +155,7 @@ namespace ioa {
 
   bool udp_sender_automaton::schedule_write_ready_precondition () const {
     // No error and something in the send queue.
-    return m_errno == 0 && !m_send_queue.empty () && m_state == SCHEDULE_WRITE_READY;
+    return m_errno == 0 && m_state == SCHEDULE_WRITE_READY && !m_send_queue.empty ();
   }
 
   void udp_sender_automaton::schedule_write_ready_effect () {
@@ -168,7 +168,7 @@ namespace ioa {
   }
 
   bool udp_sender_automaton::write_ready_precondition () const {
-    return m_state == WRITE_READY_WAIT;
+    return m_errno == 0 && m_state == WRITE_READY_WAIT;
   }
 
   void udp_sender_automaton::write_ready_effect () {

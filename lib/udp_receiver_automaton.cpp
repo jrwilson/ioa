@@ -6,52 +6,50 @@
 namespace ioa {
 
   void udp_receiver_automaton::prepare_socket (const inet_address& address) {
-    try {
-      // Open a socket.
-      m_fd = socket (AF_INET, SOCK_DGRAM, 0);
-      if (m_fd == -1) {
-	m_errno = errno;
-	throw;
-      }
+    // Open a socket.
+    m_fd = socket (AF_INET, SOCK_DGRAM, 0);
+    if (m_fd == -1) {
+      m_errno = errno;
+      return;
+    }
 
-      // Get the flags.
-      int flags = fcntl (m_fd, F_GETFL, 0);
-      if (flags < 0) {
-	// Set errno before close because close sets errno.
-	m_errno = errno;
-	throw;
-      }
+    // Get the flags.
+    int flags = fcntl (m_fd, F_GETFL, 0);
+    if (flags < 0) {
+      // Set errno before close because close sets errno.
+      m_errno = errno;
+      return;
+    }
 
-      // Set non-blocking.
-      flags |= O_NONBLOCK;
-      if (fcntl (m_fd, F_SETFL, flags) == -1) {
-	m_errno = errno;
-	throw;
-      }
+    // Set non-blocking.
+    flags |= O_NONBLOCK;
+    if (fcntl (m_fd, F_SETFL, flags) == -1) {
+      m_errno = errno;
+      return;
+    }
 
-      const int val = 1;
+    const int val = 1;
 #ifdef SO_REUSEADDR
-      // Set reuse.
-      if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val)) == -1) {
-	m_errno = errno;
-	throw;
-      }
+    // Set reuse.
+    if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val)) == -1) {
+      m_errno = errno;
+      return;
+    }
 #endif
 
 #ifdef SO_REUSEPORT
-      // Set reuse.
-      if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
-	m_errno = errno;
-	throw;
-      }
+    // Set reuse.
+    if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
+      m_errno = errno;
+      return;
+    }
 #endif
 
-      // Bind.
-      if (::bind (m_fd, address.get_sockaddr (), address.get_socklen ()) == -1) {
-	m_errno = errno;
-	throw;
-      }
-    } catch (...) { }
+    // Bind.
+    if (::bind (m_fd, address.get_sockaddr (), address.get_socklen ()) == -1) {
+      m_errno = errno;
+      return;
+    }
   }
 
   void udp_receiver_automaton::schedule () const {
@@ -145,7 +143,7 @@ namespace ioa {
   }
 
   bool udp_receiver_automaton::read_ready_precondition () const {
-    return m_state == READ_READY_WAIT;
+    return m_errno == 0 && m_state == READ_READY_WAIT;
   }
 
   void udp_receiver_automaton::read_ready_effect () {
@@ -169,11 +167,12 @@ namespace ioa {
     inet_address address;
     ssize_t actual_bytes = recvfrom (m_fd, m_buf, expect_bytes, 0, address.get_sockaddr_ptr (), address.get_socklen_ptr ());
 
-    if (actual_bytes != -1) {
+    if (actual_bytes != -1 && actual_bytes != 0) {
       // Success.
       m_recv_queue.push (receive_val (address, const_shared_ptr<std::string> (new std::string (m_buf, actual_bytes))));
     }
     else {
+      assert (errno != 0);
       m_errno = errno;
     }
   }

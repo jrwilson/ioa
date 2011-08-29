@@ -5,25 +5,18 @@
 namespace ioa {
 
   void tcp_connector_automaton::schedule () const {
-    if (connect_precondition ()) {
-      ioa::schedule (&tcp_connector_automaton::connect);
-    }
     if (error_precondition ()) {
       ioa::schedule (&tcp_connector_automaton::error);
     }
   }
 
-  void tcp_connector_automaton::observe (observable* o) {
-    schedule ();
-  }
-
-  tcp_connector_automaton::tcp_connector_automaton (const inet_address& address) :
+  tcp_connector_automaton::tcp_connector_automaton (const inet_address& address,
+						    const automaton_handle<tcp_connection_automaton>& connection) :
     m_self (get_aid ()),
-    m_fd (-1),
-    m_connection (0),
-    m_connection_reported (false),
+    m_connection (connection),
     m_errno (0),
     m_error_reported (false) {
+
     try {
       // Open a socket.
       m_fd = socket (AF_INET, SOCK_STREAM, 0);
@@ -47,13 +40,10 @@ namespace ioa {
       }
       
       if (::connect (m_fd, address.get_sockaddr (), address.get_socklen ()) != -1) {
-	m_connection = new automaton_manager<tcp_connection_automaton> (this, make_generator<tcp_connection_automaton> (m_fd));
-	m_fd = -1;
-	add_observable (m_connection);
+	automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection, m_fd));
 	make_binding_manager (this,
-			      m_connection, &tcp_connection_automaton::closed,
-			      &m_self, &tcp_connector_automaton::closed);
-
+			      init, &connection_init_automaton::done,
+			      &m_self, &tcp_connector_automaton::done);
 	throw;
       }
       else {
@@ -75,22 +65,6 @@ namespace ioa {
     if (m_fd != -1) {
       close (m_fd);
     }
-  }
-
-  bool tcp_connector_automaton::connect_precondition () const {
-    return m_connection_reported == false &&
-      m_connection != 0 &&
-      m_connection->get_handle () != -1 && 
-      binding_count (&tcp_connector_automaton::connect) != 0;
-  }
-
-  automaton_handle<tcp_connection_automaton> tcp_connector_automaton::connect_effect () {
-    m_connection_reported = true;
-    return m_connection->get_handle ();
-  }
-
-  void tcp_connector_automaton::connect_schedule () const {
-    schedule ();
   }
 
   bool tcp_connector_automaton::error_precondition () const {
@@ -121,12 +95,11 @@ namespace ioa {
 
     if (val == 0) {
       // Success.
-      m_connection = new automaton_manager<tcp_connection_automaton> (this, make_generator<tcp_connection_automaton> (m_fd));
-      m_fd = -1;
-      add_observable (m_connection);
+      automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection, m_fd));
       make_binding_manager (this,
-			    m_connection, &tcp_connection_automaton::closed,
-			    &m_self, &tcp_connector_automaton::closed);
+			    init, &connection_init_automaton::done,
+			    &m_self, &tcp_connector_automaton::done);
+      
     }
     else {
       m_errno = val;
@@ -137,11 +110,13 @@ namespace ioa {
     schedule ();
   }
 
-  void tcp_connector_automaton::closed_effect () {
-    m_connection->destroy ();
+  void tcp_connector_automaton::done_effect (const int& fd) {
+    if (fd != -1) {
+      close (fd);
+    }
   }
 
-  void tcp_connector_automaton::closed_schedule () const {
+  void tcp_connector_automaton::done_schedule () const {
     schedule ();
   }
 

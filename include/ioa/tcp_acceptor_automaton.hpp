@@ -2,43 +2,29 @@
 #define __tcp_acceptor_automaton_hpp__
 
 #include <ioa/tcp_connection_automaton.hpp>
-#include <ioa/inet_address.hpp>
 #include <queue>
 
 namespace ioa {
-  
+
   class tcp_acceptor_automaton :
-    public automaton,
-    private observer
+    public automaton
   {
-  public:
-    struct accept_val
-    {
-      inet_address address;
-      automaton_handle<tcp_connection_automaton> handle;
-
-      accept_val (const inet_address& a,
-		  const automaton_handle<tcp_connection_automaton>& h) :
-	address (a),
-	handle (h)
-      { }
-    };
-
-  private:
+  private:    
     enum state_t {
       SCHEDULE_READ_READY,
       READ_READY_WAIT,
     };
+    inet_address m_address;
     state_t m_state;
     int m_fd;
     int m_errno;
     bool m_error_reported;
     handle_manager<tcp_acceptor_automaton> m_self;
-    std::map<automaton_manager<tcp_connection_automaton>*, inet_address> m_address_map;
-    std::queue<std::pair<inet_address, automaton_manager<tcp_connection_automaton>*> > m_accept_queue;
+
+    std::queue<automaton_handle<tcp_connection_automaton> > m_connection_queue;
+    std::queue<int> m_fd_queue;
 
     void schedule () const;
-    void observe (observable* o);
 
   public:
     tcp_acceptor_automaton (const ioa::inet_address& address,
@@ -46,11 +32,11 @@ namespace ioa {
     ~tcp_acceptor_automaton ();
 
   private:
-    bool accept_precondition () const;
-    accept_val accept_effect ();
-    void accept_schedule () const;
+    void accept_effect (const automaton_handle<tcp_connection_automaton>& conn,
+			aid_t);
+    void accept_schedule (aid_t) const;
   public:
-    V_UP_OUTPUT (tcp_acceptor_automaton, accept, accept_val);
+    V_AP_INPUT (tcp_acceptor_automaton, accept, automaton_handle<tcp_connection_automaton>);
 
   private:
     bool error_precondition () const;
@@ -70,9 +56,15 @@ namespace ioa {
     void read_ready_schedule () const;
     UP_INTERNAL (tcp_acceptor_automaton, read_ready);
 
-    void closed_effect (automaton_manager<tcp_connection_automaton>*);
-    void closed_schedule (automaton_manager<tcp_connection_automaton>*) const;
-    UV_P_INPUT (tcp_acceptor_automaton, closed, automaton_manager<tcp_connection_automaton>*);
+    bool create_helper_precondition () const;
+    void create_helper_effect ();
+    void create_helper_schedule () const;
+    UP_INTERNAL (tcp_acceptor_automaton, create_helper);
+
+    void done_effect (const int&,
+		      automaton_manager<connection_init_automaton>*);
+    void done_schedule (automaton_manager<connection_init_automaton>*) const;
+    V_P_INPUT (tcp_acceptor_automaton, done, int, automaton_manager<connection_init_automaton>*);
   };
 
 }
