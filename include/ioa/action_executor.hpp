@@ -69,7 +69,8 @@ namespace ioa {
     void operator() (system_scheduler_interface& system_scheduler) const {
       assert (this->m_instance != 0);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance));
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance));
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)));
       system_scheduler.clear_current_aid ();
     }
 
@@ -143,7 +144,8 @@ namespace ioa {
     void operator() (system_scheduler_interface& system_scheduler) const {
       assert (this->m_instance != 0);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
       system_scheduler.clear_current_aid ();
     }
 
@@ -221,7 +223,8 @@ namespace ioa {
       assert (this->m_instance != 0);
       assert (m_parameter != -1);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
       system_scheduler.clear_current_aid ();
     }
     
@@ -289,7 +292,8 @@ namespace ioa {
 		     const VT& t) const {
       assert (this->m_instance != 0);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), t);
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), t);
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)));
       system_scheduler.clear_current_aid ();
     }
 
@@ -362,7 +366,8 @@ namespace ioa {
 		     const VT& t) const {
       assert (this->m_instance != 0);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), t, m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), t, m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
       system_scheduler.clear_current_aid ();
     }
 
@@ -439,7 +444,8 @@ namespace ioa {
       assert (this->m_instance != 0);
       assert (m_parameter != -1);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), t, m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), t, m_parameter);
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
       system_scheduler.clear_current_aid ();
     }
 
@@ -709,8 +715,9 @@ namespace ioa {
 
       // Execute.
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance))) {
-	((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance));
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)))) {
+	((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance));
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)));
 	system_scheduler.clear_current_aid ();
 	for (typename std::map<aid_t, record*>::const_iterator pos = this->m_records.begin ();
 	     pos != this->m_records.end ();
@@ -851,8 +858,9 @@ namespace ioa {
 
       // Execute.
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance), m_parameter)) {
-	((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)), m_parameter)) {
+	((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
 	system_scheduler.clear_current_aid ();
 	for (typename std::map<aid_t, record*>::const_iterator pos = this->m_records.begin ();
 	     pos != this->m_records.end ();
@@ -1004,8 +1012,9 @@ namespace ioa {
 
       // Execute.
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance), m_parameter)) {
-	((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)), m_parameter)) {
+	((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
 	system_scheduler.clear_current_aid ();
 	for (typename std::map<aid_t, record*>::const_iterator pos = this->m_records.begin ();
 	     pos != this->m_records.end ();
@@ -1144,8 +1153,9 @@ namespace ioa {
 
       // Execute.
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance))) {
-	VT v = ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance));
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)))) {
+	VT v = ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance));
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)));
 	const VT& value = v;
 	system_scheduler.clear_current_aid ();
 	for (typename std::map<aid_t, record*>::const_iterator pos = this->m_records.begin ();
@@ -1287,8 +1297,9 @@ namespace ioa {
 
       // Execute.
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance), m_parameter)) {
-	VT v = ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)), m_parameter)) {
+	VT v = ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
 	const VT& value = v;
 	system_scheduler.clear_current_aid ();
 	for (typename std::map<aid_t, record*>::const_iterator pos = this->m_records.begin ();
@@ -1437,8 +1448,9 @@ namespace ioa {
 
       // Execute.
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance), m_parameter)) {
-	VT v = ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)), m_parameter)) {
+	VT v = ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
 	const VT& value = v;
 	system_scheduler.clear_current_aid ();
 	for (typename std::map<aid_t, record*>::const_iterator pos = this->m_records.begin ();
@@ -1568,8 +1580,9 @@ namespace ioa {
 
       model.lock_automaton (this->m_handle);
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance))) {
-	((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance));
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)))) {
+	((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance));
+	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)));
       }
       system_scheduler.clear_current_aid ();
       model.unlock_automaton (this->m_handle);
@@ -1607,20 +1620,21 @@ namespace ioa {
 
   public:
     action_executor_impl (const automaton_handle<I>& handle,
-			  M I::*member_ptr,
-			  const PT& parameter) :
+  			  M I::*member_ptr,
+  			  const PT& parameter) :
       action_executor_core<I, M> (handle, member_ptr),
       m_parameter (parameter)
     { }
       
     void operator() (model_interface& model,
-		     system_scheduler_interface& system_scheduler) const {
+  		     system_scheduler_interface& system_scheduler) const {
       assert (this->m_instance != 0);
 
       model.lock_automaton (this->m_handle);
       system_scheduler.set_current_aid (this->m_handle);
-      if (((this->m_instance)->*(this->m_member_ptr)).precondition (*(this->m_instance), m_parameter)) {
-	((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_parameter);
+      if (((this->m_instance)->*(this->m_member_ptr)).precondition (const_cast<const I&> (*(this->m_instance)), m_parameter)) {
+  	((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_parameter);
+  	((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)), m_parameter);
       }
       system_scheduler.clear_current_aid ();
       model.unlock_automaton (this->m_handle);
@@ -1641,7 +1655,6 @@ namespace ioa {
     void* get_pid () const {
       return reinterpret_cast<void*> (m_parameter);
     }
-      
   };
 
   template <class I, class M, class VT>
@@ -1669,7 +1682,8 @@ namespace ioa {
 	
       model.lock_automaton (this->m_handle);
       system_scheduler.set_current_aid (this->m_handle);
-      ((this->m_instance)->*(this->m_member_ptr)) (*(this->m_instance), m_value);
+      ((this->m_instance)->*(this->m_member_ptr)).effect (*(this->m_instance), m_value);
+      ((this->m_instance)->*(this->m_member_ptr)).schedule (const_cast<const I&> (*(this->m_instance)));
       system_scheduler.clear_current_aid ();
       model.unlock_automaton (this->m_handle);
     }

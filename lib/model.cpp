@@ -360,8 +360,9 @@ namespace ioa {
 
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
-    if (instance->sys_create.precondition (*instance)) {
-      std::pair<generator_interface*, void*> key = instance->sys_create (*instance);
+    if (instance->sys_create.precondition (const_cast<const automaton&> (*instance))) {
+      std::pair<generator_interface*, void*> key = instance->sys_create.effect (*instance);
+      instance->sys_create.schedule (const_cast<const automaton&> (*instance));
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
       m_system_scheduler.create (aid, std::auto_ptr<generator_interface> (key.first), key.second);
@@ -386,8 +387,9 @@ namespace ioa {
 
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
-    if (instance->sys_bind.precondition (*instance)) {
-      std::pair<shared_ptr<bind_executor_interface>, void*> key = instance->sys_bind (*instance);
+    if (instance->sys_bind.precondition (const_cast<const automaton&> (*instance))) {
+      std::pair<shared_ptr<bind_executor_interface>, void*> key = instance->sys_bind.effect (*instance);
+      instance->sys_bind.schedule (const_cast<const automaton&> (*instance));
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
       m_system_scheduler.bind (aid, key.first, key.second);
@@ -412,8 +414,9 @@ namespace ioa {
 
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
-    if (instance->sys_unbind.precondition (*instance)) {
-      void* key = instance->sys_unbind (*instance);
+    if (instance->sys_unbind.precondition (const_cast<const automaton&> (*instance))) {
+      void* key = instance->sys_unbind.effect (*instance);
+      instance->sys_unbind.schedule (const_cast<const automaton&> (*instance));
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
       m_system_scheduler.unbind (aid, key);
@@ -438,8 +441,9 @@ namespace ioa {
 
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
-    if (instance->sys_destroy.precondition (*instance)) {
-      void* key = instance->sys_destroy (*instance);
+    if (instance->sys_destroy.precondition (const_cast<const automaton&> (*instance))) {
+      void* key = instance->sys_destroy.effect (*instance);
+      instance->sys_destroy.schedule (const_cast<const automaton&> (*instance));
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
       m_system_scheduler.destroy (aid, key);

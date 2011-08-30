@@ -7,41 +7,6 @@
 // TODO:  Eliminate redundancy.
 
 namespace ioa {
-  
-  template <class C, void (C::*schedule_ptr) () const>
-  class auto_scheduler
-  {
-  private:
-    const C& m_ref;
-
-  public:
-    auto_scheduler (const C& ref) :
-      m_ref (ref)
-    { }
-
-    ~auto_scheduler () {
-      (m_ref.*schedule_ptr) ();
-    }
-  };
-
-  template <class C, class P, void (C::*schedule_ptr) (P) const>
-  class pauto_scheduler
-  {
-  private:
-    const C& m_ref;
-    P m_p;
-
-  public:
-    pauto_scheduler (const C& ref,
-		    P& p) :
-      m_ref (ref),
-      m_p (p)
-    { }
-
-    ~pauto_scheduler () {
-      (m_ref.*schedule_ptr) (m_p);
-    }
-  };
 
   enum recent_op_t {
     NOOP,
@@ -62,11 +27,14 @@ namespace ioa {
       recent_op (NOOP)
     { }
 
-    void operator() (C& c) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    void effect (C& c) const {
       (c.*effect_ptr) ();
     }
     
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
+    }
+
     void bound () {
       recent_op = BOUND;
       notify_observers ();
@@ -92,9 +60,12 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    void operator() (C& c, P p) {
-      pauto_scheduler<C, P, schedule_ptr> as (c, p);
+    void effect (C& c, P p) const {
       (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, P p) const {
+      (c.*schedule_ptr) (p);
     }
 
     void bound (P p) {
@@ -124,9 +95,12 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    void operator() (C& c, aid_t p) {
-      pauto_scheduler<C, aid_t, schedule_ptr> as (c, p);
+    void effect (C& c, aid_t p) const {
       (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, aid_t p) const {
+      (c.*schedule_ptr) (p);
     }
 
     void bound (aid_t p) {
@@ -155,9 +129,12 @@ namespace ioa {
       recent_op (NOOP)
     { }
 
-    void operator() (C& c, const T& t) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    void effect (C& c, const T& t) const {
       (c.*effect_ptr) (t);
+    }
+
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
     }
     
     void bound () {
@@ -185,9 +162,12 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    void operator() (C& c, const T& t, P p) {
-      pauto_scheduler<C, P, schedule_ptr> as (c, p);
+    void effect (C& c, const T& t, P p) const {
       (c.*effect_ptr) (t, p);
+    }
+
+    void schedule (const C& c, P p) const {
+      (c.*schedule_ptr) (p);
     }
 
     void bound (P p) {
@@ -217,9 +197,12 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    void operator() (C& c, const T& t, aid_t p) {
-      pauto_scheduler<C, aid_t, schedule_ptr> as (c, p);
+    void effect (C& c, const T& t, aid_t p) const {
       (c.*effect_ptr) (t, p);
+    }
+
+    void schedule (const C& c, aid_t p) const {
+      (c.*schedule_ptr) (p);
     }
 
     void bound (aid_t p) {
@@ -248,13 +231,16 @@ namespace ioa {
       recent_op (NOOP)
     { }
 
-    bool precondition (C& c) const {
+    bool precondition (const C& c) const {
       return (c.*precondition_ptr) ();
     }
 
-    void operator() (C& c) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    void effect (C& c) const {
       (c.*effect_ptr) ();
+    }
+
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
     }
 
     void bound () {
@@ -282,13 +268,16 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    bool precondition (C& c, P p) const {
+    bool precondition (const C& c, P p) const {
       return (c.*precondition_ptr) (p);
     }
 
-    void operator() (C& c, P p) {
-      pauto_scheduler<C, P, schedule_ptr> as (c, p);
+    void effect (C& c, P p) const {
       (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, P p) const {
+      (c.*schedule_ptr) (p);
     }
     
     void bound (P p) {
@@ -318,13 +307,16 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    bool precondition (C& c, aid_t p) const {
+    bool precondition (const C& c, aid_t p) const {
       return (c.*precondition_ptr) (p);
     }
 
-    void operator() (C& c, aid_t p) {
-      pauto_scheduler<C, aid_t, schedule_ptr> as (c, p);
+    void effect (C& c, aid_t p) const {
       (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, aid_t p) const {
+      (c.*schedule_ptr) (p);
     }
     
     void bound (aid_t p) {
@@ -353,13 +345,16 @@ namespace ioa {
       recent_op (NOOP)
     { }
 
-    bool precondition (C& c) const {
+    bool precondition (const C& c) const {
       return (c.*precondition_ptr) ();
     }
     
-    T operator() (C& c) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    T effect (C& c) const {
       return (c.*effect_ptr) ();
+    }
+
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
     }
 
     void bound () {
@@ -387,13 +382,16 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    bool precondition (C& c, P p) const {
+    bool precondition (const C& c, P p) const {
       return (c.*precondition_ptr) (p);
     }
 
-    T operator() (C& c, P p) {
-      pauto_scheduler<C, P, schedule_ptr> as (c, p);
+    T effect (C& c, P p) const {
       return (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, P p) const {
+      (c.*schedule_ptr) (p);
     }
 
     void bound (P p) {
@@ -423,13 +421,16 @@ namespace ioa {
       recent_op (NOOP)
     { }
     
-    bool precondition (C& c, aid_t p) const {
+    bool precondition (const C& c, aid_t p) const {
       return (c.*precondition_ptr) (p);
     }
 
-    T operator() (C& c, aid_t p) {
-      pauto_scheduler<C, aid_t, schedule_ptr> as (c, p);
+    T effect (C& c, aid_t p) const {
       return (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, aid_t p) const {
+      (c.*schedule_ptr) (p);
     }
 
     void bound (aid_t p) {
@@ -450,13 +451,16 @@ namespace ioa {
     public internal,
     public no_parameter
   {
-    bool precondition (C& c) const {
+    bool precondition (const C& c) const {
       return (c.*precondition_ptr) ();
     }
 
-    void operator() (C& c) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    void effect (C& c) const {
       (c.*effect_ptr) ();
+    }
+
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
     }
   };
 
@@ -465,13 +469,16 @@ namespace ioa {
     public internal,
     public parameter<P>
   {
-    bool precondition (C& c, P p) const {
+    bool precondition (const C& c, P p) const {
       return (c.*precondition_ptr) (p);
     }
 
-    void operator() (C& c, P p) {
-      pauto_scheduler<C, P, schedule_ptr> as (c, p);
+    void effect (C& c, P p) const {
       (c.*effect_ptr) (p);
+    }
+
+    void schedule (const C& c, P p) const {
+      (c.*schedule_ptr) (p);
     }
   };
 
@@ -480,9 +487,12 @@ namespace ioa {
     public system_input,
     public value<T>
   {
-    void operator() (C& c, T const & t) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    void effect (C& c, T const & t) const {
       (c.*member_function_ptr) (t);
+    }
+
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
     }
   };
 
@@ -491,13 +501,16 @@ namespace ioa {
     public system_output,
     public value<T>
   {
-    bool precondition (C& c) {
+    bool precondition (const C& c) {
       return (c.*precondition_ptr) ();
     }
     
-    T operator() (C& c) {
-      auto_scheduler<C, schedule_ptr> as (c);
+    T effect (C& c) const {
       return (c.*member_function_ptr) ();
+    }
+    
+    void schedule (const C& c) const {
+      (c.*schedule_ptr) ();
     }
   };
 

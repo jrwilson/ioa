@@ -53,9 +53,11 @@ struct automaton1 :
       state (false)
     { }
 
-    void operator() (automaton1&) {
+    void effect (automaton1&) {
       state = true;
     }
+
+    void schedule (const automaton1&) const { }
   };
   uv_up_input_action uv_up_input;
 
@@ -73,11 +75,12 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (automaton1&, int parameter) {
+    void effect (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
 
+    void schedule (const automaton1&, int parameter) const { }
   };
   uv_p_input_action uv_p_input;
 
@@ -95,11 +98,12 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (automaton1&, ioa::aid_t parameter) {
+    void effect (automaton1&, ioa::aid_t parameter) {
       state = true;
       last_parameter = parameter;
     }
 
+    void schedule (const automaton1&, ioa::aid_t parameter) const { }
   };
   uv_ap_input_action uv_ap_input;
 
@@ -114,9 +118,11 @@ struct automaton1 :
     v_up_input_action () :
       value (0) { }
 
-    void operator() (automaton1&, const int t) {
+    void effect (automaton1&, const int t) {
       value = t;
     }
+
+    void schedule (const automaton1&) const { }
   };
   v_up_input_action v_up_input;
 
@@ -134,10 +140,12 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (automaton1&, const int t, int parameter) {
+    void effect (automaton1&, const int t, int parameter) {
       value = t;
       last_parameter = parameter;
     }
+
+    void schedule (const automaton1&, int parameter) const { }
   };
   v_p_input_action v_p_input;
 
@@ -155,10 +163,12 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    void operator() (automaton1&, const int t, ioa::aid_t parameter) {
+    void effect (automaton1&, const int t, ioa::aid_t parameter) {
       value = t;
       last_parameter = parameter;
     }
+
+    void schedule (const automaton1&, ioa::aid_t parameter) const { }
   };
   v_ap_input_action v_ap_input;
 
@@ -173,13 +183,15 @@ struct automaton1 :
     uv_up_output_action () :
       state (false) { }
 
-    bool precondition (automaton1&) const {
+    bool precondition (const automaton1&) const {
       return true;
     }
 
-    void operator() (automaton1&) {
+    void effect (automaton1&) {
       state = true;
     }
+
+    void schedule (const automaton1&) const { }
   };
   uv_up_output_action uv_up_output;
 
@@ -197,14 +209,16 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool precondition (automaton1&, int parameter) {
+    bool precondition (const automaton1&, int parameter) {
       return true;
     }
 
-    void operator() (automaton1&, int parameter) {
+    void effect (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
+
+    void schedule (const automaton1&, int parameter) const { }
   };
   uv_p_output_action uv_p_output;
 
@@ -222,14 +236,16 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool precondition (automaton1&, ioa::aid_t parameter) {
+    bool precondition (const automaton1&, ioa::aid_t parameter) {
       return true;
     }
 
-    void operator() (automaton1&, ioa::aid_t parameter) {
+    void effect (automaton1&, ioa::aid_t parameter) {
       state = true;
       last_parameter = parameter;
     }
+
+    void schedule (const automaton1&, ioa::aid_t parameter) const { }
   };
   uv_ap_output_action uv_ap_output;
 
@@ -245,14 +261,16 @@ struct automaton1 :
       state (false)
     { }
 
-    bool precondition (automaton1&) const {
+    bool precondition (const automaton1&) const {
       return true;
     }
 
-    int operator() (automaton1&) {
+    int effect (automaton1&) {
       state = true;
       return 9845;
     }
+
+    void schedule (const automaton1&) const { }
   };
   v_up_output_action v_up_output;
 
@@ -270,15 +288,17 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool precondition (automaton1&, int parameter) {
+    bool precondition (const automaton1&, int parameter) {
       return true;
     }
 
-    int operator() (automaton1&, int parameter) {
+    int effect (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
       return 9845;
     }
+
+    void schedule (const automaton1&, int parameter) const { }
   };
   v_p_output_action v_p_output;
 
@@ -296,15 +316,17 @@ struct automaton1 :
       last_parameter (0)
     { }
 
-    bool precondition (automaton1&, ioa::aid_t parameter) {
+    bool precondition (const automaton1&, ioa::aid_t parameter) {
       return true;
     }
 
-    int operator() (automaton1&, ioa::aid_t parameter) {
+    int effect (automaton1&, ioa::aid_t parameter) {
       state = true;
       last_parameter = parameter;
       return 9845;
     }
+
+    void schedule (const automaton1&, ioa::aid_t parameter) const { }
   };
   v_ap_output_action v_ap_output;
   
@@ -316,13 +338,15 @@ struct automaton1 :
     up_internal_action()
       : state(false) { }
 
-    bool precondition (automaton1&) const {
+    bool precondition (const automaton1&) const {
       return true;
     }
 
-    void operator() (automaton1&) {
+    void effect (automaton1&) {
       state = true;
     }
+
+    void schedule (const automaton1&) const { }
   };
   up_internal_action up_internal;
 
@@ -336,14 +360,16 @@ struct automaton1 :
     p_internal_action()
       : state(false) { }
 
-    bool precondition (automaton1&, int parameter) const {
+    bool precondition (const automaton1&, int parameter) const {
       return true;
     }
 
-    void operator() (automaton1&, int parameter) {
+    void effect (automaton1&, int parameter) {
       state = true;
       last_parameter = parameter;
     }
+
+    void schedule (const automaton1&, int parameter) const { }
   };
   p_internal_action p_internal;
 
