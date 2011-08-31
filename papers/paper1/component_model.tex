@@ -1,4 +1,4 @@
-\section{I/O Automata Component Model\label{system_model}}
+\section{I/O Automata Component Model\label{component_model}}
 
 Modularity, well-defined interfaces, and composition are essential properties of reusable software.
 A unit of software that exhibits these properties is called a \emph{component}~\cite{szyperski2002component}.
@@ -243,8 +243,8 @@ Figure~\ref{system_action} shows the relationship between an automaton and the s
 Conceptually, the state variables $A$ and $B$ belong to the system automaton.
 However, the state encoded by $A$ and $B$ is shared and used in the execution of every action.
 The scheduler uses $A$ to ensure that only actions belonging to automata exist are selected and uses $B$ to ensure that the appropriate set of inputs actions receive the value produced when an output action is executed.
-Thus, the set of actions implied by any action is the set defined in section~\ref{system_model} \emph{and} and the system automaton.
-However, the opportunities for concurrency explored in section~\ref{system_model} are not lost when one considers that the only actions that modify $A$ and $B$ must be serialized, i.e., not executed concurrently with other actions.
+Thus, the set of actions implied by any action is the set defined in section~\ref{practical} \emph{and} and the system automaton.
+However, the opportunities for concurrency explored in section~\ref{practical} are not lost when one considers that the only actions that modify $A$ and $B$ must be serialized, i.e., not executed concurrently with other actions.
 
 \paragraph{Binding predicates.}
 The static configuration of a system as prescribed by the I/O automata model guarantees that the set of implied automata for an action is always the same.
