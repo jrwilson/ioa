@@ -136,7 +136,15 @@ namespace ioa {
     inet_address address;
     int connection_fd = ::accept (m_fd, address.get_sockaddr_ptr (), address.get_socklen_ptr ());
     if (connection_fd != -1) {
-      m_fd_queue.push (connection_fd);
+
+      // No SIGPIPE.
+      const int set = 1;
+      if (setsockopt (connection_fd, SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof (int)) != -1) {
+	m_fd_queue.push (connection_fd);	
+      }
+      else {
+	m_errno = errno;
+      }
     }
     else {
       m_errno = errno;

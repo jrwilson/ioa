@@ -93,6 +93,13 @@ namespace ioa {
       return;
     }
 
+    // No SIGPIPE.
+    const int set = 1;
+    if (setsockopt (m_fd, SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof (int)) == -1) {
+      m_errno = errno;
+      return;
+    }
+
     if (val == 0) {
       // Success.
       automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection, m_fd));
