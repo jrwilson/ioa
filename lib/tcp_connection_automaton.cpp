@@ -80,8 +80,12 @@ namespace ioa {
 
   void tcp_connection_automaton::write_ready_effect () {
     // Write to the socket.
+#ifdef MSG_NOSIGNAL
     ssize_t bytes_written = ::send (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written, MSG_NOSIGNAL);
-    
+#else
+    ssize_t bytes_written = write (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written);
+#endif
+
     if (bytes_written == -1) {
       m_errno = errno;
     }
@@ -181,6 +185,14 @@ namespace ioa {
   void tcp_connection_automaton::init_effect (const int& fd) {
     if (m_fd == -1) {
       m_fd = fd;
+
+      // No SIGPIPE.
+#ifdef SO_NOSIGPIPE
+      const int set = 1;
+      if (setsockopt (m_fd, SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof (int)) == -1) {
+	m_errno = errno;
+      }
+#endif
     }
   }
 
