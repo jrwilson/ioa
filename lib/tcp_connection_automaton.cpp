@@ -80,7 +80,7 @@ namespace ioa {
 
   void tcp_connection_automaton::write_ready_effect () {
     // Write to the socket.
-    ssize_t bytes_written = write (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written);
+    ssize_t bytes_written = ::send (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written, MSG_NOSIGNAL);
     
     if (bytes_written == -1) {
       m_errno = errno;
