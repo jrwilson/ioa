@@ -22,21 +22,21 @@ namespace ioa {
       m_fd = socket (AF_INET, SOCK_STREAM, 0);
       if (m_fd == -1) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
       
       // Get the flags.
       int flags = fcntl (m_fd, F_GETFL, 0);
       if (flags < 0) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
       
       // Set non-blocking.
       flags |= O_NONBLOCK;
       if (fcntl (m_fd, F_SETFL, flags) == -1) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
       
       if (::connect (m_fd, address.get_sockaddr (), address.get_socklen ()) != -1) {
@@ -44,7 +44,7 @@ namespace ioa {
 	make_binding_manager (this,
 			      init, &connection_init_automaton::done,
 			      &m_self, &tcp_connector_automaton::done);
-	throw;
+	throw std::exception ();
       }
       else {
 	if (errno == EINPROGRESS) {
@@ -53,7 +53,7 @@ namespace ioa {
 	}
 	else {
 	  m_errno = errno;
-	  throw;
+	  throw std::exception ();
 	}
       }
     } catch (...) { }

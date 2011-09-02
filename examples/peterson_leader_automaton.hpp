@@ -7,7 +7,9 @@
 */
 
 #include "UID.hpp"
+#include <ioa/ioa.hpp>
 #include <queue>
+#include <iostream>
 
 class peterson_leader_automaton :
   public ioa::automaton
@@ -33,11 +35,12 @@ private:
   std::queue<UID_t> m_receive;
 
 public:
-  peterson_leader_automaton () :
+  peterson_leader_automaton (const size_t i) :
     m_mode (ACTIVE),
     m_status (UNKNOWN),
-    m_u (rand (), ioa::get_aid ())
+    m_u (rand (), i)
   {
+    std::cout << m_u.first << "\t" << m_u.second << std::endl;
     m_uid[0] = m_u;
     m_uid[1] = std::make_pair (-1, -1);
     m_uid[2] = std::make_pair (-1, -1);
@@ -118,7 +121,7 @@ public:
 
 private:
   bool get_second_uid_precondition () const {
-    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] == std::make_pair (-1, -1);
+    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] == std::make_pair (-1, static_cast<size_t> (-1));
   }
 
   void get_second_uid_effect () {
@@ -137,7 +140,7 @@ private:
   UP_INTERNAL (peterson_leader_automaton, get_second_uid);
 
   bool get_third_uid_precondition () const {
-    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] != std::make_pair (-1, -1) && m_uid[2] == std::make_pair (-1, -1);
+    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] != std::make_pair (-1, static_cast<size_t> (-1)) && m_uid[2] == std::make_pair (-1, static_cast<size_t> (-1));
   }
 
   void get_third_uid_effect () {
@@ -152,13 +155,13 @@ private:
   UP_INTERNAL (peterson_leader_automaton, get_third_uid);
 
   bool advance_phase_precondition () const {
-    return m_mode == ACTIVE && m_uid[2] != std::make_pair (-1, -1) && m_uid[1] > std::max (m_uid[0], m_uid[2]);
+    return m_mode == ACTIVE && m_uid[2] != std::make_pair (-1, static_cast<size_t> (-1)) && m_uid[1] > std::max (m_uid[0], m_uid[2]);
   }
 
   void advance_phase_effect () {
     m_uid[0] = m_uid[1];
-    m_uid[1] = std::make_pair (-1, -1);
-    m_uid[2] = std::make_pair (-1, -1);
+    m_uid[1] = std::make_pair (-1, static_cast<size_t> (-1));
+    m_uid[2] = std::make_pair (-1, static_cast<size_t> (-1));
     m_send.push (m_uid[0]);
   }
 
@@ -169,7 +172,7 @@ private:
   UP_INTERNAL (peterson_leader_automaton, advance_phase);
 
   bool become_relay_precondition () const {
-    return m_mode == ACTIVE && m_uid[2] != std::make_pair (-1, -1) && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
+    return m_mode == ACTIVE && m_uid[2] != std::make_pair (-1, static_cast<size_t> (-1)) && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
   }
 
   void become_relay_effect () {

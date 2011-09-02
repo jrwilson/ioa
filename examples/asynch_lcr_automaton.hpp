@@ -7,7 +7,9 @@
 */
 
 #include "UID.hpp"
+#include <ioa/ioa.hpp>
 #include <queue>
+#include <iostream>
 
 class asynch_lcr_automaton :
   public ioa::automaton
@@ -24,10 +26,11 @@ private:
   status_t m_status;
 
 public:
-  asynch_lcr_automaton () :
-    m_u (rand (), ioa::get_aid ()),
+  asynch_lcr_automaton (const size_t i) :
+    m_u (rand (), i),
     m_status (UNKNOWN)
   {
+    std::cout << m_u.first << "\t" << m_u.second << std::endl;
     m_send.push (m_u);
     schedule ();
   }

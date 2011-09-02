@@ -17,21 +17,21 @@ namespace ioa {
       m_fd = socket (AF_INET, SOCK_STREAM, 0);
       if (m_fd == -1) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
       
       // Get the flags.
       int flags = fcntl (m_fd, F_GETFL, 0);
       if (flags < 0) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
       
       // Set non-blocking.
       flags |= O_NONBLOCK;
       if (fcntl (m_fd, F_SETFL, flags) == -1) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
       
       //       const int val = 1;
@@ -39,7 +39,7 @@ namespace ioa {
       //       // Set reuse.
       //       if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val)) == -1) {
       // 	m_errno = errno;
-      // 	throw;
+      // 	throw std::exception ();
       //       }
       // #endif
       
@@ -47,20 +47,20 @@ namespace ioa {
       //       // Set reuse.
       //       if (setsockopt (m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof (val)) == -1) {
       // 	m_errno = errno;
-      // 	throw;
+      // 	throw std::exception ();
       //       }
       // #endif
 
       // Bind.
       if (::bind (m_fd, address.get_sockaddr (), address.get_socklen ()) == -1) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
 
       // Listen.
       if (listen (m_fd, backlog) == -1) {
 	m_errno = errno;
-	throw;
+	throw std::exception ();
       }
     } catch (...) { }
 

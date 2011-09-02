@@ -27,7 +27,7 @@ public:
     self (ioa::get_aid ())
   { 
     for (size_t i = 0; i < N; ++i) {
-      T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> ()));
+      T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> (i)));
       channel_automaton_managers.push_back (new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ()));
     }
     

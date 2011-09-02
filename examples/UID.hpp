@@ -2,8 +2,8 @@
 #define __UID_hpp__
 
 #include <utility>
-#include <ioa/ioa.hpp>
+#include <cstddef>
 
-typedef std::pair<int, ioa::aid_t> UID_t;
+typedef std::pair<int, size_t> UID_t;
 
 #endif
