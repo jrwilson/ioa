@@ -586,6 +586,8 @@ namespace ioa {
 
     void output_unbound (const output_executor_interface& exec) {
       schedule_sysq (new output_unbound_runnable (exec));
+      // Schedule the output.
+      schedule_execq (new output_exec_runnable (exec));
     }
 
     void input_unbound (const input_executor_interface& exec) {
