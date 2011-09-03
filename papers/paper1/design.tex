@@ -54,6 +54,7 @@ Let an action be \emph{enabled} if its precondition is true and \emph{disabled} 
 Observe that executing an action potentially changes the state of the automaton and causes the set of enabled actions to change.
 Consequently, an automaton is given a chance to declare actions to the scheduler after one of its actions is executed, i.e., changes state.
 Since the state and therefore preconditions of all automata are independent, each automaton is responsible for scheduling its own actions.
+For bootstrapping, each automaton is allowed to schedule actions when it is created.
 
 In this approach, scheduling disabled actions is unnecessary.
 Let $a$ be a scheduled disabled action.
@@ -67,6 +68,17 @@ A simple technique for accomplishing this is to schedule all enabled actions.
 More efficient schemes are possible if one considers which actions enable each other and which actions have already been scheduled.
 Not declaring an enabled action violates the fairness of the controller since it will never select an action that may cause a state change.
 Not scheduling an (enabled) action is a common mistake.
+
+\paragraph{Binding predicates and scheduling.}
+The preceding discussion on scheduling claims that an action in one automaton cannot affect preconditions in another automaton.
+This is not entirely correct when one considers the system automaton and binding predicates.
+Imagine an automaton with a single output action whose only precondition is that it must be bound and assume that the automaton only schedules the action when enabled.
+When the automaton is created, its only action is disabled.
+Consequently, it will not schedule its action and therefore not be executed.
+Suppose that some time after the automaton is created, another automaton successfully binds to the output action.
+The bind changes the precondition but the automaton will never be executed since it has no way of scheduling the output action.
+While this example may seem contrived, it is representative of situations where an automaton is waiting for one or more of its outputs to be bound; a situation that occurs quite often in practice.
+To remedy this, our framework takes advantage of the fair scheduling criteria of the I/O automata model and schedules an output action after a bind or unbind.
 
 \paragraph{Actions of non-existent automata.}
 Every action in the set of actions considered by the controller was scheduled by its associated automaton.

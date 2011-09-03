@@ -1,6 +1,121 @@
 \section{I/O Automata Representation and Programming Model\label{representation}}
 
-Conclude with our recommendations for programming, highlight need for exploration.
+In this section, we show how I/O automata are represented using our framework and how they can be used to construct programs.
+We develop a simulation for a distributed algorithm to show the basic features of the framework and then show a real implementation of the same algorithm.
+The problem we consider is that of electing a leader in unidirectional ring.
+
+The algorithm we consider is the asynchronous LCR algorithm presented by Lynch in Chapter 15 of~\cite{lynch1996distributed} which is in turn based on the work of LeLann~\cite{} and Chang and Roberts~\cite{}.
+The LCR algorithm assumes that every node has a unique identifier.
+Each node begins by assuming that it is the leader and send its own unique id to its neighbor.
+If a node receives a unique id from its predecessor that is greater that the id that it believes to be the leader, then it changes its belief about the leader to the new id and sends the new id to its successor.
+When a node receives its own id, it elects itself the leader of the ring.
+
+\subsection{The AsynchLCR Automaton}
+
+Appendix~\ref{asynch_lcr} shows the code for the asynchronous LCR automaton.
+
+All automaton inherit from the \verb+ioa::automaton+ base class which implements the system call interface expected by the system automaton.
+The \verb+asynch_lcr_automaton+ inherits from the \verb+ioa::automaton+ base class (line 13-14).
+
+The state variables of the automaton are captured as members variables.
+The \verb+m_u+ variable stores the id of node that this id believes to be the leader (line 23).
+The \verb+m_send+ variable is a queue that stores ids that will be sent to the next node in the ring (line 24).
+The \verb+m+status+ variable is used by the leader to report its election (line 25).
+
+The constructor allows for initialization of the state variables and bootstrapping the scheduler.
+The unique id of the automaton is a random number with ties broken by the index of the automaton.
+Every node assumes that they are the leader initially \verb+i+ (line 29).
+All nodes start in the unknown state (line 30).
+Each node starts by sending their id to their neighbor (line 32).
+The automaton bootstraps the scheduler after its state variable are initialized (line 33).
+
+Actions consist of member variables that implement the Action concept.
+An easiest way to declare these variables is to use a macro for the appropriate action type.
+The \verb+asynch_lcr_automaton+ contains a \verb+send+ output action (line 53), a \verb+receive+ input action (line 73), and a \verb+leader+ output action (line 90).
+The macros assume that actions are encoded using two or three functions.
+Local actions require a precondition named \verb+action_name_precondition+ that returns true if the action is enabled (line 37, 76).
+Notice that the preconditions are declared \verb+const+ since they should not change the state of the automaton.
+All actions require an effect named \verb+action_name_effect+ that encodes the effect of the action (line 42, 56, 81).
+All actions also require a scheduling function named \verb+action_name_schedule+ that allows the automaton to schedule actions (line 48, 68, 85).
+Notice that the schedule functions are also declare \verb+const+ for the same reason as the preconditions.
+
+In the I/O automata model, the send precondition only requires that the send queue not be empty (line 38).
+However, if the send action executes before it is bound, the id at the front of the send queue will be lost.
+Consequently, we add a binding predicate that ensures that send output is bound to at least one input (line 39).
+The \verb+ioa::binding_count+ function returns the number of actions bound to the given action.
+This is non-negative for output actions, 0 or 1 for input actions, and 0 for internal actions.
+
+The send action is a valued unparameterized (v-up) output.
+The value produced by send has the type \verb+UID_t+ (line 42).
+Notice that this agrees with the type in the action declaration (line 53).
+Similarly, the receive action is a valued unparameterized (v-up) input action that accepts a value of type \verb+UID_t+ (line 56, 73).
+Notice that input action effects take a constant reference.
+
+The send action removes and returns the id at the front of the queue (line 42-46).
+The receive action updates the current leader sending it to nodes successor and confirms an election (line 56-66).
+Once a node is chosen as the leader, it reports it using the leader action (line 81-83).
+
+After every action is executed, the associated scheduling function is called.
+All scheduling calls in the \verb+asynch_lcr_automaton+ dispatch to the same member function (line 93-100).
+The \verb+asynch_lcr_automaton+ uses the strategy outlined in section~\ref{design} and checks the precondition of each action before scheduling it.
+
+\subsection{AsynchLCR Simulation}
+
+For a simulation of the AsynchLCR algorithm, we connect each node using a channel automaton.
+The channel automaton is introduced by Lynch in Chapter 8 of ~\cite{lynch1996distributed} and listed in appendix~\ref{channel}.
+The channel automaton takes a template parameter for the messages transported by the channel.
+
+Appendix~\ref{ring} contains an automaton that creates the ring.
+The template parameter \verb+T+ represents the automaton, i.e., \verb+asynch_lcr_automaton+, and the template parameter \verb+M+ represents the message type for the channel automata, i.e., \verb+UID_t+.
+The size of the ring to simulate is passed as the constructor argument \verb+N+ (line 9).
+
+The constructor for the ring starts by declaring vectors to hold automaton managers for the LCR automata (line 12) and automaton managers for the channels (line 13).
+The loop in (line 15-20) initializes the vectors.
+The \verb+ioa::make_automaton_manager+ function creates automaton managers.
+These require action to an \verb+ioa::automaton+ which is always provided by a \verb+this+ pointer and a generator as described in section~\ref{design}.
+The \verb+ioa::make_generator+ creates a generator.
+Generators take constructor arguments for the automaton they will produce and pass them to the constructor when the automaton is allocated.
+For example, the LCR automata are initialized with an index (line 17).
+
+The loop in (line 22-33) creates the various bindings necessary to create the ring and receive the leader election.
+The \verb+ioa::make_binding_manager+ function creates binding managers.
+This function requires access to an \verb+ioa::automaton+ to realize the system actions.
+The other arguments are the automaton managers and actions for the output action and input action.
+For example, the send action of the LCR automaton is bound to the send action of the successor channel in (line 23-25).
+Similarly, the receive action of the LCR automaton is bound to the receive action of the predecessor channel in (line 26-28).
+
+The ring automaton contains a single unvalued parameterized (uv-p) input action for receiving the leader (line 36-38).
+The parameter \verb+i+ is the index of the LCR automaton.
+The leader actions are bound in (line 29-31).
+Notice that the parameter for the leader input action is set in the call to \verb+ioa::make_binding_manager+.
+
+Binding to an automaton that already exists requires an object that behaves like an automaton manager but refers to an automaton that already exists.
+Objects of the \verb+ioa::handle_manager+ class satisfy this requirement.
+The ring automaton declares a handler manager \verb+m_self+ (line 6) and initializes it with its automaton identifier (line 10).
+Associated with each automaton is a unique identifier called an \emph{aid} which can be retrieved with \verb+ioa::get_aid+.
+
+Appendix~\ref{driver} contains the driver program for the LCR simulation.
+A global FIFO scheduler \verb+sched+ is declared on (line 11).
+The scheduler is started with the \verb+ioa::run+ function (line 12).
+The \verb+ioa::run+ function starts the scheduler using the root automaton returned by the specified generator which in this case is the ring automaton.
+
+\subsection{AsynchLCR Implementation}
+
+%% Conclude with our recommendations for programming, highlight need for exploration.
+
+%% Tips for Writing Programs with I/O Automata
+%% 1. Make sure that a parameter exists.
+%% 2. Move logic in observe to local actions.
+%% 3. Avoid observing an arbitrary number of managers.
+%% 4. Do not bind to managers allocated on the stack.
+%% 5. Stop when an error is encoutered and report it.
+%% 6. Make sure output actions are bound.
+%% 7. Make sure local actions are scheduled.
+%% 8. Do not pass pointers---use const_shared_ptr.
+%% 9. Check preconditions.
+%% 10. Check effects.
+%% 11. Order clauses of preconditions for efficiency.
+%% 12. Automata that should be destroyed at the same time should be created at the same time and vice versa.  (Group using a parent.)
 
 %% \begin{outline}
 %% \item State

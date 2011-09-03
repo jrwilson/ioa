@@ -2,8 +2,9 @@
 
 \usepackage{outline}
 \usepackage{graphicx}
+\usepackage{listings}
 
-\newcommand{\comment}[1]{[#1]}
+\lstset{numbers=left, basicstyle=\footnotesize}
 
 \begin{document}
 
@@ -31,5 +32,23 @@
 
 \bibliography{bibliography}{}
 \bibliographystyle{plain}
+
+\appendix
+
+\section{AsyncLCR automaton\label{asynch_lcr}}
+
+\lstinputlisting[language=C++]{asynch_lcr_automaton.hpp}
+
+\section{Channel automaton\label{channel}}
+
+\lstinputlisting[language=C++]{channel_automaton.hpp}
+
+\section{Unidirectional Ring Network\label{ring}}
+
+\lstinputlisting[language=C++]{unidirectional_ring_leader_election.hpp}
+
+\section{AsyncLCR driver\label{driver}}
+
+\lstinputlisting[language=C++]{asynch_lcr.cpp}
 
 \end{document}

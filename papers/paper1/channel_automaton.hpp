@@ -1,6 +1,3 @@
-#ifndef __channel_automaton_hpp__
-#define __channel_automaton_hpp__
-
 /*
   Channel I/O Automaton
   Distributed Algorithms, p. 204.
@@ -29,7 +26,8 @@ public:
 
 private:
   bool receive_precondition () const {
-    return !m_queue.empty () && ioa::binding_count (&channel_automaton::receive) != 0;
+    return !m_queue.empty () &&
+      ioa::binding_count (&channel_automaton::receive) != 0;
   }
 
   T receive_effect () {
@@ -47,5 +45,3 @@ private:
 public:
   V_UP_OUTPUT (channel_automaton, receive, T);
 };
-
-#endif
