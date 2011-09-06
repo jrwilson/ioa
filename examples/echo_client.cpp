@@ -22,7 +22,7 @@ private:
   bool m_closed_reported;
   ssize_t m_buf_size;
   char* m_buf;
-  std::queue<ioa::const_shared_ptr<std::string> > m_recv_queue;
+  std::queue<std::string*> m_recv_queue;
 
   void schedule () const {
     if (schedule_read_ready_precondition ()) {
@@ -49,6 +49,10 @@ public:
 
   ~stdin_automaton () {
     ioa::close (m_fd);
+    while (!m_recv_queue.empty ()) {
+      delete m_recv_queue.front ();
+      m_recv_queue.pop ();
+    }
   }
 
 private:
@@ -93,7 +97,7 @@ private:
 
     if (actual_bytes != -1 && actual_bytes != 0) {
       // Success.
-      m_recv_queue.push (ioa::const_shared_ptr<std::string> (new std::string (m_buf, actual_bytes)));
+      m_recv_queue.push (new std::string (m_buf, actual_bytes));
     }
     else {
       m_closed = true;
@@ -110,8 +114,9 @@ private:
     return !m_recv_queue.empty () && ioa::binding_count (&stdin_automaton::receive) != 0;
   }
 
-  ioa::const_shared_ptr<std::string> receive_effect () {
-    ioa::const_shared_ptr<std::string> retval = m_recv_queue.front ();
+  std::string receive_effect () {
+    std::string retval = *m_recv_queue.front ();
+    delete m_recv_queue.front ();
     m_recv_queue.pop ();
     return retval;
   }
@@ -121,7 +126,7 @@ private:
   }
 
 public:
-  V_UP_OUTPUT (stdin_automaton, receive, ioa::const_shared_ptr<std::string>);
+  V_UP_OUTPUT (stdin_automaton, receive, std::string);
 
 private:
   bool closed_precondition () const {
@@ -156,7 +161,7 @@ private:
   ioa::inet_address m_address;
   bool m_created_flag;
   ioa::automaton_manager<stdin_automaton>* m_s;
-  std::queue<ioa::const_shared_ptr<std::string> > m_send_queue;
+  std::queue<std::string*> m_send_queue;
 
 public:
   echo_client_automaton (const ioa::inet_address& address) :
@@ -197,6 +202,13 @@ public:
     schedule ();
   }
 
+  ~echo_client_automaton () {
+    while (!m_send_queue.empty ()) {
+      delete m_send_queue.front ();
+      m_send_queue.pop ();
+    }
+  }
+
 private:
   void schedule () const {
     if (create_precondition ()) {
@@ -211,15 +223,15 @@ private:
     schedule ();
   }
 
-  void stdin_receive_effect (const ioa::const_shared_ptr<std::string>& val) {
-    m_send_queue.push (val);
+  void stdin_receive_effect (const std::string& val) {
+    m_send_queue.push (new std::string (val));
   }
 
   void stdin_receive_schedule () const {
     schedule ();
   }
 
-  V_UP_INPUT (echo_client_automaton, stdin_receive, ioa::const_shared_ptr<std::string>);
+  V_UP_INPUT (echo_client_automaton, stdin_receive, std::string);
 
   void stdin_closed_effect () {
     m_connection->destroy ();
@@ -272,9 +284,10 @@ private:
     return m_state == SEND_READY && !m_send_queue.empty () && ioa::binding_count (&echo_client_automaton::send) != 0;
   }
 
-  ioa::const_shared_ptr<std::string> send_effect () {
+  std::string send_effect () {
     m_state = SEND_COMPLETE_WAIT;
-    ioa::const_shared_ptr<std::string> retval = m_send_queue.front ();
+    std::string retval = *m_send_queue.front ();
+    delete m_send_queue.front ();
     m_send_queue.pop ();
     return retval;
   }
@@ -283,7 +296,7 @@ private:
     schedule ();
   }
 
-  V_UP_OUTPUT (echo_client_automaton, send, ioa::const_shared_ptr<std::string>);
+  V_UP_OUTPUT (echo_client_automaton, send, std::string);
 
   void send_complete_effect () {
     m_state = SEND_READY;
@@ -295,15 +308,15 @@ private:
 
   UV_UP_INPUT (echo_client_automaton, send_complete);
 
-  void receive_effect (const ioa::const_shared_ptr<std::string>& val) {
-    std::cout << *val;
+  void receive_effect (const std::string& val) {
+    std::cout << val;
   }
   
   void receive_schedule () const {
     schedule ();
   }
 
-  V_UP_INPUT (echo_client_automaton, receive, ioa::const_shared_ptr<std::string>);
+  V_UP_INPUT (echo_client_automaton, receive, std::string);
 
   void connection_error_effect (const int& err) {
     char buf[256];

@@ -14,10 +14,10 @@ namespace ioa {
   public:
     struct receive_val {
       inet_address address;
-      const_shared_ptr<std::string> buffer;
+      std::string buffer;
 
       receive_val (const inet_address& a,
-		   const const_shared_ptr<std::string>& b) :
+		   const std::string& b) :
 	address (a),
 	buffer (b)
       { }

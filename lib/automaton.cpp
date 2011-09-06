@@ -1,6 +1,5 @@
 #include <ioa/automaton.hpp>
 #include <ioa/scheduler.hpp>
-#include <ioa/const_shared_ptr.hpp>
 
 namespace ioa {
 

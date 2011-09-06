@@ -169,7 +169,7 @@ namespace ioa {
 
     if (actual_bytes != -1 && actual_bytes != 0) {
       // Success.
-      m_recv_queue.push (receive_val (address, const_shared_ptr<std::string> (new std::string (m_buf, actual_bytes))));
+      m_recv_queue.push (receive_val (address, std::string (m_buf, actual_bytes)));
     }
     else {
       assert (errno != 0);

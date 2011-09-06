@@ -43,17 +43,11 @@ namespace ioa {
     delete[] m_buffer;
   }
 
-  void tcp_connection_automaton::send_effect (const const_shared_ptr<std::string>& buf) {
+  void tcp_connection_automaton::send_effect (const std::string& buf) {
     if (m_errno == 0 && m_send_state == SEND_WAIT) {
-      if (buf.get () != 0) {
-	m_send_buffer = buf;
-	m_bytes_written = 0;
-	m_send_state = SCHEDULE_WRITE_READY;
-      }
-      else {
-	// No buffer.  Go straight to complete.  User should have checked.
-	m_send_state = SEND_COMPLETE_READY;
-      }
+      m_send_buffer = buf;
+      m_bytes_written = 0;
+      m_send_state = SCHEDULE_WRITE_READY;
     }
   }
 
@@ -83,7 +77,7 @@ namespace ioa {
 #ifdef MSG_NOSIGNAL
     ssize_t bytes_written = ::send (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written, MSG_NOSIGNAL);
 #else
-    ssize_t bytes_written = write (m_fd, static_cast<const char*> (m_send_buffer->data ()) + m_bytes_written, m_send_buffer->size () - m_bytes_written);
+    ssize_t bytes_written = write (m_fd, static_cast<const char*> (m_send_buffer.data ()) + m_bytes_written, m_send_buffer.size () - m_bytes_written);
 #endif
 
     if (bytes_written == -1) {
@@ -93,7 +87,7 @@ namespace ioa {
       // We have made progress.
       m_bytes_written += bytes_written;
       
-      if (m_bytes_written == static_cast<ssize_t> (m_send_buffer->size ())) {
+      if (m_bytes_written == static_cast<ssize_t> (m_send_buffer.size ())) {
 	// We are done with this buffer.
 	m_send_state = SEND_COMPLETE_READY;
       }
@@ -161,7 +155,7 @@ namespace ioa {
       return;
     }
 
-    m_receive_buffer.reset (new std::string (m_buffer, bytes_read));
+    m_receive_buffer = std::string (m_buffer, bytes_read);
     m_receive_state = RECEIVE_READY;      
   }
 
@@ -173,7 +167,7 @@ namespace ioa {
     return m_receive_state == RECEIVE_READY && binding_count (&tcp_connection_automaton::receive) != 0;
   }
 
-  const_shared_ptr<std::string> tcp_connection_automaton::receive_effect () {
+  std::string tcp_connection_automaton::receive_effect () {
     m_receive_state = SCHEDULE_READ_READY;
     return m_receive_buffer;
   }

@@ -15,10 +15,10 @@ namespace ioa {
   public:
     struct send_arg {
       inet_address address;
-      const_shared_ptr<std::string> buffer;
+      std::string buffer;
 
       send_arg (const inet_address& a,
-		const const_shared_ptr<std::string>& b) :
+		const std::string& b) :
 	address (a),
 	buffer (b)
       { }

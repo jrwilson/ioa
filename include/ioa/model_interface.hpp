@@ -3,7 +3,6 @@
 
 #include <ioa/aid.hpp>
 #include <ioa/shared_ptr.hpp>
-#include <ioa/const_shared_ptr.hpp>
 #include <memory>
 
 namespace ioa {

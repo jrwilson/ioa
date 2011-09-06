@@ -24,7 +24,7 @@ private:
   bool m_connected;
   bool m_connected_reported;
   state_t m_state;
-  std::queue<ioa::const_shared_ptr<std::string> > m_buffers;
+  std::queue<std::string*> m_buffers;
 
 public:
   client_handler_automaton (const ioa::automaton_handle<ioa::tcp_acceptor_automaton>& handle) :
@@ -58,6 +58,13 @@ public:
     ioa::make_binding_manager (this,
     			       m_connection, &ioa::tcp_connection_automaton::error,
     			       &m_self, &client_handler_automaton::error);
+  }
+
+  ~client_handler_automaton () {
+    while (!m_buffers.empty ()) {
+      delete m_buffers.front ();
+      m_buffers.pop ();
+    }
   }
 
 private:
@@ -151,8 +158,9 @@ private:
       ioa::binding_count (&client_handler_automaton::send) != 0;
   }
 
-  ioa::const_shared_ptr<std::string> send_effect () {
-    ioa::const_shared_ptr<std::string> buf = m_buffers.front ();
+  std::string send_effect () {
+    std::string buf = *m_buffers.front ();
+    delete m_buffers.front ();
     m_buffers.pop ();
     m_state = SEND_COMPLETE_WAIT;
     return buf;
@@ -162,7 +170,7 @@ private:
     schedule ();
   }
 
-  V_UP_OUTPUT (client_handler_automaton, send, ioa::const_shared_ptr<std::string>);
+  V_UP_OUTPUT (client_handler_automaton, send, std::string);
 
   void send_complete_effect () {
     assert (m_state == SEND_COMPLETE_WAIT);
@@ -175,16 +183,16 @@ private:
 
   UV_UP_INPUT (client_handler_automaton, send_complete);
 
-  void receive_effect (const ioa::const_shared_ptr<std::string>& val) {
-    std::cout << *val;
-    m_buffers.push (val);
+  void receive_effect (const std::string& val) {
+    std::cout << val;
+    m_buffers.push (new std::string (val));
   }
 
   void receive_schedule () const {
     schedule ();
   }
 
-  V_UP_INPUT (client_handler_automaton, receive, ioa::const_shared_ptr<std::string>);
+  V_UP_INPUT (client_handler_automaton, receive, std::string);
 };
 
 class echo_server_automaton :

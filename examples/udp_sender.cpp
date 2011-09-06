@@ -17,12 +17,12 @@ private:
   state_t m_state;
   ioa::handle_manager<udp_sender> m_self;
   ioa::inet_address m_address;
-  ioa::const_shared_ptr<std::string> m_message;
+  std::string m_message;
 
 public:
 
   udp_sender (const ioa::inet_address& address,
-	      const ioa::const_shared_ptr<std::string>& message) :
+	      const std::string& message) :
     m_state (SEND_READY),
     m_self (ioa::get_aid ()),
     m_address (address),
@@ -103,7 +103,7 @@ main (int argc, char* argv[]) {
     exit (EXIT_FAILURE);
   }
 
-  ioa::const_shared_ptr<std::string> message (new std::string (argv[3]));
+  std::string message (argv[3]);
 
   ioa::global_fifo_scheduler sched;
   ioa::run (sched, ioa::make_generator<udp_sender> (address, message));

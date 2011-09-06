@@ -39,7 +39,7 @@ public:
 
 private:
   void receive_effect (const ioa::udp_receiver_automaton::receive_val& v) {
-    std::cout << v.address.address_str () << ":" << v.address.port () << " (" << v.buffer->size () << ") " << *(v.buffer) << std::endl;
+    std::cout << v.address.address_str () << ":" << v.address.port () << " (" << v.buffer.size () << ") " << v.buffer << std::endl;
   }
   
   void receive_schedule () const { }

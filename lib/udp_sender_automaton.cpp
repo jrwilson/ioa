@@ -110,7 +110,7 @@ namespace ioa {
 	m_send_set.count (aid) == 0 &&
 	m_complete_set.count (aid) == 0) {
       // Good address and data.
-      if (arg.address.get_errno () == 0 && arg.buffer.get () != 0) {
+      if (arg.address.get_errno () == 0) {
 	// Add to the send queue and set.
 	m_send_queue.push_back (std::make_pair (aid, arg));
 	m_send_set.insert (aid);
@@ -179,7 +179,7 @@ namespace ioa {
       m_send_queue.pop_front ();
       m_send_set.erase (item.first);
       
-      if (sendto (m_fd, item.second.buffer->data (), item.second.buffer->size (), 0, item.second.address.get_sockaddr (), item.second.address.get_socklen ()) != -1) {
+      if (sendto (m_fd, item.second.buffer.data (), item.second.buffer.size (), 0, item.second.address.get_sockaddr (), item.second.address.get_socklen ()) != -1) {
 	// Success.
 	add_to_complete_set (item.first);
       }

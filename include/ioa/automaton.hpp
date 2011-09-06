@@ -2,7 +2,6 @@
 #define __automaton_hpp__
 
 #include <ioa/shared_ptr.hpp>
-#include <ioa/const_shared_ptr.hpp>
 #include <ioa/action.hpp>
 #include <set>
 #include <ioa/generator_interface.hpp>
