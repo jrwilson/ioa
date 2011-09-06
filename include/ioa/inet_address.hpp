@@ -84,7 +84,7 @@ namespace ioa {
     }
 
     std::string address_str () const {
-      if (errno == 0) {
+      if (m_errno == 0) {
 	switch (m_length) {
 	case sizeof (sockaddr_in):
 	  {
@@ -111,7 +111,7 @@ namespace ioa {
     }
 
     unsigned short port () const {
-      if (errno == 0) {
+      if (m_errno == 0) {
 	switch (m_length) {
 	case sizeof (sockaddr_in):
 	  return ntohs (m_addr4.sin_port);
