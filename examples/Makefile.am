@@ -15,7 +15,8 @@ slow_count \
 udp_sender \
 udp_receiver \
 echo_client \
-echo_server
+echo_server \
+tcp_lcr
 
 # Examples from Distributed Algorithms
 clock_SOURCES = clock.cpp
@@ -31,3 +32,4 @@ udp_receiver_SOURCES = udp_receiver.cpp
 udp_sender_SOURCES = udp_sender.cpp
 echo_client_SOURCES = echo_client.cpp
 echo_server_SOURCES = echo_server.cpp
+tcp_lcr_SOURCES = tcp_lcr.cpp

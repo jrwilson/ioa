@@ -20,6 +20,9 @@ namespace ioa {
     if (receive_precondition ()) {
       ioa::schedule (&tcp_connection_automaton::receive);
     }
+    if (connected_precondition ()) {
+      ioa::schedule (&tcp_connection_automaton::connected);
+    }
     if (error_precondition ()) {
       ioa::schedule (&tcp_connection_automaton::error);
     }

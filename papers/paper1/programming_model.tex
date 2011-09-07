@@ -6,7 +6,7 @@ The problem we consider is that of electing a leader in unidirectional ring.
 
 The algorithm we consider is the asynchronous LCR algorithm presented by Lynch in Chapter 15 of~\cite{lynch1996distributed} which is in turn based on the work of LeLann~\cite{} and Chang and Roberts~\cite{}.
 The LCR algorithm assumes that every node has a unique identifier.
-Each node begins by assuming that it is the leader and send its own unique id to its neighbor.
+Each node begins by assuming that it is the leader and sends its own unique id to its neighbor.
 If a node receives a unique id from its predecessor that is greater that the id that it believes to be the leader, then it changes its belief about the leader to the new id and sends the new id to its successor.
 When a node receives its own id, it elects itself the leader of the ring.
 
