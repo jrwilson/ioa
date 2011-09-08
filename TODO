@@ -7,3 +7,18 @@ This might obviate the need to a dynamic cast.
 Move all mutex and thread related stuff to lib.
 mutex.hpp
 shared_mutex.hpp
+
+
+
+In the paper I talk about a "system automaton" which is indirectly implemented by a scheduler and model.
+The result is quite messy.
+I think a better design has the following structure:
+*********************************************
+* scheduler -> executor -> system automaton *
+*********************************************
+Conceptually, the scheduler contains the set of actions to execute.
+The scheduler selects the next action an invokes the executor.
+The executor has a narrow interface consisting of a method for executing actions and possibly some getters.
+The executor has access to the set of automata and bindings managed by the system automaton.
+The executor is thread safe and uses a single-writer/multiple-reader lock to protect the system atuomaton data structures.
+The system automaton has inputs for receiving system actions, outputs for sending results, possibly internal actions for processing.
