@@ -3,6 +3,7 @@
 
 #include <ioa/aid.hpp>
 #include <cstdlib>
+#include <memory>
 
 namespace ioa {
 
@@ -46,7 +47,7 @@ namespace ioa {
   {
   public:
     virtual ~input_executor_interface () { }
-    virtual input_executor_interface* clone () const = 0;
+    virtual std::auto_ptr<input_executor_interface> clone () const = 0;
     virtual void set_parameter (const aid_t) = 0;
     virtual void bound (model_interface&, system_scheduler_interface&) const = 0;
     virtual void unbound (model_interface&, system_scheduler_interface&) const = 0;
@@ -82,7 +83,7 @@ namespace ioa {
   {
   public:
     virtual ~output_executor_interface () { }
-    virtual output_executor_interface* clone () const = 0;
+    virtual std::auto_ptr<output_executor_interface> clone () const = 0;
     virtual bool involves_output (const action_executor_interface&) const = 0;
     virtual bool involves_input (const action_executor_interface&) const = 0;
     virtual bool involves_input_automaton (const aid_t) const = 0;

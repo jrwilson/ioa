@@ -32,7 +32,7 @@ struct test_model :
 		     std::auto_ptr<ioa::generator_interface> generator,
 		     void* const key) { return -1; }
   int bind (const ioa::aid_t automaton,
-	    ioa::shared_ptr<ioa::bind_executor_interface> exec,
+	    std::auto_ptr<ioa::bind_executor_interface> exec,
 	    void* const key) { return -1; }
   int unbind (const ioa::aid_t automaton,
 	      void* const key) { return -1; }
@@ -59,7 +59,7 @@ struct test_system_scheduler :
 	       void* const key) { }
     
   void bind (const ioa::aid_t automaton,
-	     ioa::shared_ptr<ioa::bind_executor_interface> exec,
+	     std::auto_ptr<ioa::bind_executor_interface> exec,
 	     void* const key) { }
     
   void unbind (const ioa::aid_t automaton,
@@ -77,17 +77,25 @@ struct test_system_scheduler :
 	      const ioa::bound_t,
 	      void* const key) { }
     
-  void output_bound (const ioa::output_executor_interface&) { }
+  void output_bound (const ioa::output_executor_interface& out) {
+    std::auto_ptr<ioa::output_executor_interface> ptr = out.clone ();
+  }
     
-  void input_bound (const ioa::input_executor_interface&) { }
+  void input_bound (const ioa::input_executor_interface& in) {
+    std::auto_ptr<ioa::input_executor_interface> ptr = in.clone ();
+  }
     
   void unbound (const ioa::aid_t automaton,
 		const ioa::unbound_t,
 		void* const key) { }
     
-  void output_unbound (const ioa::output_executor_interface&) { }
+  void output_unbound (const ioa::output_executor_interface& out) {
+    std::auto_ptr<ioa::output_executor_interface> ptr = out.clone ();
+  }
     
-  void input_unbound (const ioa::input_executor_interface&) { }
+  void input_unbound (const ioa::input_executor_interface& in) {
+    std::auto_ptr<ioa::input_executor_interface> ptr = in.clone ();
+  }
     
   void destroyed (const ioa::aid_t automaton,
 		  const ioa::destroyed_t,

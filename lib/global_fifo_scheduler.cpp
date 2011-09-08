@@ -429,7 +429,7 @@ namespace ioa {
     }
 
     void bind (const aid_t automaton,
-	       shared_ptr<bind_executor_interface> exec,
+	       std::auto_ptr<bind_executor_interface> exec,
 	       void* const key) {
       schedule_configq (new bind_runnable (automaton, exec, key));
     }

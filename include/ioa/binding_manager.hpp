@@ -229,7 +229,7 @@ namespace ioa {
   {
   private:
 
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
     }
@@ -255,7 +255,7 @@ namespace ioa {
 
     IP m_input_parameter;
 
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr, this->m_input_parameter);
     }
@@ -279,7 +279,7 @@ namespace ioa {
     public binding_manager_core<OI, OM, II, IM>
   {
   private:
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
     }
@@ -305,7 +305,7 @@ namespace ioa {
 
     OP m_output_parameter;
 
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, this->m_output_parameter,
 				 this->m_input_handle, this->m_input_member_ptr);
     }
@@ -334,7 +334,7 @@ namespace ioa {
     OP m_output_parameter;
     IP m_input_parameter;
 
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, m_output_parameter,
 				 this->m_input_handle, this->m_input_member_ptr, m_input_parameter);
     }
@@ -364,7 +364,7 @@ namespace ioa {
 
     OP m_output_parameter;
 
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, m_output_parameter,
 				 this->m_input_handle, this->m_input_member_ptr);
     }
@@ -388,7 +388,7 @@ namespace ioa {
     public binding_manager_core<OI, OM, II, IM>
   {
   private:
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
     }
@@ -414,7 +414,7 @@ namespace ioa {
 
     IP m_input_parameter;
 
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr, this->m_input_parameter);
     }
@@ -438,7 +438,7 @@ namespace ioa {
     public binding_manager_core<OI, OM, II, IM>
   {
   private:
-    shared_ptr<bind_executor_interface> get_executor () const {
+    std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
     }

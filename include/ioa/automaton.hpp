@@ -1,7 +1,6 @@
 #ifndef __automaton_hpp__
 #define __automaton_hpp__
 
-#include <ioa/shared_ptr.hpp>
 #include <ioa/action.hpp>
 #include <set>
 #include <ioa/generator_interface.hpp>
@@ -52,7 +51,7 @@ namespace ioa {
   {
   public:
     virtual ~system_binding_manager_interface () { }
-    virtual shared_ptr<bind_executor_interface> get_executor () const = 0;
+    virtual std::auto_ptr<bind_executor_interface> get_executor () const = 0;
     virtual void bound (const bound_t result) = 0;
     virtual void unbound (const unbound_t result) = 0;
   };
@@ -99,10 +98,10 @@ namespace ioa {
 
   private:
     bool sys_bind_precondition () const;
-    std::pair<shared_ptr<bind_executor_interface>, void*> sys_bind_effect ();
+    std::pair<bind_executor_interface*, void*> sys_bind_effect ();
     void sys_bind_schedule () const { schedule (); }
   public:
-    SYSTEM_OUTPUT (automaton, sys_bind, std::pair<shared_ptr<bind_executor_interface> COMMA void*>);
+    SYSTEM_OUTPUT (automaton, sys_bind, std::pair<bind_executor_interface* COMMA void*>);
 
   private:
     bool sys_unbind_precondition () const;

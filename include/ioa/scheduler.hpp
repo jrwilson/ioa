@@ -2,7 +2,6 @@
 #define __scheduler_hpp__
 
 #include <ioa/time.hpp>
-#include <ioa/shared_ptr.hpp>
 #include <ioa/action.hpp>
 #include <ioa/generator_interface.hpp>
 #include <ioa/scheduler_interface.hpp>

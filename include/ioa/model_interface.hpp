@@ -2,7 +2,6 @@
 #define __model_interface_hpp__
 
 #include <ioa/aid.hpp>
-#include <ioa/shared_ptr.hpp>
 #include <memory>
 
 namespace ioa {
@@ -43,7 +42,7 @@ namespace ioa {
 			  std::auto_ptr<generator_interface> generator,
 			  void* const key) = 0;
     virtual int bind (const aid_t automaton,
-		      shared_ptr<bind_executor_interface> exec,
+		      std::auto_ptr<bind_executor_interface> exec,
 		      void* const key) = 0;
     virtual int unbind (const aid_t automaton,
 			void* const key) = 0;

@@ -10,12 +10,12 @@ namespace ioa {
   {
   private:
     const aid_t m_automaton;
-    shared_ptr<bind_executor_interface> m_exec;
+    std::auto_ptr<bind_executor_interface> m_exec;
     void* const m_key;
     
   public:
     bind_runnable (const aid_t automaton,
-		   shared_ptr<bind_executor_interface> exec,
+		   std::auto_ptr<bind_executor_interface> exec,
 		   void* const key) :
       m_automaton (automaton),
       m_exec (exec),

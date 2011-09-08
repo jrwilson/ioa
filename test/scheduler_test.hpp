@@ -176,7 +176,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -282,7 +282,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -398,7 +398,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -524,7 +524,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -650,7 +650,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -776,7 +776,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -902,7 +902,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }
@@ -957,8 +957,6 @@ private:
 
   helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type>* m_helper;
 
-  void schedule () const { }
-
   bool poll_precondition () const {
     return true;
   }
@@ -973,9 +971,7 @@ private:
     }
   }
 
-  void poll_schedule () const {
-    schedule ();
-  }
+  void poll_schedule () const { }
 
   UP_INTERNAL (bind_unbound, poll);
 
@@ -1049,7 +1045,7 @@ private:
       }
     }
 
-    ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+    std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
       return ioa::make_bind_executor (m_output_handle, m_output_member_ptr,
 				      m_input_handle, m_input_member_ptr);
     }

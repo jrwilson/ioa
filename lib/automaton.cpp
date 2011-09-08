@@ -173,12 +173,13 @@ namespace ioa {
     return !m_bind_send.empty ();
   }
   
-  std::pair<shared_ptr<bind_executor_interface> , void*> automaton::sys_bind_effect () {
+  std::pair<bind_executor_interface*, void*> automaton::sys_bind_effect () {
     std::set<system_binding_manager_interface*>::iterator pos = m_bind_send.begin ();
     system_binding_manager_interface* helper = *pos;
     m_bind_send.erase (pos);
     m_bind_recv.insert (helper);
-    return std::make_pair (helper->get_executor (), helper);
+    // See above.
+    return std::make_pair (helper->get_executor ().release (), helper);
   }
 
   bool automaton::sys_unbind_precondition () const {

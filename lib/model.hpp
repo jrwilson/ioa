@@ -115,7 +115,7 @@ namespace ioa {
 		  std::auto_ptr<generator_interface> generator,
 		  void* const key);
     int bind (const aid_t automaton,
-	      shared_ptr<bind_executor_interface> exec,
+	      std::auto_ptr<bind_executor_interface> exec,
 	      void* const key);
     int unbind (const aid_t automaton,
 		void* const key);

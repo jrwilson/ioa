@@ -23,7 +23,7 @@ namespace ioa {
 			 void* const key) = 0;
     
     virtual void bind (const aid_t automaton,
-		       shared_ptr<bind_executor_interface> exec,
+		       std::auto_ptr<bind_executor_interface> exec,
 		       void* const key) = 0;
     
     virtual void unbind (const aid_t automaton,

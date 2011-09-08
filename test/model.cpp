@@ -146,7 +146,7 @@ struct test_system_scheduler :
   }
 
   void bind (const ioa::aid_t automaton,
-	     ioa::shared_ptr<ioa::bind_executor_interface> exec,
+	     std::auto_ptr<ioa::bind_executor_interface> exec,
 	     void* const key) {
     assert (false);
   }
@@ -241,18 +241,26 @@ ioa::aid_t create (ioa::model& model,
 void bind (ioa::model& model,
 	   test_system_scheduler& tss,
 	   const ioa::aid_t binder,
-	   ioa::shared_ptr<ioa::bind_executor_interface> exec,
+	   std::auto_ptr<ioa::bind_executor_interface> exec,
 	   void* const key) {
+  ioa::aid_t output_bound_aid = exec->get_output ().get_aid ();
+  const void* output_bound_member_ptr = exec->get_output ().get_member_ptr ();
+  void* output_bound_pid = exec->get_output ().get_pid ();
+  ioa::aid_t input_bound_aid = exec->get_input ().get_aid ();
+  const void* input_bound_member_ptr = exec->get_input ().get_member_ptr ();
+  void* input_bound_pid = exec->get_input ().get_pid ();
+
+
   tss.reset ();
   assert (model.bind (binder, exec, key) == 0);
   assert (tss.m_bound_automaton == binder);
   assert (tss.m_bound_key == key);
-  assert (tss.m_output_bound_aid == exec->get_output ().get_aid ());
-  assert (tss.m_output_bound_member_ptr == exec->get_output ().get_member_ptr ());
-  assert (tss.m_output_bound_pid == exec->get_output ().get_pid ());
-  assert (tss.m_input_bound_aid == exec->get_input ().get_aid ());
-  assert (tss.m_input_bound_member_ptr == exec->get_input ().get_member_ptr ());
-  assert (tss.m_input_bound_pid == exec->get_input ().get_pid ());
+  assert (tss.m_output_bound_aid == output_bound_aid);
+  assert (tss.m_output_bound_member_ptr == output_bound_member_ptr);
+  assert (tss.m_output_bound_pid == output_bound_pid);
+  assert (tss.m_input_bound_aid == input_bound_aid);
+  assert (tss.m_input_bound_member_ptr == input_bound_member_ptr);
+  assert (tss.m_input_bound_pid == input_bound_pid);
 }
 
 void destroy (ioa::model& model,
@@ -674,8 +682,11 @@ unbound ()
 
   ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
 
-  ioa::shared_ptr<ioa::bind_executor_interface> bind_exec = ioa::make_bind_executor (output, &automaton1::uv_p_output, parameter, input, &automaton1::uv_up_input);
+  std::auto_ptr<ioa::bind_executor_interface> bind_exec = ioa::make_bind_executor (output, &automaton1::uv_p_output, parameter, input, &automaton1::uv_up_input);
 
+  unbound_record outrec (bind_exec->get_output ());
+  unbound_record inrec (bind_exec->get_input ());
+  
   int key;
   bind (model, tss, output,
 	bind_exec,
@@ -685,8 +696,8 @@ unbound ()
   mu_assert (model.unbind (output,
 			   &key) == 0);
   mu_assert (tss.m_unbound.count (unbound_t (output, ioa::UNBOUND_RESULT, &key)) == 1);
-  mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec->get_output ())) == 1);
-  mu_assert (tss.m_input_unbound.count (unbound_record (bind_exec->get_input ())) == 1);
+  mu_assert (tss.m_output_unbound.count (outrec) == 1);
+  mu_assert (tss.m_input_unbound.count (inrec) == 1);
 
   return 0;
 }
@@ -749,17 +760,25 @@ automaton_destroyed ()
   int gamma_key;
   ioa::automaton_handle<automaton1> gamma = create (model, tss, beta, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &gamma_key);
 
-  ioa::shared_ptr<ioa::bind_executor_interface> bind_exec1 = 
+  std::auto_ptr<ioa::bind_executor_interface> bind_exec1 = 
     ioa::make_bind_executor (alpha, &automaton1::uv_p_output, parameter,
 			     beta, &automaton1::uv_up_input);
 
-  ioa::shared_ptr<ioa::bind_executor_interface> bind_exec2 =
+  std::auto_ptr<ioa::bind_executor_interface> bind_exec2 =
     ioa::make_bind_executor (beta, &automaton1::uv_p_output, parameter,
 			     gamma, &automaton1::uv_up_input);
 
-  ioa::shared_ptr<ioa::bind_executor_interface> bind_exec3 =
+  std::auto_ptr<ioa::bind_executor_interface> bind_exec3 =
     ioa::make_bind_executor (gamma, &automaton1::uv_up_output,
 			     beta, &automaton1::uv_p_input, parameter);
+
+  unbound_record outrec1 (bind_exec1->get_output ());
+  unbound_record outrec2 (bind_exec2->get_output ());
+  unbound_record outrec3 (bind_exec3->get_output ());
+
+  unbound_record inrec1 (bind_exec1->get_input ());
+  unbound_record inrec2 (bind_exec2->get_input ());
+  unbound_record inrec3 (bind_exec3->get_input ());
 
   int bind1;
   bind (model, tss, alpha,
@@ -782,13 +801,13 @@ automaton_destroyed ()
   mu_assert (tss.m_unbound.count (unbound_t (beta, ioa::UNBOUND_RESULT, &bind2)) == 1);
   mu_assert (tss.m_unbound.count (unbound_t (beta, ioa::UNBOUND_RESULT, &bind3)) == 1);
   
-  mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec1->get_output ())) == 1);
-  mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec2->get_output ())) == 1);
-  mu_assert (tss.m_output_unbound.count (unbound_record (bind_exec3->get_output ())) == 1);
+  mu_assert (tss.m_output_unbound.count (outrec1) == 1);
+  mu_assert (tss.m_output_unbound.count (outrec2) == 1);
+  mu_assert (tss.m_output_unbound.count (outrec3) == 1);
 
-  mu_assert (tss.m_input_unbound.count (unbound_record (bind_exec1->get_input ())) == 1);
-  mu_assert (tss.m_input_unbound.count (unbound_record (bind_exec2->get_input ())) == 1);
-  mu_assert (tss.m_input_unbound.count (unbound_record (bind_exec3->get_input ())) == 1);
+  mu_assert (tss.m_input_unbound.count (inrec1) == 1);
+  mu_assert (tss.m_input_unbound.count (inrec2) == 1);
+  mu_assert (tss.m_input_unbound.count (inrec3) == 1);
 
   return 0;
 }

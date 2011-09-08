@@ -126,7 +126,7 @@ namespace ioa {
   }
 
   int model::bind (const aid_t binder,
-		   shared_ptr<bind_executor_interface> bind_exec,
+		   std::auto_ptr<bind_executor_interface> bind_exec,
 		   void* const key) {
     unique_lock lock (m_mutex);
     
@@ -195,7 +195,7 @@ namespace ioa {
       c = *out_pos;
     }
     else {
-      c = output.clone ();
+      c = output.clone ().release ();
       m_bindings.push_front (c);
     }
     
@@ -208,6 +208,8 @@ namespace ioa {
   int model::unbind (const aid_t binder,
 		      void* const key)
   {
+    unique_lock lock (m_mutex);
+
     if (!m_aids.contains (binder)) {
       // Binder does not exist.
       return -1;
@@ -388,11 +390,11 @@ namespace ioa {
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
     if (instance->sys_bind.precondition (const_cast<const automaton&> (*instance))) {
-      std::pair<shared_ptr<bind_executor_interface>, void*> key = instance->sys_bind.effect (*instance);
+      std::pair<bind_executor_interface*, void*> key = instance->sys_bind.effect (*instance);
       instance->sys_bind.schedule (const_cast<const automaton&> (*instance));
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
-      m_system_scheduler.bind (aid, key.first, key.second);
+      m_system_scheduler.bind (aid, std::auto_ptr<bind_executor_interface> (key.first), key.second);
     }
     else {
       m_system_scheduler.clear_current_aid ();

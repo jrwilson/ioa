@@ -65,7 +65,7 @@ private:
     }
   }
 
-  ioa::shared_ptr<ioa::bind_executor_interface> get_executor () const {
+  std::auto_ptr<ioa::bind_executor_interface> get_executor () const {
     return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 			       this->m_input_handle, this->m_input_member_ptr);
   }

@@ -14,12 +14,14 @@ namespace ioa {
   template <class OVS, class OVT, class IVS, class IVT> struct bind_check;
   
   template <class I, class M>
-  struct action_executor_core
+  class action_executor_core
   {
+  protected:
     const automaton_handle<I> m_handle;
     M I::*m_member_ptr;
     I* m_instance;
 
+  public:
     action_executor_core (const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       m_handle (handle),
@@ -98,8 +100,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    action_executor_impl* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<input_executor_interface> clone () const {
+      return std::auto_ptr<input_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -173,8 +175,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    action_executor_impl* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<input_executor_interface> clone () const {
+      return std::auto_ptr<input_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -250,8 +252,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    action_executor_impl* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<input_executor_interface> clone () const {
+      return std::auto_ptr<input_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -319,8 +321,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
     
-    action_executor_impl* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<input_executor_interface> clone () const {
+      return std::auto_ptr<input_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -393,8 +395,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
     
-    action_executor_impl* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<input_executor_interface> clone () const {
+      return std::auto_ptr<input_executor_interface> (new action_executor_impl (*this));
     }      
 
     bool fetch_instance (model_interface& model) {
@@ -469,8 +471,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
     
-    action_executor_impl* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<input_executor_interface> clone () const {
+      return std::auto_ptr<input_executor_interface> (new action_executor_impl (*this));
     }      
 
     bool fetch_instance (model_interface& model) {
@@ -492,11 +494,13 @@ namespace ioa {
   };
 
   template <class I, class M, class OE, class IE>
-  struct output_core :
+  class output_core :
     public action_executor_core<I, M>
   {
-    struct record
+  public:
+    class record
     {
+    public:
       system_scheduler_interface& m_system_scheduler;
       model_interface& m_model;
       const OE& m_output;
@@ -513,7 +517,7 @@ namespace ioa {
 	m_system_scheduler (system_scheduler),
 	m_model (model),
 	m_output (output),
-	m_input (dynamic_cast<IE*> (input.clone ())),
+	m_input (dynamic_cast<IE*> (input.clone ().release ())),
 	m_binder (binder),
 	m_key (key)
       {
@@ -757,8 +761,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    output_executor_interface* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<output_executor_interface> clone () const {
+      return std::auto_ptr<output_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -900,8 +904,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    output_executor_interface* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<output_executor_interface> clone () const {
+      return std::auto_ptr<output_executor_interface> (new action_executor_impl (*this));
     }
       
     bool fetch_instance (model_interface& model) {
@@ -1052,8 +1056,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    output_executor_interface* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<output_executor_interface> clone () const {
+      return std::auto_ptr<output_executor_interface> (new action_executor_impl (*this));
     }
       
     bool fetch_instance (model_interface& model) {
@@ -1192,8 +1196,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    output_executor_interface* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<output_executor_interface> clone () const {
+      return std::auto_ptr<output_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -1336,8 +1340,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    output_executor_interface* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<output_executor_interface> clone () const {
+      return std::auto_ptr<output_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -1489,8 +1493,8 @@ namespace ioa {
       model.unlock_automaton (this->m_handle);
     }
 
-    output_executor_interface* clone () const {
-      return new action_executor_impl (*this);
+    std::auto_ptr<output_executor_interface> clone () const {
+      return std::auto_ptr<output_executor_interface> (new action_executor_impl (*this));
     }
 
     bool fetch_instance (model_interface& model) {
@@ -1833,39 +1837,39 @@ namespace ioa {
   };
   
   template <class OI, class OM, class II, class IM>
-  shared_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
+  std::auto_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
 							  OM OI::*output_member_ptr,
 							  const automaton_handle<II>& input_handle,
 							  IM II::*input_member_ptr) {
-    return shared_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, input_handle, input_member_ptr));
+    return std::auto_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, input_handle, input_member_ptr));
   }
 
   template <class OI, class OM, class II, class IM>
-  shared_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
+  std::auto_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
 							  OM OI::*output_member_ptr,
 							  const typename OM::parameter_type& output_parameter,
 							  const automaton_handle<II>& input_handle,
 							  IM II::*input_member_ptr) {
-    return shared_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, output_parameter, input_handle, input_member_ptr));
+    return std::auto_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, output_parameter, input_handle, input_member_ptr));
   }
 
   template <class OI, class OM, class II, class IM>
-  shared_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
+  std::auto_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
 							  OM OI::*output_member_ptr,
 							  const automaton_handle<II>& input_handle,
 							  IM II::*input_member_ptr,
 							  const typename IM::parameter_type& input_parameter) {
-    return shared_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, input_handle, input_member_ptr, input_parameter));
+    return std::auto_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, input_handle, input_member_ptr, input_parameter));
   }
 
   template <class OI, class OM, class II, class IM>
-  shared_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
+  std::auto_ptr<bind_executor_interface> make_bind_executor (const automaton_handle<OI>& output_handle,
 							  OM OI::*output_member_ptr,
 							  const typename OM::parameter_type& output_parameter,
 							  const automaton_handle<II>& input_handle,
 							  IM II::*input_member_ptr,
 							  const typename IM::parameter_type& input_parameter) {
-    return shared_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, output_parameter, input_handle, input_member_ptr, input_parameter));
+    return std::auto_ptr<bind_executor_interface> (new bind_executor<OI, OM, II, IM> (output_handle, output_member_ptr, output_parameter, input_handle, input_member_ptr, input_parameter));
   }
   
 }
