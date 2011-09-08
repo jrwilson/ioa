@@ -3,3 +3,7 @@ I don't remember why I was thinking about this but it might reduce code bloat.
 I remember one reason.
 Binding requires a dynamic cast to an output executor of the appropriate type.
 This might obviate the need to a dynamic cast.
+
+Move all mutex and thread related stuff to lib.
+mutex.hpp
+shared_mutex.hpp
