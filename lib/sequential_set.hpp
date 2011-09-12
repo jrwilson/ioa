@@ -40,6 +40,10 @@ namespace ioa {
       m_used.insert (m_counter);
       return m_counter;
     }
+
+    void take (const T& t) {
+      m_used.insert (t);
+    }
     
     void replace (const T& t) {
       m_used.erase (t);

@@ -6,7 +6,7 @@
 
 namespace ioa {
 
-  class automaton;
+  class automaton_base;
   class output_executor_interface;
   class internal_executor_interface;
   class generator_interface;
@@ -25,7 +25,7 @@ namespace ioa {
 				  void* const key) = 0;
     
     // Executing user actions.
-    virtual automaton* get_instance (const aid_t aid) = 0;
+    virtual automaton_base* get_instance (const aid_t aid) = 0;
     virtual void lock_automaton (const aid_t aid) = 0;
     virtual void unlock_automaton (const aid_t aid) = 0;
     virtual int execute (output_executor_interface& exec) = 0;

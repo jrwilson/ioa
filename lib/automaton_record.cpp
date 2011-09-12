@@ -1,15 +1,12 @@
 #include "automaton_record.hpp"
 #include <ioa/automaton.hpp>
-#include <ioa/system_scheduler_interface.hpp>
 
 #include <cassert>
 
 namespace ioa {
 
-  automaton_record::automaton_record (system_scheduler_interface& system_scheduler,
-				      automaton* instance,
+  automaton_record::automaton_record (automaton_base* instance,
 				      const aid_t aid) :
-    m_system_scheduler (system_scheduler),
     m_instance (instance),
     m_aid (aid),
     m_key (0),
@@ -25,7 +22,7 @@ namespace ioa {
     return m_aid;
   }
 
-  automaton* automaton_record::get_instance () const {
+  automaton_base* automaton_record::get_instance () const {
     return m_instance.get ();
   }
 
@@ -36,14 +33,10 @@ namespace ioa {
   void automaton_record::add_child (void* const key,
 				    automaton_record* child) {
     m_children.insert (std::make_pair (key, child));
-    // Tell the parent that the child was created.
-    m_system_scheduler.created (m_aid, AUTOMATON_CREATED_RESULT, key, child->m_aid);
   }
 
   void automaton_record::remove_child (void* const key) {
     m_children.erase (key);
-    // Tell the parent that the child was destroyed.
-    m_system_scheduler.destroyed (m_aid, AUTOMATON_DESTROYED_RESULT, key);
   }
 
   automaton_record* automaton_record::get_child (void* const key) const {

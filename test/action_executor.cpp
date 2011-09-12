@@ -3,126 +3,44 @@
 #include <ioa/action_executor.hpp>
 #include "automaton1.hpp"
 #include <iostream>
+#include <vector>
 
-struct test_model :
-  public ioa::model_interface
+class test_scheduler :
+  public ioa::scheduler_interface
 {
-  automaton1 instance;
-
-  void add_bind_key (const ioa::aid_t aid,
-		     void* const key) { }
-  void remove_bind_key (const ioa::aid_t aid,
-			void* const key) { }
-
-  // Executing user actions.
-  ioa::automaton* get_instance (const ioa::aid_t aid) { return &instance; }
-  void lock_automaton (const ioa::aid_t aid) { }
-  void unlock_automaton (const ioa::aid_t aid) { }
-  int execute (ioa::output_executor_interface& exec) { return -1; }
-  int execute (ioa::internal_executor_interface& exec) { return -1; }
-
-  // Executing system outputs.
-  int execute_sys_create (const ioa::aid_t automaton) { return -1; }
-  int execute_sys_bind (const ioa::aid_t automaton) { return -1; }
-  int execute_sys_unbind (const ioa::aid_t automaton) { return -1; }
-  int execute_sys_destroy (const ioa::aid_t automaton) { return -1; }
-
-  // Executing configuation actions.
-  ioa::aid_t create (const ioa::aid_t automaton,
-		     std::auto_ptr<ioa::generator_interface> generator,
-		     void* const key) { return -1; }
-  int bind (const ioa::aid_t automaton,
-	    std::auto_ptr<ioa::bind_executor_interface> exec,
-	    void* const key) { return -1; }
-  int unbind (const ioa::aid_t automaton,
-	      void* const key) { return -1; }
-  int destroy (const ioa::aid_t automaton,
-	       void* const key) { return -1; }
-  int destroy (const ioa::aid_t automaton) { return -1; }
-
-  // Executing system inputs.
-  int execute (ioa::system_input_executor_interface& exec) { return -1; }
-  int execute_output_bound (ioa::output_executor_interface& exec) { return -1; }
-  int execute_input_bound (ioa::input_executor_interface& exec) { return -1; }
-  int execute_output_unbound (ioa::output_executor_interface& exec) { return -1; }
-  int execute_input_unbound (ioa::input_executor_interface& exec) { return -1; }
-};
-
-struct test_system_scheduler :
-  public ioa::system_scheduler_interface
-{
+public:
   void set_current_aid (const ioa::aid_t aid) { }
+  ioa::aid_t get_current_aid () { return -1; }
   void clear_current_aid () { }
-    
-  void create (const ioa::aid_t automaton,
-	       std::auto_ptr<ioa::generator_interface> generator,
-	       void* const key) { }
-    
-  void bind (const ioa::aid_t automaton,
-	     std::auto_ptr<ioa::bind_executor_interface> exec,
-	     void* const key) { }
-    
-  void unbind (const ioa::aid_t automaton,
-	       void* const key) { }
-    
-  void destroy (const ioa::aid_t automaton,
-		void* const key) { }
-
-  void created (const ioa::aid_t automaton,
-		const ioa::created_t,
-		void* const key,
-		const ioa::aid_t) { }
-    
-  void bound (const ioa::aid_t automaton,
-	      const ioa::bound_t,
-	      void* const key) { }
-    
-  void output_bound (const ioa::output_executor_interface& out) {
-    std::auto_ptr<ioa::output_executor_interface> ptr = out.clone ();
-  }
-    
-  void input_bound (const ioa::input_executor_interface& in) {
-    std::auto_ptr<ioa::input_executor_interface> ptr = in.clone ();
-  }
-    
-  void unbound (const ioa::aid_t automaton,
-		const ioa::unbound_t,
-		void* const key) { }
-    
-  void output_unbound (const ioa::output_executor_interface& out) {
-    std::auto_ptr<ioa::output_executor_interface> ptr = out.clone ();
-  }
-    
-  void input_unbound (const ioa::input_executor_interface& in) {
-    std::auto_ptr<ioa::input_executor_interface> ptr = in.clone ();
-  }
-    
-  void destroyed (const ioa::aid_t automaton,
-		  const ioa::destroyed_t,
-		  void* const key) { }
+  size_t binding_count (const ioa::action_executor_interface&) { return 0; }
+  void schedule (ioa::action_runnable_interface*) { }
+  void schedule_after (ioa::action_runnable_interface*,
+		       const ioa::time&) { }
+  void schedule_read_ready (ioa::action_runnable_interface*,
+			    int fd) { }
+  void schedule_write_ready (ioa::action_runnable_interface*,
+			     int fd) { }
+  void close (int fd) { }
+  void run (std::auto_ptr<ioa::generator_interface> generator) { }
 };
 
 static const char*
 unvalued_unparameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::uv_up_input_action> action (h, &automaton1::uv_up_input);
+  ioa::action_executor<automaton1, automaton1::uv_up_input_action> action (instance, mutex, h, &automaton1::uv_up_input);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::uv_up_input)) == action.get_member_ptr ());
+  mu_assert (&instance.uv_up_input == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
+  test_scheduler tss;
   action (tss);
-  mu_assert (tm.instance.uv_up_input.state);
-  action.bound (tm, tss);
-  mu_assert (tm.instance.uv_up_input.bound_);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.uv_up_input.unbound_);
+  mu_assert (instance.uv_up_input.state);
 
   std::auto_ptr<ioa::action_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
@@ -134,27 +52,21 @@ static const char*
 unvalued_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
-  int parameter = 345;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::uv_p_input_action> action (h, &automaton1::uv_p_input, parameter);
+  int parameter = 345;
+  ioa::action_executor<automaton1, automaton1::uv_p_input_action> action (instance, mutex, h, &automaton1::uv_p_input, parameter);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::uv_p_input)) == action.get_member_ptr ());
+  mu_assert (&instance.uv_p_input == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
+  test_scheduler tss;
   action (tss);
-  mu_assert (tm.instance.uv_p_input.state);
-  mu_assert (parameter == tm.instance.uv_p_input.last_parameter);
-  action.bound (tm, tss);
-  mu_assert (tm.instance.uv_p_input.bound_);
-  mu_assert (parameter == tm.instance.uv_p_input.bound_parameter);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.uv_p_input.unbound_);
-  mu_assert (parameter == tm.instance.uv_p_input.unbound_parameter);
+  mu_assert (instance.uv_p_input.state);
+  mu_assert (parameter == instance.uv_p_input.last_parameter);
 
   std::auto_ptr<ioa::action_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
@@ -166,29 +78,22 @@ static const char*
 unvalued_auto_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
-  ioa::aid_t parameter = 37;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::uv_ap_input_action> action (h, &automaton1::uv_ap_input);
+  ioa::aid_t parameter = 37;
+  ioa::action_executor<automaton1, automaton1::uv_ap_input_action> action (instance, mutex, h, &automaton1::uv_ap_input);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::uv_ap_input)) == action.get_member_ptr ());
+  mu_assert (&instance.uv_ap_input == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
-  action.set_parameter (parameter);
+  action.set_auto_parameter (parameter);
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
+  test_scheduler tss;
   action (tss);
-  mu_assert (tm.instance.uv_ap_input.state);
-  mu_assert (parameter == tm.instance.uv_ap_input.last_parameter);
-  action.bound (tm, tss);
-  mu_assert (tm.instance.uv_ap_input.bound_);
-  mu_assert (parameter == tm.instance.uv_ap_input.bound_parameter);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.uv_ap_input.unbound_);
-  mu_assert (parameter == tm.instance.uv_ap_input.unbound_parameter);
+  mu_assert (instance.uv_ap_input.state);
+  mu_assert (parameter == instance.uv_ap_input.last_parameter);
 
   std::auto_ptr<ioa::action_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
@@ -200,23 +105,19 @@ static const char*
 valued_unparameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::v_up_input_action> action (h, &automaton1::v_up_input);
+  ioa::action_executor<automaton1, automaton1::v_up_input_action> action (instance, mutex, h, &automaton1::v_up_input);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::v_up_input)) == action.get_member_ptr ());
+  mu_assert (&instance.v_up_input == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
+  test_scheduler tss;
   action (tss, 9845);
-  mu_assert (9845 == tm.instance.v_up_input.value);
-  action.bound (tm, tss);
-  mu_assert (tm.instance.v_up_input.bound_);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.v_up_input.unbound_);
+  mu_assert (9845 == instance.v_up_input.value);
 
   std::auto_ptr<ioa::action_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
@@ -228,27 +129,21 @@ static const char*
 valued_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
-  int parameter = 345;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::v_p_input_action> action (h, &automaton1::v_p_input, parameter);
+  int parameter = 345;
+  ioa::action_executor<automaton1, automaton1::v_p_input_action> action (instance, mutex, h, &automaton1::v_p_input, parameter);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::v_p_input)) == action.get_member_ptr ());
+  mu_assert (&instance.v_p_input == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
+  test_scheduler tss;
   action (tss, 9845);
-  mu_assert (9845 == tm.instance.v_p_input.value);
-  mu_assert (parameter == tm.instance.v_p_input.last_parameter);
-  action.bound (tm, tss);
-  mu_assert (tm.instance.v_p_input.bound_);
-  mu_assert (parameter == tm.instance.v_p_input.bound_parameter);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.v_p_input.unbound_);
-  mu_assert (parameter == tm.instance.v_p_input.unbound_parameter);
+  mu_assert (9845 == instance.v_p_input.value);
+  mu_assert (parameter == instance.v_p_input.last_parameter);
 
   std::auto_ptr<ioa::action_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
@@ -260,29 +155,22 @@ static const char*
 valued_auto_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
-  ioa::aid_t parameter = 345;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::v_ap_input_action> action (h, &automaton1::v_ap_input);
+  ioa::aid_t parameter = 345;
+  ioa::action_executor<automaton1, automaton1::v_ap_input_action> action (instance, mutex, h, &automaton1::v_ap_input);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::v_ap_input)) == action.get_member_ptr ());
+  mu_assert (&instance.v_ap_input == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
-  action.set_parameter (parameter);
+  action.set_auto_parameter (parameter);
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
+  test_scheduler tss;
   action (tss, 9845);
-  mu_assert (9845 == tm.instance.v_ap_input.value);
-  mu_assert (parameter == tm.instance.v_ap_input.last_parameter);
-  action.bound (tm, tss);
-  mu_assert (tm.instance.v_ap_input.bound_);
-  mu_assert (parameter == tm.instance.v_ap_input.bound_parameter);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.v_ap_input.unbound_);
-  mu_assert (parameter == tm.instance.v_ap_input.unbound_parameter);
+  mu_assert (9845 == instance.v_ap_input.value);
+  mu_assert (parameter == instance.v_ap_input.last_parameter);
 
   std::auto_ptr<ioa::action_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
@@ -295,129 +183,50 @@ unvalued_unparameterized_output_action ()
 {
   std::cout << __func__ << std::endl;
 
-  // Must exist whole time.
-  test_model tm;
-  test_system_scheduler tss;
+  test_scheduler tss;
 
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
-  ioa::action_executor<automaton1, automaton1::uv_up_output_action> action (h, &automaton1::uv_up_output);
+  ioa::action_executor<automaton1, automaton1::uv_up_output_action> action (instance, mutex, h, &automaton1::uv_up_output);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::uv_up_output)) == action.get_member_ptr ());
+  mu_assert (&instance.uv_up_output == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
   mu_assert (action == action);
 
-  mu_assert (action.involves_output (action));
+  std::vector<ioa::unvalued_input_executor_interface*> actions;
 
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.uv_up_output.state);
+
+  automaton1 instance1;
+  ioa::mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
+  automaton1 instance2;
+  ioa::mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
+  automaton1 instance3;
+  ioa::mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
-  ioa::automaton_handle<automaton1> binder_handle (5);
 
-  ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (input1_handle, &automaton1::uv_up_input);
-  mu_assert (input1.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::uv_p_input_action> input2 (input2_handle, &automaton1::uv_p_input, 890);
-  mu_assert (input2.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::uv_ap_input_action> input3 (input3_handle, &automaton1::uv_ap_input);
-  mu_assert (input3.fetch_instance (tm));
+  ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
+  ioa::action_executor<automaton1, automaton1::uv_p_input_action> input2 (instance2, mutex2, input2_handle, &automaton1::uv_p_input, 890);
+  ioa::action_executor<automaton1, automaton1::uv_ap_input_action> input3 (instance3, mutex3, input3_handle, &automaton1::uv_ap_input);
+  input3.set_auto_parameter (action.get_aid ());
 
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
+  actions.push_back (&input1);
+  actions.push_back (&input2);
+  actions.push_back (&input3);
 
-  // Always set parameter before binding.
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (action.involves_input (input1));
-  mu_assert (action.involves_input_automaton (input1_handle));
-  mu_assert (action.involves_binding (action, input1, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (action.involves_input (input2));
-  mu_assert (action.involves_input_automaton (input2_handle));
-  mu_assert (action.involves_binding (action, input2, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input2));
-
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
-  mu_assert (action.involves_input (input3));
-  mu_assert (action.involves_input_automaton (input3_handle));
-  mu_assert (action.involves_binding (action, input3, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input3));
-
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.uv_up_output.state);
-  mu_assert (tm.instance.uv_up_input.state);
-  mu_assert (tm.instance.uv_p_input.state);
-  mu_assert (tm.instance.uv_ap_input.state);
-
-  action.bound (tm, tss);
-  mu_assert (tm.instance.uv_up_output.bound_);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.uv_up_output.unbound_);
-
-  action.unbind (binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (!action.involves_input (input3));
-  mu_assert (!action.involves_input_automaton (input3_handle));
-  mu_assert (!action.involves_binding (action, input3, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input3));
-
-  action.unbind_automaton (input2_handle);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (!action.involves_input (input2));
-  mu_assert (!action.involves_input_automaton (input2_handle));
-  mu_assert (!action.involves_binding (action, input2, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input2));
-
-  action.unbind_automaton (binder_handle);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.uv_up_output.state);
+  mu_assert (instance1.uv_up_input.state);
+  mu_assert (instance2.uv_p_input.state);
+  mu_assert (instance3.uv_ap_input.state);
 
   std::auto_ptr<ioa::output_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
-  mu_assert (clone->empty ());
-  mu_assert (clone->size () == 0);
-
-  action.unbind_automaton (h);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-
-  // Parameter didn't actually change.
-  mu_assert (0U == action.get_pid ());
 
   return 0;
 }
@@ -427,132 +236,53 @@ unvalued_parameterized_output_action ()
 {
   std::cout << __func__ << std::endl;
 
-  // Must exist whole time.
-  test_model tm;
-  test_system_scheduler tss;
+  test_scheduler tss;
 
-  int parameter = 345;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
-  ioa::action_executor<automaton1, automaton1::uv_p_output_action> action (h, &automaton1::uv_p_output, parameter);
+  int parameter = 345;
+  ioa::action_executor<automaton1, automaton1::uv_p_output_action> action (instance, mutex, h, &automaton1::uv_p_output, parameter);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::uv_p_output)) == action.get_member_ptr ());
+  mu_assert (&instance.uv_p_output == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  mu_assert (action.involves_output (action));
+  std::vector<ioa::unvalued_input_executor_interface*> actions;
 
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.uv_p_output.state);
+  mu_assert (instance.uv_p_output.last_parameter == parameter);
+
+  automaton1 instance1;
+  ioa::mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
+  automaton1 instance2;
+  ioa::mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
+  automaton1 instance3;
+  ioa::mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
-  ioa::automaton_handle<automaton1> binder_handle (5);
 
-  ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (input1_handle, &automaton1::uv_up_input);
-  mu_assert (input1.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::uv_p_input_action> input2 (input2_handle, &automaton1::uv_p_input, 890);
-  mu_assert (input2.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::uv_ap_input_action> input3 (input3_handle, &automaton1::uv_ap_input);
-  mu_assert (input3.fetch_instance (tm));
+  ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
+  ioa::action_executor<automaton1, automaton1::uv_p_input_action> input2 (instance2, mutex2, input2_handle, &automaton1::uv_p_input, 890);
+  ioa::action_executor<automaton1, automaton1::uv_ap_input_action> input3 (instance3, mutex3, input3_handle, &automaton1::uv_ap_input);
+  input3.set_auto_parameter (action.get_aid ());
 
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
+  actions.push_back (&input1);
+  actions.push_back (&input2);
+  actions.push_back (&input3);
 
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (action.involves_input (input1));
-  mu_assert (action.involves_input_automaton (input1_handle));
-  mu_assert (action.involves_binding (action, input1, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (action.involves_input (input2));
-  mu_assert (action.involves_input_automaton (input2_handle));
-  mu_assert (action.involves_binding (action, input2, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input2));
-
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
-  mu_assert (action.involves_input (input3));
-  mu_assert (action.involves_input_automaton (input3_handle));
-  mu_assert (action.involves_binding (action, input3, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input3));
-
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.uv_p_output.state);
-  mu_assert (parameter == tm.instance.uv_p_output.last_parameter);
-  mu_assert (tm.instance.uv_up_input.state);
-  mu_assert (tm.instance.uv_p_input.state);
-  mu_assert (tm.instance.uv_ap_input.state);
-
-  action.bound (tm, tss);
-  mu_assert (tm.instance.uv_p_output.bound_);
-  mu_assert (parameter == tm.instance.uv_p_output.bound_parameter);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.uv_p_output.unbound_);
-  mu_assert (parameter == tm.instance.uv_p_output.unbound_parameter);
-
-  action.unbind (binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (!action.involves_input (input3));
-  mu_assert (!action.involves_input_automaton (input3_handle));
-  mu_assert (!action.involves_binding (action, input3, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input3));
-
-  action.unbind_automaton (input2_handle);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (!action.involves_input (input2));
-  mu_assert (!action.involves_input_automaton (input2_handle));
-  mu_assert (!action.involves_binding (action, input2, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input2));
-
-  action.unbind_automaton (binder_handle);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.uv_p_output.state);
+  mu_assert (parameter == instance.uv_p_output.last_parameter);
+  mu_assert (instance1.uv_up_input.state);
+  mu_assert (instance2.uv_p_input.state);
+  mu_assert (instance3.uv_ap_input.state);
 
   std::auto_ptr<ioa::output_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
-  mu_assert (clone->empty ());
-  mu_assert (clone->size () == 0);
-
-  action.unbind_automaton (h);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-
-  // Parameter didn't actually change.
-  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
 
   return 0;
 }
@@ -562,61 +292,36 @@ unvalued_auto_parameterized_output_action ()
 {
   std::cout << __func__ << std::endl;
 
-  // Must exist whole time.
-  test_model tm;
-  test_system_scheduler tss;
+  test_scheduler tss;
 
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
-  ioa::action_executor<automaton1, automaton1::uv_ap_output_action> action (h, &automaton1::uv_ap_output);
+  ioa::action_executor<automaton1, automaton1::uv_ap_output_action> action (instance, mutex, h, &automaton1::uv_ap_output);
+  action.set_auto_parameter (2);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::uv_ap_output)) == action.get_member_ptr ());
-  mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
+  mu_assert (&instance.uv_ap_output == action.get_member_ptr ());
+  mu_assert (reinterpret_cast<void*> (2) == action.get_pid ());
   mu_assert (action == action);
 
-  mu_assert (action.involves_output (action));
+  std::vector<ioa::unvalued_input_executor_interface*> actions;
 
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.uv_ap_output.state);
+  mu_assert (instance.uv_ap_output.last_parameter == 2);
+
+  automaton1 instance1;
+  ioa::mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
-  ioa::automaton_handle<automaton1> binder_handle (5);
 
-  ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (input1_handle, &automaton1::uv_up_input);
-  mu_assert (input1.fetch_instance (tm));
+  ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
 
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
+  actions.push_back (&input1);
 
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (action.involves_input (input1));
-  mu_assert (action.involves_input_automaton (input1_handle));
-  mu_assert (action.involves_binding (action, input1, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input1));
-
-  mu_assert (reinterpret_cast<void*> (ioa::aid_t (input1_handle)) == action.get_pid ());
-
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.uv_ap_output.state);
-  mu_assert (tm.instance.uv_ap_output.last_parameter == input1_handle);
-  mu_assert (tm.instance.uv_up_input.state);
-
-  action.bound (tm, tss);
-  mu_assert (tm.instance.uv_ap_output.bound_);
-  mu_assert (tm.instance.uv_ap_output.bound_parameter == input1_handle);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.uv_ap_output.unbound_);
-  mu_assert (tm.instance.uv_ap_output.unbound_parameter == input1_handle);
-
-  action.unbind_automaton (h);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.uv_ap_output.state);
+  mu_assert (instance.uv_ap_output.last_parameter == 2);
+  mu_assert (instance1.uv_up_input.state);
 
   return 0;
 }
@@ -626,129 +331,50 @@ valued_unparameterized_output_action ()
 {
   std::cout << __func__ << std::endl;
 
-  // Must exist whole time.
-  test_model tm;
-  test_system_scheduler tss;
+  test_scheduler tss;
 
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
-  ioa::action_executor<automaton1, automaton1::v_up_output_action> action (h, &automaton1::v_up_output);
+  ioa::action_executor<automaton1, automaton1::v_up_output_action> action (instance, mutex, h, &automaton1::v_up_output);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::v_up_output)) == action.get_member_ptr ());
+  mu_assert (&instance.v_up_output == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
   mu_assert (action == action);
 
-  mu_assert (action.involves_output (action));
+  std::vector<ioa::valued_input_executor_interface<int>*> actions;
 
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.v_up_output.state);
+
+  automaton1 instance1;
+  ioa::mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
+  automaton1 instance2;
+  ioa::mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
+  automaton1 instance3;
+  ioa::mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
-  ioa::automaton_handle<automaton1> binder_handle (5);
 
-  ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (input1_handle, &automaton1::v_up_input);
-  mu_assert (input1.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::v_p_input_action> input2 (input2_handle, &automaton1::v_p_input, 890);
-  mu_assert (input2.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::v_ap_input_action> input3 (input3_handle, &automaton1::v_ap_input);
-  mu_assert (input3.fetch_instance (tm));
+  ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::v_up_input);
+  ioa::action_executor<automaton1, automaton1::v_p_input_action> input2 (instance2, mutex2, input2_handle, &automaton1::v_p_input, 890);
+  ioa::action_executor<automaton1, automaton1::v_ap_input_action> input3 (instance3, mutex3, input3_handle, &automaton1::v_ap_input);
+  input3.set_auto_parameter (action.get_aid ());
 
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
+  actions.push_back (&input1);
+  actions.push_back (&input2);
+  actions.push_back (&input3);
 
-  // Always set parameter before binding.
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (action.involves_input (input1));
-  mu_assert (action.involves_input_automaton (input1_handle));
-  mu_assert (action.involves_binding (action, input1, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (action.involves_input (input2));
-  mu_assert (action.involves_input_automaton (input2_handle));
-  mu_assert (action.involves_binding (action, input2, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input2));
-
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
-  mu_assert (action.involves_input (input3));
-  mu_assert (action.involves_input_automaton (input3_handle));
-  mu_assert (action.involves_binding (action, input3, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input3));
-
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.v_up_output.state);
-  mu_assert (tm.instance.v_up_input.value == 9845);
-  mu_assert (tm.instance.v_p_input.value == 9845);
-  mu_assert (tm.instance.v_ap_input.value == 9845);
-
-  action.bound (tm, tss);
-  mu_assert (tm.instance.v_up_output.bound_);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.v_up_output.unbound_);
-
-  action.unbind (binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (!action.involves_input (input3));
-  mu_assert (!action.involves_input_automaton (input3_handle));
-  mu_assert (!action.involves_binding (action, input3, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input3));
-
-  action.unbind_automaton (input2_handle);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (!action.involves_input (input2));
-  mu_assert (!action.involves_input_automaton (input2_handle));
-  mu_assert (!action.involves_binding (action, input2, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input2));
-
-  action.unbind_automaton (binder_handle);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.v_up_output.state);
+  mu_assert (instance1.v_up_input.value == 9845);
+  mu_assert (instance2.v_p_input.value == 9845);
+  mu_assert (instance3.v_ap_input.value == 9845);
 
   std::auto_ptr<ioa::output_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
-  mu_assert (clone->empty ());
-  mu_assert (clone->size () == 0);
-
-  action.unbind_automaton (h);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-
-  // Parameter didn't actually change.
-  mu_assert (0U == action.get_pid ());
 
   return 0;
 }
@@ -758,132 +384,54 @@ valued_parameterized_output_action ()
 {
   std::cout << __func__ << std::endl;
 
-  // Must exist whole time.
-  test_model tm;
-  test_system_scheduler tss;
+  test_scheduler tss;
 
-  int parameter = 345;
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
-  ioa::action_executor<automaton1, automaton1::v_p_output_action> action (h, &automaton1::v_p_output, parameter);
+  int parameter = 345;
+  ioa::action_executor<automaton1, automaton1::v_p_output_action> action (instance, mutex, h, &automaton1::v_p_output, parameter);
+  action.set_auto_parameter (314);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::v_p_output)) == action.get_member_ptr ());
+  mu_assert (&instance.v_p_output == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  mu_assert (action.involves_output (action));
+  std::vector<ioa::valued_input_executor_interface<int>*> actions;
 
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.v_p_output.state);
+  mu_assert (parameter == instance.v_p_output.last_parameter);
+
+  automaton1 instance1;
+  ioa::mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
+  automaton1 instance2;
+  ioa::mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
+  automaton1 instance3;
+  ioa::mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
-  ioa::automaton_handle<automaton1> binder_handle (5);
 
-  ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (input1_handle, &automaton1::v_up_input);
-  mu_assert (input1.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::v_p_input_action> input2 (input2_handle, &automaton1::v_p_input, 890);
-  mu_assert (input2.fetch_instance (tm));
-  ioa::action_executor<automaton1, automaton1::v_ap_input_action> input3 (input3_handle, &automaton1::v_ap_input);
-  mu_assert (input3.fetch_instance (tm));
 
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
+  ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::v_up_input);
+  ioa::action_executor<automaton1, automaton1::v_p_input_action> input2 (instance2, mutex2, input2_handle, &automaton1::v_p_input, 890);
+  ioa::action_executor<automaton1, automaton1::v_ap_input_action> input3 (instance3, mutex3, input3_handle, &automaton1::v_ap_input);
+  input3.set_auto_parameter (action.get_aid ());
 
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (action.involves_input (input1));
-  mu_assert (action.involves_input_automaton (input1_handle));
-  mu_assert (action.involves_binding (action, input1, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input1));
+  actions.push_back (&input1);
+  actions.push_back (&input2);
+  actions.push_back (&input3);
 
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (action.involves_input (input2));
-  mu_assert (action.involves_input_automaton (input2_handle));
-  mu_assert (action.involves_binding (action, input2, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input2));
-
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
-  mu_assert (action.involves_input (input3));
-  mu_assert (action.involves_input_automaton (input3_handle));
-  mu_assert (action.involves_binding (action, input3, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input3));
-
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.v_p_output.state);
-  mu_assert (parameter == tm.instance.v_p_output.last_parameter);
-  mu_assert (tm.instance.v_up_input.value == 9845);
-  mu_assert (tm.instance.v_p_input.value == 9845);
-  mu_assert (tm.instance.v_ap_input.value == 9845);
-
-  action.bound (tm, tss);
-  mu_assert (tm.instance.v_p_output.bound_);
-  mu_assert (parameter == tm.instance.v_p_output.bound_parameter);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.v_p_output.unbound_);
-  mu_assert (parameter == tm.instance.v_p_output.unbound_parameter);
-
-  action.unbind (binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 2);
-  mu_assert (!action.involves_input (input3));
-  mu_assert (!action.involves_input_automaton (input3_handle));
-  mu_assert (!action.involves_binding (action, input3, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input3));
-
-  action.unbind_automaton (input2_handle);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (!action.involves_input (input2));
-  mu_assert (!action.involves_input_automaton (input2_handle));
-  mu_assert (!action.involves_binding (action, input2, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input2));
-
-  action.unbind_automaton (binder_handle);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
-
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  action.set_parameter (input2_handle);
-  input2.set_parameter (h);
-  action.bind (tss, tm, input2, binder_handle, &input2);
-  action.set_parameter (input3_handle);
-  input3.set_parameter (h);
-  action.bind (tss, tm, input3, binder_handle, &input3);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 3);
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.v_p_output.state);
+  mu_assert (parameter == instance.v_p_output.last_parameter);
+  mu_assert (instance1.v_up_input.value == 9845);
+  mu_assert (instance2.v_p_input.value == 9845);
+  mu_assert (instance3.v_ap_input.value == 9845);
 
   std::auto_ptr<ioa::output_executor_interface> clone (action.clone ());
   mu_assert (action == *clone);
-  mu_assert (clone->empty ());
-  mu_assert (clone->size () == 0);
-
-  action.unbind_automaton (h);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-
-  // Parameter didn't actually change.
-  mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
 
   return 0;
 }
@@ -893,61 +441,36 @@ valued_auto_parameterized_output_action ()
 {
   std::cout << __func__ << std::endl;
 
-  // Must exist whole time.
-  test_model tm;
-  test_system_scheduler tss;
+  test_scheduler tss;
 
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
-  ioa::action_executor<automaton1, automaton1::v_ap_output_action> action (h, &automaton1::v_ap_output);
+  ioa::action_executor<automaton1, automaton1::v_ap_output_action> action (instance, mutex, h, &automaton1::v_ap_output);
+  action.set_auto_parameter (2);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::v_ap_output)) == action.get_member_ptr ());
-  mu_assert (reinterpret_cast<void*> (-1) == action.get_pid ());
+  mu_assert (&instance.v_ap_output == action.get_member_ptr ());
+  mu_assert (reinterpret_cast<void*> (2) == action.get_pid ());
   mu_assert (action == action);
 
-  mu_assert (action.involves_output (action));
+  std::vector<ioa::valued_input_executor_interface<int>*> actions;
 
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.v_ap_output.state);
+  mu_assert (instance.v_ap_output.last_parameter == 2);
+
+  automaton1 instance1;
+  ioa::mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
-  ioa::automaton_handle<automaton1> binder_handle (5);
 
-  ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (input1_handle, &automaton1::v_up_input);
-  mu_assert (input1.fetch_instance (tm));
+  ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::v_up_input);
 
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
-  mu_assert (!action.involves_input (input1));
-  mu_assert (!action.involves_input_automaton (input1_handle));
-  mu_assert (!action.involves_binding (action, input1, binder_handle));
-  mu_assert (!action.involves_aid_key (binder_handle, &input1));
+  actions.push_back (&input1);
 
-  action.set_parameter (input1_handle);
-  input1.set_parameter (h);
-  action.bind (tss, tm, input1, binder_handle, &input1);
-  mu_assert (!action.empty ());
-  mu_assert (action.size () == 1);
-  mu_assert (action.involves_input (input1));
-  mu_assert (action.involves_input_automaton (input1_handle));
-  mu_assert (action.involves_binding (action, input1, binder_handle));
-  mu_assert (action.involves_aid_key (binder_handle, &input1));
-
-  mu_assert (reinterpret_cast<void*> (ioa::aid_t (input1_handle)) == action.get_pid ());
-
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.v_ap_output.state);
-  mu_assert (tm.instance.v_ap_output.last_parameter == input1_handle);
-  mu_assert (tm.instance.v_up_input.value == 9845);
-
-  action.bound (tm, tss);
-  mu_assert (tm.instance.v_ap_output.bound_);
-  mu_assert (tm.instance.v_ap_output.bound_parameter == input1_handle);
-  action.unbound (tm, tss);
-  mu_assert (tm.instance.v_ap_output.unbound_);
-  mu_assert (tm.instance.v_ap_output.unbound_parameter == input1_handle);
-
-  action.unbind_automaton (h);
-  mu_assert (action.empty ());
-  mu_assert (action.size () == 0);
+  action (tss, actions.begin (), actions.end ());
+  mu_assert (instance.v_ap_output.state);
+  mu_assert (instance.v_ap_output.last_parameter == input1_handle);
+  mu_assert (instance1.v_up_input.value == 9845);
 
   return 0;
 }
@@ -956,19 +479,19 @@ static const char*
 unparameterized_internal_action ()
 {
   std::cout << __func__ << std::endl;
+
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::up_internal_action> action (h, &automaton1::up_internal);
+  ioa::action_executor<automaton1, automaton1::up_internal_action> action (instance, mutex, h, &automaton1::up_internal);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::up_internal)) == action.get_member_ptr ());
+  mu_assert (&instance.up_internal == action.get_member_ptr ());
   mu_assert (0U == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.up_internal.state);
+  test_scheduler tss;
+  action (tss);
+  mu_assert (instance.up_internal.state);
 
   return 0;
 }
@@ -977,21 +500,21 @@ static const char*
 parameterized_internal_action ()
 {
   std::cout << __func__ << std::endl;
-  int parameter = 345;
+
+  automaton1 instance;
+  ioa::mutex mutex;
   ioa::automaton_handle<automaton1> h;
-  ioa::action_executor<automaton1, automaton1::p_internal_action> action (h, &automaton1::p_internal, parameter);
+  int parameter = 345;
+  ioa::action_executor<automaton1, automaton1::p_internal_action> action (instance, mutex, h, &automaton1::p_internal, parameter);
   mu_assert (action.get_aid () == h);
-  automaton1* i = 0;
-  mu_assert (&((*i).*(&automaton1::p_internal)) == action.get_member_ptr ());
+  mu_assert (&instance.p_internal == action.get_member_ptr ());
   mu_assert (reinterpret_cast<void*> (parameter) == action.get_pid ());
   mu_assert (action == action);
 
-  test_model tm;
-  test_system_scheduler tss;
-  mu_assert (action.fetch_instance (tm));
-  action (tm, tss);
-  mu_assert (tm.instance.p_internal.state);
-  mu_assert (parameter == tm.instance.p_internal.last_parameter);
+  test_scheduler tss;
+  action (tss);
+  mu_assert (instance.p_internal.state);
+  mu_assert (parameter == instance.p_internal.last_parameter);
 
   return 0;
 }

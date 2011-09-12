@@ -15,11 +15,6 @@
 #include <sys/select.h>
 #include <unistd.h>
 
-#include "sys_create_runnable.hpp"
-#include "sys_bind_runnable.hpp"
-#include "sys_unbind_runnable.hpp"
-#include "sys_destroy_runnable.hpp"
-
 #include "create_runnable.hpp"
 #include "bind_runnable.hpp"
 #include "unbind_runnable.hpp"
@@ -421,23 +416,6 @@ namespace ioa {
       return m_model.binding_count (ac);
     }
   
-    void schedule (automaton::sys_create_type automaton::*member_ptr) {
-      // TODO:  Could these go on the execq?
-      schedule_sysq (new sys_create_runnable (get_current_aid ()));
-    }
-  
-    void schedule (automaton::sys_bind_type automaton::*member_ptr) {
-      schedule_sysq (new sys_bind_runnable (get_current_aid ()));
-    }
-
-    void schedule (automaton::sys_unbind_type automaton::*member_ptr) {
-      schedule_sysq (new sys_unbind_runnable (get_current_aid ()));
-    }
-  
-    void schedule (automaton::sys_destroy_type automaton::*member_ptr) {
-      schedule_sysq (new sys_destroy_runnable (get_current_aid ()));
-    }
-
     void schedule (action_runnable_interface* r) {
       schedule_execq (r);
     }
@@ -555,19 +533,6 @@ namespace ioa {
       schedule_sysq (new destroy_runnable (automaton, key));
     }
 
-    void created (const aid_t aid,
-		  const created_t t,
-		  void* const key,
-		  const aid_t child) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_created, automaton::created_arg_t (t, key, child), system_input_category ()));
-    }
-  
-    void bound (const aid_t aid,
-		const bound_t t,
-		void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_bound, std::make_pair (t, key), system_input_category ()));
-    }
-
     void output_bound (const output_executor_interface& exec) {
       schedule_sysq (new output_bound_runnable (exec));
       // Schedule the output.
@@ -578,12 +543,6 @@ namespace ioa {
       schedule_sysq (new input_bound_runnable (exec));
     }
 
-    void unbound (const aid_t aid,
-		  const unbound_t t,
-		  void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_unbound, std::make_pair (t, key), system_input_category ()));
-    }
-
     void output_unbound (const output_executor_interface& exec) {
       schedule_sysq (new output_unbound_runnable (exec));
       // Schedule the output.
@@ -592,12 +551,6 @@ namespace ioa {
 
     void input_unbound (const input_executor_interface& exec) {
       schedule_sysq (new input_unbound_runnable (exec));
-    }
-
-    void destroyed (const aid_t aid,
-		    const destroyed_t t,
-		    void* const key) {
-      schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_destroyed, std::make_pair (t, key), system_input_category ()));
     }
   };
 
@@ -615,22 +568,6 @@ namespace ioa {
   
   size_t simple_scheduler::binding_count (const action_executor_interface& ac) {
     return m_impl->binding_count (ac);
-  }
-  
-  void simple_scheduler::schedule (automaton::sys_create_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-    
-  void simple_scheduler::schedule (automaton::sys_bind_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-  
-  void simple_scheduler::schedule (automaton::sys_unbind_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-  
-  void simple_scheduler::schedule (automaton::sys_destroy_type automaton::*ptr) {
-    m_impl->schedule (ptr);
   }
   
   void simple_scheduler::schedule (action_runnable_interface* r) {

@@ -155,34 +155,34 @@ namespace ioa {
     schedule ();
   }
 
-  bool automaton::sys_create_precondition () const {
+  bool automaton::create_request_precondition () const {
     return !m_create_send.empty ();
   }
 
-  std::pair<generator_interface*, void*> automaton::sys_create_effect () {
+  create_request_t automaton::create_request_effect () {
     std::set<system_automaton_manager_interface*>::iterator pos = m_create_send.begin ();
     system_automaton_manager_interface* helper = *pos;
     m_create_send.erase (pos);
     m_create_recv.insert (helper);
-    // I really don't like return the raw pointer but I haven't found a better solution.
+    // I really don't like returning the raw pointer but I haven't found a better solution.
     // Some type of smart pointer would be nice.
-    return std::make_pair (helper->get_generator ().release (), helper);
+    return create_request_t (-1, helper->get_generator (), helper);
   }
 
-  bool automaton::sys_bind_precondition () const {
+  bool automaton::bind_request_precondition () const {
     return !m_bind_send.empty ();
   }
   
-  std::pair<bind_executor_interface*, void*> automaton::sys_bind_effect () {
+  bind_request_t automaton::bind_request_effect () {
     std::set<system_binding_manager_interface*>::iterator pos = m_bind_send.begin ();
     system_binding_manager_interface* helper = *pos;
     m_bind_send.erase (pos);
     m_bind_recv.insert (helper);
     // See above.
-    return std::make_pair (helper->get_executor ().release (), helper);
+    return bind_request_t (-1, helper->get_output (), helper->get_input (), helper);
   }
 
-  bool automaton::sys_unbind_precondition () const {
+  bool automaton::unbind_request_precondition () const {
     for (std::set<system_binding_manager_interface*>::const_iterator pos = m_unbind_send.begin ();
 	 pos != m_unbind_send.end ();
 	 ++pos) {
@@ -194,7 +194,7 @@ namespace ioa {
     return false;
   }
   
-  void* automaton::sys_unbind_effect () {
+  unbind_request_t automaton::unbind_request_effect () {
     std::set<system_binding_manager_interface*>::iterator pos;
 
     for (pos = m_unbind_send.begin ();
@@ -209,10 +209,10 @@ namespace ioa {
     system_binding_manager_interface* helper = *pos;
     m_unbind_send.erase (pos);
     m_unbind_recv.insert (helper);
-    return helper;
+    return unbind_request_t (-1, helper);
   }
 
-  bool automaton::sys_destroy_precondition () const {
+  bool automaton::destroy_request_precondition () const {
     for (std::set<system_automaton_manager_interface*>::const_iterator pos = m_destroy_send.begin ();
 	 pos != m_destroy_send.end ();
 	 ++pos) {
@@ -224,7 +224,7 @@ namespace ioa {
     return false;
   }
   
-  void* automaton::sys_destroy_effect () {
+  destroy_request_t automaton::destroy_request_effect () {
     std::set<system_automaton_manager_interface*>::iterator pos;
 
     for (pos = m_destroy_send.begin ();
@@ -239,11 +239,11 @@ namespace ioa {
     system_automaton_manager_interface* helper = *pos;
     m_destroy_send.erase (pos);
     m_destroy_recv.insert (helper);
-    return helper;
+    return destroy_request_t (-1, helper);
   }
 
-  void automaton::sys_created_effect (const created_arg_t& arg) {
-    switch (arg.type) {
+  void automaton::create_respond_effect (const create_response_t& arg) {
+    switch (arg.result) {
     case CREATE_KEY_EXISTS_RESULT:
       // We prevent this in create.
       assert (false);
@@ -263,7 +263,7 @@ namespace ioa {
       // Find the helper (sanity check).
       std::set<system_automaton_manager_interface*>::const_iterator pos = m_create_recv.find (static_cast<system_automaton_manager_interface*> (arg.key));
       assert (pos != m_create_recv.end ());
-      (*pos)->created (AUTOMATON_CREATED_RESULT, arg.aid);
+      (*pos)->created (AUTOMATON_CREATED_RESULT, arg.child);
       // The create succeeded.  Move to done.
       m_create_done.insert (*pos);
       m_create_recv.erase (pos);
@@ -271,8 +271,8 @@ namespace ioa {
     }
   }
   
-  void automaton::sys_bound_effect (std::pair<bound_t, void*> const & t) {
-    switch (t.first) {
+  void automaton::bind_respond_effect (const bind_response_t& t) {
+    switch (t.result) {
     case BIND_KEY_EXISTS_RESULT:
       // We prevent this in bind.
       assert (false);
@@ -280,7 +280,7 @@ namespace ioa {
     case OUTPUT_AUTOMATON_DNE_RESULT:
       {
 	// Find the helper (sanity check).
-	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.key));
 	assert (pos != m_bind_recv.end ());
 	(*pos)->bound (OUTPUT_AUTOMATON_DNE_RESULT);
 	// The bind failed so erase.
@@ -291,20 +291,9 @@ namespace ioa {
     case INPUT_AUTOMATON_DNE_RESULT:
       {
 	// Find the helper (sanity check).
-	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.key));
 	assert (pos != m_bind_recv.end ());
 	(*pos)->bound (INPUT_AUTOMATON_DNE_RESULT);
-	// The bind failed so erase.
-	m_unbind_send.erase (*pos);
-	m_bind_recv.erase (pos);
-      }
-      break;
-    case BINDING_EXISTS_RESULT:
-      {
-	// Find the helper (sanity check).
-	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
-	assert (pos != m_bind_recv.end ());
-	(*pos)->bound (BINDING_EXISTS_RESULT);
 	// The bind failed so erase.
 	m_unbind_send.erase (*pos);
 	m_bind_recv.erase (pos);
@@ -313,7 +302,7 @@ namespace ioa {
     case OUTPUT_ACTION_UNAVAILABLE_RESULT:
       {
 	// Find the helper (sanity check).
-	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.key));
 	assert (pos != m_bind_recv.end ());
 	(*pos)->bound (OUTPUT_ACTION_UNAVAILABLE_RESULT);
 	// The bind failed so erase.
@@ -324,7 +313,7 @@ namespace ioa {
     case INPUT_ACTION_UNAVAILABLE_RESULT:
       {
 	// Find the helper (sanity check).
-	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+	std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.key));
 	assert (pos != m_bind_recv.end ());
 	(*pos)->bound (INPUT_ACTION_UNAVAILABLE_RESULT);
 	// The bind failed so erase.
@@ -334,7 +323,7 @@ namespace ioa {
       break;
     case BOUND_RESULT:
       // Find the helper (sanity check).
-      std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.second));
+      std::set<system_binding_manager_interface*>::const_iterator pos = m_bind_recv.find (static_cast<system_binding_manager_interface*> (t.key));
       assert (pos != m_bind_recv.end ());
       (*pos)->bound (BOUND_RESULT);
       // The bind succeeded.  Move to done.
@@ -344,8 +333,8 @@ namespace ioa {
     }
   }
   
-  void automaton::sys_unbound_effect (std::pair<unbound_t, void*> const & t) {
-    switch (t.first) {
+  void automaton::unbind_respond_effect (const unbind_response_t& t) {
+    switch (t.result) {
     case BIND_KEY_DNE_RESULT:
       // We prevent this in unbind.
       assert (false);
@@ -354,7 +343,7 @@ namespace ioa {
       // Something was unbound.
       // It can be in m_bind_recv or m_bind_done and also m_unbind_send or m_unbind_recv.
       
-      system_binding_manager_interface* helper = static_cast<system_binding_manager_interface*> (t.second);
+      system_binding_manager_interface* helper = static_cast<system_binding_manager_interface*> (t.key);
       
       assert ((m_bind_recv.count (helper) == 1 &&
 	       m_bind_done.count (helper) == 0) ||
@@ -380,8 +369,8 @@ namespace ioa {
     }
   }
   
-  void automaton::sys_destroyed_effect (std::pair<destroyed_t, void*> const & t) {
-    switch (t.first) {
+  void automaton::destroy_respond_effect (const destroy_response_t& t) {
+    switch (t.result) {
     case CREATE_KEY_DNE_RESULT:
       // We prevent this in destroy.
       assert (false);
@@ -390,7 +379,7 @@ namespace ioa {
       // An automaton was destroyed.
       // It can be in m_create_recv or m_create_done and also m_destroy_send or m_destroy_recv.
       
-      system_automaton_manager_interface* helper = static_cast<system_automaton_manager_interface*> (t.second);
+      system_automaton_manager_interface* helper = static_cast<system_automaton_manager_interface*> (t.key);
       
       assert ((m_create_recv.count (helper) == 1 &&
 	       m_create_done.count (helper) == 0) ||
@@ -418,17 +407,17 @@ namespace ioa {
   }
 
   void automaton::schedule () const {
-    if (sys_create_precondition ()) {
-      ioa::schedule (&automaton::sys_create);
+    if (create_request_precondition ()) {
+      ioa::schedule (&automaton::create_request);
     }
-    if (sys_bind_precondition ()) {
-      ioa::schedule (&automaton::sys_bind);
+    if (bind_request_precondition ()) {
+      ioa::schedule (&automaton::bind_request);
     }
-    if (sys_unbind_precondition ()) {
-      ioa::schedule (&automaton::sys_unbind);
+    if (unbind_request_precondition ()) {
+      ioa::schedule (&automaton::unbind_request);
     }
-    if (sys_destroy_precondition ()) {
-      ioa::schedule (&automaton::sys_destroy);
+    if (destroy_request_precondition ()) {
+      ioa::schedule (&automaton::destroy_request);
     }
   }
 

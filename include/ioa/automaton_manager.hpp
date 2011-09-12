@@ -35,16 +35,15 @@ namespace ioa {
     ~automaton_manager () { }
 
   public:
-
     void destroy () {
       m_automaton->destroy (this);
     }
 
-    std::auto_ptr<generator_interface> get_generator () {
-      return std::auto_ptr<generator_interface> (m_generator);
+    generator_interface& get_generator () const {
+      return *m_generator;
     }
 
-    void created (const created_t result,
+    void created (const create_result_t result,
 		  const aid_t aid) {
       switch (result) {
       case CREATE_KEY_EXISTS_RESULT:
@@ -65,7 +64,7 @@ namespace ioa {
       }
     }
 
-    void destroyed (const destroyed_t result) {
+    void destroyed (const destroy_result_t result) {
       switch (result) {
       case CREATE_KEY_DNE_RESULT:
 	// System is not correct.

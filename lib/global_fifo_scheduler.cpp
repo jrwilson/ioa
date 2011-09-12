@@ -1,7 +1,5 @@
 #include <ioa/global_fifo_scheduler.hpp>
 
-#include <ioa/system_scheduler_interface.hpp>
-
 #include "model.hpp"
 
 #include <algorithm>
@@ -9,11 +7,6 @@
 
 #include <unistd.h>
 #include <sys/select.h>
-
-#include "sys_create_runnable.hpp"
-#include "sys_bind_runnable.hpp"
-#include "sys_unbind_runnable.hpp"
-#include "sys_destroy_runnable.hpp"
 
 #include "create_runnable.hpp"
 #include "bind_runnable.hpp"
@@ -31,11 +24,9 @@ namespace ioa {
   typedef std::pair<time, action_runnable_interface*> time_action;
   typedef std::pair<int, action_runnable_interface*> fd_action;
 
-  class global_fifo_scheduler_impl :
-    public system_scheduler_interface
+  class global_fifo_scheduler_impl
   {
   private:
-
     model m_model;
     std::queue<runnable_interface*> m_configq;
     std::list<action_runnable_interface*> m_userq;
@@ -104,7 +95,6 @@ namespace ioa {
 
   public:
     global_fifo_scheduler_impl () :
-      m_model (*this),
       m_current_aid (-1)
     { }
 
@@ -117,23 +107,6 @@ namespace ioa {
       return m_model.binding_count (ac);
     }
   
-    void schedule (automaton::sys_create_type automaton::*member_ptr) {
-      // TODO:  Could these go on the userq?
-      schedule_configq (new sys_create_runnable (get_current_aid ()));
-    }
-  
-    void schedule (automaton::sys_bind_type automaton::*member_ptr) {
-      schedule_configq (new sys_bind_runnable (get_current_aid ()));
-    }
-
-    void schedule (automaton::sys_unbind_type automaton::*member_ptr) {
-      schedule_configq (new sys_unbind_runnable (get_current_aid ()));
-    }
-  
-    void schedule (automaton::sys_destroy_type automaton::*member_ptr) {
-      schedule_configq (new sys_destroy_runnable (get_current_aid ()));
-    }
-
     void schedule (action_runnable_interface* r) {
       schedule_userq (r);
     }
@@ -444,19 +417,6 @@ namespace ioa {
       schedule_configq (new destroy_runnable (automaton, key));
     }
 
-    void created (const aid_t aid,
-		  const created_t t,
-		  void* const key,
-		  const aid_t child) {
-      schedule_configq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_created, automaton::created_arg_t (t, key, child), system_input_category ()));
-    }
-  
-    void bound (const aid_t aid,
-		const bound_t t,
-		void* const key) {
-      schedule_configq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_bound, std::make_pair (t, key), system_input_category ()));
-    }
-
     void output_bound (const output_executor_interface& exec) {
       schedule_configq (new output_bound_runnable (exec));
       // Schedule the output.
@@ -467,12 +427,6 @@ namespace ioa {
       schedule_configq (new input_bound_runnable (exec));
     }
 
-    void unbound (const aid_t aid,
-		  const unbound_t t,
-		  void* const key) {
-      schedule_configq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_unbound, std::make_pair (t, key), system_input_category ()));
-    }
-
     void output_unbound (const output_executor_interface& exec) {
       schedule_configq (new output_unbound_runnable (exec));
       // Schedule the output.
@@ -481,12 +435,6 @@ namespace ioa {
 
     void input_unbound (const input_executor_interface& exec) {
       schedule_configq (new input_unbound_runnable (exec));
-    }
-
-    void destroyed (const aid_t aid,
-		    const destroyed_t t,
-		    void* const key) {
-      schedule_configq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_destroyed, std::make_pair (t, key), system_input_category ()));
     }
   };
 
@@ -506,22 +454,6 @@ namespace ioa {
     return m_impl->binding_count (ac);
   }
   
-  void global_fifo_scheduler::schedule (automaton::sys_create_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-    
-  void global_fifo_scheduler::schedule (automaton::sys_bind_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-  
-  void global_fifo_scheduler::schedule (automaton::sys_unbind_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-  
-  void global_fifo_scheduler::schedule (automaton::sys_destroy_type automaton::*ptr) {
-    m_impl->schedule (ptr);
-  }
-
   void global_fifo_scheduler::schedule (action_runnable_interface* r) {
     m_impl->schedule (r);
   }

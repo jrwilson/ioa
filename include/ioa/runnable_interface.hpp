@@ -5,11 +5,10 @@
 
 namespace ioa {
 
-  class model_interface;
-
   class runnable_interface
   {
   private:
+    // TODO:  Make the scheuler keep track of this.
     // We keep track of the number of runnables in existence.
     // When the count reaches 0, we can stop.
     static shared_mutex m_mutex;
@@ -19,7 +18,7 @@ namespace ioa {
     runnable_interface ();
     virtual ~runnable_interface ();
     static size_t count ();
-    virtual void operator() (model_interface& model) = 0;
+    virtual void operator() () = 0;
   };
 
 }

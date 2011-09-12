@@ -4,6 +4,8 @@ include \
 lib \
 doc \
 . \
-test \
-tutorial \
-examples
+test
+
+
+# tutorial \
+# examples

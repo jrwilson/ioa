@@ -8,55 +8,251 @@
 #include <ioa/action_wrapper.hpp>
 #include <memory>
 
-#define COMMA ,
-
 namespace ioa {
 
-  enum created_t {
-    CREATE_KEY_EXISTS_RESULT,
-    INSTANCE_EXISTS_RESULT,
-    AUTOMATON_CREATED_RESULT,
+  class action_interface
+  {
+  public:
+    virtual ~action_interface () { }
+    virtual aid_t get_aid () const = 0;
+    virtual void* get_member_ptr () const = 0;
+    virtual void* get_pid () const = 0;
+
+    virtual bool operator== (const action_interface& x) const {
+      return
+    	get_aid () == x.get_aid () &&
+    	get_member_ptr () == x.get_member_ptr () &&
+    	get_pid () == x.get_pid ();
+    }
+    
+    bool operator!= (const action_interface& x) const {
+      return !(*this == x);
+    }
+    
+    bool operator< (const action_interface& x) const {
+      if (get_aid () != x.get_aid ()) {
+    	return get_aid () < x.get_aid ();
+      }
+      if (get_member_ptr () != x.get_member_ptr ()) {
+    	return get_member_ptr () < x.get_member_ptr ();
+      }
+      return get_pid () < x.get_pid ();
+    }
   };
 
-  enum bound_t {
+  class output_action_interface :
+    public action_interface
+  {
+  public:
+    virtual ~output_action_interface () { }
+    virtual output_action_interface* clone () const = 0;
+    virtual void set_auto_parameter (aid_t) = 0;
+  };
+
+  class input_action_interface :
+    public action_interface
+  {
+  public:
+    virtual ~input_action_interface () { }
+    virtual input_action_interface* clone () const = 0;
+    virtual void set_auto_parameter (aid_t) = 0;
+  };
+
+  class create_request_t
+  {
+  public:
+    aid_t parent;
+  private:
+    generator_interface* m_generator;
+  public:
+    generator_interface& generator;
+    void* key;
+    
+    create_request_t (const aid_t p,
+		      const generator_interface& g,
+		      void* const k) :
+      parent (p),
+      m_generator (g.clone ()),
+      generator (*m_generator),
+      key (k)
+    { }
+
+    ~create_request_t () {
+      delete m_generator;
+    }
+  };
+  
+  enum create_result_t {
+    CREATE_KEY_EXISTS_RESULT,
+    INSTANCE_EXISTS_RESULT,
+    AUTOMATON_CREATED_RESULT
+  };
+  
+  struct create_response_t
+  {
+    aid_t const parent;
+    create_result_t const result;
+    void* const key;
+    aid_t const child;
+    
+    create_response_t (aid_t const p,
+		       create_result_t const r,
+		       void* const k,
+		       aid_t const c) :
+      parent (p),
+      result (r),
+      key (k),
+      child (c)
+    { }
+  };
+
+  class bind_request_t
+  {
+  public:
+    aid_t const owner;
+  private:
+    output_action_interface* m_output;
+    input_action_interface* m_input;
+  public:
+    output_action_interface& output;
+    input_action_interface& input;
+    void* const key;
+
+    bind_request_t (aid_t const ow,
+		    const output_action_interface& o,
+		    const input_action_interface& i,
+		    void* const k) :
+      owner (ow),
+      m_output (o.clone ()),
+      m_input (i.clone ()),
+      output (*m_output),
+      input (*m_input),
+      key (k)
+    { }
+
+    ~bind_request_t () {
+      delete m_output;
+      delete m_input;
+    }
+  };
+  
+  enum bind_result_t {
     BIND_KEY_EXISTS_RESULT,
     OUTPUT_AUTOMATON_DNE_RESULT,
     INPUT_AUTOMATON_DNE_RESULT,
-    BINDING_EXISTS_RESULT,
-    OUTPUT_ACTION_UNAVAILABLE_RESULT,
     INPUT_ACTION_UNAVAILABLE_RESULT,
-    BOUND_RESULT,
+    OUTPUT_ACTION_UNAVAILABLE_RESULT,
+    BOUND_RESULT
+  };
+  
+  struct bind_response_t
+  {
+    aid_t const owner;
+    bind_result_t const result;
+    void* const key;
+    
+    bind_response_t (aid_t const o,
+		     bind_result_t const r,
+		     void* const k) :
+      owner (o),
+      result (r),
+      key (k)
+    { }
   };
 
-  enum unbound_t {
+  struct unbind_request_t
+  {
+    aid_t const owner;
+    void* const key;
+
+    unbind_request_t (aid_t const o,
+		      void* const k) :
+      owner (o),
+      key (k)
+    { }
+  };
+
+  enum unbind_result_t {
     BIND_KEY_DNE_RESULT,
     UNBOUND_RESULT,
   };
 
-  enum destroyed_t {
+  struct unbind_response_t
+  {
+    aid_t const owner;
+    unbind_result_t const result;
+    void* const key;
+
+    unbind_response_t (aid_t const o,
+		       unbind_result_t const r,
+		       void* const k) :
+      owner (o),
+      result (r),
+      key (k)
+    { }
+  };
+
+  struct destroy_request_t
+  {
+    aid_t const owner;
+    void* const key;
+
+    destroy_request_t (aid_t const o,
+		       void* const k) :
+      owner (o),
+      key (k)
+    { }
+  };
+
+  enum destroy_result_t {
     CREATE_KEY_DNE_RESULT,
     AUTOMATON_DESTROYED_RESULT,
+  };
+
+  struct destroy_response_t
+  {
+    aid_t const owner;
+    destroy_result_t result;
+    void* const key;
+
+    destroy_response_t (aid_t const o,
+			destroy_result_t const r,
+			void* const k) :
+      owner (o),
+      result (r),
+      key (k)
+    { }
   };
 
   class system_automaton_manager_interface
   {
   public:
     virtual ~system_automaton_manager_interface () { }
-    virtual std::auto_ptr<generator_interface> get_generator () = 0;
-    virtual void created (const created_t result, const aid_t aid) = 0;
-    virtual void destroyed (const destroyed_t result) = 0;
+    virtual generator_interface& get_generator () const = 0;
+    virtual void created (const create_result_t result, const aid_t aid) = 0;
+    virtual void destroyed (const destroy_result_t result) = 0;
   };
 
   class system_binding_manager_interface
   {
   public:
     virtual ~system_binding_manager_interface () { }
+    // TODO:  Axe this.
     virtual std::auto_ptr<bind_executor_interface> get_executor () const = 0;
-    virtual void bound (const bound_t result) = 0;
-    virtual void unbound (const unbound_t result) = 0;
+    virtual output_action_interface& get_output () const = 0;
+    virtual input_action_interface& get_input () const = 0;
+    virtual void bound (const bind_result_t result) = 0;
+    virtual void unbound (const unbind_result_t result) = 0;
   };
 
-  class automaton {
+  class automaton_base {
+  public:
+    virtual ~automaton_base () { }
+  };
+
+  class automaton :
+    public automaton_base
+  {
   private:
     // Invariant:  m_create_send INTERSECT m_create_recv INTERSECT m_destroy_send = empty set
     // Basically, a helper is in one place or another.
@@ -90,69 +286,55 @@ namespace ioa {
     void schedule () const;
 
   private:    
-    bool sys_create_precondition () const;
-    std::pair<generator_interface*, void*> sys_create_effect ();
-    void sys_create_schedule () const { schedule (); }
+    bool create_request_precondition () const;
+    create_request_t create_request_effect ();
+    void create_request_schedule () const { schedule (); }
   public:
-    SYSTEM_OUTPUT (automaton, sys_create, std::pair<generator_interface* COMMA void*>);
+    V_UP_OUTPUT (automaton, create_request, create_request_t);
 
   private:
-    bool sys_bind_precondition () const;
-    std::pair<bind_executor_interface*, void*> sys_bind_effect ();
-    void sys_bind_schedule () const { schedule (); }
+    bool bind_request_precondition () const;
+    bind_request_t bind_request_effect ();
+    void bind_request_schedule () const { schedule (); }
   public:
-    SYSTEM_OUTPUT (automaton, sys_bind, std::pair<bind_executor_interface* COMMA void*>);
+    V_UP_OUTPUT (automaton, bind_request, bind_request_t);
 
   private:
-    bool sys_unbind_precondition () const;
-    void* sys_unbind_effect ();
-    void sys_unbind_schedule () const { schedule (); }
+    bool unbind_request_precondition () const;
+    unbind_request_t unbind_request_effect ();
+    void unbind_request_schedule () const { schedule (); }
   public:
-    SYSTEM_OUTPUT (automaton, sys_unbind, void*);
+    V_UP_OUTPUT (automaton, unbind_request, unbind_request_t);
 
   private:
-    bool sys_destroy_precondition () const;
-    void* sys_destroy_effect ();
-    void sys_destroy_schedule () const { schedule (); }
+    bool destroy_request_precondition () const;
+    destroy_request_t destroy_request_effect ();
+    void destroy_request_schedule () const { schedule (); }
   public:
-    SYSTEM_OUTPUT (automaton, sys_destroy, void*);
-
-  public:
-    struct created_arg_t {
-      const created_t type;
-      void* const key;
-      const aid_t aid;
-
-      created_arg_t (const created_t t,
-		     void* const k,
-		     const aid_t a) :
-	type (t),
-	key (k),
-	aid (a) { }
-    };
+    V_UP_OUTPUT (automaton, destroy_request, destroy_request_t);
   private:
-    void sys_created_effect (const created_arg_t &);
-    void sys_created_schedule () const { schedule (); }
+    void create_respond_effect (const create_response_t&);
+    void create_respond_schedule () const { schedule (); }
   public:
-    SYSTEM_INPUT (automaton, sys_created, created_arg_t);
+    V_UP_INPUT (automaton, create_respond, create_response_t);
 
   private:
-    void sys_bound_effect (std::pair<bound_t COMMA void*> const &);
-    void sys_bound_schedule () const { schedule (); }
+    void bind_respond_effect (const bind_response_t&);
+    void bind_respond_schedule () const { schedule (); }
   public:
-    SYSTEM_INPUT (automaton, sys_bound, std::pair<bound_t COMMA void*>);
+    V_UP_INPUT (automaton, bind_respond, bind_response_t);
 
   private:
-    void sys_unbound_effect (std::pair<unbound_t COMMA void*> const &);
-    void sys_unbound_schedule () const { schedule (); }
+    void unbind_respond_effect (const unbind_response_t&);
+    void unbind_respond_schedule () const { schedule (); }
   public:
-    SYSTEM_INPUT (automaton, sys_unbound, std::pair<unbound_t COMMA void*>);
+    V_UP_INPUT (automaton, unbind_respond, unbind_response_t);
     
   private:
-    void sys_destroyed_effect (std::pair<destroyed_t COMMA void*> const &);
-    void sys_destroyed_schedule () const { schedule (); }
+    void destroy_respond_effect (const destroy_response_t&);
+    void destroy_respond_schedule () const { schedule (); }
   public:
-    SYSTEM_INPUT (automaton, sys_destroyed, std::pair<destroyed_t COMMA void*>);
+    V_UP_INPUT (automaton, destroy_respond, destroy_response_t);
   };
 
 }

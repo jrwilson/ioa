@@ -16,7 +16,6 @@ namespace ioa {
       START,
       OUTPUT_AUTOMATON_DNE,
       INPUT_AUTOMATON_DNE,
-      BINDING_EXISTS,
       INPUT_ACTION_UNAVAILABLE,
       OUTPUT_ACTION_UNAVAILABLE,
       BOUND,
@@ -166,7 +165,7 @@ namespace ioa {
       }
     }
 
-    void bound (const bound_t result) {
+    void bound (const bind_result_t result) {
       switch (result) {
       case BIND_KEY_EXISTS_RESULT:
 	// System is incorrect.
@@ -179,11 +178,6 @@ namespace ioa {
 	break;
       case INPUT_AUTOMATON_DNE_RESULT:
 	m_state = INPUT_AUTOMATON_DNE;
-	notify_observers ();
-	delete this;
-	break;
-      case BINDING_EXISTS_RESULT:
-	m_state = BINDING_EXISTS;
 	notify_observers ();
 	delete this;
 	break;
@@ -204,7 +198,7 @@ namespace ioa {
       }
     }
 
-    void unbound (const unbound_t result) {
+    void unbound (const unbind_result_t result) {
       switch (result) {
       case BIND_KEY_DNE_RESULT:
 	// System is incorrect.
@@ -234,6 +228,18 @@ namespace ioa {
 				 this->m_input_handle, this->m_input_member_ptr);
     }
 
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return *std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return *std::auto_ptr<input_action_interface> ();
+    }
+
   public:
     binding_manager_impl (automaton* automaton,
 			  automaton_handle_interface<OI>* output,
@@ -260,6 +266,18 @@ namespace ioa {
 				 this->m_input_handle, this->m_input_member_ptr, this->m_input_parameter);
     }
 
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return *std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return *std::auto_ptr<input_action_interface> ();
+    }
+
   public:
     binding_manager_impl (automaton* automaton,
 			  automaton_handle_interface<OI>* output,
@@ -282,6 +300,18 @@ namespace ioa {
     std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
     }
 
   public:
@@ -308,6 +338,18 @@ namespace ioa {
     std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, this->m_output_parameter,
 				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
     }
 
   public:
@@ -337,6 +379,18 @@ namespace ioa {
     std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr, m_output_parameter,
 				 this->m_input_handle, this->m_input_member_ptr, m_input_parameter);
+    }
+
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
     }
 
   public:
@@ -369,6 +423,18 @@ namespace ioa {
 				 this->m_input_handle, this->m_input_member_ptr);
     }
 
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
+    }
+
   public:
     binding_manager_impl (automaton* automaton,
 			  automaton_handle_interface<OI>* output,
@@ -391,6 +457,18 @@ namespace ioa {
     std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
     }
 
   public:
@@ -419,6 +497,18 @@ namespace ioa {
 				 this->m_input_handle, this->m_input_member_ptr, this->m_input_parameter);
     }
 
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
+    }
+
   public:
     binding_manager_impl (automaton* automaton,
 			  automaton_handle_interface<OI>* output,
@@ -441,6 +531,18 @@ namespace ioa {
     std::auto_ptr<bind_executor_interface> get_executor () const {
       return make_bind_executor (this->m_output_handle, this->m_output_member_ptr,
 				 this->m_input_handle, this->m_input_member_ptr);
+    }
+
+    output_action_interface& get_output () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<output_action_interface> ();
+    }
+
+    input_action_interface& get_input () const {
+      // TODO
+      assert (false);
+      return std::auto_ptr<input_action_interface> ();
     }
 
   public:

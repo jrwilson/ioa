@@ -26,7 +26,6 @@ ioa/scheduler.hpp \
 ioa/scheduler_interface.hpp \
 ioa/shared_mutex.hpp \
 ioa/simple_scheduler.hpp \
-ioa/system_scheduler_interface.hpp \
 ioa/tcp_acceptor_automaton.hpp \
 ioa/tcp_connection_automaton.hpp \
 ioa/tcp_connector_automaton.hpp \

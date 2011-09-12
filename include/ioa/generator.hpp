@@ -15,20 +15,15 @@ namespace ioa {
   class generator :
     public typed_generator_interface<T>
   {
-  private:
-    bool m_flag;
-
   public:
     typedef T result_type;
 
-    generator () :
-      m_flag (false)
-    { }
-
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T ();
+    }
+
+    generator_interface* clone () const {
+      return new generator (*this);
     }
   };
 
@@ -42,20 +37,16 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
 
   public:
     typedef T result_type;
 
     generator1 (A0 a0) :
-      m_flag (false),
       m_a0 (a0)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0);
     }
   };
@@ -70,7 +61,6 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
     A1 m_a1;
 
@@ -78,15 +68,16 @@ namespace ioa {
     typedef T result_type;
 
     generator2 (A0 a0, A1 a1) :
-      m_flag (false),
       m_a0 (a0),
       m_a1 (a1)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0, m_a1);
+    }
+
+    generator_interface* clone () const {
+      return new generator2 (*this);
     }
   };
 
@@ -100,7 +91,6 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
     A1 m_a1;
     A2 m_a2;
@@ -109,15 +99,12 @@ namespace ioa {
     typedef T result_type;
 
     generator3 (A0 a0, A1 a1, A2 a2) :
-      m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
       m_a2 (a2)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0, m_a1, m_a2);
     }
   };
@@ -132,7 +119,6 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
     A1 m_a1;
     A2 m_a2;
@@ -142,16 +128,13 @@ namespace ioa {
     typedef T result_type;
 
     generator4 (A0 a0, A1 a1, A2 a2, A3 a3) :
-      m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
       m_a2 (a2),
       m_a3 (a3)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0, m_a1, m_a2, m_a3);
     }
   };
@@ -166,7 +149,6 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
     A1 m_a1;
     A2 m_a2;
@@ -177,7 +159,6 @@ namespace ioa {
     typedef T result_type;
 
     generator5 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) :
-      m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
       m_a2 (a2),
@@ -185,9 +166,7 @@ namespace ioa {
       m_a4 (a4)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0, m_a1, m_a2, m_a3, m_a4);
     }
   };
@@ -203,7 +182,6 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
     A1 m_a1;
     A2 m_a2;
@@ -215,7 +193,6 @@ namespace ioa {
     typedef T result_type;
 
     generator6 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) :
-      m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
       m_a2 (a2),
@@ -224,9 +201,7 @@ namespace ioa {
       m_a5 (a5)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0, m_a1, m_a2, m_a3, m_a4, m_a5);
     }
   };
@@ -241,7 +216,6 @@ namespace ioa {
     public typed_generator_interface<T>
   {
   private:
-    bool m_flag;
     A0 m_a0;
     A1 m_a1;
     A2 m_a2;
@@ -254,7 +228,6 @@ namespace ioa {
     typedef T result_type;
 
     generator7 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) :
-      m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
       m_a2 (a2),
@@ -264,9 +237,7 @@ namespace ioa {
       m_a6 (a6)
     { }
 
-    T* operator() () {
-      assert (!m_flag);
-      m_flag = true;
+    T* operator() () const {
       return new T (m_a0, m_a1, m_a2, m_a3, m_a4, m_a5, m_a6);
     }
   };

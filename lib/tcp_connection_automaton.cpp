@@ -241,7 +241,6 @@ namespace ioa {
       break;
     case binding_manager_interface::OUTPUT_AUTOMATON_DNE:
     case binding_manager_interface::INPUT_AUTOMATON_DNE:
-    case binding_manager_interface::BINDING_EXISTS:
     case binding_manager_interface::INPUT_ACTION_UNAVAILABLE:
     case binding_manager_interface::OUTPUT_ACTION_UNAVAILABLE:
       // Fail.

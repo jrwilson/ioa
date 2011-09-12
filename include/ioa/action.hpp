@@ -18,8 +18,6 @@ namespace ioa {
   struct input_category { };
   struct output_category { };
   struct internal_category { };
-  struct system_input_category { };
-  struct system_output_category { };
 
   /* Indicates if an input or output has an associated value. */
   struct unvalued { };
@@ -74,14 +72,6 @@ namespace ioa {
 
   struct internal : public no_value {
     typedef internal_category action_category;
-  };
-
-  struct system_input : public no_parameter {
-    typedef system_input_category action_category;
-  };
-
-  struct system_output : public no_parameter {
-    typedef system_output_category action_category;
   };
 
 }

@@ -9,26 +9,6 @@ namespace ioa {
     return scheduler->get_current_aid ();
   }
 
-  void schedule (automaton::sys_create_type automaton::*ptr) {
-    assert (scheduler != 0);
-    scheduler->schedule (ptr);
-  }
-
-  void schedule (automaton::sys_bind_type automaton::*ptr) {
-    assert (scheduler != 0);
-    scheduler->schedule (ptr);
-  }
-
-  void schedule (automaton::sys_unbind_type automaton::*ptr) {
-    assert (scheduler != 0);
-    scheduler->schedule (ptr);
-  }
-
-  void schedule (automaton::sys_destroy_type automaton::*ptr) {
-    assert (scheduler != 0);
-    scheduler->schedule (ptr);
-  }
-
   void close (int fd) {
     assert (scheduler != 0);
     scheduler->close (fd);

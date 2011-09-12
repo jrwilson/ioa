@@ -481,39 +481,6 @@ namespace ioa {
       (c.*schedule_ptr) (p);
     }
   };
-
-  template <class C, class T, void (C::*member_function_ptr)(T const &), void (C::*schedule_ptr) () const>
-  struct system_input_wrapper :
-    public system_input,
-    public value<T>
-  {
-    void effect (C& c, T const & t) const {
-      (c.*member_function_ptr) (t);
-    }
-
-    void schedule (const C& c) const {
-      (c.*schedule_ptr) ();
-    }
-  };
-
-  template <class C, class T, bool (C::*precondition_ptr) () const, T (C::*member_function_ptr)(), void (C::*schedule_ptr) () const>
-  struct system_output_wrapper :
-    public system_output,
-    public value<T>
-  {
-    bool precondition (const C& c) {
-      return (c.*precondition_ptr) ();
-    }
-    
-    T effect (C& c) const {
-      return (c.*member_function_ptr) ();
-    }
-    
-    void schedule (const C& c) const {
-      (c.*schedule_ptr) ();
-    }
-  };
-
 }
 
 #define UV_UP_INPUT(c, name) \
@@ -569,13 +536,5 @@ namespace ioa {
 
 #define P_INTERNAL(c, name, param_type)	\
   ioa::p_internal_wrapper<c, param_type, &c::name##_precondition, &c::name##_effect, &c::name##_schedule> name;
-
-#define SYSTEM_INPUT(c, name, type)		\
-  typedef ioa::system_input_wrapper<c, type, &c::name##_effect, &c::name##_schedule> name##_type;	\
-  name##_type name;
-
-#define SYSTEM_OUTPUT(c, name, type)		\
-  typedef ioa::system_output_wrapper<c, type, &c::name##_precondition, &c::name##_effect, &c::name##_schedule> name##_type; \
-  name##_type name;
 
 #endif

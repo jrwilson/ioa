@@ -11,33 +11,28 @@ namespace ioa {
     public action_runnable_interface
   {
   private:
-    action_executor<I, M> m_exec;
+    //action_executor<I, M> m_exec;
     
   public:
     action_runnable (const automaton_handle<I>& handle,
-		     M I::*member_ptr) :
-      m_exec (handle, member_ptr)
+		     M I::*member_ptr) // :
+      //m_exec (handle, member_ptr)
     { }
 
     action_runnable (const automaton_handle<I>& handle,
 		     M I::*member_ptr,
-		     const typename M::parameter_type& parameter) :
-      m_exec (handle, member_ptr, parameter)
+		     const typename M::parameter_type& parameter) // :
+      //m_exec (handle, member_ptr, parameter)
     { }
 
-    action_runnable (const automaton_handle<I>& handle,
-		     M I::*member_ptr,
-		     const typename M::value_type& value,
-		     system_input_category sic) :
-      m_exec (handle, member_ptr, value, sic)
-    { }
-
-    void operator() (model_interface& model) {
-      model.execute (m_exec);
+    void operator() () {
+      assert (false);
     }
     
     const action_executor_interface& get_action () const {
-      return m_exec;
+      //return m_exec;
+      assert (false);
+      return *std::auto_ptr<action_executor_interface> ();
     }
   };
   
