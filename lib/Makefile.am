@@ -4,12 +4,15 @@ lib_LTLIBRARIES = libioa.la
 
 libioa_la_SOURCES = \
 time.cpp \
-mutex.cpp \
-shared_mutex.cpp \
-runnable_interface.cpp \
-observer.cpp \
-automaton.cpp \
-scheduler.cpp
+mutex.cpp
+
+
+
+# shared_mutex.cpp \
+# runnable_interface.cpp \
+# observer.cpp \
+# automaton.cpp \
+# scheduler.cpp
 
 
 # automaton.cpp \

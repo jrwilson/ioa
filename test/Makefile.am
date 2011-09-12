@@ -4,8 +4,8 @@ LDADD = $(top_builddir)/lib/libioa.la
 
 TESTS = \
 time \
-action_executor
-
+action_executor \
+automaton_set
 # model \
 # global_fifo_scheduler \
 # simple_scheduler \
@@ -17,6 +17,8 @@ check_PROGRAMS = $(TESTS)
 time_SOURCES = minunit.h time.cpp test_main.cpp
 
 action_executor_SOURCES = minunit.h automaton1.hpp action_executor.cpp test_main.cpp
+
+automaton_set_SOURCES = minunit.h automaton_set.cpp test_main.cpp
 
 # model_SOURCES = minunit.h instance_holder.hpp automaton1.hpp model.cpp test_main.cpp
 

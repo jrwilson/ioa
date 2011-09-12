@@ -1,12 +1,14 @@
 #ifndef __automaton_hpp__
 #define __automaton_hpp__
 
-#include <ioa/action.hpp>
 #include <set>
+#include <memory>
+
+#include <ioa/action.hpp>
+#include <ioa/automaton_base.hpp>
 #include <ioa/generator_interface.hpp>
 #include <ioa/executor_interface.hpp>
 #include <ioa/action_wrapper.hpp>
-#include <memory>
 
 namespace ioa {
 
@@ -243,11 +245,6 @@ namespace ioa {
     virtual input_action_interface& get_input () const = 0;
     virtual void bound (const bind_result_t result) = 0;
     virtual void unbound (const unbind_result_t result) = 0;
-  };
-
-  class automaton_base {
-  public:
-    virtual ~automaton_base () { }
   };
 
   class automaton :
