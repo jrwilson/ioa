@@ -1,14 +1,21 @@
-\section{I/O Automata Representation and Programming Model\label{representation}}
+\section{I/O Automata Programming Model\label{representation}}
 
-In this section, we show how I/O automata are represented using our framework and how they can be used to construct programs.
-We develop a simulation for a distributed algorithm to show the basic features of the framework and then show a real implementation of the same algorithm.
-The problem we consider is that of electing a leader in unidirectional ring.
+In this section, we show how I/O automata can be used to construct programs by implementing an algorithm for electing a leader in a unidirectional ring.
+The algorithm we consider is the asynchronous LCR algorithm presented by Lynch in Chapter 15 of~\cite{lynch1996distributed} which is in turn based on the work of LeLann~\cite{le1977distributed} and Chang and Roberts~\cite{chang1979improved}.
+The LCR algorithm assumes that every node has a unique identifier (UID).
+When the protocol begins, each node sends its UID to its successor.
+When a node receives a UID from its predecessor that is greater than its own UID, it forwards the UID to its successor.
+When a node receives its own UID, it elects itself the leader of the ring.
 
-The algorithm we consider is the asynchronous LCR algorithm presented by Lynch in Chapter 15 of~\cite{lynch1996distributed} which is in turn based on the work of LeLann~\cite{} and Chang and Roberts~\cite{}.
-The LCR algorithm assumes that every node has a unique identifier.
-Each node begins by assuming that it is the leader and sends its own unique id to its neighbor.
-If a node receives a unique id from its predecessor that is greater that the id that it believes to be the leader, then it changes its belief about the leader to the new id and sends the new id to its successor.
-When a node receives its own id, it elects itself the leader of the ring.
+
+Automata are classes
+
+Actions (2/3 functions + MACRO)
+
+binding predicate (binding count)
+
+dynamics
+
 
 \subsection{The AsynchLCR Automaton}
 

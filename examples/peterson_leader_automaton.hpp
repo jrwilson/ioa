@@ -6,11 +6,10 @@
   Distributed Algorithms, p. 483-484.
 */
 
-#include "UID.hpp"
 #include <ioa/ioa.hpp>
 #include <queue>
-#include <iostream>
 
+template <typename UID>
 class peterson_leader_automaton :
   public ioa::automaton
 {
@@ -28,22 +27,21 @@ private:
 
   mode_t m_mode;
   status_t m_status;
-  UID_t m_u;
-  UID_t m_uid[3];
+  UID m_u;
+  UID m_uid[3];
 
-  std::queue<UID_t> m_send;
-  std::queue<UID_t> m_receive;
+  std::queue<UID> m_send;
+  std::queue<UID> m_receive;
 
 public:
-  peterson_leader_automaton (const size_t i) :
+  peterson_leader_automaton (const UID& u) :
     m_mode (ACTIVE),
     m_status (UNKNOWN),
-    m_u (rand (), i)
+    m_u (u)
   {
-    std::cout << m_u.first << "\t" << m_u.second << std::endl;
     m_uid[0] = m_u;
-    m_uid[1] = std::make_pair (-1, -1);
-    m_uid[2] = std::make_pair (-1, -1);
+    m_uid[1] = UID ();
+    m_uid[2] = UID ();
     m_send.push (m_u);
     schedule ();
   }
@@ -78,8 +76,8 @@ private:
     return !m_send.empty () && ioa::binding_count (&peterson_leader_automaton::send) != 0;
   }
 
-  UID_t send_effect () {
-    UID_t retval = m_send.front ();
+  UID send_effect () {
+    UID retval = m_send.front ();
     m_send.pop ();
     return retval;
   }
@@ -89,10 +87,10 @@ private:
   }
 
 public:
-  V_UP_OUTPUT (peterson_leader_automaton, send, UID_t);
+  V_UP_OUTPUT (peterson_leader_automaton, send, UID);
 
 private:
-  void receive_effect (const UID_t& v) {
+  void receive_effect (const UID& v) {
     m_receive.push (v);
   }
 
@@ -101,15 +99,16 @@ private:
   }
 
 public:
-  V_UP_INPUT (peterson_leader_automaton, receive, UID_t);
+  V_UP_INPUT (peterson_leader_automaton, receive, UID);
 
 private:
   bool leader_precondition () const {
     return m_status == CHOSEN && ioa::binding_count (&peterson_leader_automaton::leader) != 0;
   }
 
-  void leader_effect () {
+  bool leader_effect () {
     m_status = REPORTED;
+    return true;
   }
 
   void leader_schedule () const {
@@ -117,11 +116,11 @@ private:
   }
 
 public:
-  UV_UP_OUTPUT (peterson_leader_automaton, leader);
+  V_UP_OUTPUT (peterson_leader_automaton, leader, bool);
 
 private:
   bool get_second_uid_precondition () const {
-    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] == std::make_pair (-1, static_cast<size_t> (-1));
+    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] == UID ();
   }
 
   void get_second_uid_effect () {
@@ -140,7 +139,7 @@ private:
   UP_INTERNAL (peterson_leader_automaton, get_second_uid);
 
   bool get_third_uid_precondition () const {
-    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] != std::make_pair (-1, static_cast<size_t> (-1)) && m_uid[2] == std::make_pair (-1, static_cast<size_t> (-1));
+    return m_mode == ACTIVE && !m_receive.empty () && m_uid[1] != UID () && m_uid[2] == UID ();
   }
 
   void get_third_uid_effect () {
@@ -155,13 +154,13 @@ private:
   UP_INTERNAL (peterson_leader_automaton, get_third_uid);
 
   bool advance_phase_precondition () const {
-    return m_mode == ACTIVE && m_uid[2] != std::make_pair (-1, static_cast<size_t> (-1)) && m_uid[1] > std::max (m_uid[0], m_uid[2]);
+    return m_mode == ACTIVE && m_uid[2] != UID () && m_uid[1] > std::max (m_uid[0], m_uid[2]);
   }
 
   void advance_phase_effect () {
     m_uid[0] = m_uid[1];
-    m_uid[1] = std::make_pair (-1, static_cast<size_t> (-1));
-    m_uid[2] = std::make_pair (-1, static_cast<size_t> (-1));
+    m_uid[1] = UID ();
+    m_uid[2] = UID ();
     m_send.push (m_uid[0]);
   }
 
@@ -172,7 +171,7 @@ private:
   UP_INTERNAL (peterson_leader_automaton, advance_phase);
 
   bool become_relay_precondition () const {
-    return m_mode == ACTIVE && m_uid[2] != std::make_pair (-1, static_cast<size_t> (-1)) && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
+    return m_mode == ACTIVE && m_uid[2] != UID () && m_uid[1] <= std::max (m_uid[0], m_uid[2]);
   }
 
   void become_relay_effect () {

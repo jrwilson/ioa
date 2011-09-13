@@ -7,7 +7,7 @@
 \label{framework_architecture}
 \end{figure}
 
-An implementation of the model described in section~\ref{component_model} must provide a service for executing local actions and facilities for manipulating the set of automata and bindings.
+An implementation of the component model described in section~\ref{component_model} must provide a service for executing local actions and facilities for manipulating the set of automata and bindings.
 The architecture of our framework is depicted in Figure~\ref{framework_architecture}.
 The Scheduler has the resposibility of selecting and executing local actions subject to the I/O automata model and concurrency constraints of~\ref{component_model}.
 All user automata inherit from a common base class that provides facilities for asynchronously creating and destroying child automata and bindings.
@@ -82,7 +82,7 @@ To remedy this, our framework takes advantage of the fair scheduling criteria of
 
 \paragraph{Actions of non-existent automata.}
 Every action in the set of actions considered by the controller was scheduled by its associated automaton.
-Since automata can be destroyed, an action is the set of actions owned by the controller might belong to an automaton that no longer exists.
+Since automata can be destroyed, an action in the set of actions owned by the controller might belong to an automaton that no longer exists.
 Our solution is to check if the automaton exists before executing an action.
 This check is performed by the model and avoids the overhead associated with synchronizing the set of actions with the set of automata every time an automaton is destroyed.
 Our solution assumes that each automaton is assigned a unique identifier and that the set of actions turns over comparatively faster than the set of identifiers.

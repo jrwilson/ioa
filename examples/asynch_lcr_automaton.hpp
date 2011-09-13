@@ -6,31 +6,25 @@
   Distributed Algorithms, p. 477.
 */
 
-#include "UID.hpp"
 #include <ioa/ioa.hpp>
 #include <queue>
-#include <iostream>
 
+template <typename UID>
 class asynch_lcr_automaton :
   public ioa::automaton
 {
 private:
-  typedef enum {
-    UNKNOWN,
-    CHOSEN,
-    REPORTED
-  } status_t;
-
-  UID_t m_u;
-  std::queue<UID_t> m_send;
-  status_t m_status;
+  UID m_u;
+  std::queue<UID> m_send;
+  bool m_report;
+  bool m_leader;
 
 public:
-  asynch_lcr_automaton (const size_t i) :
-    m_u (rand (), i),
-    m_status (UNKNOWN)
+  asynch_lcr_automaton (const UID& u) :
+    m_u (u),
+    m_report (false),
+    m_leader (false)
   {
-    std::cout << m_u.first << "\t" << m_u.second << std::endl;
     m_send.push (m_u);
     schedule ();
   }
@@ -50,8 +44,8 @@ private:
     return !m_send.empty () && ioa::binding_count (&asynch_lcr_automaton::send) != 0;
   }
 
-  UID_t send_effect () {
-    UID_t retval = m_send.front ();
+  UID send_effect () {
+    UID retval = m_send.front ();
     m_send.pop ();
     return retval;
   }
@@ -61,15 +55,22 @@ private:
   }
 
 public:
-  V_UP_OUTPUT (asynch_lcr_automaton, send, UID_t);
+  V_UP_OUTPUT (asynch_lcr_automaton, send, UID);
 
 private:
-  void receive_effect (const UID_t& v) {
+  void receive_effect (const UID& v) {
     if (v > m_u) {
       m_send.push (v);
+      if (m_leader) {
+	m_leader = false;
+	m_report = true;
+      }
     }
     else if (v == m_u) {
-      m_status = CHOSEN;
+      if (!m_leader) {
+	m_leader = true;
+	m_report = true;
+      }
     }
     else {
       // Do nothing.
@@ -81,15 +82,16 @@ private:
   }
 
 public:
-  V_UP_INPUT (asynch_lcr_automaton, receive, UID_t);
+  V_UP_INPUT (asynch_lcr_automaton, receive, UID);
 
 private:
   bool leader_precondition () const {
-    return m_status == CHOSEN && ioa::binding_count (&asynch_lcr_automaton::leader) != 0;
+    return m_report && ioa::binding_count (&asynch_lcr_automaton::leader) != 0;
   }
 
-  void leader_effect () {
-    m_status = REPORTED;
+  bool leader_effect () {
+    m_report = false;
+    return m_leader;
   }
 
   void leader_schedule () const {
@@ -97,7 +99,22 @@ private:
   }
 
 public:
-  UV_UP_OUTPUT (asynch_lcr_automaton, leader);
+  V_UP_OUTPUT (asynch_lcr_automaton, leader, bool);
+
+private:
+  void init_effect () {
+    m_report = false;
+    m_leader = false;
+    m_send.push (m_u);
+  }
+
+  void init_schedule () const {
+    schedule ();
+  }
+
+public:
+  UV_UP_INPUT (asynch_lcr_automaton, init);
+
 };
 
 #endif

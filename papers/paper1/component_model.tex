@@ -6,7 +6,7 @@ Modularity implies that a component can be deployed independently of other compo
 Well-defined interfaces and interactions allow components to expose their functionality in a regular way that facilitates reasoning about different interactions with the component.
 Composition allows a group of interacting components to be understood as a cohesive unit.
 
-In this section we describe how I/O automata offer a natural realization of components, interfaces, and provide natural support for concurrency and composition.
+In this section we describe how I/O automata offer a natural realization of components and interfaces, and provide natural support for concurrency and composition.
 The Input/Output (I/O) automata model was developed by Lynch~\cite{lynch1996distributed} to model reactive concurrent and asynchronous systems.
 An I/O automaton consists of state variables and a set of atomic actions that manipulate the state variables.
 An action is only permitted to manipulate the state variables of the automaton to which it belongs.
@@ -19,10 +19,10 @@ An input action changes the state of the automaton when it receives a signal or 
 The set of actions associated with an automaton is known as the automaton's \emph{signature}~\cite{lynch1996distributed}.
 
 An automaton's output and internal actions constitute its \emph{local signature}~\cite{lynch1996distributed}.
-Often, local actions consists of a precondition and an effect.
+Often, a local action consists of a precondition and an effect.
 The precondition is a predicate over the state variables that enables the effect when selected.
 The effect is a function that computes the next state of the automaton from the current state.
-Input actions presented in this style consist solely of an effect.
+An input action presented in this style consists solely of an effect.
 
 Together, an automaton's output and input actions constitute its \emph{external signature}~\cite{lynch1996distributed}.
 An automaton communicates with other automata through the actions in its external signature.
@@ -33,9 +33,9 @@ Often, the properties of the resulting aggregate automaton can be reasoned about
 %% A useful operation in composite automata is \emph{hiding}~\cite{lynch1996distributed} which converts an output action to an internal action.
 
 Execution in the I/O automata model consists of non-deterministically and repeatedly selecting a local action and then applying the effect if the precondition is true.
-To be general, the scheduler is assumed to be fair meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
+In general the scheduler is assumed to be fair, meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
 Executing internal actions and output actions that are not composed with any input actions is straightforward: in one atomic step, the precondition is evaluated and the effect is applied if the precondition is true.
-Executing a composed output action consists of atomically evaluating the precondition and applying the effect of the output action and all composed input actions using the value produced by the output action subject to the precondition.
+Executing a composed output action consists of atomically evaluating the precondition and applying the effect of the output action and all composed input actions, using the value produced by the output action subject to the precondition.
 The atomic relationship between composed output actions and input actions means that multiple automata may change state atomically when executing an output action.
 The guarantee of atomicity allows a developer to relate the state of one automaton to another, resulting in well-defined interactions that facilitate composition.
 
@@ -56,21 +56,21 @@ Composition is guaranteed by the model itself.
 
 As a mathematical abstraction the I/O automata model is appropriate for modeling reactive asynchronous and concurrent systems.
 However, it lacks certain features needed to develop real components.
-This subsection introduces these features and lays the foundation for the dynamics discussed in section~\ref{dynamics}.
+This subsection introduces these features and lays the foundation for adding the dynamics discussed in section~\ref{dynamics}.
 
 \paragraph{Recursive Encapsulation.}
 Component frameworks that support recursive encapsulation allow components to contain other components.
-Recursive encapsulation encodes the idea of ``divide-and-conquer'' and is at the heart of both bottom-up and top-down design strategies.
+Recursive encapsulation is at the heart of both bottom-up and top-down design strategies.
 The contained component is the \emph{child} while the containing component is the \emph{parent}.
 The resulting hierarchy helps developers organize programs by separating concerns and facilitates the reuse of existing components.
 A distinction is made between the \emph{name} given to an instance and the \emph{type} of a child component to allow a parent component to contain multiple children of the same type.
 
-Recursive encapsulation means that an I/O automaton may contain and use other I/O automata.
+In ioa++, recursive encapsulation means that an I/O automaton may contain and use other I/O automata.
 Recursive encapsulation implies that a parent automaton is the result of composing its children and an anonymous \emph{kernel automaton}.
 The kernel automaton allows a parent automaton to have its own state variables and actions.
 The \emph{root automaton} is the automaton at the top of the hierarchy and represents the entire system as composition is applied recursively up the hierarchy.
 
-Figure\ref{sys_model} shows a sample event detector system where automata are depicted as solid rectangles, e.g., Processor.
+Figure~\ref{sys_model} shows a sample event detector system where automata are depicted as solid rectangles, e.g., Processor.
 Named automata are labeled by a box in their upper left corner, e.g., C.
 The sample event detector system illustrated in Figure~\ref{sys_model} contains three automata (components):  an anonymous Processor, a Converter named C, and a Detector named D.
 The Processor automaton is the root and C and D are its children.
@@ -96,7 +96,7 @@ The map of bindings for the event detection system is $\{ (out!(s), C.in?(s)), (
 To be compliant with name-based composition under the I/O automata model, the set of bindings must adhere to certain rules.
 First, the output action and input action of a binding must agree on the type being produced and consumed.
 For example, an input action consuming an integer value can only be bound to an output action that produces an integer value.
-The system shown in figure~\ref{sys_model} follows this rule since $(out!(s), C.in?(s))$ agree on type $s$, $(C.out!(t), D.in?(t))$ agree on type $t$, and $(D.detect!, detected?)$ agree on the absence of a value (i.e., a signal).
+The system shown in Figure~\ref{sys_model} follows this rule since $(out!(s), C.in?(s))$ agree on type $s$, $(C.out!(t), D.in?(t))$ agree on type $t$, and $(D.detect!, detected?)$ agree on the absence of a value (i.e., a signal).
 Second, an input action can be bound to at most one output action.
 Composing an input action with multiple output actions would introduce ambiguity into the relationship between the states of the automata and is therefore prohibited by the model.
 A binding map where all bindings that mention the same input action are equivalent satisfies this rule.

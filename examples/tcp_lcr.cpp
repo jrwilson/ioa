@@ -2,11 +2,73 @@
 #include <ioa/tcp_acceptor_automaton.hpp>
 #include <ioa/tcp_connector_automaton.hpp>
 #include <ioa/global_fifo_scheduler.hpp>
+#include "asynch_lcr_automaton.hpp"
 
 #include <uuid/uuid.h>
 #include <iostream>
 
-#define TIMEOUT 10
+// In seconds.
+#define CONNECTION_TIMEOUT 10
+#define ELECT_TIMEOUT 10
+#define TOKEN_TIMEOUT 1
+
+struct uuid
+{
+  uuid_t id;
+
+  uuid () {
+    uuid_clear (id);
+  }
+
+  uuid (const uuid& other) {
+    uuid_copy (id, other.id);
+  }
+
+  void generate () {
+    uuid_generate (id);
+  }
+
+  bool operator> (const uuid& other) const {
+    return uuid_compare (id, other.id) > 0;
+  }
+
+  bool operator== (const uuid& other) const {
+    return uuid_compare (id, other.id) == 0;
+  }
+
+  bool operator!= (const uuid& other) const {
+    return uuid_compare (id, other.id) != 0;
+  }
+};
+
+enum message_type_t {
+  UNKNOWN,
+  ELECT,
+  TOKEN,
+};
+
+struct message_t
+{
+  message_type_t type;
+  uuid id;
+
+  message_t () :
+    type (UNKNOWN)
+  { }
+
+  message_t (const message_type_t t,
+	     const uuid& i) :
+    type (t),
+    id (i)
+  { }
+};
+
+std::ostream& operator<< (std::ostream& o,
+			  const uuid& id) {
+  char c[37];
+  uuid_unparse (id.id, c);
+  return (o << c);
+}
 
 class tcp_lcr_automaton :
   public ioa::automaton,
@@ -14,6 +76,11 @@ class tcp_lcr_automaton :
 {
 private:
   ioa::handle_manager<tcp_lcr_automaton> m_self;
+  uuid m_u;
+  std::queue<uuid> m_to_lcr;
+  bool m_init_lcr;
+  ioa::time m_last_token;
+  bool m_leader;
   const ioa::inet_address m_recv_address;
   const ioa::inet_address m_send_address;
   ioa::automaton_manager<ioa::tcp_acceptor_automaton>* m_acceptor;
@@ -23,34 +90,8 @@ private:
   ioa::automaton_manager<ioa::tcp_connector_automaton>* m_connector;
   bool m_successor_connected;
   bool m_clear_to_send;
-
-  enum message_type_t {
-    UNKNOWN,
-    ELECT,
-    TOKEN
-  };
-
-  struct message_t
-  {
-    message_type_t type;
-    uuid_t uuid;
-
-    message_t () :
-      type (UNKNOWN)
-    { }
-
-    message_t (message_type_t t,
-	       uuid_t u) :
-      type (t) {
-      uuid_copy (uuid, u);
-    }
-  };
-    
-  uuid_t m_u;
   std::queue<message_t> m_send;
   std::string m_recv;
-  ioa::time m_last_token;
-  bool m_leader;
 
 public:
   tcp_lcr_automaton (const ioa::inet_address& recv_address,
@@ -59,23 +100,44 @@ public:
     m_recv_address (recv_address),
     m_send_address (send_address)
   {
-    uuid_generate (m_u);
+    // Generate an id.
+    m_u.generate ();
+    std::cout << "UUID: " << m_u << std::endl;
 
-    char str[37];
-    uuid_unparse (m_u, str);
-    std::cout << "UUID: " << str << std::endl;
+    // Create an LCR automaton and bind to it.
+    ioa::automaton_manager<asynch_lcr_automaton<uuid> >* lcr = ioa::make_automaton_manager (this, ioa::make_generator<asynch_lcr_automaton<uuid> > (m_u));
+    ioa::make_binding_manager (this,
+			       lcr, &asynch_lcr_automaton<uuid>::send,
+			       &m_self, &tcp_lcr_automaton::send_lcr);
+    ioa::make_binding_manager (this,
+			       &m_self, &tcp_lcr_automaton::receive_lcr,
+			       lcr, &asynch_lcr_automaton<uuid>::receive);
+    ioa::make_binding_manager (this,
+			       lcr, &asynch_lcr_automaton<uuid>::leader,
+			       &m_self, &tcp_lcr_automaton::leader_lcr);
+    ioa::make_binding_manager (this,
+			       &m_self, &tcp_lcr_automaton::init_lcr,
+			       lcr, &asynch_lcr_automaton<uuid>::init);
 
     schedule ();
+    // Schedule timeouts.
     ioa::schedule (&tcp_lcr_automaton::elect);
     ioa::schedule (&tcp_lcr_automaton::token);
   }
 
 private:
   void observe (ioa::observable*) {
+    // Something related to our connections changed.
     schedule ();
   }
 
   void schedule () const {
+    if (receive_lcr_precondition ()) {
+      ioa::schedule (&tcp_lcr_automaton::receive_lcr);
+    }
+    if (init_lcr_precondition ()) {
+      ioa::schedule (&tcp_lcr_automaton::init_lcr);
+    }
     if (create_acceptor_precondition ()) {
       ioa::schedule (&tcp_lcr_automaton::create_acceptor);
     }
@@ -95,6 +157,65 @@ private:
       ioa::schedule (&tcp_lcr_automaton::send, m_successor);
     }
   }
+
+  // Cause the LCR automaton to receive a message.
+  bool receive_lcr_precondition () const {
+    return !m_to_lcr.empty () && ioa::binding_count (&tcp_lcr_automaton::receive_lcr) != 0;
+  }
+
+  uuid receive_lcr_effect () {
+    uuid m = m_to_lcr.front ();
+    m_to_lcr.pop ();
+    return m;
+  }
+
+  void receive_lcr_schedule () const {
+    schedule ();
+  }
+
+  V_UP_OUTPUT (tcp_lcr_automaton, receive_lcr, uuid);
+
+  // Forward messages from the LCR automaton.
+  void send_lcr_effect (const uuid& u) {
+    if (m_successor_connected) {
+      m_send.push (message_t (ELECT, u));
+    }
+  }
+
+  void send_lcr_schedule () const {
+    schedule ();
+  }
+
+  V_UP_INPUT (tcp_lcr_automaton, send_lcr, uuid);
+
+  // Leader update.
+  void leader_lcr_effect (const bool& v) {
+    m_leader = v;    
+    if (m_leader) {
+      std::cout << "LEADER" << std::endl;
+    }
+  }
+
+  void leader_lcr_schedule () const {
+    schedule ();
+  }
+
+  V_UP_INPUT (tcp_lcr_automaton, leader_lcr, bool);
+
+  // Re-initialize the LCR automaton.
+  bool init_lcr_precondition () const {
+    return m_init_lcr && ioa::binding_count (&tcp_lcr_automaton::init_lcr) != 0;
+  }
+
+  void init_lcr_effect () {
+    m_init_lcr = false;
+  }
+
+  void init_lcr_schedule () const {
+    schedule ();
+  }
+
+  UV_UP_OUTPUT (tcp_lcr_automaton, init_lcr);
 
   bool create_acceptor_precondition () const {
     return m_acceptor == 0;
@@ -121,8 +242,8 @@ private:
   void acceptor_error_effect (const int& err,
 			      ioa::automaton_manager<ioa::tcp_acceptor_automaton>* a) {
     assert (a == m_acceptor);
-    std::cout << "Accepting failed...retrying in " << TIMEOUT << " seconds" << std::endl;
-    ioa::schedule_after (&tcp_lcr_automaton::retry_acceptor, ioa::time (TIMEOUT, 0));
+    std::cout << "Accepting failed...retrying in " << CONNECTION_TIMEOUT << " seconds" << std::endl;
+    ioa::schedule_after (&tcp_lcr_automaton::retry_acceptor, ioa::time (CONNECTION_TIMEOUT, 0));
   }
 
   void acceptor_error_schedule (ioa::automaton_manager<ioa::tcp_acceptor_automaton>*) const {
@@ -303,8 +424,8 @@ private:
   void connector_error_effect (const int& err,
 			       ioa::automaton_manager<ioa::tcp_connector_automaton>* c) {
     assert (c == m_connector);
-    std::cout << "Connection failed...retrying in " << TIMEOUT << " seconds" << std::endl;
-    ioa::schedule_after (&tcp_lcr_automaton::retry_connector, ioa::time (TIMEOUT, 0));
+    std::cout << "Connection failed...retrying in " << CONNECTION_TIMEOUT << " seconds" << std::endl;
+    ioa::schedule_after (&tcp_lcr_automaton::retry_connector, ioa::time (CONNECTION_TIMEOUT, 0));
   }
 
   void connector_error_schedule (ioa::automaton_manager<ioa::tcp_connector_automaton>*) const {
@@ -366,31 +487,21 @@ private:
 	message_t m;
 	m_recv.copy (reinterpret_cast<char *> (&m), sizeof (message_t), offset);
 	offset += sizeof (message_t);
-
-	char c[37];
-	uuid_unparse (m.uuid, c);
-
 	switch (m.type) {
 	case UNKNOWN:
-	  break;
-	case ELECT:
-	  if (uuid_compare (m.uuid, m_u) > 0) {
-	    m_send.push (m);
-	    m_leader = false;
-	  }
-	  else if (uuid_compare (m.uuid, m_u) == 0) {
-	    m_leader = true;
-	    std::cout << "LEADER" << std::endl;
-	  }
+	  // Do nothing.
 	  break;
 	case TOKEN:
-	  char c[37];
-	  uuid_unparse (m.uuid, c);
-	  std::cout << "Received a token from " << c << std::endl;
+	  // Update the time and forward.
 	  m_last_token = ioa::time::now ();
-	  if (!m_leader) {
+	  std::cout << "Token from " << m.id << std::endl;
+	  if (m.id != m_u && m_successor_connected) {
 	    m_send.push (m);
 	  }
+	  // Fall through.
+	case ELECT:
+	  // Always give the id to the LCR automaton.
+	  m_to_lcr.push (m.id);
 	  break;
 	}
       }
@@ -404,25 +515,27 @@ private:
 
   V_P_INPUT (tcp_lcr_automaton, receive, std::string, ioa::automaton_manager<ioa::tcp_connection_automaton>*);
 
+  // Elect a leader if we haven't seen an id in ELECT_TIMEOUT seconds.
   bool elect_precondition () const {
     return true;
   }
 
   void elect_effect () {
-    if (ioa::time::now () > m_last_token + ioa::time (10, 0) && m_successor_connected) {
+    if (ioa::time::now () > m_last_token + ioa::time (ELECT_TIMEOUT, 0)) {
       std::cout << "Calling for an election" << std::endl;
       m_leader = false;
-      m_send.push (message_t (ELECT, m_u));
+      m_init_lcr = true;
     }
   }
 
   void elect_schedule () const {
-    ioa::schedule_after (&tcp_lcr_automaton::elect, ioa::time (10, 0));
+    ioa::schedule_after (&tcp_lcr_automaton::elect, ioa::time (ELECT_TIMEOUT, 0));
     schedule ();
   }
 
   UP_INTERNAL (tcp_lcr_automaton, elect);
 
+  // The leader circulates a token every TOKEN_TIMEOUT.
   bool token_precondition () const {
     return true;
   }
@@ -434,7 +547,7 @@ private:
   }
 
   void token_schedule () const {
-    ioa::schedule_after (&tcp_lcr_automaton::token, ioa::time (1, 0));
+    ioa::schedule_after (&tcp_lcr_automaton::token, ioa::time (TOKEN_TIMEOUT, 0));
     schedule ();
   }
 
@@ -443,7 +556,6 @@ private:
 };
 
 int main (int argc, char* argv[]) {
-
   if (argc != 5) {
     std::cerr << "Usage: " << argv[0] << " RECV_ADDR RECV_PORT SEND_ADDR SEND_PORT" << std::endl;
     exit (EXIT_FAILURE);

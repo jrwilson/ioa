@@ -21,6 +21,6 @@ int main (int argc,
   srand (time (0));
 
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<unidirectional_ring_leader_election<peterson_leader_automaton, UID_t> > (node_count));
+  ioa::run (sched, ioa::make_generator<unidirectional_ring_leader_election<peterson_leader_automaton<UID_t> > > (node_count));
   return 0; 
 }
