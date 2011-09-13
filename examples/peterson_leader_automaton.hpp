@@ -11,7 +11,7 @@
 
 template <typename UID>
 class peterson_leader_automaton :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   typedef enum {

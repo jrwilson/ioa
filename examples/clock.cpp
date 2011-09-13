@@ -4,7 +4,7 @@
 #include <ioa/global_fifo_scheduler.hpp>
 
 class trigger :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
 
@@ -34,7 +34,7 @@ public:
 */
 
 class clock_automaton :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   int m_counter;
@@ -106,7 +106,7 @@ public:
 
 
 class display :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   void clock_effect (int const & t) {
@@ -122,7 +122,7 @@ public:
 
 
 class composer :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 public:
   composer ()

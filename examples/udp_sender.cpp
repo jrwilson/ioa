@@ -6,7 +6,7 @@
 #include <iostream>
 
 class udp_sender :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   enum state_t {

@@ -9,7 +9,7 @@
 namespace ioa {
 
   class udp_sender_automaton :
-    public automaton,
+    public virtual automaton,
     private observer
   {
   public:

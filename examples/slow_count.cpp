@@ -4,7 +4,7 @@
 #include <iostream>
 
 class count_to_ten :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   int m_count;

@@ -13,7 +13,7 @@
 
 template <class T, typename M>
 class weighted_bidirectional_network :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
 

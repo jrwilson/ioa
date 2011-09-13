@@ -56,7 +56,8 @@ namespace ioa {
     virtual void unbound (const unbound_t result) = 0;
   };
 
-  class automaton {
+  class automaton
+  {
   private:
     // Invariant:  m_create_send INTERSECT m_create_recv INTERSECT m_destroy_send = empty set
     // Basically, a helper is in one place or another.

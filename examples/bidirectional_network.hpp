@@ -11,7 +11,7 @@
 
 template <class T, typename M>
 class bidirectional_network :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   std::vector<ioa::automaton_handle_interface<T>*> T_helpers;

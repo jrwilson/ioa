@@ -21,7 +21,7 @@ enum message_type_t {
 typedef std::pair<message_type_t, size_t> message_t;
 
 class asynch_bcast_ack_automaton:
-  public ioa::automaton {
+  public virtual ioa::automaton {
 
 private:
 

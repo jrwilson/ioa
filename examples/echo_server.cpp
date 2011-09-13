@@ -6,7 +6,7 @@
 #include <iostream>
 
 class client_handler_automaton :
-  public ioa::automaton,
+  public virtual ioa::automaton,
   private ioa::observer
 {
 private:
@@ -196,7 +196,7 @@ private:
 };
 
 class echo_server_automaton :
-  public ioa::automaton,
+  public virtual ioa::automaton,
   private ioa::observer
 {
 private:

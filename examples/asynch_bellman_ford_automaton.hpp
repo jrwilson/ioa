@@ -12,7 +12,7 @@
 #include <map>
 
 class asynch_bellman_ford_automaton :
-  public ioa::automaton {
+  public virtual ioa::automaton {
 private:
   typedef std::queue<size_t> distq;
 

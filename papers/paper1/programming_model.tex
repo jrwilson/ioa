@@ -1,6 +1,15 @@
 \section{I/O Automata Programming Model\label{representation}}
 
-In this section, we show how I/O automata can be used to construct programs by implementing an algorithm for electing a leader in a unidirectional ring.
+In this section, we show how I/O automata can be used to construct programs.
+
+
+
+
+We motivated our presentation using the classic problem of electing a leader in a unidirectional ring.
+
+\paragraph{Leader election in a unidirectional ring.}
+
+ by implementing an algorithm for electing a leader in a unidirectional ring.
 The algorithm we consider is the asynchronous LCR algorithm presented by Lynch in Chapter 15 of~\cite{lynch1996distributed} which is in turn based on the work of LeLann~\cite{le1977distributed} and Chang and Roberts~\cite{chang1979improved}.
 The LCR algorithm assumes that every node has a unique identifier (UID).
 When the protocol begins, each node sends its UID to its successor.

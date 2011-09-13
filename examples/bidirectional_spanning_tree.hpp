@@ -11,7 +11,7 @@
 
 template <class T, class M>
 class bidirectional_spanning_tree :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   void parent_effect(const size_t& j, size_t i) {

@@ -2,7 +2,7 @@
 #include <ioa/global_fifo_scheduler.hpp>
 
 class null_automaton :
-  public ioa::automaton
+  public virtual ioa::automaton
 { };
 
 int main () {

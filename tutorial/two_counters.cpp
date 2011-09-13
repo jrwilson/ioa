@@ -4,7 +4,7 @@
 #include <iostream>
 
 class count_to_ten_automaton :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   int m_count;
@@ -38,7 +38,7 @@ private:
 };
 
 class two_counter_automaton :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 public:
   two_counter_automaton () {

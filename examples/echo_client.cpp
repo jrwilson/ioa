@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>
 
 class stdin_automaton :
-  public ioa::automaton
+  public virtual ioa::automaton
 {
 private:
   enum state_t {
@@ -146,7 +146,7 @@ public:
 };
 
 class echo_client_automaton :
-  public ioa::automaton,
+  public virtual ioa::automaton,
   private ioa::observer
 {
 private:

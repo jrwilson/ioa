@@ -7,7 +7,7 @@
 namespace ioa {
 
   class tcp_acceptor_automaton :
-    public automaton
+    public virtual automaton
   {
   private:    
     enum state_t {
