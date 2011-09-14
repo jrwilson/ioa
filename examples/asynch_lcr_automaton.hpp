@@ -14,7 +14,7 @@ class asynch_lcr_automaton :
   public virtual ioa::automaton
 {
 private:
-  UID m_u;
+  const UID m_u;
   std::queue<UID> m_send;
   bool m_report;
   bool m_leader;
@@ -41,7 +41,8 @@ private:
   }
 
   bool send_precondition () const {
-    return !m_send.empty () && ioa::binding_count (&asynch_lcr_automaton::send) != 0;
+    return !m_send.empty () &&
+      ioa::binding_count (&asynch_lcr_automaton::send) != 0;
   }
 
   UID send_effect () {
