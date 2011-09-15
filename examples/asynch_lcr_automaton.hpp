@@ -11,7 +11,7 @@
 
 template <typename UID>
 class asynch_lcr_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 private:
   const UID m_u;

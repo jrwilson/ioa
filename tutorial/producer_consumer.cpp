@@ -4,7 +4,7 @@
 #include <iostream>
 
 class producer_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 private:
   int m_count;
@@ -37,7 +37,7 @@ public:
 };
 
 class consumer_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 private:
   void consume_effect (const int& val) {
@@ -51,7 +51,7 @@ public:
 };
 
 class producer_consumer_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 public:
   producer_consumer_automaton () {

@@ -11,7 +11,7 @@
 
 template <class T>
 class channel_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 private:
   std::queue<T> m_queue;

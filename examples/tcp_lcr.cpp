@@ -71,7 +71,7 @@ std::ostream& operator<< (std::ostream& o,
 }
 
 class tcp_lcr_automaton :
-  public virtual ioa::automaton,
+  public ioa::automaton,
   private ioa::observer
 {
 private:

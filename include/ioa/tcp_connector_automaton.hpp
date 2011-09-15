@@ -6,7 +6,7 @@
 namespace ioa {
   
   class tcp_connector_automaton :
-    public virtual automaton
+    public automaton
   {
   private:
     handle_manager<tcp_connector_automaton> m_self;

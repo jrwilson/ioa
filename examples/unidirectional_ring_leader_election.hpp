@@ -7,7 +7,7 @@
 
 template <class T>
 class unidirectional_ring_leader_election :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 private:
   ioa::handle_manager<unidirectional_ring_leader_election> m_self;

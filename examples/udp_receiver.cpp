@@ -7,7 +7,7 @@
 #include <iostream>
 
 class udp_receiver :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 private:
   ioa::handle_manager<udp_receiver> m_self;

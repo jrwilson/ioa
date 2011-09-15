@@ -8,7 +8,7 @@
 namespace ioa {
 
   class tcp_connection_automaton :
-    public virtual automaton
+    public automaton
   {
   private:
     enum send_state_t {
@@ -107,7 +107,7 @@ namespace ioa {
   };
 
   class connection_init_automaton :
-    public virtual automaton,
+    public automaton,
     private observer
   {
   private:

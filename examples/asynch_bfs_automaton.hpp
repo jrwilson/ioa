@@ -14,7 +14,7 @@
 #include <queue>
 
 class asynch_bfs_automaton:
-  public virtual ioa::automaton {
+  public ioa::automaton {
 
 private:
 

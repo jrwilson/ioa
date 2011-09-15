@@ -16,7 +16,7 @@ typedef enum {
 } search_t;
 
 class asynch_spanning_tree_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
 
 private:

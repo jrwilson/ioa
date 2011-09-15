@@ -9,7 +9,7 @@
 namespace ioa {
 
   class udp_receiver_automaton :
-    public virtual automaton
+    public automaton
   {
   public:
     struct receive_val {
