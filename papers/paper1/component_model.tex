@@ -35,7 +35,7 @@ Often, the properties of the resulting aggregate automaton can be reasoned about
 Execution in the I/O automata model consists of non-deterministically and repeatedly selecting a local action and then applying the effect if the precondition is true.
 In general the scheduler is assumed to be fair, meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
 Executing internal actions and output actions that are not composed with any input actions is straightforward: in one atomic step, the precondition is evaluated and the effect is applied if the precondition is true.
-Executing a composed output action consists of atomically evaluating the precondition and applying the effect of the output action and all composed input actions, using the value produced by the output action subject to the precondition.
+Executing a composed output action consists of atomically evaluating the precondition and applying the effect of the output action and all composed input actions,  subject to the precondition using the value produced by the output action.
 The atomic relationship between composed output actions and input actions means that multiple automata may change state atomically when executing an output action.
 The guarantee of atomicity allows a developer to relate the state of one automaton to another, resulting in well-defined interactions that facilitate composition.
 
@@ -65,13 +65,14 @@ The contained component is the \emph{child} while the containing component is th
 The resulting hierarchy helps developers organize programs by separating concerns and facilitates the reuse of existing components.
 A distinction is made between the \emph{name} given to an instance and the \emph{type} of a child component to allow a parent component to contain multiple children of the same type.
 
-In ioa++, recursive encapsulation means that an I/O automaton may contain and use other I/O automata.
+Applying recursive encapsulation to I/O automata means that an I/O automaton may contain and use other I/O automata.
 Recursive encapsulation implies that a parent automaton is the result of composing its children and an anonymous \emph{kernel automaton}.
 The kernel automaton allows a parent automaton to have its own state variables and actions.
 The \emph{root automaton} is the automaton at the top of the hierarchy and represents the entire system as composition is applied recursively up the hierarchy.
 
-Figure~\ref{sys_model} shows a sample event detector system where automata are depicted as solid rectangles, e.g., Processor.
-Named automata are labeled by a box in their upper left corner, e.g., C.
+Figure~\ref{sys_model} shows a sample event detector system where automata are depicted as solid rectangles.
+The type of the automaton appears in a box in the upper left or lower left corner, e.g., Processor.
+The name of a named automata appears after its type, e.g., Converter C.
 The sample event detector system illustrated in Figure~\ref{sys_model} contains three automata (components):  an anonymous Processor, a Converter named C, and a Detector named D.
 The Processor automaton is the root and C and D are its children.
 
@@ -135,10 +136,10 @@ Compositions of automata can be statically composed to take advantage of in-lini
 An individual automaton can be factored into a number of child automata to increase parallelism.
 
 \paragraph{Parameters.}
-Actions in the I/O automata model can defined using parameters.
-Parameters are useful for situations requiring fan-in or a session.
-For example, consider an automaton with an input actions $in?(s)$ that is to be bound to $N$ different output actions.
-The solution is to parameterize the input action with a parameter that indicates the associated output actions, e.g., $in?[i](s)$ where $i$ takes on the integer values from 1 to $N$.
+Actions in the I/O automata model can be defined using parameters.
+Parameters are useful for situations requiring fan-in or session semantics.
+For example, consider an automaton with an input action $in?(s)$ that is to be bound to $N$ different output actions.
+To get around the limitation that an input can only be bound to one output, we augment the input action with a parameter that indicates the associated output action, e.g., $in?[i](s)$ where $i$ takes on the integer values from 1 to $N$.
 \emph{Parameterized} actions take a parameter while \emph{unparameterized} actions do not.
 Parameters, for actions that require them, are specified in the binding and serve to identify the action.
 
@@ -170,7 +171,7 @@ The Control automaton $C$ starts the sampling process with the uv-up output $Z.t
 The uv-up input $S.trigger?$ is executed atomically with $Z.trigger!$ due to the binding $(Z.trigger!, S.trigger?)$.
 When the sampling process is complete, the v-up output $S.sample!(s)$ distributes the sample to the Filter $F$ and Statistics component $T$ via the $(S.sample!(s), F.in?(s))$ and $(S.sample!(s), T.in?(s))$ bindings.
 Note that $S.sample!(s)$, $F.in?(s)$, and $T.in?(s)$ all agree on the type of the sample $s$.
-The Filter automaton $F$ passes the filtered sample to the Control automaton $Z$ via the $F.out!(t) \to Z.sample?(t)$ binding.
+The Filter automaton $F$ passes the filtered sample to the Control automaton $Z$ via the $(F.out!(t), Z.sample?(t))$ binding.
 The Statistics automaton $T$ calculates the statistics incrementally using the up internal $T.compute$.
 The statistics can be polled by the Control automaton $Z$ using the bindings $(Z.request!, T.request?)$ and $(T.response!(u), Z.response?(u))$.
 The Control automaton $Z$ contains a vp-output $Z.send![](m)$ and a vp-input $Z.recv?[](m)$ for sending and receiving network messages using the Channel automata $A$, $B$, and $C$.
@@ -227,10 +228,10 @@ A destroy fails if the automaton being destroyed does not exist or is not a chil
 \center
 \includegraphics[width=\textwidth]{system_action}
 \caption{System actions.
-  An automaton contains output actions for creating, binding, unbinding, and destroying.
+  A base automaton contains output actions for creating, binding, unbinding, and destroying.
   The system automaton contains parameterized input actions for receiving the requests to create, binding, unbind, and destroy.
   The system automaton returns a result using the appropriate parameterized output action.
-  The automaton contains input actions to receive the results.}
+  The base automaton contains input actions to receive the results.}
 \label{system_action}
 \end{figure}
 
@@ -238,7 +239,7 @@ A destroy fails if the automaton being destroyed does not exist or is not a chil
 Let the set of automata $A$ and set of bindings $B$ be managed by the \emph{system automaton} which represents the run-time system.
 Each automaton is composed (not bound) with the system automaton and has output actions for requesting system actions and input actions for receiving the results of system actions.
 The system automaton, in turn, has input actions for receiving requests for system actions, possibly some internal actions for evaluating system action requests, and output actions for responding with the result of system actions.
-Figure~\ref{system_action} shows the relationship between an automaton and the system automaton.
+Figure~\ref{system_action} shows the relationship between a base automaton and the system automaton.
 
 Conceptually, the state variables $A$ and $B$ belong to the system automaton.
 However, the state encoded by $A$ and $B$ is shared and used in the execution of every action.

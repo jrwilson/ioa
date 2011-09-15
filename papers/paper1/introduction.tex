@@ -42,9 +42,9 @@ However, although threads are widely used in practice, using threads to develop 
 % Illustrate the problem
 First, developing concurrent programs with threads is difficult.
 Lee identifies the source of this difficulty as the pairing of shared state with the non-deterministic interleaving of machine instructions~\cite{lee2006problem}.
-The properties that make the synchronous sequential model of computation useful for developing programs, i.e., ``understandability, predictability, and determinism'', are lost with the immediate introduction of non-determinism.
-After introducing non-deterministic execution with threads, programmers must immediately ``prune'' the portions of the resulting reachable state space to remove execution sequences that result in bad states.
-Identifying all possible paths to bad states is an activity that is sufficiently challenging that automated program analsysis and verification techniques are often required< to find and correct such errors.
+The properties that make the synchronous sequential model of computation useful for developing programs, i.e., ``understandability, predictability, and determinism''~\cite{lee2006problem}, are lost with the immediate introduction of non-determinism.
+After introducing non-deterministic execution with threads, programmers must immediately ``prune''~\cite{lee2006problem} the portions of the resulting reachable state space to remove execution sequences that result in bad states.
+Identifying all possible paths to bad states is an activity that is sufficiently challenging that automated program analsysis and verification techniques are often required to find and correct such errors.
 
 %% [Additional fodder.]
 %% First, threads are difficult to treat formally and therefore \emph{very} difficult to treat informally.
@@ -131,8 +131,8 @@ This paper presents a framework for building distributed systems that is based o
 %% The model must facilitate the development of concurrent modules that can be reused.
 %% The model must have a strong connection with a formal model to simplify the task of reasoning about individual components and complete systems.
 %% The model must be implemented in such a way that it is easily approachable.
-In section~\ref{component_model}, we develop a component model based on I/O automata.
-Section~\ref{representation} describes how I/O automata are represented in the ioa++ framework and in section~\ref{design}, we describe its design and implementation.
+We develop a component model based on I/O automaton in section~\ref{component_model} and describe its design and implementation in section~\ref{design}.
+Section~\ref{representation} describes how I/O automata are represented in the ioa++ framework and.
 In section~\ref{evaluation} we develop and evaluate a number of systems using ioa++.
 Section~\ref{related_work} contains an overview of related work and we offer our conclusions and thoughts for future work in section~\ref{conclusion}.
 

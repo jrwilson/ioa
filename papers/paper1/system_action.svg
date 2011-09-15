@@ -81,9 +81,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.1404548"
-     inkscape:cx="335.07714"
-     inkscape:cy="139.33453"
+     inkscape:zoom="3.0270602"
+     inkscape:cx="37.528472"
+     inkscape:cy="51.36992"
      inkscape:document-units="pt"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -92,7 +92,7 @@
      inkscape:window-height="852"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="0"
+     inkscape:window-maximized="1"
      inkscape:snap-global="true"
      inkscape:object-nodes="false"
      inkscape:object-paths="false"
@@ -324,12 +324,12 @@
     <text
        sodipodi:linespacing="125%"
        id="text4034"
-       y="917.36218"
-       x="311.25"
-       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       y="913.61218"
+       x="11.25"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
        xml:space="preserve"><tspan
-         y="917.36218"
-         x="311.25"
+         y="913.61218"
+         x="11.25"
          id="tspan4036"
          sodipodi:role="line">Base Automaton</tspan></text>
     <path
@@ -547,14 +547,14 @@
        style="fill:none;stroke:#000000;stroke-width:1.25;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
     <text
        xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
-       x="311.25"
-       y="1037.3622"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="11.25"
+       y="1041.1122"
        id="text4104"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
-         x="311.25"
-         y="1037.3622"
+         x="11.25"
+         y="1041.1122"
          id="tspan4108">System Automaton</tspan></text>
     <g
        transform="translate(52.5,-135)"
@@ -662,5 +662,18 @@
        id="path3201"
        d="m 573.75,969.86218 0,-15 0,-7.5"
        style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:1, 1;stroke-dashoffset:0;marker-end:url(#Arrow1Mend)" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.25;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+       d="m 7.5,22.5 97.5,0 0,-15"
+       id="path7043"
+       inkscape:connector-curvature="0"
+       transform="translate(0,894.86218)"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.25;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+       d="m 7.5,135 108.75,0 0,15"
+       id="path7045"
+       inkscape:connector-curvature="0"
+       transform="translate(0,894.86218)" />
   </g>
 </svg>

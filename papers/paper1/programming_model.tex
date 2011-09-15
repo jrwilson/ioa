@@ -24,14 +24,13 @@ The following code declares the \verb+asynch_lcr_automaton+:
 \begin{lstlisting}
 template <typename UID>
 class asynch_lcr_automaton :
-  public virtual ioa::automaton
+  public ioa::automaton
 {
   ...
 };
 \end{lstlisting}
 The \verb+asynch_lcr_automaton+ is declared as a template where the \verb+UID+ template parameter must model the unique identifier concept.
 The generic programming facilities of the C++ language aid in the development of general purpose reusable components.
-The choice to declare \verb+ioa::automaton+ as a virtual base class is discussed in the paragraph on static composition.
 
 \paragraph{Declaring and initializing state variables.}
 The state variables of an automaton are expressed as member variables of the corresponding class.
@@ -62,8 +61,8 @@ The \verb+schedule+ member function is discussed in the paragraph on scheduling.
 
 \paragraph{Declaring/defining actions.}
 Actions are member variables that model the action concept.
-Actions contain methods for preconditions, effects, and scheduling and traits that indicate the type of action (input, output, internal), if the action is valued and the value type, and if the action is parameterized and the parameter type.
-The traits are used to guide the execution of the methods supplying values and parameters as necessary.
+Actions contain methods for preconditions, effects, and scheduling and traits that indicate the actions's type (input, output, internal), value status, value type, parameter status, and parameter type.
+The traits are used to guide the execution of the methods by the model and supply values and parameters as necessary.
 The traits are also used to check that input actions are bound to output actions with the same value status and type.
 Bindings are checked for type compatibility at compile time using the generic programming facilities of C++.
 
@@ -87,7 +86,7 @@ The macros for actions that are subject to binding by other automata belong in a
 Automata submit actions to the scheduler using the \verb+ioa::schedule+ function.
 The \verb+ioa::schedule+ function can be called at any time.
 However, automata are generally easier to read if scheduling calls are relegated to the scheduling functions.
-A common pattern is to schedule all local actions using one member function where each action is guarded by its precondition.
+A common pattern is to schedule all local actions using one member function where each action is guarded by its precondition as described in section~\ref{scheduling}.
 For the \verb+asynch_lcr_automaton+, the scheduling function is:
 \begin{lstlisting}
   void schedule () const {
@@ -101,13 +100,7 @@ For the \verb+asynch_lcr_automaton+, the scheduling function is:
 \end{lstlisting}
 The various scheduling functions in the \verb+asynch_lcr_automaton+ and the constructor all dispatch to this function.
 
-\paragraph{Static composition.}
-Static composition can be accomplished by inheriting from, i.e., extending, other automata.
-For example, an automaton wishing to statically compose an \verb+asynch_lcr_automaton+ with other automata could declare it as a base class and provide the necessary code to dispatch to the \verb+asynch_lcr_automaton+ actions.
-A problem arises when an automaton extends more than one automaton since the common \verb+ioa::automaton+ base class will be duplicated for each inheritance path.
-The solution is to make the \verb+ioa::automaton+ base class a virtual base class which eliminates the duplicates and resolves all references appropriately.
-
-\subsection{Dynamics}
+\subsection{Dynamic Composition}
 
 \begin{figure}
 \center
@@ -120,7 +113,7 @@ The solution is to make the \verb+ioa::automaton+ base class a virtual base clas
 The \verb+asynch_lcr_automaton+ is a reusable component designed to be used in the context of a larger system.
 The \verb+tcp_lcr_automaton+ listed in \verb+examples/tcp_lcr.cpp+ elects a leader in a dynamic ring of processes connected by TCP sockets.
 The structure of the \verb+tcp_lcr_automaton+ is given in Figure~\ref{tcp_lcr_automaton}.
-The \verb+tcp_lcr_automaton+ is composed with a \verb+tcp_acceptor_automaton+ to accept a connection from its predecessor, a \verb+tcp_connector_automaton+ to create a connection to its successor, and two \verb+tcp_connection_automaton+ representing the predecessor and successor, and a \verb+asynch_lcr_automaton+ to realize the leader election algorithm.
+The \verb+tcp_lcr_automaton+ is composed with a \verb+tcp_acceptor_automaton+ to accept a connection from its predecessor, a \verb+tcp_connector_automaton+ to create a connection to its successor, two \verb+tcp_connection_automaton+ representing the predecessor and successor, and a \verb+asynch_lcr_automaton+ to realize the leader election algorithm.
 The leader of the ring periodically sends a token which is forwarded by all nodes in the ring.
 If a node has not received a token for a specified duration of time, it calls for an election.
 
@@ -139,7 +132,7 @@ This type of usage can be seen in the send action of the \verb+tcp_lcr_automaton
 \end{lstlisting}
 
 \paragraph{Dynamic composition.}
-Dynamic composition is accomplished by creating child automata and bindings.
+Dynamic composition is accomplished by creating child automata and bindings via \verb+ioa::automaton_manager+ and \verb+ioa::binding_manager+ objects.
 The \verb+tcp_lcr_automaton+ creates a \verb+asynch_lcr_automaton+ and binds to it with the following code:
 \begin{lstlisting}
     ioa::automaton_manager<asynch_lcr_automaton<uuid> >* lcr =
@@ -166,7 +159,7 @@ The \verb+ioa::automaton_manager+ class and \verb+ioa::binding_manager+ class co
 The \verb+m_self+ object of the example is a \verb+ioa::handle_manager+ which can be used to bind to automata that already exist.
 From the example, the \verb+tcp_lcr_automaton+ binds the \verb+asynch_lcr_automaton+ to itself.
 The wary reader might notice that the \verb+ioa::automaton_manager+ and \verb+ioa::binding_manager+s in the example are dynamically allocated but never recorded and thus never freed.
-Both classes are managed by the \verb+ioa::automaton+ and deallocated at the appropriate time.
+Both classes are managed by the \verb+ioa::automaton+ and automatically deallocated when the automaton or binding they manange is destroyed or unbound respectively.
 
 \subsection{Managing Dynamic Constellations}
 
@@ -184,9 +177,8 @@ Similarly, the successor connection must be created before it is passed via a co
 
 \paragraph{System action events.}
 Determining the outcome of a system action event, e.g., that a child automaton was created, is necessary when there are constraints on the order in which system actions must occur.
-Specifically, an automaton must be able to receive events from its \verb+ioa::automaton+ base class.
-This is a straightforward application of the Observer Pattern~\cite{} where the user automaton observes events forwarded by the \verb+ioa::automaton+ base class.
-Conceptually, the system input actions of the \verb+ioa::automaton+ base class are mapped into the user automaton.
+For example, the Binding Manager mentioned in section~\ref{system_action_section} waits until the automata supply the output action and input action are created before attempting to bind.
+User automata can observe \verb+ioa::automaton_manager+ objects and \verb+ioa::binding_manager+ objects to receive events generated upon the completion of a system action.
 
 \paragraph{Error reporting.}
 The event semantics of I/O automata provide a natural mechanism for reporting errors.
@@ -202,7 +194,7 @@ Errors need not be viewed as exceptional circumstances but a necessary part of t
 Automaton designers should strive to write automata that are capable of being reset as this is the simplest error handling strategy.
 
 \paragraph{Handling errors by replacing.}
-The non-deterministic and the asynchronous nature of system actions complicates replacing an automaton.
+The non-deterministic and asynchronous nature of system actions complicates replacing an automaton.
 To replace a child automaton, the parent automaton must destroy the child, create a new child, and bind to the new child.
 For reasons already discussed, the bind must occur after the create.
 This constraint is enforced by the \verb+ioa::binding_manager+ class.
