@@ -1,7 +1,6 @@
 #ifndef __automaton_set_hpp__
 #define __automaton_set_hpp__
 
-#include <cassert>
 #include <set>
 #include <map>
 
@@ -10,13 +9,19 @@
 
 namespace ioa {
 
+  // TODO: .cpp file.
+
   class automaton_set
   {
   private:
     aid_t m_next_aid;
+    // TODO:  Use a hash.
     std::set<automaton_base*> m_instances;
+    // TODO:  Use a hash.
     std::map<aid_t, automaton_base*> m_aids;
+    // TODO:  Use a hash.
     typedef std::map<void*, aid_t> key_set_type;
+    // TODO:  Use a hash.
     typedef std::map<aid_t, key_set_type*> parent_key_type;
     parent_key_type m_parent_key;
 
