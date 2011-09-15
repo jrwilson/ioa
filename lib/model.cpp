@@ -333,7 +333,7 @@ namespace ioa {
       // Automaton does not exist.
       return -1;
     }
-    
+
     exec (*this, m_system_scheduler);
     return 0;
   }

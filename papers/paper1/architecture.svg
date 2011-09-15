@@ -132,7 +132,7 @@
      inkscape:window-height="852"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="1"
+     inkscape:window-maximized="0"
      inkscape:snap-global="true"
      inkscape:object-nodes="false"
      inkscape:object-paths="false"
@@ -173,7 +173,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -388,7 +388,7 @@
          y="864.86218"
          x="273.75003"
          sodipodi:role="line"
-         id="tspan7038">Automaton</tspan></text>
+         id="tspan7038">Base Automaton</tspan></text>
     <g
        id="g3409"
        transform="translate(0,-63.75)">
