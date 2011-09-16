@@ -1,0 +1,233 @@
+<html lang="en">
+<head>
+<title>Fan-out and Binding Count - IOA++</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="IOA++">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Examples.html#Examples" title="Examples">
+<link rel="prev" href="External-Actions.html#External-Actions" title="External Actions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2011 Justin R. Wilson.
+
+     This work is licensed under the Creative Commons
+     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
+     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
+     send a letter to Creative Commons, 444 Castro Street, Suite 900,
+     Mountain View, California, 94041, USA.
+   -->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Fan-out-and-Binding-Count"></a>
+<a name="Fan_002dout-and-Binding-Count"></a>
+<p>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="External-Actions.html#External-Actions">External Actions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
+<hr>
+</div>
+
+<h3 class="section">3.5 Fan-out and Binding Count</h3>
+
+<p>In this tutorial, we bind an output action to multiple input actions (fan-out) and prevent lost outputs by counting the number of bindings associated with an action. 
+The source is given below and can be found in <samp><span class="file">tutorial/producer_consumer2.cpp</span></samp>.
+
+<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+     #include &lt;ioa/global_fifo_scheduler.hpp>
+     
+     #include &lt;iostream>
+     
+     class producer_automaton :
+       public ioa::automaton
+     {
+     private:
+       int m_count;
+     
+     public:
+       producer_automaton () :
+         m_count (1) { }
+       
+     private:
+       bool produce_precondition () const {
+         return m_count &lt;= 10 &amp;&amp;
+           ioa::binding_count (&amp;producer_automaton::produce) == 2;
+       }
+     
+       int produce_effect () {
+         int retval = m_count++;
+         std::cout &lt;&lt; "producing " &lt;&lt; retval &lt;&lt; std::endl;
+         return retval;
+       }
+     
+       void produce_schedule () const {
+         if (produce_precondition ()) {
+           ioa::schedule (&amp;producer_automaton::produce);
+         }
+       }
+     
+     public:
+       V_UP_OUTPUT (producer_automaton, produce, int);
+     };
+     
+     class consumer_automaton :
+       public ioa::automaton
+     {
+     private:
+       void consume_effect (const int&amp; val) {
+         std::cout &lt;&lt; ioa::get_aid () &lt;&lt; " consuming " &lt;&lt; val &lt;&lt; std::endl;
+       }
+     
+       void consume_schedule () const { }
+     
+     public:
+       V_UP_INPUT (consumer_automaton, consume, int);
+     };
+     
+     class producer_consumer_automaton :
+       public ioa::automaton
+     {
+     public:
+       producer_consumer_automaton () {
+         ioa::automaton_manager&lt;producer_automaton>* producer =
+           ioa::make_automaton_manager (this,
+     	  ioa::make_generator&lt;producer_automaton> ());
+     
+         ioa::automaton_manager&lt;consumer_automaton>* consumer1 =
+           ioa::make_automaton_manager (this,
+               ioa::make_generator&lt;consumer_automaton> ());
+     
+         ioa::automaton_manager&lt;consumer_automaton>* consumer2 =
+           ioa::make_automaton_manager (this,
+               ioa::make_generator&lt;consumer_automaton> ());
+     
+         ioa::make_binding_manager (this,
+     			       producer, &amp;producer_automaton::produce,
+     			       consumer1, &amp;consumer_automaton::consume);
+     
+         ioa::make_binding_manager (this,
+     			       producer, &amp;producer_automaton::produce,
+     			       consumer2, &amp;consumer_automaton::consume);
+       }
+     
+     };
+     
+     int main () {
+       ioa::global_fifo_scheduler sched;
+       ioa::run (sched, ioa::make_generator&lt;producer_consumer_automaton> ());
+       return 0; 
+     }
+</pre></pre>
+   <p>The constructor of the <code>producer_consumer_automaton</code> creates a <code>producer_automaton</code> and two <code>consumer_automaton</code>s and then binds the <code>produce</code> and <code>consume</code> actions of the respective automatons together:
+<pre class="example"><pre class="verbatim">       producer_consumer_automaton () {
+         ioa::automaton_manager&lt;producer_automaton>* producer =
+           ioa::make_automaton_manager (this,
+     	  ioa::make_generator&lt;producer_automaton> ());
+     
+         ioa::automaton_manager&lt;consumer_automaton>* consumer1 =
+           ioa::make_automaton_manager (this,
+               ioa::make_generator&lt;consumer_automaton> ());
+     
+         ioa::automaton_manager&lt;consumer_automaton>* consumer2 =
+           ioa::make_automaton_manager (this,
+               ioa::make_generator&lt;consumer_automaton> ());
+     
+         ioa::make_binding_manager (this,
+     			       producer, &amp;producer_automaton::produce,
+     			       consumer1, &amp;consumer_automaton::consume);
+     
+         ioa::make_binding_manager (this,
+     			       producer, &amp;producer_automaton::produce,
+     			       consumer2, &amp;consumer_automaton::consume);
+       }
+</pre>
+</pre>
+   <p>We changed the <code>consume_effect</code> of the <code>consumer_automaton</code> to print out the aid to distinguish between the two consumers:
+<pre class="example"><pre class="verbatim">       void consume_effect (const int&amp; val) {
+         std::cout &lt;&lt; ioa::get_aid () &lt;&lt; " consuming " &lt;&lt; val &lt;&lt; std::endl;
+       }
+</pre>
+</pre>
+   <p>We also removed the call to <code>produce_schedule</code> in the <code>producer_automaton</code> constructor:
+<pre class="example"><pre class="verbatim">       producer_automaton () :
+         m_count (1) { }
+</pre>
+</pre>
+   <p>More on this later.
+
+   <p>The most important change is the addition of an <code>ioa::binding_count</code> to the <code>produce_precondition</code> of the <code>producer</code> automaton:
+<pre class="example"><pre class="verbatim">       bool produce_precondition () const {
+         return m_count &lt;= 10 &amp;&amp;
+           ioa::binding_count (&amp;producer_automaton::produce) == 2;
+       }
+</pre>
+</pre>
+   <p>The <code>ioa::binding_count</code> returns the number of actions to which the given action is bound. 
+The binding count of an internal action will always be 0. 
+The binding count of an output action is a non-negative integer. 
+The binding count of an input action is either 0 or 1. 
+In this example, the <code>produce_effect</code> is not executed until the two consumers have been bound.
+
+   <p>You might be wondering, &ldquo;If we don't schedule the <code>produce</code> action in the constructor, how does it get executed?&rdquo;
+The answer is that scheduler automatically schedules output actions when they are bound. 
+Thus, whenever the second automaton binds to <code>produce</code>, <code>produce</code> is scheduled. 
+Since the binding count is now 2, the <code>produce_precondition</code> becomes true, and <code>produce_effect</code> and <code>produce_schedule</code> are evaluated. 
+Scheduling output actions in this way takes advantage of the concept of a fair scheduler in the I/O automata model and seems to be a graceful way of handling the common case where an output must be bound before it is executed.
+
+   <p>When I execute <code>producer_consumer2</code>, I get the following output:
+<pre class="example"><pre class="verbatim">     $ ./producer_consumer2
+     producing 1
+     3 consuming 1
+     4 consuming 1
+     producing 2
+     3 consuming 2
+     4 consuming 2
+     producing 3
+     3 consuming 3
+     4 consuming 3
+     producing 4
+     3 consuming 4
+     4 consuming 4
+     producing 5
+     3 consuming 5
+     4 consuming 5
+     producing 6
+     3 consuming 6
+     4 consuming 6
+     producing 7
+     3 consuming 7
+     4 consuming 7
+     producing 8
+     3 consuming 8
+     4 consuming 8
+     producing 9
+     3 consuming 9
+     4 consuming 9
+     producing 10
+     3 consuming 10
+     4 consuming 10
+</pre>
+</pre>
+   <p>which shows that both consumers receive the values produced by the producer.
+
+<!-- Expected bind count in parameter -->
+<!-- automatic parameters -->
+<!-- self helper and binding -->
+<!-- unbind -->
+<!-- destroy -->
+<!-- Show how to observe -->
+<!-- Show how to self-destruct -->
+   </body></html>
+

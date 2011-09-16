@@ -1,11 +1,11 @@
 <html lang="en">
 <head>
-<title>Creating Automata - The I/O Automata Library</title>
+<title>Creating Automata - IOA++</title>
 <meta http-equiv="Content-Type" content="text/html">
-<meta name="description" content="The I/O Automata Library">
+<meta name="description" content="IOA++">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="up" href="Tutorials.html#Tutorials" title="Tutorials">
+<link rel="up" href="Examples.html#Examples" title="Examples">
 <link rel="prev" href="Internal-Actions.html#Internal-Actions" title="Internal Actions">
 <link rel="next" href="External-Actions.html#External-Actions" title="External Actions">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
@@ -37,11 +37,11 @@ Copyright (C) 2011 Justin R. Wilson.
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="External-Actions.html#External-Actions">External Actions</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="Internal-Actions.html#Internal-Actions">Internal Actions</a>,
-Up:&nbsp;<a rel="up" accesskey="u" href="Tutorials.html#Tutorials">Tutorials</a>
+Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
 <hr>
 </div>
 
-<h3 class="section">2.3 Creating Automata</h3>
+<h3 class="section">3.3 Creating Automata</h3>
 
 <p>Decomposition is a powerful technique for managing complexity&mdash;especially in concurrent and distributed systems. 
 Instead of solving the problem with one large automaton, we can decompose the problem into a number of simpler automata and bind their actions together. 
@@ -66,16 +66,10 @@ The source is given below and can be found in <samp><span class="file">tutorial/
        count_to_ten_automaton () :
          m_count (1)
        {
-         schedule ();
+         increment_schedule ();
        }
        
      private:
-       void schedule () const {
-         if (increment_precondition ()) {
-           ioa::schedule (&amp;count_to_ten_automaton::increment);
-         }
-       }
-     
        bool increment_precondition () const {
          return m_count &lt;= 10;
        }
@@ -87,6 +81,12 @@ The source is given below and can be found in <samp><span class="file">tutorial/
          ++m_count;
        }
      
+       void increment_schedule () const {
+         if (increment_precondition ()) {
+           ioa::schedule (&amp;count_to_ten_automaton::increment);
+         }
+       }
+     
        UP_INTERNAL (count_to_ten_automaton, increment);
      };
      
@@ -95,15 +95,10 @@ The source is given below and can be found in <samp><span class="file">tutorial/
      {
      public:
        two_counter_automaton () {
-         new ioa::automaton_manager&lt;count_to_ten_automaton> (
-           this,
-           ioa::make_generator&lt;count_to_ten_automaton> ()
-         );
-     
-         new ioa::automaton_manager&lt;count_to_ten_automaton> (
-           this,
-           ioa::make_generator&lt;count_to_ten_automaton> ()
-         );
+         ioa::make_automaton_manager (this,
+             ioa::make_generator&lt;count_to_ten_automaton> ());
+         ioa::make_automaton_manager (this,
+     	ioa::make_generator&lt;count_to_ten_automaton> ());
        }
      
      };
@@ -113,47 +108,42 @@ The source is given below and can be found in <samp><span class="file">tutorial/
        ioa::run (sched, ioa::make_generator&lt;two_counter_automaton> ());
        return 0; 
      }
-     
 </pre></pre>
    <p>This example contains two automata: <code>count_to_ten_automaton</code> and <code>two_counter_automaton</code>. 
 Of primary interest is the constructor of the <code>two_counter_automaton</code>.
 <pre class="example"><pre class="verbatim">       two_counter_automaton () {
-         new ioa::automaton_manager&lt;count_to_ten_automaton> (
-           this,
-           ioa::make_generator&lt;count_to_ten_automaton> ()
-         );
-     
-         new ioa::automaton_manager&lt;count_to_ten_automaton> (
-           this,
-           ioa::make_generator&lt;count_to_ten_automaton> ()
-         );
+         ioa::make_automaton_manager (this,
+             ioa::make_generator&lt;count_to_ten_automaton> ());
+         ioa::make_automaton_manager (this,
+     	ioa::make_generator&lt;count_to_ten_automaton> ());
        }
 </pre>
 </pre>
-   <p>An <code>ioa::automaton_manager</code> uses an <code>ioa::automaton</code> object and generator to <em>asynchronously</em> create a new automaton. 
-<em>Automaton creation and destruction are asynchronous in <acronym>IOA</acronym>.</em>
-A pointer to an <code>ioa::automaton</code> object is specified by the first argument to the <code>ioa::automaton_manager</code> constructor. 
+   <p>The function <code>ioa::make_automaton_manager</code> creates a dynamically allocated <code>ioa::automaton_manager</code>. 
+An <code>ioa::automaton_manager</code> uses an <code>ioa::automaton</code> object and generator to <em>asynchronously</em> create a new automaton. 
+<em>Automaton creation and destruction are asynchronous in IOA++.</em>
+A pointer to an <code>ioa::automaton</code> object is specified by the first argument to the <code>ioa::make_automaton_manager</code> function. 
 This should always be the <code>this</code> pointer of the automaton that is creating a new automaton. 
 The second argument is a generator that returns an instance of the automaton to be created. 
 In this example, each generator returns a <code>count_to_ten</code> automaton.
 
    <p>If automaton A creates automaton B then A is the <dfn>parent</dfn> of B and B is the <dfn>child</dfn> of A. 
-Thus, automata in <acronym>IOA</acronym> form a tree with the automaton generated by <code>ioa::run</code> being the root. 
+Thus, automata in IOA++ form a tree with the automaton generated by <code>ioa::run</code> being the root. 
 When an automaton is destroyed, so are all of its children.
 
-   <p>Something that might concern you is that fact that the automaton managers are dynamically allocated with <code>new</code> but we neither save their address nor <code>delete</code> them in a destructor. 
+   <p>Something that might concern you is that fact that the automaton managers are dynamically allocated but we neither save their address nor <code>delete</code> them in a destructor. 
 Upon construction, the <code>ioa::automaton</code> object takes ownership of the automaton manager. 
-An parent automaton can request that one of its children be destroyed using its <code>destroy ()</code> method and can detected child automata that have been destroyed by observing the automaton manager. 
-Note that a child automaton might voluntarily destroy itself, say, when it has no more work to do. 
+A parent automaton can request that one of its children be destroyed using its <code>destroy</code> method and can detect child automata that have been destroyed by observing the automaton manager. 
+Note that a child automaton might voluntarily destroy itself, i.e., self destruct, when it has no more work to do. 
 A parent automaton should forget the automaton manager of any child that has been destroyed.
 
-   <p>To distinguish the output of the two <code>count_to_ten_automaton</code>s, we use the <code>ioa::get_aid ()</code> function.
+   <p>To distinguish the output of the two <code>count_to_ten_automaton</code>s, we use the <code>ioa::get_aid</code> function.
 <pre class="example"><pre class="verbatim">         std::cout &lt;&lt;
            "automaton: " &lt;&lt; ioa::get_aid () &lt;&lt;
            " count: " &lt;&lt; m_count &lt;&lt; std::endl;
 </pre>
 </pre>
-   <p>Associated with each instance of an automaton is an <dfn>automaton identifier (aid)</dfn> of type <code>aid_t</code> that can be retrieved with <code>ioa::get_aid ()</code>.
+   <p>Associated with each instance of an automaton is an <dfn>automaton identifier (aid)</dfn> of type <code>aid_t</code> that can be retrieved with <code>ioa::get_aid</code>.
 
    </body></html>
 

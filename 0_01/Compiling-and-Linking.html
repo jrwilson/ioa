@@ -1,11 +1,11 @@
 <html lang="en">
 <head>
-<title>Compiling and Linking - The I/O Automata Library</title>
+<title>Compiling and Linking - IOA++</title>
 <meta http-equiv="Content-Type" content="text/html">
-<meta name="description" content="The I/O Automata Library">
+<meta name="description" content="IOA++">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="up" href="Tutorials.html#Tutorials" title="Tutorials">
+<link rel="up" href="Examples.html#Examples" title="Examples">
 <link rel="next" href="Internal-Actions.html#Internal-Actions" title="Internal Actions">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
@@ -35,13 +35,13 @@ Copyright (C) 2011 Justin R. Wilson.
 <a name="Compiling-and-Linking"></a>
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="Internal-Actions.html#Internal-Actions">Internal Actions</a>,
-Up:&nbsp;<a rel="up" accesskey="u" href="Tutorials.html#Tutorials">Tutorials</a>
+Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
 <hr>
 </div>
 
-<h3 class="section">2.1 Compiling and Linking</h3>
+<h3 class="section">3.1 Compiling and Linking</h3>
 
-<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with <acronym>IOA</acronym>. 
+<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with IOA++. 
 The following program contains the null automaton&mdash;an automaton with no actions. 
 The source can be found in <samp><span class="file">tutorial/null_automaton.cpp</span></samp>.
 
@@ -71,10 +71,10 @@ The lines
      { };
 </pre>
 </pre>
-   <p>declares a new automaton type called <code>null_automaton</code>. 
+   <p>declare a new automaton type called <code>null_automaton</code>. 
 All automata must inherit from <code>ioa::automaton</code>. 
-Also note that all <acronym>IOA</acronym> types and functions are in the <code>ioa</code> namespace. 
-The definition of the main function
+Also note that all IOA++ types and functions are in the <code>ioa</code> namespace. 
+The main function
 <pre class="example"><pre class="verbatim">     int main () {
        ioa::global_fifo_scheduler sched;
        ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
@@ -93,7 +93,7 @@ In this case, the value of the generator is a dynamically created instance of <c
 </pre>
 </pre>
    <p>Notice that we needed to link against the I/O automata library (<samp><span class="option">-lioa</span></samp>) and pthreads library (<samp><span class="option">-lpthread</span></samp>). 
-Some environments, e.g., Mac OSX, include pthreads in the standard C library. 
+Some environments, e.g., Mac OS X, include pthreads in the standard C library. 
 If you have such an environment, omit the <samp><span class="option">-lpthread</span></samp> part of the command.
 
    </body></html>

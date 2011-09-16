@@ -1,0 +1,172 @@
+<html lang="en">
+<head>
+<title>Concepts - IOA++</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="IOA++">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Introduction.html#Introduction" title="Introduction">
+<link rel="next" href="Examples.html#Examples" title="Examples">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2011 Justin R. Wilson.
+
+     This work is licensed under the Creative Commons
+     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
+     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
+     send a letter to Creative Commons, 444 Castro Street, Suite 900,
+     Mountain View, California, 94041, USA.
+   -->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Concepts"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Examples.html#Examples">Examples</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Introduction.html#Introduction">Introduction</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">2 Concepts</h2>
+
+<h3 class="section">2.1 The I/O Automata Model</h3>
+
+<p>I/O automata is a model for asynchronous and concurrent systems. 
+The I/O automata model was developed by Nancy Lynch and described in Chapter 8 of <cite>Distributed Algorithms</cite>. 
+I/O automata have been used to model and verify a number of real-world systems and protocols.
+
+   <p>An I/O automaton consists of state variables and a set of atomic input, output, and internal actions. 
+The set of actions in an automaton is known as its <dfn>signature</dfn>. 
+Output and internal actions are under the control of the automaton and are known as <dfn>local actions</dfn>. 
+Input and output actions are known as <dfn>external actions</dfn>.
+
+   <p>I/O automata can be composed to form a new automaton by concatenating state variables and folding input actions into similarly named output actions. 
+Whereas output and internal actions can selectively be enabled or disabled, input actions are executed whenever their associated output is executed. 
+This property is known as being <dfn>input enabled</dfn>.
+
+   <p>Execution proceeds by repeatedly selecting a local action and executing it if enabled. 
+The model admits non-determinism by allowing the scheduler to pick actions in any order. 
+The scheduler must select (but not necessarily execute) every action infinitely often. 
+Schedulers that meet this criteria are said to be <dfn>fair</dfn>.
+
+<h3 class="section">2.2 Representing I/O Automata</h3>
+
+<p>I/O Automata are encoded directly in the C++ programming language as classes that inherit from <code>ioa::automaton</code>. 
+The state variables of the I/O automaton are naturally encoded as member variables of the class. 
+The actions of the I/O automaton are encoded as a combination of member functions and member variables. 
+A suite of templates and macros exist to simplify the definition of actions.
+
+<h3 class="section">2.3 Dynamics</h3>
+
+<p>The I/O automata model assumes that systems consist of a static set of automata. 
+Often, the size of the set is infinitely countable meaning that it can be represented by an integer variable <var>N</var>. 
+A model specified in this way is capable of capturing any real system since there is a countable number of participants in all real systems. 
+Within an infinitely countable set, a dynamic set of automata is simulated by associating a flag with each automaton indicating if it is active or inactive and defining appropriate &ldquo;wake-up&rdquo; and &ldquo;sleep&rdquo; actions. 
+A direct implementation of this strategy does not work for real systems because an implementation must specify a concrete value for <var>N</var>. 
+Computing with a fixed number of automata is either unduly prohibitive if resources exist for additional automata or unduly wasteful if the number of active automata is much less than <var>N</var>.
+
+   <p>Consequently, we require the ability to dynamically create and destroy automata. 
+Since we can dynamically create and destroy automata, we also require the ability to dynamically compose and decompose. 
+<dfn>Binding</dfn> and <dfn>unbinding</dfn> refer to the act of dynamically composing and decomposing, respectively. 
+For simplicity, binding and unbinding is limited to a single output action-input action pair. 
+Dynamic binding allows us to drop the requirement that the actions have the same name.
+
+<h3 class="section">2.4 Run-time System</h3>
+
+<p>The IOA++ run-time system consists of a model, a scheduler, and a user-space library.
+
+   <p>The <dfn>model</dfn> contains the set of automata and bindings and has methods for creating, binding, unbinding, destroying, and executing local actions. 
+Creating, binding, unbinding, and destroying are called <dfn>system actions</dfn>. 
+Users do not interact directly with the model and should only be concerned with the guarantees it provides. 
+The model enforces atomic execution according to the I/O automata model. 
+Internal actions are executed atomically. 
+Output actions are executed by executing the output and all bound input actions in one atomic step.
+
+   <p>The <dfn>scheduler</dfn> invokes the model with selected local and system actions. 
+Conceptually, the scheduler contains a set of actions that are submitted to the model according to some policy. 
+Users, in turn, are responsible for submitting actions that should be considered by the scheduler. 
+Users are required to choose a scheduler implementation before execution begins thereby facilitating different scheduling policies.
+
+   <p>The user-space library is designed to help users write actions, submit actions to the scheduler, and execute system actions. 
+Local actions consist of a coordinating object and three functions: a precondition, an effect, and a scheduling function. 
+Input actions consists of a coordinating object and two functions: an effect and a scheduling function. 
+The precondition determines if the effect of the output or internal action will be evaluated. 
+The scheduling function is invoked after the effect of all actions and is intended as a place to submit actions to the scheduler.
+
+   <p>System actions in IOA++ are asynchronous and resemble a request-response protocol. 
+Conceptually, the model is permanently bound to every automaton and contains input actions for receiving system action requests and output actions for delivering system action results. 
+The user-space library contains classes that hide the complexities of creating and binding asynchronously. 
+Synchronous system actions were considered and rejected because they break the semantics of the I/O automata model. 
+For example, it is not clear how to execute an output that bindings itself to an input as part of its execution.
+
+<h3 class="section">2.5 Concurrency</h3>
+
+<p>Each local action involves a set of automata. 
+For internal actions, this is just the automaton that contains the internal actions. 
+For output actions, the set consists of the output action and the automata that contain the input actions bound to the output action. 
+The semantics of I/O automata are such that two actions can be executed concurrently if their respective sets of involved automata are disjoint. 
+An important consequence is that two actions belonging to the same automaton will never execute concurrently. 
+To truly execute actions concurrently, the scheduler must concurrently invoke the model with independent actions.
+
+<h3 class="section">2.6 Actions and Values</h3>
+
+<p>Recall that there are three types of actions: output actions, input actions, and internal actions. 
+Output actions produce a signal or value, input actions consume a signal or value, and internal actions neither produce nor consume signals or values. 
+Actions that produce or consume signals are said to be <dfn>unvalued</dfn> while signals that produce and consume values are said to be <dfn>valued</dfn>. 
+External actions can only be bound together if they agree on the signal or type of value to be produced. 
+Any input that consumes a signal can be bound to any output producing a signal. 
+An input that consumes values of type <var>T</var> can only be bound to an output that produces a value of type <var>T</var>.
+
+<h3 class="section">2.7 Parameters and Automatic Parameters</h3>
+
+<p>A common technique in the I/O automata model is to associate a parameter with an action. 
+For example, actions that receive messages are often parameterized with communication endpoints. 
+Parameters are distinct from values because they are constant under composition. 
+All actions types, outputs, inputs, and internals, can be parameterized. 
+Actions requiring a parameter are said to be <dfn>parameterized</dfn> while actions that don't require parameters are said to be <dfn>unparameterized</dfn>. 
+Parameters must be used to identify parameterized actions. 
+For example, the parameter for a parameterized output must specified when scheduling and binding. 
+Similarly, a parameter for a parameterized input must specified when binding and a parameter for a parameterized internal must be specified when scheduling.
+
+   <p>Parameters allow users to implement fan-in by associating a different parameter with each bind to an input. 
+More generally, parameters can be used to implement a session by associating the same parameter with all bindings related to some automaton. 
+Each automaton has a unique identifier called an <dfn>automaton identfier</dfn> or <dfn>aid</dfn>. 
+Often, the parameter for a session is the aid of another automaton. 
+To prevent errors and make sessions easier to implement, we introduce the concept of an automatic parameter. 
+An <dfn>automatic parameter</dfn> or <dfn>auto parameter</dfn> is a parameter that represents the automaton on the opposite side of a binding. 
+For example, an auto parameterized input receives the identifier of the output automaton to which it is bound. 
+An auto parameterized output receives the identifier of the input automaton to which it is bound. 
+According to the binding rules below, auto parameterized outputs can only be bound once.
+
+<h3 class="section">2.8 Binding Rules</h3>
+
+<p>To enforce the semantics of I/O automata, certain attempts to bind will fail. 
+The automaton requesting a binding is called the <dfn>owner</dfn>. 
+A binding is a tuple (output automaton, output action, output parameter, input automaton, input action, input parameter, owner). 
+Unparameterized actions have a null parameter. 
+A binding will fail if any of the follow is true:
+     <ol type=1 start=1>
+<li>The owner does not exist. 
+<li>The output automaton does not exist. 
+<li>The input automaton does not exist. 
+<li>The binding already exists.  (This is only reported to the owner.) 
+<li>The (input automaton, input action, input parameter) is already bound. 
+<li>The (output automaton, output action, output parameter) is already bound to some input action in the input automaton. 
+<li>The output automaton and input automaton are the same.
+        </ol>
+
+   </body></html>
+
