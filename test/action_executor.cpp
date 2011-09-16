@@ -10,18 +10,7 @@ class test_scheduler :
 {
 public:
   void set_current_aid (const ioa::aid_t aid) { }
-  ioa::aid_t get_current_aid () { return -1; }
   void clear_current_aid () { }
-  size_t binding_count (const ioa::action_executor_interface&) { return 0; }
-  void schedule (ioa::action_runnable_interface*) { }
-  void schedule_after (ioa::action_runnable_interface*,
-		       const ioa::time&) { }
-  void schedule_read_ready (ioa::action_runnable_interface*,
-			    int fd) { }
-  void schedule_write_ready (ioa::action_runnable_interface*,
-			     int fd) { }
-  void close (int fd) { }
-  void run (std::auto_ptr<ioa::generator_interface> generator) { }
 };
 
 static const char*

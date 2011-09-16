@@ -3,7 +3,7 @@
 #include "../lib/automaton_set.hpp"
 #include "automaton1.hpp"
 
-#include <vector>
+#include <map>
 #include <iostream>
 
 static const char*
@@ -34,7 +34,6 @@ create3 ()
   int key2;
   automaton1 child2_instance;
   std::map<void*, ioa::aid_t> keys_gold;
-  std::map<void*, ioa::aid_t> keys;
 
   ioa::aid_t parent = as.create (&parent_instance);
   mu_assert (!as.exists (&child1_instance));
@@ -50,7 +49,7 @@ create3 ()
 
   keys_gold.insert (std::make_pair (&key1, child1));
   keys_gold.insert (std::make_pair (&key2, child2));
-  std::copy (as.keys_begin (parent), as.keys_end (parent), std::inserter (keys, keys.end ()));
+  ioa::automaton_set::key_set_type keys = as.keys (parent);
   mu_assert (std::equal (keys.begin (), keys.end (), keys_gold.begin ()));
 
   return 0;

@@ -10,19 +10,20 @@
 namespace ioa {
 
   // TODO: .cpp file.
-
+  
   class automaton_set
   {
-  private:
-    aid_t m_next_aid;
-    // TODO:  Use a hash.
-    std::set<automaton_base*> m_instances;
-    // TODO:  Use a hash.
-    std::map<aid_t, automaton_base*> m_aids;
-    // TODO:  Use a hash.
+    // TODO:  Use hashes.
+  public:
     typedef std::map<void*, aid_t> key_set_type;
-    // TODO:  Use a hash.
-    typedef std::map<aid_t, key_set_type*> parent_key_type;
+
+  private:
+    typedef std::map<aid_t, automaton_base*> aid_set_type;
+    typedef std::map<aid_t, key_set_type> parent_key_type;
+
+    aid_t m_next_aid;
+    std::set<automaton_base*> m_instances;
+    aid_set_type m_aids;
     parent_key_type m_parent_key;
 
   public:
@@ -40,7 +41,7 @@ namespace ioa {
       } while (m_aids.count (aid) != 0);
       m_instances.insert (instance);
       m_aids.insert (std::make_pair (aid, instance));
-      m_parent_key.insert (std::make_pair (aid, new key_set_type ()));
+      m_parent_key.insert (std::make_pair (aid, key_set_type ()));
       return aid;
     }
 
@@ -48,7 +49,7 @@ namespace ioa {
 		  void* key,
 		  automaton_base* instance) {
       aid_t aid = create (instance);
-      m_parent_key[parent]->insert (std::make_pair (key, aid));
+      m_parent_key[parent].insert (std::make_pair (key, aid));
       return aid;      
     }
 
@@ -56,7 +57,7 @@ namespace ioa {
 		 void* key) const {
       parent_key_type::const_iterator pos = m_parent_key.find (parent);
       if (pos != m_parent_key.end ()) {
-	return pos->second->count (key) != 0;
+	return pos->second.count (key) != 0;
       }
       else {
 	return false;
@@ -71,25 +72,20 @@ namespace ioa {
       return m_aids.count (aid) != 0;
     }
     
-    key_set_type::const_iterator keys_begin (aid_t parent) const {
-      return m_parent_key.find (parent)->second->begin ();
-    }
-
-    key_set_type::const_iterator keys_end (aid_t parent) const {
-      return m_parent_key.find (parent)->second->end ();
+    key_set_type keys (aid_t parent) const {
+      return m_parent_key.find (parent)->second;
     }
 
     automaton_base* destroy (aid_t parent,
 			     void* key) {
-      key_set_type::iterator pos1 = (*m_parent_key[parent]).find (key);
+      key_set_type::iterator pos1 = m_parent_key[parent].find (key);
       const aid_t child = pos1->second;
-      m_parent_key[parent]->erase (pos1);
+      m_parent_key[parent].erase (pos1);
 
       parent_key_type::iterator pos3 = m_parent_key.find (child);
-      delete pos3->second;
       m_parent_key.erase (pos3);
 
-      std::map<aid_t, automaton_base*>::iterator pos2 = m_aids.find (child);
+      aid_set_type::iterator pos2 = m_aids.find (child);
       automaton_base* instance = pos2->second;
       m_aids.erase (pos2);
       

@@ -4,7 +4,7 @@
 AC_PREREQ([2.65])
 AC_INIT([ioa], [0.01], [jrwilson@go.wustl.edu])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([lib/model.cpp])
+AC_CONFIG_SRCDIR([lib/time.cpp])
 AC_CONFIG_HEADERS([config.hpp])
 #AX_PREFIX_CONFIG_H([include/ioa/conf.hpp], [ioa], [config.hpp])
 AM_INIT_AUTOMAKE
@@ -40,8 +40,9 @@ AC_CHECK_FUNCS([gettimeofday memset select socket])
 AC_CONFIG_FILES([Makefile
 		 include/Makefile
 		 lib/Makefile
-		 test/Makefile
-		 doc/Makefile
-		 tutorial/Makefile
-		 examples/Makefile])
+		 test/Makefile])
+
+#		 doc/Makefile
+#		 tutorial/Makefile
+#		 examples/Makefile])
 AC_OUTPUT

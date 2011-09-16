@@ -3,8 +3,11 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libioa.la
 
 libioa_la_SOURCES = \
-time.cpp \
-mutex.cpp
+automaton_set.hpp \
+binding_set.hpp \
+mutex.cpp \
+time.cpp
+
 
 
 
@@ -31,7 +34,6 @@ mutex.cpp
 # lock.cpp \
 # model.hpp \
 # model.cpp \
-# mutex.cpp \
 # observer.cpp \
 # output_bound_runnable.hpp \
 # output_exec_runnable.hpp \

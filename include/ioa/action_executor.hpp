@@ -1,14 +1,112 @@
 #ifndef __action_executor_hpp__
 #define __action_executor_hpp__
 
+#include <cassert>
 #include <ioa/mutex.hpp>
 #include <ioa/automaton_handle.hpp>
 #include <ioa/action.hpp>
-#include <ioa/executor_interface.hpp>
 #include <ioa/scheduler_interface.hpp>
 
 namespace ioa {
+
+  class action_executor_interface
+  {
+  public:
+    virtual ~action_executor_interface () { }
+    virtual aid_t get_aid () const = 0;
+    virtual void* get_member_ptr () const = 0;
+    virtual void* get_pid () const = 0;
+
+    virtual bool operator== (const action_executor_interface& x) const {
+      return
+  	get_aid () == x.get_aid () &&
+  	get_member_ptr () == x.get_member_ptr () &&
+  	get_pid () == x.get_pid ();
+    }
+
+    bool operator!= (const action_executor_interface& x) const {
+      return !(*this == x);
+    }
+
+    bool operator< (const action_executor_interface& x) const {
+      if (get_aid () != x.get_aid ()) {
+	return get_aid () < x.get_aid ();
+      }
+      if (get_member_ptr () != x.get_member_ptr ()) {
+	return get_member_ptr () < x.get_member_ptr ();
+      }
+      return get_pid () < x.get_pid ();
+    }
+
+  };
+
+  class input_executor_interface :
+    public action_executor_interface
+  {
+  public:
+    virtual ~input_executor_interface () { }
+    virtual input_executor_interface* clone () const = 0;
+    virtual void set_auto_parameter (const aid_t) = 0;
+    virtual void lock () = 0;
+    virtual void unlock () = 0;
+  };
+
+  class unvalued_input_executor_interface :
+    public input_executor_interface
+  {
+  public:
+    virtual ~unvalued_input_executor_interface () { }
+    virtual void operator() (scheduler_interface&) const = 0;
+  };
+
+  template <typename T>
+  class valued_input_executor_interface :
+    public input_executor_interface
+  {
+  public:
+    virtual ~valued_input_executor_interface () { }
+    virtual void operator() (scheduler_interface&, const T& t) const = 0;
+  };
+
+  class local_executor_interface :
+    public action_executor_interface
+  {
+  public:
+    virtual ~local_executor_interface () { }
+    //virtual void operator() (scheduler_interface&) const = 0;
+  };
   
+  class output_executor_interface :
+    public local_executor_interface
+  {
+  public:
+    virtual ~output_executor_interface () { }
+    virtual output_executor_interface* clone () const = 0;
+    virtual void set_auto_parameter (const aid_t) = 0;
+  };
+
+  class unvalued_output_executor_interface :
+    public output_executor_interface
+  {
+  public:
+    virtual ~unvalued_output_executor_interface () { }
+  };
+
+  template <typename T>
+  class valued_output_executor_interface :
+    public output_executor_interface
+  {
+  public:
+    virtual ~valued_output_executor_interface () { }
+  };
+  
+  class internal_executor_interface :
+    public local_executor_interface
+  {
+  public:
+    virtual ~internal_executor_interface () { }
+  };
+    
   template <class I, class M>
   class action_executor_core
   {
@@ -56,6 +154,9 @@ namespace ioa {
 	}
 	(*iter)->lock ();
       }
+      if (!output_processed) {
+	lock ();
+      }
     }
 
     template <class Iterator>
@@ -68,6 +169,9 @@ namespace ioa {
 	  output_processed = true;
 	}
 	(*iter)->unlock ();
+      }
+      if (!output_processed) {
+	unlock ();
       }
     }
   };
@@ -443,39 +547,25 @@ namespace ioa {
     void operator() (scheduler_interface& system_scheduler,
 		     Iterator begin,
 		     Iterator end) {
-      if (begin != end) {
-	// Bound.
-	// Lock in order.
-	this->lock_in_order (begin, end);
-
-	// Execute.
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance))) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
-	  system_scheduler.clear_current_aid ();
-	  for (Iterator iter = begin; iter != end; ++iter) {
-	    (*(*iter)) (system_scheduler);
-	  }
+      // Lock in order.
+      this->lock_in_order (begin, end);
+      
+      // Execute.
+      system_scheduler.set_current_aid (this->m_handle);
+      if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance))) {
+	((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance);
+	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
+	system_scheduler.clear_current_aid ();
+	for (Iterator iter = begin; iter != end; ++iter) {
+	  (*(*iter)) (system_scheduler);
 	}
-	else {
-	  system_scheduler.clear_current_aid ();
-	}
-
-	// Unlock.
-	this->unlock_in_order (begin, end);
       }
       else {
-	// Not bound.
-	action_executor_core<I,M>::lock ();
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance))) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
-	}
 	system_scheduler.clear_current_aid ();
-	action_executor_core<I,M>::unlock ();
       }
+      
+      // Unlock.
+      this->unlock_in_order (begin, end);
     }
 
     void set_auto_parameter (const aid_t) {
@@ -526,39 +616,25 @@ namespace ioa {
     void operator() (scheduler_interface& system_scheduler,
 		     Iterator begin,
 		     Iterator end) {
-      if (begin != end) {
-	// Bound.
-	// Lock in order.
-	this->lock_in_order (begin, end);
-
-	// Execute.
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	  system_scheduler.clear_current_aid ();
-	  for (Iterator iter = begin; iter != end; ++iter) {
-	    (*(*iter)) (system_scheduler);
-	  }
+      // Lock in order.
+      this->lock_in_order (begin, end);
+      
+      // Execute.
+      system_scheduler.set_current_aid (this->m_handle);
+      if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
+	((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
+	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
+	system_scheduler.clear_current_aid ();
+	for (Iterator iter = begin; iter != end; ++iter) {
+	  (*(*iter)) (system_scheduler);
 	}
-	else {
-	  system_scheduler.clear_current_aid ();
-	}
-
-	// Unlock.
-	this->unlock_in_order (begin, end);
       }
       else {
-	// Not bound.
-	action_executor_core<I,M>::lock ();
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	}
 	system_scheduler.clear_current_aid ();
-	action_executor_core<I,M>::unlock ();
       }
+      
+      // Unlock.
+      this->unlock_in_order (begin, end);
     }
 
     void set_auto_parameter (const aid_t) {
@@ -614,39 +690,25 @@ namespace ioa {
 		     Iterator end) {
       assert (m_parameter != -1);
 
-      if (begin != end) {
-	// Bound.
-	// Lock in order.
-	this->lock_in_order (begin, end);
-
-	// Execute.
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	  system_scheduler.clear_current_aid ();
-	  for (Iterator iter = begin; iter != end; ++iter) {
-	    (*(*iter)) (system_scheduler);
-	  }
+      // Lock in order.
+      this->lock_in_order (begin, end);
+      
+      // Execute.
+      system_scheduler.set_current_aid (this->m_handle);
+      if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
+	((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
+	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
+	system_scheduler.clear_current_aid ();
+	for (Iterator iter = begin; iter != end; ++iter) {
+	  (*(*iter)) (system_scheduler);
 	}
-	else {
-	  system_scheduler.clear_current_aid ();
-	}
-
-	// Unlock.
-	this->unlock_in_order (begin, end);
       }
       else {
-	// Not bound.
-	action_executor_core<I,M>::lock ();
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	}
 	system_scheduler.clear_current_aid ();
-	action_executor_core<I,M>::unlock ();
       }
+      
+      // Unlock.
+      this->unlock_in_order (begin, end);
     }
 
     output_executor_interface* clone () const {
@@ -692,40 +754,26 @@ namespace ioa {
     void operator() (scheduler_interface& system_scheduler,
 		     Iterator begin,
 		     Iterator end) {
-      if (begin != end) {
-	// Bound.
-	// Lock in order.
-	this->lock_in_order (begin, end);
-
-	// Execute.
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance))) {
-	  VT value = ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance);
-	  const VT& ref = value;
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
-	  system_scheduler.clear_current_aid ();
-	  for (Iterator iter = begin; iter != end; ++iter) {
-	    (*(*iter)) (system_scheduler, ref);
-	  }
+      // Lock in order.
+      this->lock_in_order (begin, end);
+      
+      // Execute.
+      system_scheduler.set_current_aid (this->m_handle);
+      if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance))) {
+	VT value = ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance);
+	const VT& ref = value;
+	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
+	system_scheduler.clear_current_aid ();
+	for (Iterator iter = begin; iter != end; ++iter) {
+	  (*(*iter)) (system_scheduler, ref);
 	}
-	else {
-	  system_scheduler.clear_current_aid ();
-	}
-
-	// Unlock.
-	this->unlock_in_order (begin, end);
       }
       else {
-	// Not bound.
-	action_executor_core<I,M>::lock ();
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance))) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
-	}
 	system_scheduler.clear_current_aid ();
-	action_executor_core<I,M>::unlock ();
       }
+      
+      // Unlock.
+      this->unlock_in_order (begin, end);
     }
 
     output_executor_interface* clone () const {
@@ -776,40 +824,26 @@ namespace ioa {
     void operator() (scheduler_interface& system_scheduler,
 		     Iterator begin,
 		     Iterator end) {
-      if (begin != end) {
-	// Bound.
-	// Lock in order.
-	this->lock_in_order (begin, end);
-
-	// Execute.
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  VT value = ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  const VT& ref = value;
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	  system_scheduler.clear_current_aid ();
-	  for (Iterator iter = begin; iter != end; ++iter) {
-	    (*(*iter)) (system_scheduler, ref);
-	  }
+      // Lock in order.
+      this->lock_in_order (begin, end);
+      
+      // Execute.
+      system_scheduler.set_current_aid (this->m_handle);
+      if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
+	VT value = ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
+	const VT& ref = value;
+	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
+	system_scheduler.clear_current_aid ();
+	for (Iterator iter = begin; iter != end; ++iter) {
+	  (*(*iter)) (system_scheduler, ref);
 	}
-	else {
-	  system_scheduler.clear_current_aid ();
-	}
-
-	// Unlock.
-	this->unlock_in_order (begin, end);
       }
       else {
-	// Not bound.
-	action_executor_core<I,M>::lock ();
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	}
 	system_scheduler.clear_current_aid ();
-	action_executor_core<I,M>::unlock ();
       }
+      
+      // Unlock.
+      this->unlock_in_order (begin, end);
     }
 
     output_executor_interface* clone () const {
@@ -868,40 +902,26 @@ namespace ioa {
 		     Iterator end) {
       assert (m_parameter != -1);
 
-      if (begin != end) {
-	// Bound.
-	// Lock in order.
-	this->lock_in_order (begin, end);
-
-	// Execute.
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  VT value = ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  const VT& ref = value;
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	  system_scheduler.clear_current_aid ();
-	  for (Iterator iter = begin; iter != end; ++iter) {
-	    (*(*iter)) (system_scheduler, ref);
-	  }
+      // Lock in order.
+      this->lock_in_order (begin, end);
+      
+      // Execute.
+      system_scheduler.set_current_aid (this->m_handle);
+      if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
+	VT value = ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
+	const VT& ref = value;
+	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
+	system_scheduler.clear_current_aid ();
+	for (Iterator iter = begin; iter != end; ++iter) {
+	  (*(*iter)) (system_scheduler, ref);
 	}
-	else {
-	  system_scheduler.clear_current_aid ();
-	}
-
-	// Unlock.
-	this->unlock_in_order (begin, end);
       }
       else {
-	// Not bound.
-	action_executor_core<I,M>::lock ();
-	system_scheduler.set_current_aid (this->m_handle);
-	if (((this->m_instance).*(this->m_member_ptr)).precondition (const_cast<const I&> (this->m_instance), m_parameter)) {
-	  ((this->m_instance).*(this->m_member_ptr)).effect (this->m_instance, m_parameter);
-	  ((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
-	}
 	system_scheduler.clear_current_aid ();
-	action_executor_core<I,M>::unlock ();
       }
+      
+      // Unlock.
+      this->unlock_in_order (begin, end);
     }
 
     output_executor_interface* clone () const {
