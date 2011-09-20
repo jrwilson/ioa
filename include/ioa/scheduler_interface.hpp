@@ -38,6 +38,10 @@ namespace ioa {
     virtual void close (int fd) = 0;
 
     virtual void run (std::auto_ptr<generator_interface> generator) = 0;
+
+    virtual void begin_sys_call () = 0;
+
+    virtual void end_sys_call () = 0;
   };
   
 }

@@ -99,6 +99,7 @@ namespace ioa {
 	    std::auto_ptr<typed_generator_interface<T> > generator) {
     scheduler = &s;
     scheduler->run (std::auto_ptr<generator_interface> (generator));
+    scheduler = 0;
   }
   
 }

@@ -17,7 +17,7 @@ namespace ioa {
     void operator= (const simple_scheduler&) { }
 
   public:
-    simple_scheduler ();
+    simple_scheduler (int const threads = 1);
     ~simple_scheduler ();
     
     aid_t get_current_aid ();
@@ -46,6 +46,10 @@ namespace ioa {
     void close (int fd);
 
     void run (std::auto_ptr<generator_interface> generator);
+
+    void begin_sys_call ();
+
+    void end_sys_call ();
   };
 
 }

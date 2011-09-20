@@ -31,7 +31,16 @@
 #include "output_unbound_runnable.hpp"
 #include "input_unbound_runnable.hpp"
 
+#include <iostream>
+
 namespace ioa {
+
+  std::ostream& operator<< (std::ostream& os, const ioa::time& t) {
+    double d = t.usec ();
+    d /= 1000000.0;
+    d += t.sec ();
+    return (os << d);
+  }
 
   typedef std::pair<time, action_runnable_interface*> time_action;
   typedef std::pair<int, action_runnable_interface*> fd_action;
@@ -40,10 +49,80 @@ namespace ioa {
     public system_scheduler_interface
   {
   private:
+    class thread_context
+    {
+    private:
+      enum state_t {
+	NONE,
+	IOA,
+	THREAD,
+	USER,
+	SCHEDULE
+      };
+      state_t m_state;
+      ioa::time m_start;
+      ioa::time m_none;
+
+      void switch_to (state_t state) {
+	const ioa::time now = ioa::time::now ();
+	switch (m_state) {
+	case NONE:
+	  m_none += (now - m_start);
+	  break;
+	case IOA:
+	  m_ioa += (now - m_start);
+	  break;
+	case THREAD:
+	  m_thread += (now - m_start);
+	  break;
+	case USER:
+	  m_user += (now - m_start);
+	  break;
+	case SCHEDULE:
+	  m_schedule += (now - m_start);
+	  break;
+	}
+	m_state = state;
+	m_start = now;
+      }
+
+    public:
+      pthread_t m_id;
+      blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
+      ioa::time m_ioa;
+      ioa::time m_thread;
+      ioa::time m_user;
+      ioa::time m_schedule;
+
+      thread_context () :
+	m_state (NONE) { }
+
+      void switch_to_none () {
+	switch_to (NONE);
+      }
+
+      void switch_to_ioa () {
+	switch_to (IOA);
+      }
+
+      void switch_to_thread () {
+	switch_to (THREAD);
+      }
+
+      void switch_to_user () {
+	switch_to (USER);
+      }
+
+      void switch_to_schedule () {
+	switch_to (SCHEDULE);
+      }
+    };
 
     model m_model;
+    const int THREAD_COUNT;
     blocking_list<std::pair<bool, runnable_interface*> > m_sysq;
-    blocking_list<std::pair<bool, action_runnable_interface*> > m_execq;
+    mutex m_context_mutex;
+    std::vector<thread_context*> m_contexts;
     int m_wakeup_fd[2];
     blocking_list<time_action> m_timerq;
     blocking_list<fd_action> m_readq;
@@ -51,6 +130,7 @@ namespace ioa {
     // TODO:  Replace with block set.  Actually, all of these could be sets.
     blocking_list<int> m_closeq;
     thread_key<aid_t> m_current_aid;
+    thread_key<thread_context*> m_con;
 
     struct action_runnable_equal
     {
@@ -98,7 +178,9 @@ namespace ioa {
 	  Consequenty, we push a sentinel value to unblock the processing threads.
 	*/
 	m_sysq.push (std::pair<bool, runnable_interface*> (false, 0));
-	m_execq.push (std::pair<bool, action_runnable_interface*> (false, 0));
+	for (int i = 0; i < THREAD_COUNT; ++i) {
+	 m_contexts[i]->m_execq.push (std::pair<bool, action_runnable_interface*> (false, 0));
+	}
 	wakeup_io_thread ();
       }
       return retval;
@@ -120,6 +202,8 @@ namespace ioa {
     }
 
     void schedule_execq (action_runnable_interface* r) {
+      thread_context* context = m_contexts[r->get_action ().get_aid () % THREAD_COUNT];
+
       /*
 	Imagine an automaton with with an internal action that does nothing but schedule itself twice.
 	Let (n) denote the number of runnables in the execq for the action.
@@ -133,8 +217,8 @@ namespace ioa {
       */
       bool duplicate;
       {
-	lock lock (m_execq.list_mutex);
-	duplicate = std::find_if (m_execq.list.begin (), m_execq.list.end (), action_runnable_equal (r)) != m_execq.list.end ();
+	lock lock (context->m_execq.list_mutex);
+	duplicate = std::find_if (context->m_execq.list.begin (), context->m_execq.list.end (), action_runnable_equal (r)) != context->m_execq.list.end ();
       }
 
       /*
@@ -146,7 +230,7 @@ namespace ioa {
       */
 
       if (!duplicate) {
-	m_execq.push (std::make_pair (true, r));
+	context->m_execq.push (std::make_pair (true, r));
       }
       else {
 	delete r;
@@ -154,14 +238,31 @@ namespace ioa {
     }
 
     void process_execq () {
+      // Find the context.
+      thread_context* context = 0;
+      pthread_t id = pthread_self ();
+      for (int i = 0; i < THREAD_COUNT; ++i) {
+	m_context_mutex.lock ();
+	if (pthread_equal (id, m_contexts[i]->m_id)) {
+	  context = m_contexts[i];
+	  m_context_mutex.unlock ();
+	  break;
+	}
+	m_context_mutex.unlock ();
+      }
+      assert (context != 0);
+      m_con.set (context);
+
       clear_current_aid ();
+      context->switch_to_ioa ();
       while (thread_keep_going ()) {
-	std::pair<bool, runnable_interface*> r = m_execq.pop ();
+	std::pair<bool, runnable_interface*> r = context->m_execq.pop ();
 	if (r.first) {
 	  (*r.second) (m_model);
 	  delete r.second;
 	}
       }
+      context->switch_to_none ();
     }
 
     void wakeup_io_thread () {
@@ -407,9 +508,20 @@ namespace ioa {
     }
 
   public:
-    simple_scheduler_impl () :
-      m_model (*this)
-    { }
+    simple_scheduler_impl (int const threads) :
+      m_model (*this),
+      THREAD_COUNT (threads)
+    {
+      for (int i = 0; i < THREAD_COUNT; ++i) {
+	m_contexts.push_back (new thread_context ());
+      }
+    }
+
+    ~simple_scheduler_impl () {
+      for (int i = 0; i < THREAD_COUNT; ++i) {
+	delete m_contexts[i];
+      }      
+    }
 
     aid_t get_current_aid () {
       aid_t retval = m_current_aid.get ();
@@ -439,7 +551,14 @@ namespace ioa {
     }
 
     void schedule (action_runnable_interface* r) {
+      thread_context* context = m_con.get ();
+      if (context != 0) {
+	context->switch_to_schedule ();
+      }
       schedule_execq (r);
+      if (context != 0) {
+	context->switch_to_user ();
+      }
     }
 
     void schedule_after (action_runnable_interface* r,
@@ -461,7 +580,6 @@ namespace ioa {
       int r;
     
       assert (m_sysq.list.size () == 0);
-      assert (m_execq.list.size () == 0);
       assert (!keep_going ());
     
       // Create a pipe to communicate with the timer thread.
@@ -476,13 +594,23 @@ namespace ioa {
       m_model.create (generator);
     
       thread sysq_thread (*this, &simple_scheduler_impl::process_sysq);
-      thread execq_thread (*this, &simple_scheduler_impl::process_execq);
       thread timerq_thread (*this, &simple_scheduler_impl::process_ioq);
 
+      std::vector<thread*> threads;
+      for (int i = 0; i < THREAD_COUNT; ++i) {
+	m_context_mutex.lock ();
+	threads.push_back (new thread (*this, &simple_scheduler_impl::process_execq));
+	m_contexts[i]->m_id = threads[i]->get_id ();
+	m_context_mutex.unlock ();
+      }
+      for (int i = 0; i < THREAD_COUNT; ++i) {
+	threads[i]->join ();
+	delete threads[i];
+      }
+      threads.clear ();
 
-      sysq_thread.join ();
-      execq_thread.join ();
       timerq_thread.join ();
+      sysq_thread.join ();
 
       // There are no runnables left in the system, thus, there is no more work to do.
       // If all of the automata have been coded correctly, then we have reached "fixed point".
@@ -499,21 +627,27 @@ namespace ioa {
 	delete pos->second;
       }
       m_sysq.list.clear ();
-    
-      for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_execq.list.begin ();
-	   pos != m_execq.list.end ();
-	   ++pos) {
-	delete pos->second;
+
+      for (int i = 0; i < THREAD_COUNT; ++i) {
+	for (std::list<std::pair<bool, action_runnable_interface*> >::iterator pos = m_contexts[i]->m_execq.list.begin ();
+	     pos != m_contexts[i]->m_execq.list.end ();
+	     ++pos) {
+	  delete pos->second;
+	}
+	m_contexts[i]->m_execq.list.clear ();
+	std::cout << "ioa=" << m_contexts[i]->m_ioa << " "
+		  << "schedule=" <<  m_contexts[i]->m_schedule << " "
+		  << "thread=" << m_contexts[i]->m_thread << " "
+		  << "user=" << m_contexts[i]->m_user << " "
+		  << "total=" << m_contexts[i]->m_ioa + m_contexts[i]->m_schedule + m_contexts[i]->m_thread + m_contexts[i]->m_user << std::endl;
       }
-      m_execq.list.clear ();
-    
+        
       // TODO:  Do I need to close both ends?
       close (m_wakeup_fd[0]);
       close (m_wakeup_fd[1]);
 
       // Notice that the post-conditions match the preconditions.
       assert (m_sysq.list.size () == 0);
-      assert (m_execq.list.size () == 0);
       assert (!keep_going ());
     }
   
@@ -524,12 +658,20 @@ namespace ioa {
     }
 
     void set_current_aid (const aid_t aid) {
-      // This is to be used during generation so that any allocated memory can be associated with the automaton.
       assert (aid != -1);
+      thread_context* context = m_con.get ();
+      if (context != 0) {
+	context->switch_to_user ();
+      }
+      // This is to be used during generation so that any allocated memory can be associated with the automaton.
       m_current_aid.set (aid);
     }
   
     void clear_current_aid () {
+      thread_context* context = m_con.get ();
+      if (context != 0) {
+	context->switch_to_ioa ();
+      }
       m_current_aid.set (-1);
     }
 
@@ -599,10 +741,24 @@ namespace ioa {
 		    void* const key) {
       schedule_sysq (make_action_runnable (automaton_handle<automaton> (aid), &automaton::sys_destroyed, std::make_pair (t, key), system_input_category ()));
     }
+
+    void begin_sys_call () {
+      thread_context* context = m_con.get ();
+      if (context != 0) {
+	context->switch_to_thread ();
+      }
+    }
+
+    void end_sys_call () {
+      thread_context* context = m_con.get ();
+      if (context != 0) {
+	context->switch_to_ioa ();
+      }
+    }
   };
 
-  simple_scheduler::simple_scheduler () :
-    m_impl (new simple_scheduler_impl ())
+  simple_scheduler::simple_scheduler (int const threads) :
+    m_impl (new simple_scheduler_impl (threads))
   { }
 
   simple_scheduler::~simple_scheduler () {
@@ -658,6 +814,14 @@ namespace ioa {
 
   void simple_scheduler::run (std::auto_ptr<generator_interface> generator) {
     m_impl->run (generator);
+  }
+
+  void simple_scheduler::begin_sys_call () {
+    m_impl->begin_sys_call ();
+  }
+  
+  void simple_scheduler::end_sys_call () {
+    m_impl->end_sys_call ();
   }
   
 }

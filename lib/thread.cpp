@@ -21,4 +21,7 @@ namespace ioa {
     assert (r == 0);
   }
 
+  pthread_t thread::get_id () const {
+    return m_thread;
+  }
 }

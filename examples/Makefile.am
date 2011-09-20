@@ -16,7 +16,8 @@ udp_sender \
 udp_receiver \
 echo_client \
 echo_server \
-tcp_lcr
+tcp_lcr \
+random
 
 # Examples from Distributed Algorithms
 clock_SOURCES = clock.cpp
@@ -33,3 +34,4 @@ udp_sender_SOURCES = udp_sender.cpp
 echo_client_SOURCES = echo_client.cpp
 echo_server_SOURCES = echo_server.cpp
 tcp_lcr_SOURCES = tcp_lcr.cpp
+random_SOURCES = random.cpp

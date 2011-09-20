@@ -1,10 +1,74 @@
 \section{Evaluation and Discussion\label{evaluation}}
 
-\begin{itemize}
-\item Translation of automaton in \emph{Distributed Algorithms} to C++.
-\item Simulate a protocol then replace with network components
-\item Compare a protocol using: single-threaded event-based (select loop), multi-threaded, I/O automata
-\item Show a buggy program and then apply an invariant to find the bug.
-\end{itemize}
+The goal of this section is to provide a preliminary exploration of concurrent execution for I/O automata and establish a baseline for system overhead.
 
-Bring up style mentioned in section \ref{representation}.
+Time spent executing a system of automata falls into four categories.
+\emph{Ioa++} time indicates time spent executing framework code.
+\emph{Thread} time indicates time spent executing (blocking) calls to the pthreads library.
+\emph{Scheduling} time indicates time spent for calls into the framework to schedule an action.
+\emph{User} time indicates the time spent executing automaton code.
+The \emph{total} time is the sum of the four categories.
+
+\paragraph{Experimental design.}
+An automaton $R$ contains an input, output, and internal action.
+The output and internal action execute a routine whose complexity is proportional to the parameter $N$.
+The automaton schedules the internal action with probability $\rho$ and schedules the output action otherwise.
+The automaton executes a total of the 1,000 local actions.
+The system to be executed consists of two $R$ automata composed so the output action of one is composed with the input action of another.
+
+The number of threads, the parameter $N$, and the parameter $\rho$ constitute the configuration parameters for the experiment.
+The internal actions are independent and can be executed concurrently by independent threads.
+Increasing $N$ increases user time.
+When $\rho = 0$, the internal actions are never scheduled and the output actions are always scheduled.
+Consequently, no actions are executed concurrently.
+Conversely, when $\rho = 1$, the internal actions are always scheduled and every action can be executed concurrently.
+
+\paragraph{Results.}
+We executed the described system for $N = 10^{\{1, 2, 3, 4, 5, 6\}}$ and $\rho$ from $0.0$ to $1.0$ in $0.1$ increments.
+The results are shown in Figures~\ref{plot1}, \ref{plot10}, \ref{plot100}, \ref{plot1000}, \ref{plot10000}, \ref{plot100000}, and \ref{plot1000000}.
+
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot1}
+\label{plot1}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot10}
+\label{plot10}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot100}
+\label{plot100}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot1000}
+\label{plot1000}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot10000}
+\label{plot10000}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot100000}
+\label{plot100000}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=\textwidth]{plot1000000}
+\label{plot1000000}
+\end{figure}
+
+0.000357291 0.000767172
+0.000359442 0.000769291

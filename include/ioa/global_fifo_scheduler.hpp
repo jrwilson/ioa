@@ -47,6 +47,10 @@ namespace ioa {
     void close (int fd);
     
     void run (std::auto_ptr<generator_interface> generator);
+
+    void begin_sys_call () { }
+
+    void end_sys_call () { }
   };
 
 }

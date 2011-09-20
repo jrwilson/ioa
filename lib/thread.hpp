@@ -62,6 +62,7 @@ namespace ioa {
 
     ~thread ();
     void join ();
+    pthread_t get_id () const;
   };
   
 }
