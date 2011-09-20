@@ -661,10 +661,13 @@ namespace ioa {
       assert (aid != -1);
       thread_context* context = m_con.get ();
       if (context != 0) {
-	context->switch_to_user ();
+	context->switch_to_ioa ();
       }
       // This is to be used during generation so that any allocated memory can be associated with the automaton.
       m_current_aid.set (aid);
+      if (context != 0) {
+	context->switch_to_user ();
+      }
     }
   
     void clear_current_aid () {
