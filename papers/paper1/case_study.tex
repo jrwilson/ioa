@@ -17,9 +17,10 @@ We observe that having a representation of I/O automata in a production language
 For example, an invariant in the asynchronous LCR automaton is that all of the UIDs in the send queue of automaton $i$ must be greater than or equal to the UID of automaton $i$.
 This invariant can be quickly checked against the constructor and four actions of the \verb+asynch_lcr_automaton+.
 Upon construction, the send queue contains the UID of the automaton so the invariant holds initially.
-The leader and init actions do not modify the send queue so the invariant holds trivially.
+The leader action does not modify the send queue so the invariant holds trivially.
+The init action adds the automaton's UID to the send queue.
 The receive action only adds a UID to the send queue if the UID is greater than the automaton's UID.
-The send action removes a UID from the send queue so if the invariant is true before, it will be true after.
+The send action removes a UID from the send queue.
 Reasoning about an automaton directly from the source code allows one to use formal methods to develop and debug systems.
 
 \paragraph{Unit testing with simulation.}

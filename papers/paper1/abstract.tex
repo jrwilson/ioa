@@ -1,16 +1,16 @@
 \begin{abstract}
-
-The ability to realize sophisticated distributed systems such as those found in cyber-physical systems, pervasive computing, and enterprise computing is predicated on a suitable model and implementation of asynchrony and concurrency.
-The size and complexity of these systems implies that software re-use in their development, maintenance, and evaluation is also essential.
-Taken together, these requirements demand appropriate programming abstractions through which different forms of asynchrony and concurrency can be realized in reusable software.
+The ability to realize sophisticated distributed systems such as those found in cyber-physical, pervasive, or enterprise computing environments is predicated on a suitable model and implementation of asynchrony and concurrency.
+The size and complexity of these systems implies that software re-use in their development, maintenance, and evolution is also essential.
+Taken together, these requirements demand appropriate programming abstractions through which different forms of asynchrony and concurrency can be realized directly and easily in reusable software.
 % By ``different forms'' we mean single-threaded, multi-threaded, time triggered, event triggered, etc.
 
-To this end, this paper presents the \emph{ioa++ framework} for developing distributed systems, which is the primary contribution of this research.
-We outline a system model for distributed systems and connect these requirements to the I/O automata formal model.
-We then describe how ioa++ is implemented in C++ and offer a number of examples showing how ioa++ can be used to develop distributed systems.
+To that end, this paper presents the \emph{ioa++ framework} for developing distributed systems, which is the primary contribution of this research.
+We outline a system model for asynchronous and concurrent systems, which is grounded in the design and implementation of the I/O automata formal model.
+We describe the design and implementation of ioa++ and show how ioa++ can be used to develop a real network protocol.
 
-Our evaluations show that ioa++ can help simplify developing distributed systems.
-Ioa++ allows developers to reason about asynchronous and concurrent programs directly from the source code using the I/O automata formal model.
-Where reasoning about the correctness of modules in a threaded program requires considering interactions among the various threads, reasoning about the correctness of modules in ioa++ is limited to the modules themselves and a well-defined set of composition rules.
+Our experiences demonstrate that ioa++ can help simplify developing distributed systems, by supporting reasoning about asynchronous and concurrent programs directly from the source code using the I/O automata formal model.
 Common concurrency and interaction semantics allow simple modules to be aggregated into complex systems without building adapters that convert from one thread model or event system to another.
+Whereas reasoning about the correctness of modules in a threaded program requires considering interactions among the various threads, reasoning about the correctness of modules in ioa++ is limited to the modules themselves and a well-defined set of composition rules.
+
+We evaluate the ability to concurrently execute actions in ioa++ through a series of micro-benchmarks which confirm that concurrent execution is limited by the interactions of the automata that comprise the system and the overhead of synchronization.
 \end{abstract}
