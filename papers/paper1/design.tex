@@ -7,38 +7,35 @@
 \label{framework_architecture}
 \end{figure}
 
-An implementation of the component model described in section~\ref{component_model} must provide a service for executing local actions and facilities for manipulating the set of automata and bindings.
+An implementation of the component model described in Section~\ref{component_model} must provide a service for executing local actions and facilities for manipulating the set of automata and bindings.
 The architecture of our framework is depicted in Figure~\ref{framework_architecture}.
-The Scheduler has the resposibility of selecting and executing local actions subject to the I/O automata model and concurrency constraints of~\ref{component_model}.
+The Scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
 All user automata inherit from a common base class that provides facilities for asynchronously creating and destroying child automata and bindings.
-The services provided by the base class are indicated by the Base Automaton layer of Figure~\ref{framework_architecture}.
+The services provided by the base class are indicated by the Base Automaton layer shown in Figure~\ref{framework_architecture}.
 The Base Automaton class contains statically composed System Actions that are used to communicate with the System Automaton.
 In most situations, the services provided by the Base Automaton class are too low-level to be used directly by a User Automaton.
 An Automaton Manager presents a high-level interface for asynchronously managing a single child automaton using the services of the Base Automaton class.
 Similarly, a Binding Manager presents a high-level interface for asynchronously managing a single binding.
-We assume a POSIX environment whose native concurrency mechanism is threads.
 
 \subsection{Scheduler\label{scheduling}}
 
-The scheduler has the responsibility of selecting and executing local actions.
-The two activities of the scheduler can be decomposed into a \emph{model} that executes actions and a \emph{controller} that selects the next action.
+The scheduler is responsible both for selecting and for executing local actions.
+These two activities can be decomposed into a \emph{dispatcher} that executes actions and a \emph{controller} that selects the next action.
 
-\paragraph{The Model.}
-The model enforces the execution and concurrency constraints of section~\ref{component_model}.
+The dispatcher enforces the execution and concurrency constraints of Section~\ref{component_model}.
 Input actions are executed with output actions according to the current set of bindings.
-The model allows executing actions concurrently by (1)~requiring that the sets of automata implied by each action are disjoint and (2)~serializing all updates to the set of automata and bindings.
-Since concurrent access to the model is allowed, the module implementing the model must be thread-safe.
+The dispatcher allows executing actions concurrently by (1)~requiring that the sets of automata implied by each action are disjoint and (2)~serializing all updates to the set of automata and bindings.
+Since concurrent access to the dispatcher is allowed, the module implementing the dispatcher must be thread-safe.
 
-Our implementation of the model uses a two-level locking scheme to enforce the concurrent execution constraints.
+Our implementation of the dispatcher uses a two-level locking scheme to enforce the concurrent execution constraints.
 Any action that modifies the set of automata and bindings must first acquire a write lock to prevent concurrent access.
 All other actions acquire a read lock to implement single-writer/multiple reader semantics.
 The second phase of executing a non-modifying action involves acquiring locks for the set of automata implied by an action.
 The locks are acquired in a fixed order to prevent deadlock~\cite{havender1968avoiding}.
 Once the locks are acquired, the precondition is evaluated, the local action and all bound input actions are executed, and the locks are released.
 
-\paragraph{The Controller.}
 The controller encodes a \emph{policy} that selects the next local action.
-For the framework to be an valid implementation of the I/O automata model, the controller used by the scheduler should be \emph{fair} as defined in section~\ref{component_model}.
+For the framework to be an valid implementation of the I/O automata model, the controller used by the scheduler should be \emph{fair} as defined in Section~\ref{component_model}.
 The run-time system can be initialized with different controllers to achieve different performance objectives.
 
 \paragraph{Explicit dynamic scheduling.}
@@ -70,21 +67,21 @@ Not declaring an enabled action violates the fairness of the controller since it
 Not scheduling an (enabled) action is a common mistake.
 
 \paragraph{Binding predicates and scheduling.}
-The preceding discussion on scheduling claims that an action in one automaton cannot affect preconditions in another automaton.
+The preceding discussion on scheduling assumes that an action in one automaton cannot affect preconditions in another automaton.
 This is not entirely correct when one considers the system automaton and binding predicates.
-Imagine an automaton with a single output action whose only precondition is that it must be bound and assume that the automaton only schedules the action when enabled.
+For example, imagine an automaton with a single output action whose only precondition is that it must be bound and assume that the automaton only schedules the action when enabled.
 When the automaton is created, its only action is disabled.
-Consequently, it will not schedule its action and therefore not be executed.
+Consequently, it will not schedule its action and therefore will not be executed.
 Suppose that some time after the automaton is created, another automaton successfully binds to the output action.
 The bind changes the precondition but the automaton will never be executed since it has no way of scheduling the output action.
-While this example may seem contrived, it is representative of situations where an automaton is waiting for one or more of its outputs to be bound; a situation that occurs quite often in practice.
+While this example may seem contrived, it is representative of situations where an automaton is waiting for one or more of its outputs to be bound: a situation that occurs quite often in practice.
 To remedy this, our framework takes advantage of the fair scheduling criteria of the I/O automata model and schedules an output action after a successful bind or unbind.
 
-\paragraph{Actions of non-existent automata.}
-Every action in the set of actions considered by the controller was scheduled by its associated automaton.
+\paragraph{Actions of no-longer-existing automata.}
+Every action in the set of actions considered by the controller is scheduled by its associated automaton.
 Since automata can be destroyed, an action in the set of actions owned by the controller might belong to an automaton that no longer exists.
 Our solution is to check if the automaton exists before executing an action.
-This check is performed by the model and avoids the overhead associated with synchronizing the set of actions with the set of automata every time an automaton is destroyed.
+This check is performed by the dispatcher and avoids the overhead associated with synchronizing the set of actions with the set of automata every time an automaton is destroyed.
 Our solution assigns each automaton a unique identifier called an \emph{automaton id (aid)} and that the set of actions in the scheduler turns over comparatively faster than the set of aids.
 
 \paragraph{Delayed actions.}
@@ -104,7 +101,7 @@ This implies the use of either the Proactor or Reactor pattern~\cite{schmidt2000
 For our framework, we used the Reactor pattern since (1) the Reactor pattern is simpler and (2) all major operating systems have non-blocking I/O and some kind of synchronous I/O multiplexing whereas asynchronous I/O is much less standardized.
 
 Our implementation of the Reactor pattern causes an action to be scheduled when a file descriptor is ready for reading or writing.
-A user automaton creates a file descriptors and places it in non-blocking mode.
+A user automaton creates a file descriptor and configures it for non-blocking I/O.
 The automaton then tells the scheduler to release an action (typically an internal action) whenever the automaton becomes ready for reading (or writing).
 Subsequent requests made using the same file descriptor and event (ready for reading, ready for writing) are ignored.
 Once the file descriptor is ready, the action is released for consideration by the controller.
@@ -118,7 +115,7 @@ The global FIFO scheduler uses the Reactor pattern to implement delayed actions 
 \subsection{System Actions\label{system_action_section}}
 
 \paragraph{System action protocol.}
-Our approach to system actions follows the model introduced in section~\ref{dynamics}.
+Our approach to system actions follows the model introduced in Section~\ref{dynamics}.
 All automata are statically composed with a system automaton via system actions for dynamically creating child automata, binding external actions, unbinding external actions, and destroying child automata.
 The system automaton implements a request-response protocol where an automaton requests a system action and the system automaton processes the request and responds with either success or failure.
 Associated with each request is a \emph{subject} which is the automaton's local name for an automaton or binding.
