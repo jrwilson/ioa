@@ -1,0 +1,48 @@
+# -*-Makefile-*-
+
+command = random
+
+threads = 1 2
+
+actions = 1000
+
+calcs = 1 10 100 1000 10000 100000 1000000
+
+fraction = 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+
+runs = 30
+
+experiments = $(foreach t,$(threads),$(foreach c, $(calcs),$(foreach f,$(fraction),$(command)_$(t)_$(actions)_$(c)_$(f)_.exp)))
+
+fracs = $(foreach t,$(threads),$(foreach c, $(calcs),$(foreach f,$(fraction),$(command)_$(t)_$(actions)_$(c)_$(f)_.frac)))
+
+results = $(foreach t,$(threads),$(foreach c, $(calcs),$(foreach f,$(fraction),$(command)_$(t)_$(actions)_$(c)_$(f)_.res)))
+
+fresults = $(foreach t,$(threads),$(foreach c, $(calcs),$(foreach f,$(fraction),$(command)_$(t)_$(actions)_$(c)_$(f)_.fres)))
+
+.PHONY: all
+all: experiments fracs results fresults
+
+.PHONY: experiments
+experiments: $(experiments)
+
+.PHONY: fracs
+fracs: $(fracs)
+
+.PHONY: results
+results: $(results)
+
+.PHONY: fresults
+fresults: $(fresults)
+
+%.exp:
+	./do_experiment $@ $(runs) > $@
+
+%.frac : %.exp
+	awk -f normalize.awk $< > $@
+
+%.res : %.exp
+	awk -f analyze.awk $< > $@
+
+%.fres : %.frac
+	awk -f analyze.awk $< > $@
