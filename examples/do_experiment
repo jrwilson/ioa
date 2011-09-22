@@ -1,0 +1,18 @@
+#/bin/bash
+
+IFSOLD=$IFS
+IFS='_'
+args=($1)
+IFS=$IFSOLD
+
+command=${args[0]}
+threads=${args[1]}
+actions=${args[2]}
+calcs=${args[3]}
+fraction=${args[4]}
+runs=$2
+
+for (( i=1; i<=$runs; i++ ))
+do
+  ./${command} $threads $actions $calcs $fraction
+done
