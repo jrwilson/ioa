@@ -1,17 +1,30 @@
-\documentclass[letterpaper]{article}
+\documentclass[10pt, conference, compsocconf]{IEEEtran}
 
-\usepackage{outline}
+\usepackage{cite}
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{url}
+\usepackage{amsmath}
 
 \lstset{language=C++, basicstyle=\footnotesize}
+
+\newif\ifjournal
+\journalfalse
 
 \begin{document}
 
 \title{Implementing Distributed Systems Directly with I/O Automata in Ioa++}
-\author{Justin R. Wilson \and Christopher D. Gill}
-\date{}
+\author{
+  \IEEEauthorblockN{Justin R. Wilson and Christopher D. Gill}
+  \IEEEauthorblockA{Department of Computer Science and Engineering\\
+    Campus Box 1045, Washington University\\
+    One Brookings Drive\\
+    St. Louis, MO 63130\\
+    {wilsonj,cdgill}@cse.wustl.edu}
+  \and
+  \IEEEauthorblockN{Guia-Catalin Roman}
+  \IEEEauthorblockA{TODO:  Dr. Roman's address}
+}
 
 \maketitle
 
@@ -33,25 +46,7 @@
 
 \input{conclusion}
 
+\bibliographystyle{IEEEtran}
 \bibliography{bibliography}{}
-\bibliographystyle{plain}
-
-%% \appendix
-
-%% \section{AsyncLCR automaton\label{asynch_lcr}}
-
-%% \lstinputlisting[language=C++]{asynch_lcr_automaton.hpp}
-
-%% \section{Channel automaton\label{channel}}
-
-%% \lstinputlisting[language=C++]{channel_automaton.hpp}
-
-%% \section{Unidirectional Ring Network\label{ring}}
-
-%% \lstinputlisting[language=C++]{unidirectional_ring_leader_election.hpp}
-
-%% \section{AsyncLCR driver\label{driver}}
-
-%% \lstinputlisting[language=C++]{asynch_lcr.cpp}
 
 \end{document}

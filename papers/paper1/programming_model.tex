@@ -6,7 +6,7 @@ We first show how I/O automata are represented in the C++ language.
 We then discuss the mechanisms available for dynamic composition.
 We conclude with techniques for managing dynamic constellations of automata.
 
-\paragraph{Leader election in a unidirectional ring.}
+\paragraph*{Leader election in a unidirectional ring}
 Nodes in a distributed system are arranged in a ring so that two consecutive nodes are connected by a directed channel.
 The goal is to designate one of the nodes as the leader of the ring.
 The solution we adopt is the asynchronous LCR algorithm presented by Lynch in Chapter 15 of~\cite{lynch1996distributed} which is in turn based on the work of LeLann~\cite{le1977distributed} and Chang and Roberts~\cite{chang1979improved}.
@@ -14,13 +14,13 @@ The LCR algorithm assumes that every node has a unique identifier (UID).
 When the protocol begins, each node sends its UID to its successor.
 When a node receives a UID from its predecessor that is greater than its own, it forwards the UID to its successor.
 When a node receives its own UID, it elects itself the leader of the ring.
-Our implementation of the asynchronous LCR automaton is located in \verb+examples/asynch_lcr_automaton.hpp+ of the ioa++ package.
+Our implementation of the asynchronous LCR automaton is located in examples/asynch\_lcr\_automaton.hpp of the ioa++ package.
 
 \subsection{I/O Automata Representation}
 
-\paragraph{Declaring an automaton.}
-All automata inherit from the common base class \verb+ioa::automaton+ which implements the system action interface.
-The following code declares the \verb+asynch_lcr_automaton+:
+\paragraph*{Declaring an automaton}
+All automata inherit from the common base class ioa::automaton which implements the system action interface.
+The following code declares the asynch\_lcr\_automaton:
 \begin{lstlisting}
 template <typename UID>
 class asynch_lcr_automaton :
@@ -29,12 +29,12 @@ class asynch_lcr_automaton :
   ...
 };
 \end{lstlisting}
-The \verb+asynch_lcr_automaton+ is declared as a template where the \verb+UID+ template parameter must model the unique identifier concept.
+The asynch\_lcr\_automaton is declared as a template where the UID template parameter must model the unique identifier concept.
 The generic programming facilities of the C++ language aid in the development of general purpose reusable components.
 
-\paragraph{Declaring and initializing state variables.}
+\paragraph*{Declaring and initializing state variables}
 The state variables of an automaton are expressed as member variables of the corresponding class.
-The four state variables of the \verb+asynch_lcr_automaton+ include the UID of the automaton, a queue of outgoing messages, and flags for reporting a change in status:
+The four state variables of the asynch\_lcr\_automaton include the UID of the automaton, a queue of outgoing messages, and flags for reporting a change in status:
 \begin{lstlisting}
 private:
   const UID m_u;
@@ -42,9 +42,9 @@ private:
   bool m_report;
   bool m_leader;
 \end{lstlisting}
-Notice that the member variables are declared \verb+private+ which is in keeping with the notion that the state of each automaton is independent.
+Notice that the member variables are declared private which is in keeping with the notion that the state of each automaton is independent.
 State variables are initialized using a constructor.
-For the \verb+asynch_lcr_automaton+, the flags are both false and the UID is initialized and added to the send queue:
+For the asynch\_lcr\_automaton, the flags are both false and the UID is initialized and added to the send queue:
 \begin{lstlisting}
 public:
   asynch_lcr_automaton (const UID& u) :
@@ -56,10 +56,10 @@ public:
     schedule ();
   }
 \end{lstlisting}
-The constructor also bootstraps the scheduler by scheduling all enabled local actions using the member function \verb+schedule+.
-The \verb+schedule+ member function is discussed in the paragraph on scheduling.
+The constructor also bootstraps the scheduler by scheduling all enabled local actions using the member function schedule.
+The schedule member function is discussed in the paragraph on scheduling.
 
-\paragraph{Declaring/defining actions.}
+\paragraph*{Declaring/defining actions}
 Actions are member variables that model the action concept.
 Actions contain methods for preconditions, effects, and scheduling and traits that indicate the actions's type (input, output, internal), value status, value type, parameter status, and parameter type.
 The traits are used to guide the execution of the methods by the model and supply values and parameters as necessary.
@@ -68,8 +68,8 @@ Bindings are checked for type compatibility at compile time using the generic pr
 
 To facilitate declaring actions, a number of wrappers and macros corresponding to the action types listed in section~\ref{practical} are available.
 Local actions are declared using three functions corresponding to a precondition, effect, and scheduling call.
-The macros assume the functions are named \verb+action_name_precondition+, \verb+action_name_effect+, and \verb+action_name_schedule+.
-For example, the send action of the \verb+asynch_lcr_automaton+ is declared:
+The macros assume the functions are named action\_name\_precondition, action\_name\_effect, and action\_name\_schedule.
+For example, the send action of the asynch\_lcr\_automaton is declared:
 \begin{lstlisting}
 private:
   bool send_precondition () const { ... }
@@ -79,15 +79,15 @@ public:
   V_UP_OUTPUT (asynch_lcr_automaton, send, UID);
 \end{lstlisting}
 Input actions are declared similarly save the absence of a precondition.
-The precondition and scheduling functions are not allowed to change the state of the automaton and are consequently declared \verb+const+.
-The macros for actions that are subject to binding by other automata belong in a \verb+public+ section.
+The precondition and scheduling functions are not allowed to change the state of the automaton and are consequently declared const.
+The macros for actions that are subject to binding by other automata belong in a public section.
 
-\paragraph{Scheduling.}
-Automata submit actions to the scheduler using the \verb+ioa::schedule+ function.
-The \verb+ioa::schedule+ function can be called at any time.
+\paragraph*{Scheduling}
+Automata submit actions to the scheduler using the ioa::schedule function.
+The ioa::schedule function can be called at any time.
 However, automata are generally easier to read if scheduling calls are relegated to the scheduling functions.
 A common pattern is to schedule all local actions using one member function where each action is guarded by its precondition as described in section~\ref{scheduling}.
-For the \verb+asynch_lcr_automaton+, the scheduling function is:
+For the asynch\_lcr\_automaton, the scheduling function is:
 \begin{lstlisting}
   void schedule () const {
     if (send_precondition ()) {
@@ -98,52 +98,54 @@ For the \verb+asynch_lcr_automaton+, the scheduling function is:
     }
   }
 \end{lstlisting}
-The various scheduling functions in the \verb+asynch_lcr_automaton+ and the constructor all dispatch to this function.
+The various scheduling functions in the asynch\_lcr\_automaton and the constructor all dispatch to this function.
 
 \subsection{Dynamics}
 
-\paragraph{Dynamic composition.}
-The \verb+asynch_lcr_automaton+ is a reusable component designed to be composed in the context of a larger system.
-Dynamic composition is accomplished by creating child automata and bindings via \verb+ioa::automaton_manager+ and \verb+ioa::binding_manager+ objects.
-The \verb+tcp_lcr_automaton+ discussed in section~\ref{case_study} creates a \verb+asynch_lcr_automaton+ and binds to it with the following code:
+\paragraph*{Dynamic composition}
+The asynch\_lcr\_automaton is a reusable component designed to be composed in the context of a larger system.
+Dynamic composition is accomplished by creating child automata and bindings via ioa::automaton\_manager and ioa::binding\_manager objects.
+The tcp\_lcr\_automaton discussed in section~\ref{case_study} creates a asynch\_lcr\_automaton and binds to it with the following code:
 \begin{lstlisting}
-    ioa::automaton_manager<asynch_lcr_automaton<uuid> >* lcr =
-       ioa::make_automaton_manager (this,
-         ioa::make_generator<asynch_lcr_automaton<uuid> > (m_u));
-    ioa::make_binding_manager (this,
-			       lcr, &asynch_lcr_automaton<uuid>::send,
-			       &m_self, &tcp_lcr_automaton::send_lcr);
-    ioa::make_binding_manager (this,
-			       &m_self, &tcp_lcr_automaton::receive_lcr,
-			       lcr, &asynch_lcr_automaton<uuid>::receive);
-    ioa::make_binding_manager (this,
-			       lcr, &asynch_lcr_automaton<uuid>::leader,
-			       &m_self, &tcp_lcr_automaton::leader_lcr);
-    ioa::make_binding_manager (this,
-			       &m_self, &tcp_lcr_automaton::init_lcr,
-			       lcr, &asynch_lcr_automaton<uuid>::init);
+ioa::automaton_manager<asynch_lcr_automaton<uuid> >*
+lcr = ioa::make_automaton_manager (this,
+  ioa::make_generator<asynch_lcr_automaton<uuid> > (
+    m_u));
+ioa::make_binding_manager (this,
+  lcr, &asynch_lcr_automaton<uuid>::send,
+  &m_self, &tcp_lcr_automaton::send_lcr);
+ioa::make_binding_manager (this,
+  &m_self, &tcp_lcr_automaton::receive_lcr,
+  lcr, &asynch_lcr_automaton<uuid>::receive);
+ioa::make_binding_manager (this,
+  lcr, &asynch_lcr_automaton<uuid>::leader,
+  &m_self, &tcp_lcr_automaton::leader_lcr);
+ioa::make_binding_manager (this,
+  &m_self, &tcp_lcr_automaton::init_lcr,
+  lcr, &asynch_lcr_automaton<uuid>::init);
 \end{lstlisting}
-Children automata are managed by \verb+ioa::automaton_manager+ objects which can be created via the \verb+ioa::make_automaton_manager+ function.
-An automaton manager object requires an \verb+ioa::automaton+ object for its system action implementation and a generator for allocating the child automaton.
-Bindings are managed by \verb+ioa::binding_manager+ objects which can created via the \verb+ioa::make_binding_manager+ function.
-A binding manager objects requires an \verb+ioa::automaton+ object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
-The \verb+ioa::automaton_manager+ class and \verb+ioa::binding_manager+ class contain methods for destroying and unbinding respectively.
-The \verb+m_self+ object of the example is a \verb+ioa::handle_manager+ which can be used to bind to automata that already exist.
-From the example, the \verb+tcp_lcr_automaton+ binds the \verb+asynch_lcr_automaton+ to itself.
-The wary reader might notice that the \verb+ioa::automaton_manager+ and \verb+ioa::binding_manager+s in the example are dynamically allocated but never recorded and thus never freed.
-Both classes are managed by the \verb+ioa::automaton+ and automatically deallocated when the automaton or binding they manange is destroyed or unbound respectively.
+Children automata are managed by ioa::automaton\_manager objects which can be created via the ioa::make\_automaton\_manager function.
+An automaton manager object requires an ioa::automaton object for its system action implementation and a generator for allocating the child automaton.
+Bindings are managed by ioa::binding\_manager objects which can be created via the ioa::make\_binding\_manager function.
+A binding manager object requires an ioa::automaton object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
+The ioa::automaton\_manager class and ioa::binding\_manager class contain methods for destroying and unbinding respectively.
+The m\_self object of the example is an ioa::handle\_manager which can be used to bind to automata that already exist.
+From the example, the tcp\_lcr\_automaton binds the asynch\_lcr\_automaton to itself.
+The wary reader might notice that the ioa::automaton\_manager and ioa::binding\_managers in the example are dynamically allocated but never recorded and thus never freed.
+Both classes are managed by the ioa::automaton and automatically deallocated when the automaton or binding they manange is destroyed or unbound respectively.
 
-\paragraph{Binding predicates.}
+\paragraph*{Binding predicates}
 Recall that automata require the ability to inspect the current set of bindings to adhere to the I/O automata model.
-The binding predicate supplied by ioa++ is the \verb+ioa::binding_count+ function which returns the number of actions bound to the specified action.
-The value returned by \verb+ioa::binding_count+ is zero for internal actions, zero or one for input actions, and non-negative for output actions.
-Most often, \verb+ioa::binding_count+ is used in the precondition of outputs to ensure that the value generated by the output will be received.
-This type of usage can be seen in the send action of the \verb+asynch_lcr_automaton+:
+The binding predicate supplied by ioa++ is the ioa::binding\_count function which returns the number of actions bound to the specified action.
+The value returned by ioa::binding\_count is zero for internal actions, zero or one for input actions, and non-negative for output actions.
+Most often, ioa::binding\_count is used in the precondition of outputs to ensure that the value generated by the output will be received.
+This type of usage can be seen in the send action of the asynch\_lcr\_automaton:
 \begin{lstlisting}
-  bool send_precondition () const {
-    return !m_send.empty () &&
-      ioa::binding_count (&asynch_lcr_automaton::send) != 0;
-  }
+bool send_precondition () const {
+  return !m_send.empty () &&
+    ioa::binding_count (&asynch_lcr_automaton::send)
+      != 0;
+}
 \end{lstlisting}
 
 \subsection{Managing Dynamic Constellations}
@@ -151,13 +153,13 @@ This type of usage can be seen in the send action of the \verb+asynch_lcr_automa
 In this section, we introduce techniques and principles for managing dynamic constellations of automata and bindings that go beyond the ``nuts and bolts'' presented in the previous section.
 This list is neither exhaustive nor authoritative but rather a distillation of our experiences working with I/O automata.
 
-\paragraph{System action events.}
+\paragraph*{System action events}
 Determining the outcome of a system action event, e.g., that a child automaton was created, is necessary when there are constraints on the order in which system actions must occur.
 For example, the Binding Manager mentioned in section~\ref{system_action_section} waits until the automata supply the output action and input action are created before attempting to bind.
 Similarly, an automaton might compose with an automaton that it does not manage and therefore expects the automaton to exist before attempting to bind.
-To enable such behavior, user automata can observe \verb+ioa::automaton_manager+ objects and \verb+ioa::binding_manager+ objects to receive events generated upon the completion of a system action.
+To enable such behavior, user automata can observe ioa::automaton\_manager objects and ioa::binding\_manager objects to receive events generated upon the completion of a system action.
 
-\paragraph{Error reporting.}
+\paragraph*{Error reporting}
 The event semantics of I/O automata provide a natural mechanism for reporting errors.
 An automaton that encounters an error can use an output action to signal the error.
 The automaton can continue processing if the error is transient or stop if the error is permanent.
@@ -165,16 +167,16 @@ In either case, the error is propagated to the automaton that is using the autom
 Using this technique, errors can be propagated up the hierarchy and resolved at an appropriate level.
 The two strategies for handling an error are to either reset or replace the portion of the constellation that encountered the error.
 
-\paragraph{Handling errors by resetting.}
+\paragraph*{Handling errors by resetting}
 An automaton that can be reset has one or more output actions for reporting errors and one or more input actions for resetting.
 Errors need not be viewed as exceptional circumstances but a necessary part of the protocol implemented by the automaton.
 Automaton designers should strive to write automata that are capable of being reset as this is the simplest error handling strategy.
 
-\paragraph{Handling errors by replacing.}
+\paragraph*{Handling errors by replacing}
 The non-deterministic and asynchronous nature of system actions complicates replacing an automaton.
 To replace a child automaton, the parent automaton must destroy the child, create a new child, and bind to the new child.
 For reasons already discussed, the bind must occur after the create.
-This constraint is enforced by the \verb+ioa::binding_manager+ class.
+This constraint is enforced by the ioa::binding\_manager class.
 Additionally, the destroy must occur before the first bind to ensure that all bindings associated with the first child have been dissolved.
 Attempts to bind before the destroy will fail because either the output action or the input action will be unavailable, i.e., still bound to the first child.
 A general solution is to observe the automaton and wait for it to be destroyed.

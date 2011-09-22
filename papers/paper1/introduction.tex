@@ -32,10 +32,10 @@ To achieve increasing degrees of sophistication with current levels of effort, w
 %% While there is no ``silver bullet''~\cite{brooks1987no}, reducing accidental complexity increases productivity and makes new levels of sophistication possible with existing levels of effort.
 
 %% In the context of distributed systems, a major source of accidental complexity is the mismatch between the asynchronous semantics of distributed systems and the synchronous techniques used to implement them.
-\paragraph{Limitations of thread models.}
+\paragraph*{Limitations of thread models}
 Threads are the \emph{de facto} standard concurrency mechanism for many distributed systems.
 Threads offer a seemingly straightforward extension of the synchronous sequential processing model supported by modern processors, programming languages, and operating systems.
-However, although the widespread availability of thread libraries makes them a natural choice for system development, using threads to develop distributed systems has significant drawbacks.
+While the widespread availability of thread libraries makes them a natural choice for system development, using threads to develop distributed systems has significant drawbacks.
 
 % Illustrate the problem
 First, developing concurrent programs with threads is difficult.
@@ -72,8 +72,8 @@ The difficulty of identifying and evaluating the behavior and requirements of co
 %% A single thread then waits for the events and dispatches the appropriate handler.
 %% The illusion of concurrency, then, is accomplished by interleaving event handlers for different tasks.
 
-\paragraph{Limitations of event models.}
-Events\footnote{It seems to me that there is no standard definition of ``event'' to appeal to.  Are you thinking more Lamport/Pnueli and Manna or something related to building event-based systems?} are a good choice for developing distributed systems due to their reactive semantics and support for asynchrony.
+\paragraph*{Limitations of event models}
+Events~\cite{lamport1978time}, \cite{manna1992temporal} are a good choice for developing distributed systems due to their reactive semantics and support for asynchrony.
 A node in a distributed system senses and actuates its environment and sends and receives messages to communicate with other nodes.
 The input activities, sensing and receiving, are naturally asynchronous, i.e., they can come from the environment at any time.
 The output activities, actuating and sending, in their most general form are also asynchronous as the environment might not be able to immediately consume data produced by a node.
@@ -86,7 +86,7 @@ The alternative is to either convert Java Swing to use the middleware's event lo
 Composing two event systems thus requires a common definition of events and agreement upon how events are generated, distributed, and consumed, which is not often the case.
 % Continuous vs. halting. (search reactive systems, Amir Pnueli, Zohar Manna)
 
-\paragraph{Motivation for I/O automata.}
+\paragraph*{Motivation for I/O automata}
 It is thus clear that existing concurrency abstractions are inadequate to the needs of many sophisticated distributed systems and new approaches must be pursued.
 While threads match the semantics of widely available synchronous processors, thread-based development may introduce hazards for the distributed system developer including obscure race conditions, poor support for asynchrony, and difficulties integrating software developed using different thread models.
 Events, while matching the semantics of distributed systems more closely, are often inflexible, ad hoc, and lack a standard calculus to facilitate the creation of reusable event-based modules.
@@ -115,14 +115,14 @@ Alternative concurrency abstractions that more closely match the semantics of di
 
 The reactive semantics of the I/O automata model match the asynchronous and concurrent semantics of distributed systems well and have been proven effective in the formal design and verification of real world distributed systems.
 The I/O automata model prohibits shared state and thus avoids the problems stemming from it.
-Furthermore, its precise semantics for composition facilitate the creation of reusable event-based modules that may be executed with different forms of concurrency\footnote{What do you mean by ``different forms of concurrency?''  Perhaps we should give some examples.}.
+Furthermore, its precise semantics for composition facilitate the creation of reusable event-based modules that may be executed with different forms of concurrency\footnote{TODO: What do you mean by ``different forms of concurrency?''  Perhaps we should give some examples.}.
 However, there is to date insufficient experience \emph{building} and \emph{evaluating} real distributed systems directly atop I/O automata.
-Previous efforts in this area have focused mainly on formal software development, i.e., automata are described in a language suitable for theorem proving and simulation and aftward are translated into a production language for deployment.
+Previous efforts in this area have focused mainly on formal software development, i.e., automata are described in a language suitable for theorem proving and simulation and afterward are translated into a production language for deployment\footnote{TODO:  Add citations.}.
 The translation from modeling language to production language complicates interfacing with system facilities and makes developing low-level protocols difficult, an area which could greatly benefit from the direct application of I/O automata.
 % Before giving the paper structure, needs to say (1) what the main contributions of the paper are, and (2) how the help address the challenges raised earlier in the intro
 % Thus, in order to build sophisticated distributed systems, we require a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
 
-\paragraph{Paper structure and contributions.}
+\paragraph*{Paper structure and contributions}
 This paper presents ioa++, a framework for building asynchronous and concurrent systems that is based on the I/O automata formal model.
 %% The model must be general to support the wide variety of devices and protocols necessary for cyber-physical and pervasive computing systems.
 %% The model must facilitate the development of concurrent modules that can be reused.

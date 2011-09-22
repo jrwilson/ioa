@@ -5,12 +5,16 @@ Taken together, these requirements demand appropriate programming abstractions t
 % By ``different forms'' we mean single-threaded, multi-threaded, time triggered, event triggered, etc.
 
 To that end, this paper presents the \emph{ioa++ framework} for developing distributed systems, which is the primary contribution of this research.
-We outline a system model for asynchronous and concurrent systems, which is grounded in the design and implementation of the I/O automata formal model.
-We describe the design and implementation of ioa++ and show how ioa++ can be used to develop a real network protocol.
+We develop a component model for asynchronous and concurrent systems based on the I/O automata formal model and dynamic composition.
+We describe the design and implementation of ioa++ based on that system model and show how ioa++ can be used to develop protocols and other forms of distributed systems.
 
 Our experiences demonstrate that ioa++ can help simplify developing distributed systems, by supporting reasoning about asynchronous and concurrent programs directly from the source code using the I/O automata formal model.
-Common concurrency and interaction semantics allow simple modules to be aggregated into complex systems without building adapters that convert from one thread model or event system to another.
+Common concurrency and interaction semantics allow simple modules to be aggregated into complex systems without building adapters that convert from one concurrency model to another.
 Whereas reasoning about the correctness of modules in a threaded program requires considering interactions among the various threads, reasoning about the correctness of modules in ioa++ is limited to the modules themselves and a well-defined set of composition rules.
 
-We evaluate the ability to concurrently execute actions in ioa++ through a series of micro-benchmarks which confirm that concurrent execution is limited by the interactions of the automata that comprise the system and the overhead of synchronization.
+We evaluate the ability to execute actions concurrently in ioa++ through a series of micro-benchmarks which confirm that concurrent execution is limited only by the interactions of the automata that comprise the system and the overhead of synchronization.
 \end{abstract}
+
+\begin{IEEEkeywords}
+TODO; component; formatting; style; styling;
+\end{IEEEkeywords}

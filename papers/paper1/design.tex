@@ -2,7 +2,7 @@
 
 \begin{figure}
 \center
-\includegraphics[width=\textwidth]{architecture}
+\includegraphics[width=\columnwidth]{architecture}
 \caption{Framework architecture.}
 \label{framework_architecture}
 \end{figure}
@@ -38,7 +38,7 @@ The controller encodes a \emph{policy} that selects the next local action.
 For the framework to be an valid implementation of the I/O automata model, the controller used by the scheduler should be \emph{fair} as defined in Section~\ref{component_model}.
 The run-time system can be initialized with different controllers to achieve different performance objectives.
 
-\paragraph{Explicit dynamic scheduling.}
+\paragraph*{Explicit dynamic scheduling}
 The I/O automata model assumes that the scheduler knows about every local action in the system.
 There are two approaches for achieving this in practice.
 In the first approach, automata declare \emph{statically} all of their actions to the scheduler.
@@ -66,7 +66,7 @@ More efficient schemes are possible if one considers how an action might enable 
 Not declaring an enabled action violates the fairness of the controller since it will never select an action that may cause a state change.
 Not scheduling an (enabled) action is a common mistake.
 
-\paragraph{Binding predicates and scheduling.}
+\paragraph*{Binding predicates and scheduling}
 The preceding discussion on scheduling assumes that an action in one automaton cannot affect preconditions in another automaton.
 This is not entirely correct when one considers the system automaton and binding predicates.
 For example, imagine an automaton with a single output action whose only precondition is that it must be bound and assume that the automaton only schedules the action when enabled.
@@ -77,14 +77,14 @@ The bind changes the precondition but the automaton will never be executed since
 While this example may seem contrived, it is representative of situations where an automaton is waiting for one or more of its outputs to be bound: a situation that occurs quite often in practice.
 To remedy this, our framework takes advantage of the fair scheduling criteria of the I/O automata model and schedules an output action after a successful bind or unbind.
 
-\paragraph{Actions of no-longer-existing automata.}
+\paragraph*{Actions of no-longer-existing automata}
 Every action in the set of actions considered by the controller is scheduled by its associated automaton.
 Since automata can be destroyed, an action in the set of actions owned by the controller might belong to an automaton that no longer exists.
 Our solution is to check if the automaton exists before executing an action.
 This check is performed by the dispatcher and avoids the overhead associated with synchronizing the set of actions with the set of automata every time an automaton is destroyed.
 Our solution assigns each automaton a unique identifier called an \emph{automaton id (aid)} and that the set of actions in the scheduler turns over comparatively faster than the set of aids.
 
-\paragraph{Delayed actions.}
+\paragraph*{Delayed actions}
 Scheduling activities for a future time is a useful feature for a real system because it allows the system to sleep between activities.
 The framework should permit the development of automata that act as timers and alarms.
 The corresponding feature that must be supported by the framework is scheduling an action at a future time.
@@ -93,7 +93,7 @@ Actions scheduled in the past or present are released immediately to the schedul
 When the same action is scheduled at two different times, the earliest time is used.
 % Things I didn't say:  No canceling.
 
-\paragraph{File descriptor events.}
+\paragraph*{File descriptor events}
 File descriptors are used to communicate with the outside world in a POSIX environment.
 Observe that there is no concept of blocking in the I/O automata model and introducing blocking I/O operations into action effects adversely affects the asynchronous and concurrent nature of I/O automata.
 Thus, we require techniques that allow a program (1) to wait until a file descriptor is ready for I/O and (2) to perform non-blocking I/O operations.
@@ -107,14 +107,14 @@ Subsequent requests made using the same file descriptor and event (ready for rea
 Once the file descriptor is ready, the action is released for consideration by the controller.
 The scheduler also provides a special function for closing file descriptors that purges them from the reactor.
 
-\paragraph{Global FIFO scheduler.}
+\paragraph*{Global FIFO scheduler}
 The scheduler included with the framework is single-threaded and uses a single queue of actions that is processed using first-in/first-out semantics.
 Scheduling is idempotent to prevent unbounded growth of the queue.
 The global FIFO scheduler uses the Reactor pattern to implement delayed actions and file descriptor events.
 
 \subsection{System Actions\label{system_action_section}}
 
-\paragraph{System action protocol.}
+\paragraph*{System action protocol}
 Our approach to system actions follows the model introduced in Section~\ref{dynamics}.
 All automata are statically composed with a system automaton via system actions for dynamically creating child automata, binding external actions, unbinding external actions, and destroying child automata.
 The system automaton implements a request-response protocol where an automaton requests a system action and the system automaton processes the request and responds with either success or failure.
@@ -136,17 +136,17 @@ The protocol for binding is similar but addresses the possibility that a binding
 Define analogous states for the binding state machine: BindSend, BindRecv, BindDone, UnbindSend, and UnbindRecv.
 A binding subject can be in either BindRecv, BindDone, UnbindSend, or UnbindRecv when it receives a result from the system automaton indicating that the binding was dissolved.
 
-\paragraph{Automaton and Binding managers.}
+\paragraph*{Automaton and Binding managers}
 The protocol used by automata to asynchronously manage child automata and bindings is suitable for simple applications but becomes unwieldy when creating complicated constellations.
 The Automaton Managers and Binding Managers provide an individualized facade to the system action state machines.
 Creating an Automaton Manager initiates the creation of a new child automaton and invoking a destroy method initiates the destruction of a child automaton.
 Automaton Managers can be observed using the Observer~\cite{gamma1995design} pattern to determine when and how the creation/destruction process succeeds.
 Binding Managers are similar except they do not begin the process of binding until the automata providing the output action and input action have been created, thus, Binding Managers observe Automaton Managers.
 
-\paragraph{Generators.}
+\paragraph*{Generators}
 A \emph{generator} is a single-use factory for creating an instance of an automaton.
 Generators are used to produce new automata as part of the create system action and are visible as arguments in the various layers of the framework.
 
 \subsection{Implementation}
 
-Ioa++ is implemented in C++ and available at \url{http://jrwilson.github.com/ioa/}.
+Ioa++ is implemented in C++ for POSIX environments and is available at \url{http://jrwilson.github.com/ioa/}.

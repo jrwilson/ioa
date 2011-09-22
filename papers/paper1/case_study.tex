@@ -1,10 +1,10 @@
 \section{Case Study:  The TCP LCR Automaton\label{case_study}}
 
-In this section, we explore (1) if ioa++ offers a convenient representation for I/O automata and (2) and if ioa++ contains the features necessary for building real distributed systems.
+In this section, we explore whether ioa++ offers a suitably convenient representation for reifying I/O automata and contains the features necessary for building real distributed systems.
 Our approach is to (1) express an automaton in ioa++ using an existing listing, (2) simulate a distributed system built using the automaton as debugging step, and (3) build a real distributed system by composing the automaton with automata for network services.
 For continuity, we use the asynchronous LCR automaton developed in section~\ref{representation}.
 
-\paragraph{Translating the asynchronous LCR automaton into ioa++.}
+\paragraph*{Translating the asynchronous LCR automaton into ioa++}
 The first version of the code for the asynchronous LCR automaton was translated directly from a listing in~\cite{lynch1996distributed}.
 The final version contains an additional action to reinitialize the automaton and modifications that allow an automaton that elected itself leader to nullify its election.
 The motivation for these modifications will be explained when we discuss its use in a real system.
@@ -15,7 +15,7 @@ On average, every local action contributed 6 lines of scheduling code and every 
 
 We observe that having a representation of I/O automata in a production language that closely matches a formal representation is of great benefit because it allows one to reason about an automaton directly from the source code.
 For example, an invariant in the asynchronous LCR automaton is that all of the UIDs in the send queue of automaton $i$ must be greater than or equal to the UID of automaton $i$.
-This invariant can be quickly checked against the constructor and four actions of the \verb+asynch_lcr_automaton+.
+This invariant can be quickly checked against the constructor and four actions of the asynch\_lcr\_automaton.
 Upon construction, the send queue contains the UID of the automaton so the invariant holds initially.
 The leader action does not modify the send queue so the invariant holds trivially.
 The init action adds the automaton's UID to the send queue.
@@ -23,42 +23,42 @@ The receive action only adds a UID to the send queue if the UID is greater than 
 The send action removes a UID from the send queue.
 Reasoning about an automaton directly from the source code allows one to use formal methods to develop and debug systems.
 
-\paragraph{Unit testing with simulation.}
+\paragraph*{Unit testing with simulation}
 After the asynchronous LCR automaton was implemented, we developed a simulation to test it.
-The \verb+examples/asynch_lcr.cpp+ file contains the driver for the simulation.
-The simulation creates a unidirectional ring of a specified size consisting of alternating \verb+asynch_lcr_automaton+ and \verb+channel_automaton+.
-(The \verb+channel_automaton+ was also a direct translation from~\cite{lynch1996distributed}.)
+The examples/asynch\_lcr.cpp file contains the driver for the simulation.
+The simulation creates a unidirectional ring of a specified size consisting of alternating asynch\_lcr\_automaton and channel\_automaton.
+(The channel\_automaton was also a direct translation from~\cite{lynch1996distributed}.)
 
-The simulation showed that the \verb+asynch_lcr_automaton+ was not correct.
+The simulation showed that the asynch\_lcr\_automaton was not correct.
 The first bug we encountered was a silent failure where the ring always failed to elect a leader.
 The problem was that the leader action was never being scheduled so the leader action was added to the scheduling function.
 The second bug manifested itself by electing the wrong leader, i.e., one whose UID was not the maximum.
 A closer inspection showed that certain UIDs were being sent but never received.
 The key insight into solving the problem was to understand that the automata were executing as the ring was being constructed, i.e., we failed to consider dynamic composition.
-The solution was to add binding predicates to the outputs of the \verb+asynch_lcr_automaton+ and \verb+channel_automaton+.
+The solution was to add binding predicates to the outputs of the asynch\_lcr\_automaton and channel\_automaton.
 
-\paragraph{From abstraction to real system.}
+\paragraph*{From abstraction to real system}
 The next phase was to use the asynchronous LCR automaton to perform leader election in a real unidirectional ring of processes connected by TCP sockets.
 The leader of the ring periodically sends a token which is forwarded by all nodes in the ring.
 If a node has not received a token for a specified duration of time, it calls for an election.
-This is the motivation behind the action that resets the \verb+asynch_lcr_automaton+.
+This is the motivation behind the action that resets the asynch\_lcr\_automaton.
 Nodes listen for connections from their predecessor and attempt to connect to their successor.
 Nodes can join and leave the ring at any time.
 The protocol should eventually succeed for complete rings and restart when a ring becomes incomplete.
 These dynamics admit situations where a ring might lose its leader or contain multiple leaders.
 A ring containing multiple leaders should stabilize to having a single leader.
-This is the motivation behind the \verb+asynch_lcr_automaton+ being able to withdraw its election.
+This is the motivation behind the asynch\_lcr\_automaton being able to withdraw its election.
 A rare but possible and valid situation is a ring circulating a token without a leader, i.e., the leader sends a token, leaves the ring, and is replaced before the token makes a full cycle.
 
-The \verb+tcp_lcr_automaton+ which is listed in \verb+examples/tcp_lcr.cpp+ (484 lines) of the ioa++ package implements the protocol just described.
-The \verb+tcp_lcr_automaton+ is a composition of a number of automata including an \verb+asynch_lcr_automaton+, an \verb+ioa::tcp_acceptor_automaton+, an \verb+ioa::tcp_connector_automaton+, and two \verb+ioa::tcp_connection_automaton+ representing the channel from the predecessor and channel to the successor.
+The tcp\_lcr\_automaton which is listed in examples/tcp\_lcr.cpp (484 lines) of the ioa++ package implements the protocol just described.
+The tcp\_lcr\_automaton is a composition of a number of automata including an asynch\_lcr\_automaton, an ioa::tcp\_acceptor\_automaton, an ioa::tcp\_connector\_automaton, and two ioa::tcp\_connection\_automaton representing the channel from the predecessor and channel to the successor.
 The TCP automata provided by the ioa++ package are ordinary automata implemented using file descriptors and the techniques described in section~\ref{design}.
-The \verb+tcp_lcr_automaton+ uses the techniques for managing dynamic constellations described in section~\ref{representation}.
+The tcp\_lcr\_automaton uses the techniques for managing dynamic constellations described in section~\ref{representation}.
 
-The \verb+tcp_lcr_automaton+ is validation that I/O automata are a good foundation for building reusable concurrent modules.
+The tcp\_lcr\_automaton is validation that I/O automata are a good foundation for building reusable concurrent modules.
 The key idea is that all of these modules have well-defined interactions when composed while being inherently concurrent.
-For example, one could substitute the \verb+asynch_lcr_automaton+ with a different automaton to realize a different leader election protocol or a different protocol altogether.
-Alternatively, the \verb+tcp_lcr_automaton+ could be refactored to use a different communication mechanism, e.g., UDP.
+For example, one could substitute the asynch\_lcr\_automaton with a different automaton to realize a different leader election protocol or a different protocol altogether.
+Alternatively, the tcp\_lcr\_automaton could be refactored to use a different communication mechanism, e.g., UDP.
 One need only focus on the protocol implemented by an automaton when composing it with an existing system as opposed to worrying about interacting threads and race conditions.
 
 %% \begin{figure}
