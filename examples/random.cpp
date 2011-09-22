@@ -97,6 +97,7 @@ public:
   random_pair_automaton (int const actions,
 			 int const calcs,
 			 float const internal_fraction) {
+    srand48 (time (0));
     ioa::automaton_manager<random_automaton>* r1 = ioa::make_automaton_manager (this, ioa::make_generator<random_automaton> (actions, calcs, internal_fraction));
     ioa::automaton_manager<random_automaton>* r2 = ioa::make_automaton_manager (this, ioa::make_generator<random_automaton> (actions, calcs, internal_fraction));
     ioa::make_binding_manager (this,
