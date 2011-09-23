@@ -21,11 +21,11 @@ When two threads are used, one thread executes the actions of one $R$ automaton 
 A trial consists of a choice for $\rho$, $N$, and the number of actions to be executed.
 For the experiments, the parameter $\rho$ was varied from $0.0$ to $1.0$ in increments of $0.1$ and the parameter $N$ was varied from $1$ to $1000000$ by factors of $10$.
 The number of actions executed by each automaton was fixed at 1000.
-Each trial was repeated 30 times.
+Each trial was repeated 1000 times.
 All calculations were performed assuming a normal distribution at a confidence level of 95\%.
 
 The driver for a single trial can be found in examples/random.cpp of the ioa++ package.
-The trials were performed on a MacBook Pro running OS X 10.5.8 with an 2.4 GHz Intel Core 2 Duo processor with 4GB of memory.
+The trials were performed on a Mac G4 running OS X 10.5.8 with two 2.66 GHz Dual-Core Intel Xeon processors with 2GB of memory.
 The code was compiled and linked with i686-apple-darwin9-g++-4.0.1 build 5493 with -O2 optimization and the -DPROFILE flag to enable profiling in ioa++.
 
 \begin{figure}
@@ -35,6 +35,7 @@ The code was compiled and linked with i686-apple-darwin9-g++-4.0.1 build 5493 wi
 \end{figure}
 
 Figure~\ref{speed_up} shows the speed-up when system $S$ was executed with one and two threads.
+Confidence intervals are shown with largest being 0.0165.
 When $\rho = 0$, every action is a bound output action and therefore depends on both $R$ automata.
 Consequently, every action must be serialized yielding a maximum speed-up of 1.
 When $\rho = 1$, every action is an internal action and can be executed concurrently with a corresponding maximum speed-up of 2.
@@ -60,7 +61,7 @@ Consequently, contention is reduced allowing for greater speed-ups as indicated 
 \end{figure}
 
 Figures~\ref{overhead1} and \ref{overhead2} show the per thread average of the fraction of time devoted to framework code and synchronization calls for the single and multi-threaded executions.
-(Note that the confidence intervals are present but small.)
+Confidence intervals are shown with largest being 0.002155 for Figure~\ref{overhead1} and 0.001781 for Figure~\ref{overhead2}.
 Since the number of actions to be executed is constant, the single threaded execution shows a relatively consistent fraction for each value of $N$.
 The fraction decreases as $\rho$ goes to 1 as the system transitions from acquiring two locks to one lock.
 The multi-threaded execution shows that the fraction of time devoted to system overhead decreases as $\rho$ goes to 1 and is more pronounced when $N$ is large.
@@ -68,8 +69,8 @@ For example, when $N=1000000$ one thread spends half of its time waiting on the 
 
 This experiment indicates that concurrent execution is possible with ioa++ but a speed-up will only be achieved if (1) enough independent actions are enabled and (2) the duration of the independent actions overcome the overhead of ioa++.
 The overhead of ioa++ can be divided into three components corresponding to the time it takes to dispatch an action, the time required to synchronize using the pthreads library, and the time required to add an action to the scheduler via the ioa::schedule call.
-From the results, we calculated the average overhead per action of the ioa++ framework when dispatching an action and found it to be 4211ns $\pm$ 31ns for the single threaded experiments and 4858ns $\pm$ 32ns for the multi-threaded experiments.
-Similary, we calculated the scheduling overhead and found it to be 227ns $\pm$ 2.5ns for the single threaded experiments and 279ns $\pm$ 2.3ns for the multi-threaded experiments.
+From the results, we calculated the average overhead per action of the ioa++ framework when dispatching an action and found it to be 4316ns $\pm$ 3.5ns for the single threaded experiments and 6067ns $\pm$ 3.6ns for the multi-threaded experiments.
+Similary, we calculated the scheduling overhead and found it to be 247ns $\pm$ 0.678ns for the single threaded experiments and 307ns $\pm$ 0.357ns for the multi-threaded experiments.
 Both of these can be improved with better scheduler design.
 The synchronization time depends on the interactions among the system being executed, the scheduler, and the locking scheme used by the framework.
 We plan to address scheduling and synchronization in future work.

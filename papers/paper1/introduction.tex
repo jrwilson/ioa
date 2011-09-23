@@ -115,7 +115,7 @@ Alternative concurrency abstractions that more closely match the semantics of di
 
 The reactive semantics of the I/O automata model match the asynchronous and concurrent semantics of distributed systems well and have been proven effective in the formal design and verification of real world distributed systems.
 The I/O automata model prohibits shared state and thus avoids the problems stemming from it.
-Furthermore, its precise semantics for composition facilitate the creation of reusable event-based modules that may be executed with different forms of concurrency\footnote{TODO: What do you mean by ``different forms of concurrency?''  Perhaps we should give some examples.}.
+Furthermore, its precise semantics for composition facilitate the creation of reusable event-based modules that may be executed with different degrees of concurrency as we demonstrate in our evaluation presented in Section~\ref{evaluation}.
 However, there is to date insufficient experience \emph{building} and \emph{evaluating} real distributed systems directly atop I/O automata.
 Previous efforts in this area have focused mainly on formal software development, i.e., automata are described in a language suitable for theorem proving and simulation and afterward are translated into a production language for deployment\footnote{TODO:  Add citations.}.
 The translation from modeling language to production language complicates interfacing with system facilities and makes developing low-level protocols difficult, an area which could greatly benefit from the direct application of I/O automata.
