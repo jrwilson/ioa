@@ -22,7 +22,7 @@ In I/O automata, the sequential flow control of threads~\cite{lee2006problem} an
 The ability to create new automata can be compared to actor creation in the actor model~\cite{agha1986actors}.
 Actors communicate asynchronously by name using a buffered mail system while I/O automata communicate synchronously and anonymously according to composition.
 
-Ioa++ can be compared directly to the the IOA language~\cite{garland2003ioa} developed by Lynch et al.
+ioa++ can be compared directly to the the IOA language~\cite{garland2003ioa} developed by Lynch et al.
 IOA is programming language for I/O automata that can be used with formal verification tools.
 Recently, a compiler for IOA has been developed~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} and used it to implement a number of protocols~\cite{georgiou2009automated}.
 \cite{georgiou2009automated} lists six challenges when developing the compiler: ``Program structuring,'' ``IOA Programs and external services,'' ``Modeling procedure calls,'' ``Composing automata,'' ``Nondeterminism'', and ``Implementing datatypes.''
@@ -34,7 +34,7 @@ The next action to be executed is determined by a schedule function that resolve
 
 IOA and ioa++ represent two fundamentally different approaches to programming directly with I/O automata.
 The development of a new language was necessary for IOA due to their focus on formal verification.
-Ioa++ on the other hand uses the existing C++ language and compilers.
+ioa++ on the other hand uses the existing C++ language and compilers.
 IOA encapsulates external services using built in ``mediators'' while ioa++ exposes operating system services via file descriptors relying on the programmer to ensure non-blocking operation.
 IOA focuses on static composition to produce a single node program while ioa++ focuses on dynamic composition and allows concurrent execution.
 Both IOA and ioa++ require the programmer to add code to schedule actions.
