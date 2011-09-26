@@ -1,4 +1,4 @@
-av\section{Introduction\label{introduction}}
+\section{Introduction\label{introduction}}
 
 Advances in platforms and networks are paving the way for distributed systems of unprecedented sophistication.
 Cyber-physical systems go beyond the traditional embedded system paradigm by explicitly integrating the dynamics of the physical system and communication network in the computational task.
@@ -17,34 +17,41 @@ A unit of software that exhibits all of these properties is called a \emph{compo
 Modularity implies that a component can be deployed independently of other components.
 Well-defined interfaces and interactions allow components to expose their functionality in a regular way that facilitates reasoning about different interactions among them.
 Composition allows a group of interacting components to be understood as a cohesive unit.
-Thus, we require a component framework for developing asynchronous and concurrent modules.
 
-While a number of component frameworks for distributed systems have been developed, each framework uses threads, event loops, or a combination of both.
+While a number of component frameworks for distributed systems have been developed, each framework uses the same basic technologies:  threads, event loops, or a combination of both.
 We limit our scope to imperative frameworks but note that functional approaches are gaining popularity~\cite{armstrong1996concurrent},~\cite{halloway2009programming}.
 Threads offer a seemingly straightforward extension of the synchronous sequential processing model supported by modern processors, programming languages, and operating systems.
 The difficulties of using threads, namely using locks to control access to shared state, is known in both academia~\cite{lee2006problem} and industry~\cite{sutter2005free}.
-We observe that locks also complicate composition as the locking strategies of each component must be taken into account when composing to avoid currency hazards.
+We observe that locks also complicate composition as the locking strategies of each component must be taken into account when integrating to avoid currency hazards.
 For example, a system that doesn't acquire locks in the same other may deadlock~\cite{havender1968avoiding}.
 
 An event loop executes handlers in response to external (I/O) and internal events and is often proposed as a simpler alternative to threads~\cite{ousterhout1996threads}.
 Event loops match the reactive and asynchronous nature of distributed systems more closely.
-One challenge when using events is the lack of common semantics for how events are generated, distributed, and consumed; thus complicating composition.
-To illustrate this issue consider the problem of providing a graphical user interface using Java Swing for a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
+One challenge when using event loops is the lack of common semantics for how events are generated, distributed, and consumed; thus complicating composition.
+To illustrate this issue consider the problem of providing a graphical user interface using Java Swing~\cite{eckstein1998java} for a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
 One solution is to either convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
-The alternative is to run both event loops in independent threads and thus face all of the challenges associated with multiple threads discussed previously.
+The alternative is to run both event loops in independent threads and thus face the challenges of multi-threaded development.
+Similarly, performance requirements might require true concurrent execution using multiple threads in an event system.
+%% True concurrent execution in an event system is important given the leveling of clock frequencies and the trend toward multi-core processors.
 A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities for true concurrent execution.
 
-This paper presents ioa++, a framework for building asynchronous and concurrent systems that is based on the I/O automata formal model.
+In this paper, we present ioa++; a framework for building asynchronous and concurrent systems that is based on the I/O automata formal model.
 The I/O automata model was developed to model reactive systems~\cite{lynch1987hierarchical} and has been used in the design and verification of concurrent and distributed systems.
-I/O automata have independent state, well-defined interfaces, and well-defined interactions under composition and are thus a good foundation for components.
-This work extends the I/O automata model for dynamics which is necessary when implementing (as opposed to modeling) distributed systems.
-Dynamic composition also facilitates true concurrent execution which is important given the trend toward multi-core platforms.
-ioa++ is implemented in C++ for POSIX environments and is available at \url{http://jrwilson.github.com/ioa/}.
+I/O automata are good foundation for components because they have independent state, well-defined interfaces, and precise semantics for event generation, distribution, and consumption resulting in well-defined interactions under composition.
+Like previous systems~\cite{goldman1990distributed},~\cite{georgiou2009automated}, ioa++ allows programmers to reason about the behavior and interactions of asynchronous and concurrent modules directly from the source code using techniques from the I/O automata formalism.
+However, where previous work focuses on simulation and verification, ioa++ focuses on gaining experience building real system with I/O automata.
+
+\paragraph*{Contributions}
+This paper makes the following contributions:
+(1)  a model for dynamic systems which is necessary for implementing (as opposed to modeling) distributed system with I/O automata,
+(2)  an implementation of the model using C++ that allows one to build real systems using the facilities provided by POSIX environments,
+(3)  a preliminary investigation for true concurrent execution based on dynamic composition.
+ioa++ is available at \url{http://jrwilson.github.com/ioa/}.
 
 \paragraph*{Paper structure}
-In Section~\ref{component_model}, we present I/O automata as a suitable foundation for components, make some practical considerations for developing programs with I/O automata, and introduce features for dynamic systems.
+In Section~\ref{component_model}, we present I/O automata as a suitable foundation for components and introduce a model for dynamic systems.
 Section~\ref{design} describes the design and implementation of ioa++ and Section~\ref{representation} describes how I/O automata are represented in ioa++.
-In Section~\ref{case_study}, we use ioa++ to develop a leader election protocol for a ring of processes connected by TCP sockets.
+In Section~\ref{case_study}, we describe our experiences using ioa++ to develop a leader election protocol for a ring of processes connected by TCP sockets.
 We evaluate concurrent execution with a series of micro-benchmarks in Section~\ref{evaluation}.
 Section~\ref{related_work} summarizes related work and we offer conclusions and thoughts for future work in Section~\ref{conclusion}.
 

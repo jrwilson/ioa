@@ -1,10 +1,11 @@
 \section{Evaluation\label{evaluation}}
 
 ioa++ permits independent actions to be executed concurrently.
-To test this capability, we execute a system whose actions can be configured to span the range from having no independent actions to having all independent actions.
+The goal of this evaluation is (1) to show the concurrent execution is indeed possible and (2) to show that the degree of exploitable concurrency depends on the interactions of the I/O automata comprising the system and the overhead of the system.
+To test concurrent execution, we execute a system whose actions can be configured to span the range from having no independent actions to having all independent actions.
 We measure the time required to execute a fixed number of actions using a scheduler with a configurable number of threads.
 We then calculate the speed-up by comparing an execution using one thread to an execution using two threads.
-We also vary the complexity of each action to gain insight into how synchronization affects concurrent execution.
+We also vary the complexity of each action to gain insight into how overhead and synchronization affect concurrent execution.
 
 An automaton $R$ contains an input, output, and internal action.
 The output and internal action execute a routine whose complexity is proportional to the parameter $N$.

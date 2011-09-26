@@ -22,9 +22,11 @@ In I/O automata, the sequential flow control of threads~\cite{lee2006problem} an
 The ability to create new automata can be compared to actor creation in the actor model~\cite{agha1986actors}.
 Actors communicate asynchronously by name using a buffered mail system while I/O automata communicate synchronously and anonymously according to composition.
 
-ioa++ can be compared directly to the the IOA language~\cite{garland2003ioa} developed by Lynch et al.
-IOA is programming language for I/O automata that can be used with formal verification tools.
-Recently, a compiler for IOA has been developed~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} and used it to implement a number of protocols~\cite{georgiou2009automated}.
+To our knowledge, only the Spectrum Simulation System of Goldman~\cite{goldman1990distributed} and the IOA language developed by Lynch et al.~\cite{garland2003ioa} are the only existing systems that allow one to execute a system expressed as a collection of I/O automata.
+Spectrum focuses on algorithm development through simulation.
+IOA focuses on formal software development including both simulation and verification.
+
+ioa++ can be compared directly to the IOA language due to the addition of a compiler~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} that has been used to implement a number of protocols~\cite{georgiou2009automated}.
 \cite{georgiou2009automated} lists six challenges when developing the compiler: ``Program structuring,'' ``IOA Programs and external services,'' ``Modeling procedure calls,'' ``Composing automata,'' ``Nondeterminism'', and ``Implementing datatypes.''
 Programming written in IOA are compiled to Java and executed on hosts communicating using the MPI library.
 IOA requires programs to presented in a ``node-channel'' form that allows them to be composed with built in ``mediators'' that implement external services such as MPI.
