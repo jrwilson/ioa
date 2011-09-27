@@ -20,8 +20,8 @@ Our implementation of the asynchronous LCR automaton is located in examples/asyn
 
 \paragraph*{Declaring an automaton}
 All automata inherit from the common base class ioa::automaton which implements the system action interface.
-The following code declares the asynch\_lcr\_automaton:
 \ifjournal
+The following code declares the asynch\_lcr\_automaton:
 \begin{lstlisting}
 template <typename UID>
 class asynch_lcr_automaton :
@@ -36,7 +36,7 @@ The generic programming facilities of the C++ language aid in the development of
 
 \paragraph*{Declaring and initializing state variables}
 The state variables of an automaton are expressed as member variables of the corresponding class.
-The four state variables of the asynch\_lcr\_automaton include the UID of the automaton, a queue of outgoing messages, and flags for reporting a change in status:
+The four state variables of the asynch\_lcr\_automaton include the UID of the automaton, a queue of outgoing messages, and flags for reporting a change in status.
 \ifjournal
 \begin{lstlisting}
 private:
@@ -46,9 +46,9 @@ private:
   bool m_leader;
 \end{lstlisting}
 \fi
-Notice that the member variables are declared private which is in keeping with the notion that the state of each automaton is independent.
+Member variables are declared private which is in keeping with the notion that the state of each automaton is independent.
 State variables are initialized using a constructor.
-For the asynch\_lcr\_automaton, the flags are both false and the UID is initialized and added to the send queue:
+For the asynch\_lcr\_automaton, the flags are both false and the UID is initialized and added to the send queue.
 \ifjournal
 \begin{lstlisting}
 public:
@@ -67,16 +67,17 @@ The schedule member function is discussed in the paragraph on scheduling.
 
 \paragraph*{Declaring/defining actions}
 Actions are member variables that model the action concept.
-Actions contain methods for preconditions, effects, and scheduling and traits that indicate the actions's type (input, output, internal), value status, value type, parameter status, and parameter type.
+Actions contain methods for preconditions, effects, and scheduling and traits that indicate the action's type (input, output, internal), value status, value type, parameter status, and parameter type.
 The traits are used to guide the execution of the methods by the model and supply values and parameters as necessary.
 The traits are also used to check that input actions are bound to output actions with the same value status and type.
 Bindings are checked for type compatibility at compile time using the generic programming facilities of C++.
 
-To facilitate declaring actions, a number of wrappers and macros corresponding to the action types listed in section~\ref{practical} are available.
+A number of wrappers and macros are available for declaring actions.
+%%To facilitate declaring actions, a number of wrappers and macros corresponding to the action types listed in section~\ref{practical} are available.
 Local actions are declared using three functions corresponding to a precondition, effect, and scheduling call.
 The macros assume the functions are named action\_name\_precondition, action\_name\_effect, and action\_name\_schedule.
-For example, the send action of the asynch\_lcr\_automaton is declared:
 \ifjournal
+For example, the send action of the asynch\_lcr\_automaton is declared:
 \begin{lstlisting}
 private:
   bool send_precondition () const { ... }
@@ -95,8 +96,8 @@ Automata submit actions to the scheduler using the ioa::schedule function.
 The ioa::schedule function can be called at any time.
 However, automata are generally easier to read if scheduling calls are relegated to the scheduling functions.
 A common pattern is to schedule all local actions using one member function where each action is guarded by its precondition as described in section~\ref{scheduling}.
-For the asynch\_lcr\_automaton, the scheduling function is:
 \ifjournal
+For the asynch\_lcr\_automaton, the scheduling function is:
 \begin{lstlisting}
   void schedule () const {
     if (send_precondition ()) {
@@ -115,8 +116,8 @@ The various scheduling functions in the asynch\_lcr\_automaton and the construct
 \paragraph*{Dynamic composition}
 The asynch\_lcr\_automaton is a reusable component designed to be composed in the context of a larger system.
 Dynamic composition is accomplished by creating child automata and bindings via ioa::automaton\_manager and ioa::binding\_manager objects.
-The tcp\_lcr\_automaton discussed in section~\ref{case_study} creates a asynch\_lcr\_automaton and binds to it with the following code:
 \ifjournal
+The tcp\_lcr\_automaton discussed in section~\ref{case_study} creates a asynch\_lcr\_automaton and binds to it with the following code:
 \begin{lstlisting}
 ioa::automaton_manager<asynch_lcr_automaton<uuid> >*
 lcr = ioa::make_automaton_manager (this,
@@ -141,18 +142,20 @@ An automaton manager object requires an ioa::automaton object for its system act
 Bindings are managed by ioa::binding\_manager objects which can be created via the ioa::make\_binding\_manager function.
 A binding manager object requires an ioa::automaton object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
 The ioa::automaton\_manager class and ioa::binding\_manager class contain methods for destroying and unbinding respectively.
+\ifjournal
 The m\_self object of the example is an ioa::handle\_manager which can be used to bind to automata that already exist.
 From the example, the tcp\_lcr\_automaton binds the asynch\_lcr\_automaton to itself.
 The wary reader might notice that the ioa::automaton\_manager and ioa::binding\_managers in the example are dynamically allocated but never recorded and thus never freed.
 Both classes are managed by the ioa::automaton and automatically deallocated when the automaton or binding they manange is destroyed or unbound respectively.
+\fi
 
 \paragraph*{Binding predicates}
 Recall that automata require the ability to inspect the current set of bindings to adhere to the I/O automata model.
 The binding predicate supplied by ioa++ is the ioa::binding\_count function which returns the number of actions bound to the specified action.
 The value returned by ioa::binding\_count is zero for internal actions, zero or one for input actions, and non-negative for output actions.
 Most often, ioa::binding\_count is used in the precondition of outputs to ensure that the value generated by the output will be received.
-This type of usage can be seen in the send action of the asynch\_lcr\_automaton:
 \ifjournal
+This type of usage can be seen in the send action of the asynch\_lcr\_automaton:
 \begin{lstlisting}
 bool send_precondition () const {
   return !m_send.empty () &&

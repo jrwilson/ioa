@@ -1,7 +1,7 @@
 \section{Evaluation\label{evaluation}}
 
 ioa++ permits independent actions to be executed concurrently.
-The goal of this evaluation is (1) to show the concurrent execution is indeed possible and (2) to show that the degree of exploitable concurrency depends on the interactions of the I/O automata comprising the system and the overhead of the system.
+The goal of this evaluation is (1) to show that concurrent execution is indeed possible and (2) to show that the degree of exploitable concurrency depends on the interactions of the I/O automata comprising the system and the overhead of the system.
 To test concurrent execution, we execute a system whose actions can be configured to span the range from having no independent actions to having all independent actions.
 We measure the time required to execute a fixed number of actions using a scheduler with a configurable number of threads.
 We then calculate the speed-up by comparing an execution using one thread to an execution using two threads.
@@ -64,7 +64,7 @@ Consequently, contention is reduced allowing for greater speed-ups as indicated 
 Figures~\ref{overhead1} and \ref{overhead2} show the per thread average of the fraction of time devoted to framework code and synchronization calls for the single and multi-threaded executions.
 Confidence intervals are shown with largest being 0.002155 for Figure~\ref{overhead1} and 0.001781 for Figure~\ref{overhead2}.
 Since the number of actions to be executed is constant, the single threaded execution shows a relatively consistent fraction for each value of $N$.
-The fraction decreases as $\rho$ goes to 1 as the system transitions from acquiring two locks to one lock.
+The fraction decreases as $\rho$ goes to 1 and the system transitions from acquiring two locks to one lock.
 The multi-threaded execution shows that the fraction of time devoted to system overhead decreases as $\rho$ goes to 1 and is more pronounced when $N$ is large.
 For example, when $N=1000000$ one thread spends half of its time waiting on the other thread when $\rho = 0$ and spends virtually no time on synchronization when $\rho = 1$.
 

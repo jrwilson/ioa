@@ -9,7 +9,7 @@ The first version of the code for the asynchronous LCR automaton was translated 
 The final version contains an additional action to reinitialize the automaton and modifications that allow an automaton that elected itself leader to nullify its election.
 The motivation for these modifications will be explained when we discuss its use in a real system.
 The listing in~\cite{lynch1996distributed} consists of approximately 24 lines in a formal language that must be translated to a production language.
-The raw listing for the final version consists of 121 lines (5x).
+The raw listing for the final version consists of 121 lines (\~5x).
 Scheduling accounts for 22 of the 121 lines (20\%) and is the main source of code that cannot be traced back to the formal listing.
 On average, every local action contributed 6 lines of scheduling code and every input action contributed 3 lines of scheduling code.
 
@@ -27,7 +27,7 @@ Reasoning about an automaton directly from the source code allows one to use for
 After the asynchronous LCR automaton was implemented, we developed a simulation to test it.
 The examples/asynch\_lcr.cpp file contains the driver for the simulation.
 The simulation creates a unidirectional ring of a specified size consisting of alternating asynch\_lcr\_automaton and channel\_automaton.
-(The channel\_automaton was also a direct translation from~\cite{lynch1996distributed}.)
+The channel\_automaton was also a direct translation from~\cite{lynch1996distributed}.
 
 The simulation showed that the asynch\_lcr\_automaton was not correct.
 The first bug we encountered was a silent failure where the ring always failed to elect a leader.

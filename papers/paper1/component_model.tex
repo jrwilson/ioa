@@ -6,9 +6,12 @@
 %% Well-defined interfaces and interactions allow components to expose their functionality in a regular way that facilitates reasoning about different interactions among them.
 %% Composition allows a group of interacting components to be understood as a cohesive unit.
 
-\subsection{I/O Automata\label{io_automaton}}
+In this section we describe how the I/O automata model offers a natural realization of components and interfaces, and provides natural support for concurrency and composition.
+%% We then describe extensions to support dynamic semantics as participants in the system may arrive and depart at run-time.
+We then describe extensions to support dynamic semantics for systems with participants that may arrive and depart at run-time.
 
-In this subsection we describe how the I/O automata model offers a natural realization of components and interfaces, and provides natural support for concurrency and composition.
+\subsection{Background: I/O Automata}
+
 The Input/Output (I/O) automata model was developed by Lynch and Tuttle to model reactive concurrent and asynchronous systems~\cite{lynch1987hierarchical},\cite{lynch1996distributed}.
 An I/O automaton consists of state variables and a set of atomic actions that manipulate the state variables.
 An action is only permitted to manipulate the state variables of the automaton to which it belongs.
@@ -16,15 +19,18 @@ An action is either an internal action, an output action, or an input action.
 An internal action changes the state of the automaton.
 An output action changes the state of the automaton and produces a signal or value that may be consumed by one or more input actions.
 An input action changes the state of the automaton when it receives a signal or value produced by an output action.
+\ifjournal
 The set of actions associated with an automaton is known as the automaton's \emph{signature}~\cite{lynch1996distributed}.
-
+\fi
 An automaton's output and internal actions constitute its \emph{local signature}~\cite{lynch1996distributed}.
+\ifjournal
 Often, a local action consists of a precondition and an effect.
 The precondition is a predicate over the state variables that enables the effect when selected for execution.
 The effect is a function that computes the next state of the automaton from the current state.
 An input action presented in this style consists solely of an effect.
+\fi
+An automaton's output and input actions constitute its \emph{external signature}~\cite{lynch1996distributed}.
 
-Together, an automaton's output and input actions constitute its \emph{external signature}~\cite{lynch1996distributed}.
 An automaton communicates with other automata through the actions in its external signature.
 I/O automata are \emph{composed} by (1)~concatenating the state variables of the constituent automata, (2)~consolidating the effects of all input actions with the same name, and (3)~incorporating the effects of input actions into output actions with the same name.
 Composing automata that have identically named output actions would be ambiguous and thus is not allowed.
@@ -46,6 +52,8 @@ The guarantee of atomicity allows a developer to relate the state of one automat
 \label{sys_model}
 \end{figure}
 
+\subsection{Component Structure\label{component_structure}}
+
 \paragraph*{Recursive Encapsulation}
 Component frameworks that support recursive encapsulation allow components to contain other components.
 Recursive encapsulation is at the heart of both bottom-up design strategies where smaller components are composed to produce larger ones, and top-down design strategies in which larger components are decomposed into smaller ones.
@@ -64,7 +72,7 @@ Actions are depicted as dotted rectangles and bindings are indicate by dotted li
 Output actions are suffixed with \emph{!}, e.g., \emph{detect!}, input actions are suffixed with \emph{?}, e.g., \emph{detected?}, and internal actions have neither suffix, e.g., \emph{process1}.
 The type associated with the value produced or consumed by an action is in parentheses after the name, e.g., \emph{out!(s)}.
 
-The sample event detector system illustrated in Figure~\ref{sys_model} contains three automata (components):  an anonymous Processor, a Converter named C, and a Detector named D.
+The event detector system illustrated in Figure~\ref{sys_model} contains three automata (components):  an anonymous Processor, a Converter named C, and a Detector named D.
 The Processor automaton is the root and C and D are its children.
 
 \paragraph*{Explicit Composition}
@@ -218,7 +226,7 @@ The \emph{destroy} operation allows an automaton to recursively destroy a child 
 
 System actions can fail for a variety of reasons.
 A create fails if the automaton that should be added to the set of automata, i.e., the automata being created, already exists.
-A bind fails if the automaton associated with the output action doesn't exist, the automaton associated with the input action doesn't exist, or any of the binding rules outlined in Section~\ref{io_automaton} would be violated.
+A bind fails if the automaton associated with the output action doesn't exist, the automaton associated with the input action doesn't exist, or any of the binding rules outlined in Section~\ref{component_structure} would be violated.
 An unbind fails if the binding does not exist.
 Note that the owner of binding is taken into account when determining if the binding exists so only the owner of a binding can dissolve it.
 A destroy fails if the automaton being destroyed does not exist or is not a child of the automaton requesting the destroy action.
@@ -259,8 +267,8 @@ Figure~\ref{system_action} shows the relationship between a base automaton and t
 Conceptually, the state variables $A$ and $B$ belong to the system automaton.
 However, the state encoded by $A$ and $B$ is shared and used in the execution of every action.
 The scheduler uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
-Thus, the set of actions implied by any action is the set defined in Section~\ref{io_automata} \emph{and} and the system automaton.
-However, the opportunities for concurrency explored in Section~\ref{io_automata} are not lost when one considers that the only actions that modify $A$ and $B$ must be serialized, i.e., not executed concurrently with other actions.
+Thus, the set of actions implied by any action is the set defined in Section~\ref{component_structure} \emph{and} and the system automaton.
+However, the opportunities for concurrency explored in Section~\ref{component_structure} are not lost when one considers that the only actions that modify $A$ and $B$ must be serialized, i.e., not executed concurrently with other actions.
 
 \paragraph*{Binding predicates}
 The static configuration of a system as prescribed by the I/O automata model guarantees that the set of implied automata for an action is always the same.

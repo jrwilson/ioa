@@ -7,7 +7,7 @@
 \label{framework_architecture}
 \end{figure}
 
-ioa++ is an implementation in C++ of the component model described in Section~\ref{component_model} for POSIX environments and is available at \url{http://jrwilson.github.com/ioa/}.
+ioa++ is an implementation of the component model described in Section~\ref{component_model} for POSIX environments in C++.
 Our implementation provides services for executing local actions and facilities for manipulating the set of automata and bindings.
 The architecture of our framework is depicted in Figure~\ref{framework_architecture}.
 The Scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
@@ -30,7 +30,7 @@ Since concurrent access to the dispatcher is allowed, the module implementing th
 
 Our implementation of the dispatcher uses a two-level locking scheme to enforce the concurrent execution constraints.
 Any action that modifies the set of automata and bindings must first acquire a write lock to prevent concurrent access.
-All other actions acquire a read lock to implement single-writer/multiple reader semantics.
+All other actions acquire a read lock to implement single-writer/multiple-reader semantics.
 The second phase of executing a non-modifying action involves acquiring locks for the set of automata implied by an action.
 The locks are acquired in a fixed order to prevent deadlock~\cite{havender1968avoiding}.
 Once the locks are acquired, the precondition is evaluated, the local action and all bound input actions are executed, and the locks are released.
@@ -99,7 +99,7 @@ File descriptors are used to communicate with the outside world in a POSIX envir
 Observe that there is no concept of blocking in the I/O automata model and introducing blocking I/O operations into action effects adversely affects the asynchronous and concurrent nature of I/O automata.
 Thus, we require techniques that allow a program (1) to wait until a file descriptor is ready for I/O and (2) to perform non-blocking I/O operations.
 This implies the use of either the Proactor or Reactor pattern~\cite{schmidt2000pattern}.
-For our framework, we used the Reactor pattern since (1) the Reactor pattern is simpler and (2) all major operating systems have non-blocking I/O and some kind of synchronous I/O multiplexing whereas asynchronous I/O is much less standardized.
+For our framework, we used the Reactor pattern since (1)~the Reactor pattern is simpler and (2) all major operating systems have non-blocking I/O and some kind of synchronous I/O multiplexing whereas asynchronous I/O is much less standardized.
 
 Our implementation of the Reactor pattern causes an action to be scheduled when a file descriptor is ready for reading or writing.
 A user automaton creates a file descriptor and configures it for non-blocking I/O.
