@@ -557,7 +557,8 @@ namespace ioa {
 	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
 	system_scheduler.clear_current_aid ();
 	for (Iterator iter = begin; iter != end; ++iter) {
-	  (*(*iter)) (system_scheduler);
+	  unvalued_input_executor_interface& input = dynamic_cast<unvalued_input_executor_interface&> (*(*iter));
+	  input (system_scheduler);
 	}
       }
       else {
@@ -626,7 +627,8 @@ namespace ioa {
 	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
 	system_scheduler.clear_current_aid ();
 	for (Iterator iter = begin; iter != end; ++iter) {
-	  (*(*iter)) (system_scheduler);
+	  unvalued_input_executor_interface& input = dynamic_cast<unvalued_input_executor_interface&> (*(*iter));
+	  input (system_scheduler);
 	}
       }
       else {
@@ -680,6 +682,15 @@ namespace ioa {
       m_parameter (-1)
     { }
 
+    action_executor_impl (I& instance,
+			  mutex& mutex,
+			  const automaton_handle<I>& handle,
+			  M I::*member_ptr,
+			  const aid_t aid) :
+      action_executor_core<I, M> (instance, mutex, handle, member_ptr),
+      m_parameter (aid)
+    { }
+
     void set_auto_parameter (const aid_t aid) {
       m_parameter = aid;
     }
@@ -700,7 +711,8 @@ namespace ioa {
 	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
 	system_scheduler.clear_current_aid ();
 	for (Iterator iter = begin; iter != end; ++iter) {
-	  (*(*iter)) (system_scheduler);
+	  unvalued_input_executor_interface& input = dynamic_cast<unvalued_input_executor_interface&> (*(*iter));
+	  input (system_scheduler);
 	}
       }
       else {
@@ -765,7 +777,8 @@ namespace ioa {
 	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance));
 	system_scheduler.clear_current_aid ();
 	for (Iterator iter = begin; iter != end; ++iter) {
-	  (*(*iter)) (system_scheduler, ref);
+	  valued_input_executor_interface<VT>& input = dynamic_cast<valued_input_executor_interface<VT>&> (*(*iter));
+	  input (system_scheduler, ref);
 	}
       }
       else {
@@ -835,7 +848,8 @@ namespace ioa {
 	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
 	system_scheduler.clear_current_aid ();
 	for (Iterator iter = begin; iter != end; ++iter) {
-	  (*(*iter)) (system_scheduler, ref);
+	  valued_input_executor_interface<VT>& input = dynamic_cast<valued_input_executor_interface<VT>&> (*(*iter));
+	  input (system_scheduler, ref);
 	}
       }
       else {
@@ -885,10 +899,12 @@ namespace ioa {
       m_parameter (-1)
     { }
 
-    action_executor_impl (const automaton_handle<I>& handle,
+    action_executor_impl (I& instance,
+			  mutex& mutex,
+			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const aid_t aid) :
-      action_executor_core<I, M> (handle, member_ptr, *this),
+      action_executor_core<I, M> (instance, mutex, handle, member_ptr),
       m_parameter (aid)
     { }
 
@@ -913,7 +929,8 @@ namespace ioa {
 	((this->m_instance).*(this->m_member_ptr)).schedule (const_cast<const I&> (this->m_instance), m_parameter);
 	system_scheduler.clear_current_aid ();
 	for (Iterator iter = begin; iter != end; ++iter) {
-	  (*(*iter)) (system_scheduler, ref);
+	  valued_input_executor_interface<VT>& input = dynamic_cast<valued_input_executor_interface<VT>&> (*(*iter));
+	  input (system_scheduler, ref);
 	}
       }
       else {

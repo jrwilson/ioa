@@ -1,6 +1,6 @@
 #include "minunit.h"
 
-#include "../lib/binding_set.hpp"
+#include <ioa/binding_set.hpp>
 #include "automaton1.hpp"
 
 #include <iostream>

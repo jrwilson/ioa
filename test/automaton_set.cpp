@@ -1,6 +1,6 @@
 #include "minunit.h"
 
-#include "../lib/automaton_set.hpp"
+#include <ioa/automaton_set.hpp>
 #include "automaton1.hpp"
 
 #include <map>

@@ -6,7 +6,8 @@ TESTS = \
 time \
 action_executor \
 automaton_set \
-binding_set
+binding_set \
+action_runnable
 
 # model \
 # global_fifo_scheduler \
@@ -23,6 +24,8 @@ action_executor_SOURCES = minunit.h automaton1.hpp action_executor.cpp test_main
 automaton_set_SOURCES = minunit.h automaton_set.cpp test_main.cpp
 
 binding_set_SOURCES = minunit.h binding_set.cpp test_main.cpp
+
+action_runnable_SOURCES = minunit.h action_runnable.cpp test_main.cpp
 
 # model_SOURCES = minunit.h instance_holder.hpp automaton1.hpp model.cpp test_main.cpp
 
