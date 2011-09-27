@@ -24,6 +24,7 @@ observer.cpp \
 output_bound_runnable.hpp \
 output_exec_runnable.hpp \
 output_unbound_runnable.hpp \
+profile.hpp \
 runnable_interface.cpp \
 scheduler.cpp \
 sequential_set.hpp \

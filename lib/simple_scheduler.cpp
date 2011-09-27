@@ -1,3 +1,19 @@
+/*
+   Copyright 2011 Justin R. Wilson
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 #include <ioa/simple_scheduler.hpp>
 
 #include <ioa/system_scheduler_interface.hpp>
@@ -635,11 +651,13 @@ namespace ioa {
 	  delete pos->second;
 	}
 	m_contexts[i]->m_execq.list.clear ();
+#ifdef PROFILE
 	std::cout << "ioa=" << m_contexts[i]->m_ioa << " "
 		  << "schedule=" <<  m_contexts[i]->m_schedule << " "
 		  << "thread=" << m_contexts[i]->m_thread << " "
 		  << "user=" << m_contexts[i]->m_user << " "
 		  << "total=" << m_contexts[i]->m_ioa + m_contexts[i]->m_schedule + m_contexts[i]->m_thread + m_contexts[i]->m_user << std::endl;
+#endif
       }
         
       // TODO:  Do I need to close both ends?
