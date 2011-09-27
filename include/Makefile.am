@@ -12,7 +12,8 @@ ioa/mutex.hpp \
 ioa/scheduler_interface.hpp \
 ioa/shared_lock.hpp \
 ioa/shared_mutex.hpp \
-ioa/time.hpp
+ioa/time.hpp \
+ioa/unique_lock.hpp
 
 # ioa/action_wrapper.hpp \
 # ioa/automaton.hpp \

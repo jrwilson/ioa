@@ -6,8 +6,8 @@ libioa_la_SOURCES = \
 mutex.cpp \
 shared_lock.cpp \
 shared_mutex.cpp \
-time.cpp
-
+time.cpp \
+unique_lock.cpp
 
 
 # runnable_interface.cpp \
@@ -55,6 +55,4 @@ time.cpp
 # thread_key.hpp \
 # udp_receiver_automaton.cpp \
 # udp_sender_automaton.cpp \
-# unbind_runnable.hpp \
-# unique_lock.hpp \
-# unique_lock.cpp
+# unbind_runnable.hpp
