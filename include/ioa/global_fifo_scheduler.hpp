@@ -2,7 +2,8 @@
 #define __global_fifo_scheduler_hpp__
 
 #include <ioa/scheduler_interface.hpp>
-#include <memory>
+#include <ioa/action_runnable.hpp>
+#include <ioa/time.hpp>
 
 namespace ioa {
 
@@ -22,8 +23,8 @@ namespace ioa {
     ~global_fifo_scheduler ();
     
     aid_t get_current_aid ();
-    
-    size_t binding_count (const action_executor_interface&);
+    void set_current_aid (const aid_t);
+    void clear_current_aid ();
     
     void schedule (action_runnable_interface*);
     
@@ -38,7 +39,7 @@ namespace ioa {
 
     void close (int fd);
     
-    void run (std::auto_ptr<generator_interface> generator);
+    void run ();
   };
 
 }

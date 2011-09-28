@@ -7,10 +7,10 @@ time \
 action_executor \
 automaton_set \
 binding_set \
-action_runnable
+action_runnable \
+global_fifo_scheduler
 
 # model \
-# global_fifo_scheduler \
 # simple_scheduler \
 # binding_manager \
 # reuse_bind_key
@@ -27,9 +27,11 @@ binding_set_SOURCES = minunit.h binding_set.cpp test_main.cpp
 
 action_runnable_SOURCES = minunit.h action_runnable.cpp test_main.cpp
 
-# model_SOURCES = minunit.h instance_holder.hpp automaton1.hpp model.cpp test_main.cpp
+global_fifo_scheduler_SOURCES = minunit.h global_fifo_scheduler.cpp test_main.cpp
 
 # global_fifo_scheduler_SOURCES = minunit.h automaton2.hpp global_fifo_scheduler.cpp scheduler_test.hpp test_main.cpp
+
+# model_SOURCES = minunit.h instance_holder.hpp automaton1.hpp model.cpp test_main.cpp
 
 # simple_scheduler_SOURCES = minunit.h automaton2.hpp simple_scheduler.cpp scheduler_test.hpp test_main.cpp
 

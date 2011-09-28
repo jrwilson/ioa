@@ -1,23 +1,12 @@
 #include <ioa/global_fifo_scheduler.hpp>
 
-#include "model.hpp"
-
-#include <algorithm>
 #include <queue>
+#include <list>
+#include <set>
+#include <algorithm>
 
 #include <unistd.h>
 #include <sys/select.h>
-
-#include "create_runnable.hpp"
-#include "bind_runnable.hpp"
-#include "unbind_runnable.hpp"
-#include "destroy_runnable.hpp"
-
-#include "output_exec_runnable.hpp"
-#include "output_bound_runnable.hpp"
-#include "input_bound_runnable.hpp"
-#include "output_unbound_runnable.hpp"
-#include "input_unbound_runnable.hpp"
 
 namespace ioa {
 
@@ -27,9 +16,7 @@ namespace ioa {
   class global_fifo_scheduler_impl
   {
   private:
-    model m_model;
-    std::queue<runnable_interface*> m_configq;
-    std::list<action_runnable_interface*> m_userq;
+    std::list<action_runnable_interface*> m_runq;
     std::queue<time_action> m_timerq;
     std::queue<fd_action> m_readq;
     std::queue<fd_action> m_writeq;
@@ -49,11 +36,7 @@ namespace ioa {
       }
     };
 
-    void schedule_configq (runnable_interface* r) {
-      m_configq.push (r);
-    }
-
-    void schedule_userq (action_runnable_interface* r) {
+    void schedule_runq (action_runnable_interface* r) {
       /*
     	Imagine an automaton with with an internal action that does nothing but schedule itself twice.
     	Let (n) denote the number of runnables in the execq for the action.
@@ -65,8 +48,8 @@ namespace ioa {
     	This is bad.
     	We need to remove duplicates.
       */
-      if (std::find_if (m_userq.begin (), m_userq.end (), action_runnable_equal (r)) == m_userq.end ()) {
-    	m_userq.push_back (r);	
+      if (std::find_if (m_runq.begin (), m_runq.end (), action_runnable_equal (r)) == m_runq.end ()) {
+    	m_runq.push_back (r);	
       }
       else {
     	delete r;
@@ -103,12 +86,18 @@ namespace ioa {
       return m_current_aid;
     }
 
-    size_t binding_count (const action_executor_interface& ac) {
-      return m_model.binding_count (ac);
+    void set_current_aid (const aid_t aid) {
+      // This is to be used during generation so that any allocated memory can be associated with the automaton.
+      assert (aid != -1);
+      m_current_aid = aid;
     }
   
+    void clear_current_aid () {
+      m_current_aid = -1;
+    }
+
     void schedule (action_runnable_interface* r) {
-      schedule_userq (r);
+      schedule_runq (r);
     }
 
     void schedule_after (action_runnable_interface* r,
@@ -126,11 +115,7 @@ namespace ioa {
       schedule_writeq (r, fd);
     }
 
-    void run (std::auto_ptr<generator_interface> generator) {
-      assert (m_configq.empty ());
-      assert (m_userq.empty ());
-      assert (runnable_interface::count () == 0);
-
+    void run () {
       std::multimap<time, action_runnable_interface*> time_to_action;
       std::map<action_runnable_interface*, time, compare_action_runnable> action_to_time;
       std::map<int, action_runnable_interface*> read_actions;
@@ -143,11 +128,16 @@ namespace ioa {
 
       clear_current_aid ();
     
-      m_model.create (generator);
-
       // TODO:  We iterate over the same data structures many times.  Could we do this better?
-
-      while (runnable_interface::count () != 0) {
+      
+      while (!m_runq.empty () || 
+	     !m_timerq.empty () ||
+	     !m_readq.empty () ||
+	     !m_writeq.empty () ||
+	     !m_close.empty () ||
+	     !action_to_time.empty () ||
+	     !read_actions.empty () ||
+	     !write_actions.empty ()) {
 	// There is work to do.
     
     	// Process registrations.
@@ -210,6 +200,27 @@ namespace ioa {
 	  }
 	}
 
+	// Remove closed fds.
+	for (std::set<int>::const_iterator pos = m_close.begin ();
+	     pos != m_close.end ();
+	     ++pos) {
+	  std::map<int, action_runnable_interface*>::iterator p;
+	  
+	  p = read_actions.find (*pos);
+	  if (p != read_actions.end ()) {
+	    delete p->second;
+	    read_actions.erase (p);
+	  }
+	  
+	  p = write_actions.find (*pos);
+	  if (p != write_actions.end ()) {
+	    delete p->second;
+	    write_actions.erase (p);
+	  }
+	  
+	  ::close (*pos);	    
+	}
+
     	// Determine timeout for select.
     	struct timeval* test_timeout;
     	struct timeval timeout;
@@ -232,9 +243,9 @@ namespace ioa {
 
     	  test_timeout = &timeout;
     	}
-
+	
 	// If we have work to do, go immediately.
-	if (!m_configq.empty () || !m_userq.empty ()) {
+	if (!m_runq.empty ()) {
 	  timeout = time (0, 0);
 	  test_timeout = &timeout;
 	}
@@ -242,27 +253,6 @@ namespace ioa {
 	// We only need to select if we have fds or timers.
 	if (!read_actions.empty () || !write_actions.empty () || !time_to_action.empty ()) {
 	  
-	  // Remove closed fds.
-	  for (std::set<int>::const_iterator pos = m_close.begin ();
-	       pos != m_close.end ();
-	       ++pos) {
-	    std::map<int, action_runnable_interface*>::iterator p;
-
-	    p = read_actions.find (*pos);
-	    if (p != read_actions.end ()) {
-	      delete p->second;
-	      read_actions.erase (p);
-	    }
-
-	    p = write_actions.find (*pos);
-	    if (p != write_actions.end ()) {
-	      delete p->second;
-	      write_actions.erase (p);
-	    }
-
-	    ::close (*pos);	    
-	  }
-
 	  // Determine the read set.
 	  for (std::map<int, action_runnable_interface*>::const_iterator pos = read_actions.begin ();
 	       pos != read_actions.end ();
@@ -295,7 +285,7 @@ namespace ioa {
 	      action_runnable_interface* a = time_to_action.begin ()->second;
 	      time_to_action.erase (time_to_action.begin ());
 	      action_to_time.erase (a);
-	      schedule_userq (a);
+	      schedule_runq (a);
 	    }
 	  }
 	  
@@ -306,7 +296,7 @@ namespace ioa {
 		 ) {
 	      if (FD_ISSET (pos->first, &read_set)) {
 		FD_CLR (pos->first, &read_set);
-		schedule_userq (pos->second);
+		schedule_runq (pos->second);
 		read_actions.erase (pos++);
 	      }
 	      else {
@@ -322,7 +312,7 @@ namespace ioa {
 		 ) {
 	      if (FD_ISSET (pos->first, &write_set)) {
 		FD_CLR (pos->first, &write_set);
-		schedule_userq (pos->second);
+		schedule_runq (pos->second);
 		write_actions.erase (pos++);
 	      }
 	      else {
@@ -335,107 +325,20 @@ namespace ioa {
 
 	m_close.clear ();
 
-	// Process configuration actions.
-	if (!m_configq.empty ()) {
-	  runnable_interface* r = m_configq.front ();
-	  m_configq.pop ();
-	  (*r) (m_model);
-	  delete r;
-	}
-
-	// Process user actions.
-	if (!m_userq.empty ()) {
-	  runnable_interface* r = m_userq.front ();
-	  m_userq.pop_front ();
-	  (*r) (m_model);
+	// Process actions.
+	if (!m_runq.empty ()) {
+	  action_runnable_interface* r = m_runq.front ();
+	  m_runq.pop_front ();
+	  (*r) ();
 	  delete r;
 	}
 
       }
-
-      // There are no runnables left in the system, thus, there is no more work to do.
-      // If all of the automata have been coded correctly, then we have reached "fixed point".
-
-      // Consequently, we are going to reset.
-
-      // We clear the system first because it might add something to a run queue.
-      m_model.clear ();
-    
-      // Then, we clear the run queues.
-      while (!m_configq.empty ()) {
-	runnable_interface* r = m_configq.front ();
-	m_configq.pop ();
-	delete r;
-      }
-    
-      for (std::list<action_runnable_interface*>::iterator pos = m_userq.begin ();
-      	   pos != m_userq.end ();
-      	   ++pos) {
-      	delete (*pos);
-      }
-      m_userq.clear ();
-    
-      // Notice that the post-conditions match the preconditions.
-      assert (m_configq.empty ());
-      assert (m_userq.empty ());
-      assert (runnable_interface::count () == 0);
     }
 
     void close (int fd) {
       m_close.insert (fd);
-    }
-  
-    void set_current_aid (const aid_t aid) {
-      // This is to be used during generation so that any allocated memory can be associated with the automaton.
-      assert (aid != -1);
-      m_current_aid = aid;
-    }
-  
-    void clear_current_aid () {
-      m_current_aid = -1;
-    }
-
-    void create (const aid_t automaton,
-		 std::auto_ptr<generator_interface> generator,
-		 void* const key) {
-      schedule_configq (new create_runnable (automaton, generator, key));
-    }
-
-    void bind (const aid_t automaton,
-	       std::auto_ptr<bind_executor_interface> exec,
-	       void* const key) {
-      schedule_configq (new bind_runnable (automaton, exec, key));
-    }
-  
-    void unbind (const aid_t automaton,
-		 void* const key) {
-      schedule_configq (new unbind_runnable (automaton, key));
-    }
-  
-    void destroy (const aid_t automaton,
-		  void* const key) {
-      schedule_configq (new destroy_runnable (automaton, key));
-    }
-
-    void output_bound (const output_executor_interface& exec) {
-      schedule_configq (new output_bound_runnable (exec));
-      // Schedule the output.
-      schedule_userq (new output_exec_runnable (exec));
-    }
-
-    void input_bound (const input_executor_interface& exec) {
-      schedule_configq (new input_bound_runnable (exec));
-    }
-
-    void output_unbound (const output_executor_interface& exec) {
-      schedule_configq (new output_unbound_runnable (exec));
-      // Schedule the output.
-      schedule_userq (new output_exec_runnable (exec));
-    }
-
-    void input_unbound (const input_executor_interface& exec) {
-      schedule_configq (new input_unbound_runnable (exec));
-    }
+    }  
   };
 
   global_fifo_scheduler::global_fifo_scheduler () :
@@ -449,11 +352,15 @@ namespace ioa {
   aid_t global_fifo_scheduler::get_current_aid () {
     return m_impl->get_current_aid ();
   }
-  
-  size_t global_fifo_scheduler::binding_count (const action_executor_interface& ac) {
-    return m_impl->binding_count (ac);
+
+  void global_fifo_scheduler::set_current_aid (const aid_t aid) {
+    m_impl->set_current_aid (aid);
   }
-  
+
+  void global_fifo_scheduler::clear_current_aid () {
+    m_impl->clear_current_aid ();
+  }
+
   void global_fifo_scheduler::schedule (action_runnable_interface* r) {
     m_impl->schedule (r);
   }
@@ -477,8 +384,8 @@ namespace ioa {
     m_impl->close (fd);
   }
   
-  void global_fifo_scheduler::run (std::auto_ptr<generator_interface> generator) {
-    m_impl->run (generator);
+  void global_fifo_scheduler::run () {
+    m_impl->run ();
   }
   
 }

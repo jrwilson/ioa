@@ -3,24 +3,21 @@ AM_CXXFLAGS = -Wall -I$(top_srcdir)/include
 lib_LTLIBRARIES = libioa.la
 
 libioa_la_SOURCES = \
+global_fifo_scheduler.cpp \
 null_mutex.hpp \
 null_shared_lock.hpp \
 null_shared_mutex.hpp \
 null_unique_lock.hpp \
 time.cpp
 
-
 # mutex.cpp \
 # shared_lock.cpp \
 # shared_mutex.cpp \
 # unique_lock.cpp
-
 # runnable_interface.cpp \
 # observer.cpp \
 # automaton.cpp \
 # scheduler.cpp
-
-
 # automaton.cpp \
 # automaton_record.hpp \
 # automaton_record.cpp \
@@ -30,7 +27,6 @@ time.cpp
 # condition_variable.cpp \
 # create_runnable.hpp \
 # destroy_runnable.hpp \
-# global_fifo_scheduler.cpp \
 # input_bound_runnable.hpp \
 # input_unbound_runnable.hpp \
 # lock.hpp \

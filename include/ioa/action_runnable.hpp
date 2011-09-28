@@ -186,25 +186,17 @@ namespace ioa {
     { }
   };
   
-  // template <class I, class M>
-  // action_runnable<I, M>* make_action_runnable (const automaton_handle<I>& handle,
-  // 					       M I::*member_ptr) {
-  //   return new action_runnable<I, M> (handle, member_ptr);
+  // template <class I, class M, class L>
+  // action_runnable<I, M, L>* make_action_runnable (const automaton_handle<I>& handle,
+  // 						  M I::*member_ptr) {
+  //   return new action_runnable<I, M, L> (handle, member_ptr);
   // }
-
+  
   // template <class I, class M>
   // action_runnable<I, M>* make_action_runnable (const automaton_handle<I>& handle,
   // 					       M I::*member_ptr,
   // 					       const typename M::parameter_type& parameter) {
   //   return new action_runnable<I, M> (handle, member_ptr, parameter);
-  // }
-
-  // template <class I, class M>
-  // action_runnable<I, M>* make_action_runnable (const automaton_handle<I>& handle,
-  // 					       M I::*member_ptr,
-  // 					       const typename M::value_type& value,
-  // 					       typename M::action_category category) {
-  //   return new action_runnable<I, M> (handle, member_ptr, value, category);
   // }
   
 }

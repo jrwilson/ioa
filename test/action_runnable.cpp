@@ -14,8 +14,15 @@ class test_scheduler :
   public ioa::scheduler_interface
 {
 public:
+  ioa::aid_t get_current_aid () { return -1; }
   void set_current_aid (const ioa::aid_t aid) { }
   void clear_current_aid () { }
+  void schedule (ioa::action_runnable_interface*) { }
+  void schedule_after (ioa::action_runnable_interface*, const ioa::time&) { }
+  void schedule_read_ready (ioa::action_runnable_interface*, int) { }
+  void schedule_write_ready (ioa::action_runnable_interface*, int) { }
+  void close (int) { }
+  void run () { }
 };
 
 static const char*

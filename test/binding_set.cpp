@@ -29,6 +29,8 @@ bind ()
   mu_assert (!bs.exists (owner, &key1));
   mu_assert (!bs.bound (input_action1));
   mu_assert (!bs.bound (output_action, input_action1.get_aid ()));
+  mu_assert (bs.binding_count (input_action1) == 0);
+  mu_assert (bs.binding_count (output_action) == 0);
   mu_assert (bs.begin (output_action) == bs.end (output_action));
   mu_assert (bs.keys (owner).empty ());
   mu_assert (bs.keys (output_action.get_aid ()).empty ());
@@ -37,6 +39,8 @@ bind ()
   mu_assert (bs.exists (owner, &key1));
   mu_assert (bs.bound (input_action1));
   mu_assert (bs.bound (output_action, input_action1.get_aid ()));
+  mu_assert (bs.binding_count (input_action1) == 1);
+  mu_assert (bs.binding_count (output_action) == 1);
   mu_assert (bs.begin (output_action) != bs.end (output_action));
   mu_assert (**bs.begin (output_action) == input_action1);
   mu_assert (++(bs.begin (output_action)) == bs.end (output_action));
@@ -85,6 +89,11 @@ bind3 ()
   bs.bind (owner, &key3, output_action, input_action3);
   bs.bind (owner, &key1, output_action, input_action1);
   bs.bind (owner, &key2, output_action, input_action2);
+
+  mu_assert (bs.binding_count (output_action) == 3);
+  mu_assert (bs.binding_count (input_action1) == 1);
+  mu_assert (bs.binding_count (input_action2) == 1);
+  mu_assert (bs.binding_count (input_action3) == 1);
 
   ioa::binding_set::iterator pos = bs.begin (output_action);
   mu_assert (pos != bs.end (output_action));
@@ -156,6 +165,8 @@ unbind ()
   mu_assert (!bs.exists (owner, &key1));
   mu_assert (!bs.bound (input_action1));
   mu_assert (!bs.bound (output_action, input_action1.get_aid ()));
+  mu_assert (bs.binding_count (output_action) == 0);
+  mu_assert (bs.binding_count (input_action1) == 0);
   mu_assert (bs.begin (output_action) == bs.end (output_action));
   mu_assert (bs.keys (owner).empty ());
   mu_assert (bs.keys (output_action.get_aid ()).empty ());

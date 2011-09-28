@@ -78,7 +78,21 @@ namespace ioa {
 
     bool bound (const output_executor_interface& output_action,
 		aid_t const input_aid) const {
-      return m_output_to_aid.count (std::make_pair (output_action_t (output_action), input_aid));
+      return m_output_to_aid.count (std::make_pair (output_action_t (output_action), input_aid)) != 0;
+    }
+
+    size_t binding_count (const output_executor_interface& output_action) {
+      output_to_inputs_type::const_iterator pos = m_output_to_inputs.find (output_action_t (output_action));
+      if (pos != m_output_to_inputs.end ()) {
+	return pos->second.size ();
+      }
+      else {
+	return 0;
+      }
+    }
+
+    size_t binding_count (const input_executor_interface& input_action) {
+      return m_input_set.count (input_action_t (input_action));
     }
 
     iterator begin (const output_executor_interface& output_action) const {
