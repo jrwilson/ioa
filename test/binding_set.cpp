@@ -1,6 +1,7 @@
 #include "minunit.h"
 
 #include <ioa/binding_set.hpp>
+#include "../lib/null_mutex.hpp"
 #include "automaton1.hpp"
 
 #include <iostream>
@@ -13,12 +14,12 @@ bind ()
   ioa::binding_set bs;
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> handle1 (1);
   ioa::action_executor<automaton1, automaton1::uv_up_output_action> output_action (instance1, mutex1, handle1, &automaton1::uv_up_output);
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> handle2 (2);
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input_action1 (instance2, mutex2, handle2, &automaton1::uv_up_input);
 
@@ -57,22 +58,22 @@ bind3 ()
   ioa::binding_set bs;
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> handle1 (1);
   ioa::action_executor<automaton1, automaton1::uv_up_output_action> output_action (instance1, mutex1, handle1, &automaton1::uv_up_output);
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> handle2 (2);
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input_action1 (instance2, mutex2, handle2, &automaton1::uv_up_input);
 
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> handle3 (3);
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input_action2 (instance3, mutex3, handle3, &automaton1::uv_up_input);
 
   automaton1 instance4;
-  ioa::mutex mutex4;
+  ioa::null_mutex mutex4;
   ioa::automaton_handle<automaton1> handle4 (4);
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input_action3 (instance4, mutex4, handle4, &automaton1::uv_up_input);
 
@@ -138,12 +139,12 @@ unbind ()
   ioa::binding_set bs;
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> handle1 (1);
   ioa::action_executor<automaton1, automaton1::uv_up_output_action> output_action (instance1, mutex1, handle1, &automaton1::uv_up_output);
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> handle2 (2);
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input_action1 (instance2, mutex2, handle2, &automaton1::uv_up_input);
 

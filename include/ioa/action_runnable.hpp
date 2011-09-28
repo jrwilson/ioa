@@ -2,7 +2,7 @@
 #define __action_runnable_hpp__
 
 #include <ioa/action_executor.hpp>
-#include <ioa/shared_mutex.hpp>
+#include <ioa/shared_mutex_interface.hpp>
 #include <ioa/automaton_set.hpp>
 #include <ioa/binding_set.hpp>
 
@@ -37,18 +37,18 @@ namespace ioa {
   {
   private:
     scheduler_interface& m_scheduler;
-    shared_mutex& m_shared_mutex;
+    shared_mutex_interface& m_shared_mutex;
     automaton_set& m_automaton_set;
     binding_set& m_binding_set;
     action_executor<I, M> m_exec;
     
   public:
     action_runnable_impl (scheduler_interface& scheduler,
-			  shared_mutex& shared_mutex,
+			  shared_mutex_interface& shared_mutex,
 			  automaton_set& automaton_set,
 			  binding_set& binding_set,
 			  I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       m_scheduler (scheduler),
@@ -59,11 +59,11 @@ namespace ioa {
     { }
 
     action_runnable_impl (scheduler_interface& scheduler,
-			  shared_mutex& shared_mutex,
+			  shared_mutex_interface& shared_mutex,
 			  automaton_set& automaton_set,
 			  binding_set& binding_set,
 			  I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const typename M::parameter_type& parameter) :
@@ -92,16 +92,16 @@ namespace ioa {
   {
   private:
     scheduler_interface& m_scheduler;
-    shared_mutex& m_shared_mutex;
+    shared_mutex_interface& m_shared_mutex;
     automaton_set& m_automaton_set;
     action_executor<I, M> m_exec;
     
   public:
     action_runnable_impl (scheduler_interface& scheduler,
-			  shared_mutex& shared_mutex,
+			  shared_mutex_interface& shared_mutex,
 			  automaton_set& automaton_set,
 			  I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       m_scheduler (scheduler),
@@ -111,10 +111,10 @@ namespace ioa {
     { }
 
     action_runnable_impl (scheduler_interface& scheduler,
-			  shared_mutex& shared_mutex,
+			  shared_mutex_interface& shared_mutex,
 			  automaton_set& automaton_set,
 			  I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const typename M::parameter_type& parameter) :
@@ -142,32 +142,32 @@ namespace ioa {
   {
   public:
     action_runnable (scheduler_interface& scheduler,
-		     shared_mutex& shared_mutex,
+		     shared_mutex_interface& shared_mutex,
 		     automaton_set& automaton_set,
 		     binding_set& binding_set,
 		     I& instance,
-		     mutex& mutex,
+		     mutex_interface& mutex,
 		     const automaton_handle<I>& handle,
 		     M I::*member_ptr) :
       action_runnable_impl<I, M, typename M::action_category, L> (scheduler, shared_mutex, automaton_set, binding_set, instance, mutex, handle, member_ptr)
     { }
 
     action_runnable (scheduler_interface& scheduler,
-		     shared_mutex& shared_mutex,
+		     shared_mutex_interface& shared_mutex,
 		     automaton_set& automaton_set,
 		     I& instance,
-		     mutex& mutex,
+		     mutex_interface& mutex,
 		     const automaton_handle<I>& handle,
 		     M I::*member_ptr) :
       action_runnable_impl<I, M, typename M::action_category, L> (scheduler, shared_mutex, automaton_set, instance, mutex, handle, member_ptr)
     { }
 
     action_runnable (scheduler_interface& scheduler,
-		     shared_mutex& shared_mutex,
+		     shared_mutex_interface& shared_mutex,
 		     automaton_set& automaton_set,
 		     binding_set& binding_set,
 		     I& instance,
-		     mutex& mutex,
+		     mutex_interface& mutex,
 		     const automaton_handle<I>& handle,
 		     M I::*member_ptr,
 		     const typename M::parameter_type& parameter) :
@@ -175,10 +175,10 @@ namespace ioa {
     { }
 
     action_runnable (scheduler_interface& scheduler,
-		     shared_mutex& shared_mutex,
+		     shared_mutex_interface& shared_mutex,
 		     automaton_set& automaton_set,
 		     I& instance,
-		     mutex& mutex,
+		     mutex_interface& mutex,
 		     const automaton_handle<I>& handle,
 		     M I::*member_ptr,
 		     const typename M::parameter_type& parameter) :

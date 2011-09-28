@@ -2,7 +2,7 @@
 #define __action_executor_hpp__
 
 #include <cassert>
-#include <ioa/mutex.hpp>
+#include <ioa/mutex_interface.hpp>
 #include <ioa/automaton_handle.hpp>
 #include <ioa/action.hpp>
 #include <ioa/scheduler_interface.hpp>
@@ -112,13 +112,13 @@ namespace ioa {
   {
   protected:
     I& m_instance;
-    mutex& m_mutex;
+    mutex_interface& m_mutex;
     const automaton_handle<I> m_handle;
     M I::*m_member_ptr;
 
   public:
     action_executor_core (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       m_instance (instance),
@@ -190,7 +190,7 @@ namespace ioa {
     
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr)
@@ -247,7 +247,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const PT& parameter) :
@@ -306,7 +306,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr),
@@ -362,7 +362,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr)
@@ -420,7 +420,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const PT& parameter) :
@@ -480,7 +480,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr),
@@ -537,7 +537,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr)
@@ -605,7 +605,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const PT& parameter) :
@@ -675,7 +675,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr),
@@ -683,7 +683,7 @@ namespace ioa {
     { }
 
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const aid_t aid) :
@@ -752,7 +752,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr)
@@ -821,7 +821,7 @@ namespace ioa {
     
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const PT& parameter) :
@@ -892,7 +892,7 @@ namespace ioa {
     
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr),
@@ -900,7 +900,7 @@ namespace ioa {
     { }
 
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr,
 			  const aid_t aid) :
@@ -969,7 +969,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
 			  M I::*member_ptr) :
       action_executor_core<I, M> (instance, mutex, handle, member_ptr)
@@ -1013,7 +1013,7 @@ namespace ioa {
 
   public:
     action_executor_impl (I& instance,
-			  mutex& mutex,
+			  mutex_interface& mutex,
 			  const automaton_handle<I>& handle,
   			  M I::*member_ptr,
   			  const PT& parameter) :
@@ -1052,14 +1052,14 @@ namespace ioa {
   {
   public:
     action_executor (I& instance,
-		     mutex& mutex,
+		     mutex_interface& mutex,
 		     const automaton_handle<I>& handle,
 		     M I::*member_ptr) :
       action_executor_impl<I, M, typename M::action_category, typename M::value_status, typename M::value_type, typename M::parameter_status, typename M::parameter_type> (instance, mutex, handle, member_ptr)
     { }
 
     action_executor (I& instance,
-		     mutex& mutex,
+		     mutex_interface& mutex,
 		     const automaton_handle<I>& handle,
 		     M I::*member_ptr,
 		     const typename M::parameter_type& parameter) :

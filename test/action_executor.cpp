@@ -1,6 +1,7 @@
 #include "minunit.h"
 
 #include <ioa/action_executor.hpp>
+#include "../lib/null_mutex.hpp"
 #include "automaton1.hpp"
 #include <iostream>
 #include <vector>
@@ -18,7 +19,7 @@ unvalued_unparameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> action (instance, mutex, h, &automaton1::uv_up_input);
   action.set_auto_parameter (314);
@@ -42,7 +43,7 @@ unvalued_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   int parameter = 345;
   ioa::action_executor<automaton1, automaton1::uv_p_input_action> action (instance, mutex, h, &automaton1::uv_p_input, parameter);
@@ -68,7 +69,7 @@ unvalued_auto_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   ioa::aid_t parameter = 37;
   ioa::action_executor<automaton1, automaton1::uv_ap_input_action> action (instance, mutex, h, &automaton1::uv_ap_input);
@@ -95,7 +96,7 @@ valued_unparameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   ioa::action_executor<automaton1, automaton1::v_up_input_action> action (instance, mutex, h, &automaton1::v_up_input);
   action.set_auto_parameter (314);
@@ -119,7 +120,7 @@ valued_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   int parameter = 345;
   ioa::action_executor<automaton1, automaton1::v_p_input_action> action (instance, mutex, h, &automaton1::v_p_input, parameter);
@@ -145,7 +146,7 @@ valued_auto_parameterized_input_action ()
 {
   std::cout << __func__ << std::endl;
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   ioa::aid_t parameter = 345;
   ioa::action_executor<automaton1, automaton1::v_ap_input_action> action (instance, mutex, h, &automaton1::v_ap_input);
@@ -175,7 +176,7 @@ unvalued_unparameterized_output_action ()
   test_scheduler tss;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
   ioa::action_executor<automaton1, automaton1::uv_up_output_action> action (instance, mutex, h, &automaton1::uv_up_output);
   action.set_auto_parameter (314);
@@ -190,13 +191,13 @@ unvalued_unparameterized_output_action ()
   mu_assert (instance.uv_up_output.state);
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
 
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
@@ -228,7 +229,7 @@ unvalued_parameterized_output_action ()
   test_scheduler tss;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
   int parameter = 345;
   ioa::action_executor<automaton1, automaton1::uv_p_output_action> action (instance, mutex, h, &automaton1::uv_p_output, parameter);
@@ -245,13 +246,13 @@ unvalued_parameterized_output_action ()
   mu_assert (instance.uv_p_output.last_parameter == parameter);
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
 
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
@@ -284,7 +285,7 @@ unvalued_auto_parameterized_output_action ()
   test_scheduler tss;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
   ioa::action_executor<automaton1, automaton1::uv_ap_output_action> action (instance, mutex, h, &automaton1::uv_ap_output);
   action.set_auto_parameter (2);
@@ -300,7 +301,7 @@ unvalued_auto_parameterized_output_action ()
   mu_assert (instance.uv_ap_output.last_parameter == 2);
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
 
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
@@ -323,7 +324,7 @@ valued_unparameterized_output_action ()
   test_scheduler tss;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
   ioa::action_executor<automaton1, automaton1::v_up_output_action> action (instance, mutex, h, &automaton1::v_up_output);
   action.set_auto_parameter (314);
@@ -338,13 +339,13 @@ valued_unparameterized_output_action ()
   mu_assert (instance.v_up_output.state);
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
 
   ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::v_up_input);
@@ -376,7 +377,7 @@ valued_parameterized_output_action ()
   test_scheduler tss;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
   int parameter = 345;
   ioa::action_executor<automaton1, automaton1::v_p_output_action> action (instance, mutex, h, &automaton1::v_p_output, parameter);
@@ -393,13 +394,13 @@ valued_parameterized_output_action ()
   mu_assert (parameter == instance.v_p_output.last_parameter);
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (3);
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (4);
 
 
@@ -433,7 +434,7 @@ valued_auto_parameterized_output_action ()
   test_scheduler tss;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (1);
   ioa::action_executor<automaton1, automaton1::v_ap_output_action> action (instance, mutex, h, &automaton1::v_ap_output);
   action.set_auto_parameter (2);
@@ -449,7 +450,7 @@ valued_auto_parameterized_output_action ()
   mu_assert (instance.v_ap_output.last_parameter == 2);
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (2);
 
   ioa::action_executor<automaton1, automaton1::v_up_input_action> input1 (instance1, mutex1, input1_handle, &automaton1::v_up_input);
@@ -470,7 +471,7 @@ unparameterized_internal_action ()
   std::cout << __func__ << std::endl;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   ioa::action_executor<automaton1, automaton1::up_internal_action> action (instance, mutex, h, &automaton1::up_internal);
   mu_assert (action.get_aid () == h);
@@ -491,7 +492,7 @@ parameterized_internal_action ()
   std::cout << __func__ << std::endl;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h;
   int parameter = 345;
   ioa::action_executor<automaton1, automaton1::p_internal_action> action (instance, mutex, h, &automaton1::p_internal, parameter);

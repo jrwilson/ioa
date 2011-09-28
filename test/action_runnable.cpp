@@ -1,8 +1,10 @@
 #include "minunit.h"
 
 #include <ioa/action_runnable.hpp>
-#include <ioa/shared_lock.hpp>
-#include <ioa/unique_lock.hpp>
+#include "../lib/null_mutex.hpp"
+#include "../lib/null_shared_mutex.hpp"
+#include "../lib/null_shared_lock.hpp"
+#include "../lib/null_unique_lock.hpp"
 #include "automaton1.hpp"
 
 #include <iostream>
@@ -22,24 +24,24 @@ unvalued_unparameterized_output_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
   ioa::binding_set binding_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (automaton_set.create (&instance1));
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (automaton_set.create (&instance2));
 
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (automaton_set.create (&instance3));
 
   ioa::action_executor<automaton1, automaton1::uv_up_output_action> executor (instance, mutex, h, &automaton1::uv_up_output);
@@ -48,7 +50,7 @@ unvalued_unparameterized_output_action ()
   ioa::action_executor<automaton1, automaton1::uv_ap_input_action> input_action3 (instance3, mutex3, input3_handle, &automaton1::uv_ap_input);
   input_action3.set_auto_parameter (executor.get_aid ());
 
-  ioa::action_runnable<automaton1, automaton1::uv_up_output_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::uv_up_output);
+  ioa::action_runnable<automaton1, automaton1::uv_up_output_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::uv_up_output);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -77,25 +79,25 @@ unvalued_parameterized_output_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
   ioa::binding_set binding_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
   int parameter = 345;
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (automaton_set.create (&instance1));
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (automaton_set.create (&instance2));
 
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (automaton_set.create (&instance3));
 
   ioa::action_executor<automaton1, automaton1::uv_p_output_action> executor (instance, mutex, h, &automaton1::uv_p_output, parameter);
@@ -104,7 +106,7 @@ unvalued_parameterized_output_action ()
   ioa::action_executor<automaton1, automaton1::uv_ap_input_action> input_action3 (instance3, mutex3, input3_handle, &automaton1::uv_ap_input);
   input_action3.set_auto_parameter (executor.get_aid ());
 
-  ioa::action_runnable<automaton1, automaton1::uv_p_output_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::uv_p_output, parameter);
+  ioa::action_runnable<automaton1, automaton1::uv_p_output_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::uv_p_output, parameter);
   mu_assert (executor == runnable.get_action ());
   
   runnable ();
@@ -135,23 +137,23 @@ unvalued_auto_parameterized_output_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
   ioa::binding_set binding_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (automaton_set.create (&instance1));
 
   ioa::action_executor<automaton1, automaton1::uv_ap_output_action> executor (instance, mutex, h, &automaton1::uv_ap_output);
   executor.set_auto_parameter (input1_handle);
   ioa::action_executor<automaton1, automaton1::uv_up_input_action> input_action1 (instance1, mutex1, input1_handle, &automaton1::uv_up_input);
 
-  ioa::action_runnable<automaton1, automaton1::uv_ap_output_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::uv_ap_output, input_action1.get_aid ());
+  ioa::action_runnable<automaton1, automaton1::uv_ap_output_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::uv_ap_output, input_action1.get_aid ());
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -176,24 +178,24 @@ valued_unparameterized_output_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
   ioa::binding_set binding_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (automaton_set.create (&instance1));
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (automaton_set.create (&instance2));
 
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (automaton_set.create (&instance3));
 
   ioa::action_executor<automaton1, automaton1::v_up_output_action> executor (instance, mutex, h, &automaton1::v_up_output);
@@ -202,7 +204,7 @@ valued_unparameterized_output_action ()
   ioa::action_executor<automaton1, automaton1::v_ap_input_action> input_action3 (instance3, mutex3, input3_handle, &automaton1::v_ap_input);
   input_action3.set_auto_parameter (executor.get_aid ());
 
-  ioa::action_runnable<automaton1, automaton1::v_up_output_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::v_up_output);
+  ioa::action_runnable<automaton1, automaton1::v_up_output_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::v_up_output);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -231,25 +233,25 @@ valued_parameterized_output_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
   ioa::binding_set binding_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
   int parameter = 345;
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (automaton_set.create (&instance1));
 
   automaton1 instance2;
-  ioa::mutex mutex2;
+  ioa::null_mutex mutex2;
   ioa::automaton_handle<automaton1> input2_handle (automaton_set.create (&instance2));
 
   automaton1 instance3;
-  ioa::mutex mutex3;
+  ioa::null_mutex mutex3;
   ioa::automaton_handle<automaton1> input3_handle (automaton_set.create (&instance3));
 
   ioa::action_executor<automaton1, automaton1::v_p_output_action> executor (instance, mutex, h, &automaton1::v_p_output, parameter);
@@ -258,7 +260,7 @@ valued_parameterized_output_action ()
   ioa::action_executor<automaton1, automaton1::v_ap_input_action> input_action3 (instance3, mutex3, input3_handle, &automaton1::v_ap_input);
   input_action3.set_auto_parameter (executor.get_aid ());
 
-  ioa::action_runnable<automaton1, automaton1::v_p_output_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::v_p_output, parameter);
+  ioa::action_runnable<automaton1, automaton1::v_p_output_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::v_p_output, parameter);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -289,23 +291,23 @@ valued_auto_parameterized_output_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
   ioa::binding_set binding_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
 
   automaton1 instance1;
-  ioa::mutex mutex1;
+  ioa::null_mutex mutex1;
   ioa::automaton_handle<automaton1> input1_handle (automaton_set.create (&instance1));
 
   ioa::action_executor<automaton1, automaton1::v_ap_output_action> executor (instance, mutex, h, &automaton1::v_ap_output);
   executor.set_auto_parameter (input1_handle);
   ioa::action_executor<automaton1, automaton1::v_up_input_action> input_action1 (instance1, mutex1, input1_handle, &automaton1::v_up_input);
 
-  ioa::action_runnable<automaton1, automaton1::v_ap_output_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::v_ap_output, input_action1.get_aid ());
+  ioa::action_runnable<automaton1, automaton1::v_ap_output_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, binding_set, instance, mutex, h, &automaton1::v_ap_output, input_action1.get_aid ());
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -330,16 +332,16 @@ unparameterized_internal_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
 
   ioa::action_executor<automaton1, automaton1::up_internal_action> executor (instance, mutex, h, &automaton1::up_internal);
 
-  ioa::action_runnable<automaton1, automaton1::up_internal_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::up_internal);
+  ioa::action_runnable<automaton1, automaton1::up_internal_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::up_internal);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -354,16 +356,16 @@ unparameterized_internal_action_unique ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
 
   ioa::action_executor<automaton1, automaton1::up_internal_action> executor (instance, mutex, h, &automaton1::up_internal);
 
-  ioa::action_runnable<automaton1, automaton1::up_internal_action, ioa::unique_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::up_internal);
+  ioa::action_runnable<automaton1, automaton1::up_internal_action, ioa::null_unique_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::up_internal);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -378,17 +380,17 @@ parameterized_internal_action ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
   int parameter = 345;
 
   ioa::action_executor<automaton1, automaton1::p_internal_action> executor (instance, mutex, h, &automaton1::p_internal, parameter);
 
-  ioa::action_runnable<automaton1, automaton1::p_internal_action, ioa::shared_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::p_internal, parameter);
+  ioa::action_runnable<automaton1, automaton1::p_internal_action, ioa::null_shared_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::p_internal, parameter);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();
@@ -404,17 +406,17 @@ parameterized_internal_action_unique ()
   std::cout << __func__ << std::endl;
 
   test_scheduler tss;
-  ioa::shared_mutex shared_mutex;
+  ioa::null_shared_mutex shared_mutex;
   ioa::automaton_set automaton_set;
 
   automaton1 instance;
-  ioa::mutex mutex;
+  ioa::null_mutex mutex;
   ioa::automaton_handle<automaton1> h (automaton_set.create (&instance));
   int parameter = 345;
 
   ioa::action_executor<automaton1, automaton1::p_internal_action> executor (instance, mutex, h, &automaton1::p_internal, parameter);
 
-  ioa::action_runnable<automaton1, automaton1::p_internal_action, ioa::unique_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::p_internal, parameter);
+  ioa::action_runnable<automaton1, automaton1::p_internal_action, ioa::null_unique_lock> runnable (tss, shared_mutex, automaton_set, instance, mutex, h, &automaton1::p_internal, parameter);
   mu_assert (executor == runnable.get_action ());
 
   runnable ();

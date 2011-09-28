@@ -8,12 +8,12 @@ ioa/automaton_handle.hpp \
 ioa/automaton_set.hpp \
 ioa/binding_set.hpp \
 ioa/environment.hpp \
-ioa/mutex.hpp \
+ioa/mutex_interface.hpp \
 ioa/scheduler_interface.hpp \
-ioa/shared_lock.hpp \
-ioa/shared_mutex.hpp \
+ioa/shared_lock_interface.hpp \
+ioa/shared_mutex_interface.hpp \
 ioa/time.hpp \
-ioa/unique_lock.hpp
+ioa/unique_lock_interface.hpp
 
 # ioa/action_wrapper.hpp \
 # ioa/automaton.hpp \

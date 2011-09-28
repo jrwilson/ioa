@@ -1,7 +1,7 @@
 #ifndef __shared_lock_hpp__
 #define __shared_lock_hpp__
 
-#include <ioa/shared_mutex.hpp>
+#include "shared_mutex.hpp"
 
 namespace ioa {
   
