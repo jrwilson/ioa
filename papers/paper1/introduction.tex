@@ -9,20 +9,21 @@ The interactions these systems have with the physical environment, communities o
 The activities performed by the nodes in the distributed systems we desire to build are intrinsically concurrent and asynchronous.
 Nodes may continuously sense and manipulate the environment, perform background processing, and interact with other nodes by sending and receiving messages.
 Often, the program running on a node will straddle multiple logically independent systems and participate in a number of protocols.
-To produce more sophisticated systems with current levels of effort, we require the ability to construct programs by integrating a number of protocol-specific modules where each module itself is concurrent and asynchronous.
+To produce more sophisticated systems with current levels of effort, we require the ability to construct programs by integrating a number of system-specific modules where each module itself is concurrent and asynchronous.
 Consequently, the ease with which asynchronous and concurrent modules can be \emph{developed} and \emph{reused} is important for the development of distributed systems.
 
-Modularity, well-defined interfaces, and composition are essential properties of reusable software.
+Modularity, well-defined interfaces, and composition are crucial properties of reusable software.
 A unit of software that exhibits all of these properties is called a \emph{component}~\cite{szyperski2002component}.
 Modularity implies that a component can be deployed independently of other components.
 Well-defined interfaces and interactions allow components to expose their functionality in a regular way that facilitates reasoning about different interactions among them.
 Composition allows a group of interacting components to be understood as a cohesive unit.
 
+\paragraph*{Limitations of the state of the art:}
 While a number of component frameworks for distributed systems have been developed, each such framework is implemented using threads, event loops, or a combination of both.
-We limit our scope to imperative frameworks but note that functional approaches are gaining popularity~\cite{armstrong1996concurrent},~\cite{halloway2009programming}.
-Threads offer a seemingly straightforward extension of the synchronous sequential processing model supported by modern processors, programming languages, and operating systems.
-The difficulties of using threads, namely using locks to control access to shared state, is known in both academia~\cite{lee2006problem} and industry~\cite{sutter2005free}.
-We observe that locks also complicate composition as the locking strategies of each component must be taken into account when integrating.
+We limit our scope to imperative frameworks but note that functional approaches are also gaining popularity~\cite{armstrong1996concurrent},~\cite{halloway2009programming}.
+Although threads offer a seemingly straightforward extension of the synchronous sequential processing model (supported by modern processors, programming languages, and operating systems),
+the difficulties of using threads in practice (e.g., when using locks to control access to shared state) are well known in both academia~\cite{lee2006problem} and industry~\cite{sutter2005free}.
+We observe that locks also complicate composition, since the locking strategy of each component must be taken into account when integrating them.
 For example, a component that doesn't acquire locks in the same order as others may cause deadlock~\cite{havender1968avoiding}.
 
 An event loop executes handlers in response to external (I/O) and internal events and has been proposed as a simpler alternative to threads~\cite{ousterhout1996threads}.
@@ -33,27 +34,21 @@ One solution is to either convert Java Swing to use the middleware's event loop 
 Another alternative is to run both event loops in independent threads and thus face the challenges of multi-threaded development.
 Similarly, performance requirements might dictate true concurrent execution using multiple threads in an event system.
 %% True concurrent execution in an event system is important given the leveling of clock frequencies and the trend toward multi-core processors.
-A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities for true concurrent execution.
+A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities to exploit concurrent execution.
 
-To address these challenges, we present ioa++; a framework for building asynchronous and concurrent systems that is based on the I/O automata formal model.
-The I/O automata formalism was developed to model reactive systems~\cite{lynch1987hierarchical} and has been used in the design and verification of concurrent and distributed systems.
-I/O automata are a good foundation for components because they have independent state, straightforward interfaces, and precise semantics for event generation, distribution, and consumption resulting in well-defined interactions under composition.
-Other efforts to implement I/O automata have focused on simulation and verification~\cite{goldman1990distributed},~\cite{georgiou2009automated}.
-As observed in~\cite{georgiou2009automated}, a benefit of implementing distributed systems directly with I/O automata is the ability to reason about the behavior of a system or component directly from the source code using techniques from the I/O automata formalism.
-However, where~\cite{georgiou2009automated} introduces a new language and uses the Message Passing Interface (MPI)~\cite{gropp1999using} library for communication, ioa++ uses the existing C++ language and exposes native operating system services.
-
-\paragraph*{Contributions}
+\paragraph*{Contributions of this work:}
+To address this challenge we present the ioa++ framework for building asynchronous and concurrent systems, which is based on the I/O automata formal model. 
 This paper makes three main contributions to the state of the art in distributed systems:
 (1)  a model for \emph{dynamic} systems which is necessary for implementing (as opposed to only modeling) many distributed systems based on I/O automata,
 (2)  a C++ implementation of the model that allows one to build real systems using the facilities provided by POSIX environments, and
 (3)  a preliminary investigation into the degree of \emph{exploitable concurrency} in a system as a function of the automata interactions and framework overhead.
 The ioa++ framework is freely available at \url{http://jrwilson.github.com/ioa/}.
 
-\paragraph*{Paper structure}
+%\paragraph*{Paper structure}
 In Section~\ref{component_model}, we motivate I/O automata as a suitable foundation for components and introduce a model for dynamic systems.
-Section~\ref{design} describes the design and implementation of the ioa++ framework and Section~\ref{programming_model} describes how component automata are represented in the framework.
-In Section~\ref{case_study}, we show how ioa++ can be used to build distributed software by implementing a leader election protocol for a ring of processes connected by TCP sockets.
-We evaluate concurrent execution with a series of micro-benchmarks in Section~\ref{evaluation}.
+Section~\ref{design} describes the design and implementation of the ioa++ framework and Section~\ref{programming_model} describes how component automata are represented in it.
+In Section~\ref{case_study}, we show how ioa++ can be used to build a simple but representative example of distributed software by implementing a leader election protocol for a ring of processes connected by TCP sockets.
+We evaluate the ability of ioa++ to exploit potential concurrency with a series of micro-benchmarks in Section~\ref{evaluation}.
 Section~\ref{related_work} summarizes related work and we offer conclusions in Section~\ref{conclusion}.
 
 %% The component model behind our framework is based on our objectives for aysnchrony and concurrency tempered with a number practical considerations.
