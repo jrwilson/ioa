@@ -1,44 +1,63 @@
 \section{Related Work\label{related_work}}
 
-This work grew out of the challenges faced when trying to develop distributed systems with threads.
+Our development of ioa++ grew out of the challenges faced when trying to develop distributed systems with threads.
 Lee elaborates on the problems faced when using threads for concurrency in~\cite{lee2006problem}.
 These same concerns are relevant to trends towards increasingly concurrent programming to increase performance, given the leveling trend of clock frequencies and the advent of multi-core processors\cite{sutter2005software}.
 
-The direction implementation of a formal model to simplify concurrent programming was inspired by the application of structured programming~\cite{dijkstra1968letters} to programming language design.
+The direct implementation of a formal model to simplify concurrent programming was inspired by the application of structured programming~\cite{dijkstra1968letters} to programming language design.
+Structured programming simplifies development by allowing programmers to reason about their programs directly from the source code; regardless of whether of not the code it formally verified.
 The I/O automata model of Lynch and Tuttle\cite{lynch1987hierarchical} was selected because it supports features essential to developing distributed systems~\cite{lynch1996distributed}.
-Temporal logic proof techniques~\cite{manna1992temporal},~\cite{lamport1978time} also can be used to reason about I/O automata, towards developing \emph{correct} systems.
+%% Temporal logic proof techniques~\cite{manna1992temporal},~\cite{lamport1978time} also can be used to reason about I/O automata, towards developing \emph{correct} systems.
 
-Comparing I/O automata to every model for asynchronous, concurrent, and distributed computing is beyond the scope of this paper so we focus on exemplars.
-The I/O automata model is based on state transitions which matches the imperative style that dominates modern concurrent programming.
-This is similar to the motivation for UNITY~\cite{chandy1988parallel} and is in contrast to functional models such as the $\pi$-calculus~\cite{milner1992calculus} and actors~\cite{agha1986actors}.
-The I/O automata model assumes independent state with explicit communication like communicating sequential processes (CSP)~\cite{hoare1978communicating} but unlike threads~\cite{lee2006problem} and the UNITY model~\cite{chandy1988parallel}.
-All models for asynchronous, concurrent, and distributed computing admit non-determinism.
-Lee points out that the difficulties of thread-based programming come from a need to ``prune'' non-determinism when paired with shared state and adopts the view that software components should be deterministic with respect to concurrency save a few that introduce non-determinism in a controlled way~\cite{lee2006problem}.
-Programs in UNITY are composed by concatenating program texts and resolving shared variables~\cite{chandy1988parallel}.
-For this reason, they share many of the same problems as threads under composition.
-I/O automata can be viewed as taking the alternate approach by admitting non-determinism while prohibiting shared state.
-In I/O automata, the sequential flow control seen with threads~\cite{lee2006problem} and CSP~\cite{hoare1978communicating} is replaced by the non-deterministic execution of conditional atomic actions which resembles execution in the UNITY model~\cite{chandy1988parallel}.
-The ability to create new automata can be compared to actor creation in the actor model~\cite{agha1986actors}.
-Actors communicate by name using a buffered mail system while communications in I/O automata are not buffered and anonymous.
+Incorporating a formal model of concurrency into a language to make concurrent programming easier is an established technique.
+We consider three exemplars:  Communicating Sequential Processes, Actors, and threads.
+The Communicating Sequential Processes (CSP) model~\cite{hoare1978communicating} is an extremely popular technique for modeling concurrent systems.
+The fundamental concurrency control primitive in CSP is the \emph{rendezvous} which allows processes to synchronize and possibly exchange values.
+CSP was influential in the design of the occam programming language~\cite{jones1987programming} and continues to influence programming language design, e.g., Go~\cite{go}.
+An actor~\cite{agha1986actors} is a behavior that can perform a number of actions when receiving a message including (1) replacing itself with a new behavior, (2) sending messages to other actors, and (3) creating new actors.
+The Actor model influenced the design of languages such as Erlang~\cite{armstrong1996concurrent} and Scala~\cite{odersky2004overview}.
+The collective formalization of threads, e.g., semaphores~\cite{dijkstra1968cooperating}, monitors~\cite{hoare1974monitors}, all appear in popular libraries, e.g., POSIX threads~\cite{butenhof1997programming}, and languages, e.g., Java~\cite{christopher2000high}.
 
-To our knowledge, the Spectrum Simulation System~\cite{goldman1990distributed} and the IOA language~\cite{garland2003ioa} are the only existing systems that allow one to execute a system expressed as a collection of I/O automata.
+%% Frameworks for reusable asynchronous and concurrent modules
+%%   Collective formalization of threads
+%%     CORBA (asynchronous method invocation)/RMI/RPC (function call stack model, ~threads)
+%%   CSP
+%%   Actors
+
+%% Comparing I/O automata to every model for asynchronous, concurrent, and distributed computing is beyond the scope of this paper, so we focus instead on exemplars.
+%% The I/O automata model is based on state transitions which matches the imperative style that dominates modern concurrent programming.
+%% This is similar to the motivation for UNITY~\cite{chandy1988parallel} and is in contrast to functional models such as the $\pi$-calculus~\cite{milner1992calculus} and actors~\cite{agha1986actors}.
+%% The I/O automata model assumes independent state with explicit communication, like communicating sequential processes (CSP)~\cite{hoare1978communicating} but unlike threads~\cite{lee2006problem} or the UNITY model~\cite{chandy1988parallel}.
+
+%% All models for asynchronous, concurrent, and distributed computing admit non-determinism.
+%% Lee points out that the difficulties of thread-based programming come from a need to ``prune'' non-determinism when paired with shared state and adopts the view that software components should be deterministic with respect to concurrency save a few that introduce non-determinism in a controlled way~\cite{lee2006problem}.
+%% Programs in UNITY are composed by concatenating program texts and resolving shared variables~\cite{chandy1988parallel}.
+%% For this reason, they share many of the same concerns as threads under composition.
+%% I/O automata can be viewed as taking an alternate approach by admitting non-determinism while prohibiting shared state.
+%% In I/O automata, the sequential flow control seen with threads~\cite{lee2006problem} and CSP~\cite{hoare1978communicating} is replaced by the non-deterministic execution of conditional atomic actions which resembles execution in the UNITY model~\cite{chandy1988parallel}.
+%% The ability to create new automata can be compared to actor creation in the actor model~\cite{agha1986actors}.
+%% Actors communicate by name using a buffered mail system while communications in I/O automata are not buffered and anonymous.
+
+To our knowledge, the Spectrum Simulation System~\cite{goldman1990distributed} and the IOA language~\cite{garland2003ioa} are the only existing approaches that allow one to execute a system expressed as a collection of I/O automata.
 Spectrum focuses on algorithm development through simulation.
 IOA focuses on formal software development including both simulation and verification.
 
-The ioa++ framework can be compared directly to the IOA language due to the addition of a compiler~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} that has been used to implement a number of protocols~\cite{georgiou2009automated}.
+The ioa++ framework can be compared directly to the IOA language due to the availability of a compiler~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} that has been used to implement a number of protocols~\cite{georgiou2009automated}.
 \cite{georgiou2009automated} lists six challenges when developing the compiler: ``Program structuring,'' ``IOA Programs and external services,'' ``Modeling procedure calls,'' ``Composing automata,'' ``Nondeterminism'', and ``Implementing datatypes.''
-Programming written in IOA are compiled to Java and executed on hosts communicating using the MPI library.
+Programs written in IOA are compiled to Java and executed on hosts communicating using the MPI library.
 IOA requires programs to presented in a ``node-channel'' form that allows them to be composed with built in ``mediators'' that implement external services such as MPI.
-IOA lacks support for procedure calls which complicates modeling and interfacing with external services; especially when a procedure call blocks.
+IOA lacks support for procedure calls which complicates modeling and interfacing with external services: especially when a procedure call blocks.
 The IOA compiler composes automata statically using a ``composer'' resulting in a ``node automaton.''
 The next action to be executed is determined by a schedule function that resolves the non-determinism in the schedule.
 
 IOA and ioa++ represent two fundamentally different approaches to programming directly with I/O automata.
 The development of a new language was necessary for IOA due to their focus on formal verification.
-ioa++ on the other hand uses the existing C++ language and compilers.
-IOA encapsulates external services using built in ``mediators'' while ioa++ exposes operating system services via file descriptors relying on the programmer to ensure non-blocking operation.
+On the other hand ioa++ uses the existing C++ language and compilers.
+IOA encapsulates external services using built in ``mediators'' while ioa++ exposes operating system services via file descriptors, relying on the programmer to ensure non-blocking operation.
 IOA focuses on static composition to produce a single node program while ioa++ focuses on dynamic composition and allows concurrent execution.
-Both IOA and ioa++ require the programmer to add code to schedule actions and find this to be a common source of errors.
+Both IOA and ioa++ require the programmer to add code to schedule actions, which may be a common source of errors.
+Scheduling in IOA is deterministic and the programmer provides the policy.
+Scheduling in ioa++ is non-deterministic according to the global policy encoded by the controller.
 
 %% CORBA thread model
 
