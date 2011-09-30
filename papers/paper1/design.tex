@@ -87,7 +87,7 @@ Every action in the set of actions considered by the controller is scheduled by 
 Since automata can be destroyed, an action in the set owned by the controller might belong to an automaton that no longer exists.
 Our solution is to check if the automaton exists before executing an action.
 This check is performed by the dispatcher and avoids the overhead associated with synchronizing the set of actions with the set of automata every time an automaton is destroyed.
-Our solution assigns each automaton a unique identifier called an \emph{automaton id (aid)}, assuming that automata turn over less frequently overall than the set of actions in the scheduler.
+Our solution assigns each automaton a unique identifier assuming that the set of automata turn over less frequently overall than the set of actions in the scheduler.
 
 \paragraph*{Delayed actions}
 Scheduling activities for a future time is a useful feature for a real system because it allows the system to sleep between activities, i.e., the framework should support the development of automata that act as timers and alarms.
@@ -139,12 +139,14 @@ We define analogous states for the binding state machine: BindSend, BindRecv, Bi
 A binding subject can be in either BindRecv, BindDone, UnbindSend, or UnbindRecv when it receives a result from the system automaton indicating that the binding was dissolved.
 
 \paragraph*{Automaton and Binding managers}
-The protocol used by automata to asynchronously manage child automata and bindings is suitable for simple applications but becomes unwieldy when creating more complicated ones.
+The protocol used by automata to asynchronously manage child automata and bindings is suitable for simple constellations but becomes unwieldy when creating more complicated ones.
 Automaton Managers and Binding Managers provide individualized facades to the system action state machines.
 Creating an Automaton Manager initiates the creation of a new child automaton and invoking a destroy method initiates the destruction of a child automaton.
 Automaton Managers can be monitored using the Observer~\cite{gamma1995design} pattern to determine when and how the creation/destruction process succeeds.
 Binding Managers are similar except they do not begin the process of binding until the automata providing the output action and input action have been created: thus, Binding Managers observe Automaton Managers.
 
+\ifjournal
 \paragraph*{Generators}
 A \emph{generator} is a single-use factory for creating an instance of an automaton.
 Generators are used to produce new automata as part of the create system action and are visible as arguments in the various layers of the framework.
+\fi

@@ -19,7 +19,7 @@ class asynch_lcr_automaton :
 };
 \end{lstlisting}
 The asynch\_lcr\_automaton is declared as a C++ template where the UID template parameter must model the \emph{unique identifier} concept.
-The generic programming facilities of the C++ language aid in the development of general purpose reusable components.
+The metaprogramming facilities of the C++ language aid in the development of general purpose reusable components.
 \fi
 
 \paragraph*{Declaring and initializing state variables}
@@ -62,7 +62,7 @@ Bindings are checked for type compatibility at compile time using the generic pr
 A number of wrappers and macros are provided by ioa++ for declaring actions.
 %%To facilitate declaring actions, a number of wrappers and macros corresponding to the action types listed in section~\ref{practical} are available.
 Local actions are declared using three functions corresponding respectively to precondition, effect, and scheduling.
-The macros assume the functions are named action\_name\_precondition, action\_name\_effect, and action\_name\_schedule.
+%%The macros assume the functions are named action\_name\_precondition, action\_name\_effect, and action\_name\_schedule.
 \ifjournal
 For example, the send action of the asynch\_lcr\_automaton is declared:
 \begin{lstlisting}
@@ -125,16 +125,16 @@ ioa::make_binding_manager (this,
   lcr, &asynch_lcr_automaton<uuid>::init);
 \end{lstlisting}
 \fi
-Child automata are managed by ioa::automaton\_manager objects which can be created via the ioa::make\_automaton\_manager function.
-An automaton manager object requires an ioa::automaton object for its system action implementation and a generator for allocating child automata.
-Bindings are managed by ioa::binding\_manager objects which can be created via the ioa::make\_binding\_manager function.
+%%Child automata are managed by ioa::automaton\_manager objects which can be created via the ioa::make\_automaton\_manager function.
+An automaton manager object requires an ioa::automaton object for its system action implementation and a factory for allocating child automata.
+%%Bindings are managed by ioa::binding\_manager objects which can be created via the ioa::make\_binding\_manager function.
 A binding manager object requires an ioa::automaton object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
 The ioa::automaton\_manager class and ioa::binding\_manager class contain methods for destroying and unbinding respectively.
 \ifjournal
 The m\_self object of the example is an ioa::handle\_manager which can be used to bind to automata that already exist.
 From the example, the tcp\_lcr\_automaton binds the asynch\_lcr\_automaton to itself.
 The wary reader might notice that the ioa::automaton\_manager and ioa::binding\_managers in the example are dynamically allocated but never recorded and thus never freed.
-Both classes are managed by the ioa::automaton and automatically deallocated when the automaton or binding they manange is destroyed or unbound respectively.
+Both classes are managed by the ioa::automaton and automatically deallocated when the automaton or binding they manage is destroyed or unbound respectively.
 \fi
 
 \paragraph*{Binding predicates}
@@ -182,7 +182,7 @@ To replace a child automaton, the parent automaton must destroy the child (thus 
 Recall that system actions are asynchronous and can be executed in any order.
 Thus, the user might might request the actions in one order, e.g., destroy, create, bind, but the system may execute them in a different order, e.g., create, bind, destroy.
 If the sequence executed by the system automaton is (create, bind, destroy) then the bind will fail because the user automaton's actions are still bound to the old child.
-Note that executing the bind action before the create will also fail but this case is prevent by the ioa::binding\_manager class.
+Note that executing the bind action before the create will also fail but this case is prevented by the ioa::binding\_manager class.
 Thus, a user automaton must receive notification that the first child has been destroyed before (creating and) binding to the second child.
 A general solution is to observe the automaton and wait for it to be destroyed.
 

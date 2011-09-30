@@ -70,7 +70,7 @@ For example, when $N=1000000$ one thread spends half of its time waiting on the 
 This experiment indicates that concurrent execution is possible with ioa++ but a speed-up will only be achieved if (1) enough independent actions are enabled and (2) the duration of the independent actions overcome the overhead of ioa++.
 The overhead of ioa++ can be divided into three components corresponding to the time it takes to dispatch an action, the time required to synchronize using the pthreads library, and the time required to add an action to the scheduler via the ioa::schedule call.
 From the results, we calculated the average overhead per action of the ioa++ framework when dispatching an action and found it to be 4316ns $\pm$ 3.5ns for the single threaded experiments and 6067ns $\pm$ 3.6ns for the multi-threaded experiments.
-Similary, we calculated the scheduling overhead and found it to be 247ns $\pm$ 0.678ns for the single threaded experiments and 307ns $\pm$ 0.357ns for the multi-threaded experiments.
+Similarly, we calculated the scheduling overhead and found it to be 247ns $\pm$ 0.678ns for the single threaded experiments and 307ns $\pm$ 0.357ns for the multi-threaded experiments.
 Both of these potentially can be improved with better scheduler design.
-The synchronization time depends on the interactions among the system being executed, the scheduler, and the locking scheme used by the framework.
+The synchronization time depends on the interactions among the automata comprising the system, the scheduler, and the locking scheme used by the framework.
 We plan to address scheduling and synchronization in future work.
