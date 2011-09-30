@@ -36,10 +36,10 @@ The locks are acquired in a fixed order to prevent deadlock~\cite{havender1968av
 Once the locks are acquired, the precondition is evaluated, the local action and all bound input actions are executed, and the locks are released.
 
 The controller encodes a \emph{policy} that selects the next local action.
-For the framework to be an valid implementation of the I/O automata model, the controller used by the scheduler must be \emph{fair} as defined in Section~\ref{component_model}.
+For the framework to be a valid implementation of the I/O automata model, the controller used by the scheduler must be \emph{fair} as defined in Section~\ref{component_model}.
 The run-time system can be initialized with different controllers to achieve different performance objectives.
 Controllers can use multiple threads of execution to exploit the concurrency available in a system of automata.
-The ioa++ framework is designed so that all native concurrency structures (e.g., threads, mutexes) are encapsulated in the dispatcher and controller.
+The ioa++ framework is designed so that all native concurrency mechanisms (e.g., threads, mutexes) are encapsulated in the dispatcher and controller.
 
 \paragraph*{Explicit dynamic scheduling}
 The I/O automata model assumes that the scheduler knows about every local action in the system.
@@ -48,7 +48,7 @@ In the first approach, automata declare \emph{statically} all of their actions t
 The controller then has the responsibility of cycling through the actions according to some fair policy.
 Since the scheduler has no knowledge about what actions are enabled, i.e., have a precondition that is true, this approach reduces to naively trying each action.
 
-A more focused approached used in our framework is to allow automata to declare \emph{dynamically} the actions they would like the scheduler to consider.
+A more focused approach used in our framework is to allow automata to declare \emph{dynamically} the actions they would like the scheduler to consider.
 The controller then has the responsibility of processing the set of requested actions according to some fair policy.
 Let an action be \emph{enabled} if its precondition is true and \emph{disabled} otherwise.
 Observe that executing an action potentially changes the state of the automaton and causes the set of enabled actions to change.
@@ -68,7 +68,7 @@ A simple technique for accomplishing this is to \emph{schedule} all enabled acti
 More efficient schemes are possible if one considers how an action might enable other actions and which actions have already been scheduled.
 However, this must be done carefully.
 Not declaring an enabled action would violate the fairness of the controller since it will never select an action that may cause a state change.
-Not scheduling an (enabled) action could be another potential mistake.
+Not scheduling an (enabled) action \textbf{could be another potential mistake}.
 
 \paragraph*{Binding predicates and scheduling}
 %% This assumption is not implicit because we state that the preconditions are independent.
