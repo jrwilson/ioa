@@ -18,7 +18,7 @@ Modularity implies that a component can be deployed independently of other compo
 Well-defined interfaces and interactions allow components to expose their functionality in a regular way that facilitates reasoning about different interactions among them.
 Composition allows a group of interacting components to be understood as a cohesive unit.
 
-\paragraph*{Limitations of the state of the art:}
+\paragraph*{Limitations of the state of the art}
 While a number of component frameworks for distributed systems have been developed, each such framework is implemented using threads, event loops, or a combination of both.
 We limit our scope to imperative frameworks but note that functional approaches are also gaining popularity~\cite{armstrong1996concurrent},~\cite{halloway2009programming}.
 Although threads offer a seemingly straightforward extension of the synchronous sequential processing model (supported by modern processors, programming languages, and operating systems),
@@ -36,7 +36,7 @@ Similarly, performance requirements might dictate true concurrent execution usin
 %% True concurrent execution in an event system is important given the leveling of clock frequencies and the trend toward multi-core processors.
 A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities to exploit concurrent execution.
 
-\paragraph*{Contributions of this work:}
+\paragraph*{Contributions of this work}
 To address this challenge we present the ioa++ framework for building asynchronous and concurrent systems, which is based on the I/O automata formal model. 
 This paper makes three main contributions to the state of the art in distributed systems:
 (1)  a model for \emph{dynamic} systems which is necessary for implementing (as opposed to only modeling) many distributed systems based on I/O automata,

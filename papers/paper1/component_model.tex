@@ -8,7 +8,7 @@
 
 In this section we describe how the I/O automata model offers a natural realization of components and interfaces, and provides natural support for concurrency and composition.
 %% We then describe extensions to support dynamic semantics as participants in the system may arrive and depart at run-time.
-We then describe \textbf{extensions to support dynamic semantics for systems with participants that may arrive and depart at run-time}.
+We then describe extensions to support semantics for dynamic systems, i.e., systems whose set of constituent automata changes over time.
 
 \subsection{Background: I/O Automata}
 
@@ -116,7 +116,7 @@ Allowing such bindings would result in undefined behavior since the order of the
 The I/O automata model prevents this by requiring that all actions belonging to the same automaton have a unique name.
 To elaborate, we usually think about the output action occurring before the input action because a value must be generated.
 However, the I/O automata model admits an interpretation where the value is generated first and the effects of the output action and input action are applied non-deterministically.
-Graphically, an arrow originating in one component must terminate in another component, \textbf{even if the latter is a child of the former} as Figure~\ref{sys_model} illustrates.
+Graphically, an arrow originating in one component must terminate in another component as Figure~\ref{sys_model} illustrates.
 %% To adhere to this rule, the following must be true for the global binding map $B$:  $\langle \forall o, i : (o, i) \in B :: \pi (o) \neq \pi (i) \rangle$.
 
 \paragraph*{Concurrent execution}
@@ -210,7 +210,7 @@ While assuming a fixed number of automata is reasonable for modeling, assuming a
 To develop a component based on the static I/O automata model, a developer must choose a concrete value for the abstract quantity $N$.
 System resources are wasted if the actual number of participants is much smaller than $N$.
 If the number of participants is greater than $N$, then the system cannot respond to certain situations even though resources might be available.
-Thus, the techniques for \emph{modeling} a dynamic system of I/O automata are not necessarily appropriate for \emph{implementing} a dynamic system of I/O automata \textbf{directly}.
+Thus, the techniques for \emph{modeling} a dynamic system of I/O automata are not necessarily appropriate for \emph{implementing} a dynamic system of I/O automata.
 %% Consequently, we add the ability to deal with a dynamic set of automata and interactions.
 
 To illustrate, let a system $S=(A,B)$ be a pair consisting of a set of automata $A$ and a set of bindings $B$.

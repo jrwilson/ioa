@@ -49,10 +49,11 @@ The controller then has the responsibility of cycling through the actions accord
 Since the scheduler has no knowledge about what actions are enabled, i.e., have a precondition that is true, this approach reduces to naively trying each action.
 
 A more focused approach used in our framework is to allow automata to declare \emph{dynamically} the actions they would like the scheduler to consider.
+The act of declaring an action to the scheduler is called \emph{scheduling}.
 The controller then has the responsibility of processing the set of requested actions according to some fair policy.
 Let an action be \emph{enabled} if its precondition is true and \emph{disabled} otherwise.
 Observe that executing an action potentially changes the state of the automaton and causes the set of enabled actions to change.
-Consequently, an automaton is given the opportunity to declare actions to the scheduler after one of its actions is executed.
+Consequently, an automaton is given the opportunity to schedule actions to the scheduler after one of its actions is executed.
 Since the state variables (and therefore preconditions) of all automata are independent, each automaton is responsible for scheduling its own actions.
 For bootstrapping, each automaton is allowed to schedule actions when it is created.
 
@@ -64,11 +65,11 @@ Notice that refraining from scheduling disabled actions does not affect the fair
 This result leads to a guarded programming idiom where the precondition of each action is checked before it is added to the schedule.
 
 However, an automaton should still ensure that the scheduler will \emph{consider} all actions that are currently enabled.
-A simple technique for accomplishing this is to \emph{schedule} all enabled actions.
+A simple technique for accomplishing this is to schedule all enabled actions.
 More efficient schemes are possible if one considers how an action might enable other actions and which actions have already been scheduled.
 However, this must be done carefully.
-Not declaring an enabled action would violate the fairness of the controller since it will never select an action that may cause a state change.
-Not scheduling an (enabled) action \textbf{could be another potential mistake}.
+Not scheduling an enabled action would violate the fairness of the controller since it will never select an action that may cause a state change.
+Not scheduling an (enabled) action is a common mistake.
 
 \paragraph*{Binding predicates and scheduling}
 %% This assumption is not implicit because we state that the preconditions are independent.
