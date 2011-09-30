@@ -38,6 +38,10 @@ The collective formalization of threads, e.g., semaphores~\cite{dijkstra1968coop
 %% The ability to create new automata can be compared to actor creation in the actor model~\cite{agha1986actors}.
 %% Actors communicate by name using a buffered mail system while communications in I/O automata are not buffered and anonymous.
 
+% Other efforts to implement I/O automata have focused on simulation and verification~\cite{goldman1990distributed},~\cite{georgiou2009automated}.
+% As observed in~\cite{georgiou2009automated}, a benefit of implementing distributed systems directly with I/O automata is the ability to reason about the behavior of a system or component directly from the source code using techniques from the I/O automata formalism.
+% However, where~\cite{georgiou2009automated} introduces a new language and uses the Message Passing Interface (MPI)~\cite{gropp1999using} library for communication, ioa++ uses the existing C++ language and exposes native operating system services.
+
 To our knowledge, the Spectrum Simulation System~\cite{goldman1990distributed} and the IOA language~\cite{garland2003ioa} are the only existing approaches that allow one to execute a system expressed as a collection of I/O automata.
 Spectrum focuses on algorithm development through simulation.
 IOA focuses on formal software development including both simulation and verification.

@@ -53,6 +53,8 @@ The contained component is the \emph{child} while the containing component is th
 The resulting hierarchy helps developers organize programs by separating concerns and facilitates the reuse of existing components.
 A distinction is made between the \emph{name} given to an instance and the \emph{type} of a child component to allow a parent component to contain multiple children of the same type.
 
+%The I/O automata formalism was developed to model reactive systems~\cite{lynch1987hierarchical} and has been used in the design and verification of concurrent and distributed systems.
+I/O automata are a good foundation for such components because they have independent state, straightforward interfaces, and precise semantics for event generation, distribution, and consumption resulting in well-defined interactions under composition.
 \emph{Hierarchical decomposition}, the modeling dual of recursive encapsulation, is an established technique for I/O automata~\cite{lynch1987hierarchical},~\cite{lynch1994atomic}.
 For convenience, we extend the notion that a parent automaton is the composition of its children to include an anonymous child that contains state and actions attributed to the parent.
 The \emph{root automaton} is the automaton at the top of the hierarchy and represents the entire system as composition is applied recursively up the hierarchy.
