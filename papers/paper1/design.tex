@@ -7,15 +7,15 @@
 \label{framework_architecture}
 \end{figure}
 
-The ioa++ framework is a C++ implementation of the component model described in Section~\ref{component_model} (including services for executing local actions and facilities for manipulating the set of automata and bindings), for POSIX environments .
+The ioa++ framework is a C++ implementation of the component model described in Section~\ref{component_model} for POSIX environments .
 The architecture of the ioa++ framework is depicted in Figure~\ref{framework_architecture}.
 
-Conceptually, state variables belong to the system automaton.
+Conceptually, the set of automata $A$ and set of bindings $B$ belong to the system automaton.
 However, the state they encode is shared and is used in the execution of every action.
-For a system $S=(A,B)$ consisting of a set of automata $A$ and a set of bindings $B$,
-a \emph{scheduler} uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
+A \emph{scheduler} uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
 Thus, the set of actions implied by any action is the union of the set defined in Section~\ref{component_structure} and the system automaton.
 The opportunities for concurrent execution discussed in Section~\ref{component_structure} hinge on the fact that \emph{only} actions that modify $A$ and $B$ must be serialized.
+Binding predicates do not modify $B$ and therefore do not affect concurrent execution.
 The scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
 
 All user automata inherit from a common base class (indicated by the Base Automaton layer shown in Figure~\ref{framework_architecture}) that provides facilities for asynchronously creating and destroying child automata and bindings.
@@ -55,7 +55,7 @@ In the first approach, automata declare \emph{statically} all of their actions t
 The controller then has the responsibility of cycling through the actions according to some fair policy.
 Since the scheduler has no knowledge about which actions are \emph{enabled} or \emph{disabled} (have a precondition that is true or false respectively), this approach reduces to naively trying each action.
 
-A more focused approach, which is the default approach used in our framework implementation, is to allow automata to declare \emph{dynamically} the actions they would like the scheduler to consider.
+A more focused approach, which is the approach used in our framework implementation, is to allow automata to declare \emph{dynamically} the actions they would like the scheduler to consider.
 %The act of declaring an action to the scheduler is called \emph{scheduling}.
 The controller then has the responsibility of processing the set of requested actions according to some fair policy.
 Observe that executing an action potentially changes the state of the automaton and causes the set of enabled actions to change.
