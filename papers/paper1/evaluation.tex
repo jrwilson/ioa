@@ -1,13 +1,14 @@
 \section{Evaluation\label{evaluation}}
 
 The ioa++ framework permits independent actions to be executed concurrently.
-The goal of this evaluation is to show that the degree of exploitable concurrency depends on the interactions of the I/O automata comprising a system and the overhead of the framework.
-To test concurrent execution, we examine a system whose actions can be configured to span the range from having no independent actions to having only independent actions.
+The goal of this evaluation is to show that the degree of exploitable concurrency depends only on (1) the interactions of the I/O automata comprising a system, and (2) the overhead of the framework which this evaluation serves to quantify for our current implementation of ioa++.
+
+To evaluate concurrent execution, we examine a system whose actions can be configured to span the range from having no independent actions to having only independent actions.
 We measure the time required to execute a fixed number of actions using a scheduler with a configurable number of threads.
 We then calculate the speed-up by comparing an execution using one thread to an equivalent execution using two threads.
 We also vary the complexity of each action to gain insight into how overhead and synchronization affect concurrent execution.
 
-An automaton $R$ contains an input, output, and internal action.
+An automaton of type $R$ contains an input, output, and internal action.
 The output and internal action effects execute an algorithm whose complexity is proportional to the parameter $N$.
 The automaton executes a fixed number of local actions.
 The automaton schedules the internal action with probability $\sqrt{\rho}$ and schedules the output action otherwise.
@@ -15,8 +16,8 @@ The system $S$ to be executed consists of two $R$ automata composed so the outpu
 If we divide the execution into rounds where each automaton executes a single action, the probability that both $R$ automata execute an internal action is $\sqrt{\rho} \times \sqrt{\rho} = \rho$.
 Thus, we can use the parameter $\rho$ to vary the independence of the automata.
 
-For this experiment, we developed a simple multi-threaded scheduler that assigns each local action to a thread based on the automaton identifier of the local action using the techniques described in Section~\ref{scheduling}.
-When a single thread is used, all actions are executed by the same thread.
+For this experiment, we used a simple multi-threaded scheduler that assigns each local action to a thread based on the automaton identifier of the local action using the techniques described in Section~\ref{scheduling}.
+When the scheduler is configured to use a single thread, all actions are executed by that same thread.
 When two threads are used, one thread executes the actions of one $R$ automaton while the other thread executes the actions of the other $R$ automaton.
 
 A trial consists of a choice for $\rho$, $N$, and the number of actions to be executed.
@@ -35,8 +36,8 @@ The code was compiled and linked with i686-apple-darwin9-g++-4.0.1 build 5493 wi
 \caption{Speed-up for system $S$.\label{speed_up}}
 \end{figure}
 
-Figure~\ref{speed_up} shows the speed-up when system $S$ was executed with one and two threads.
-Confidence intervals are shown but are negligible with the largest being a speed-up factor of $\pm$0.0165.
+Figure~\ref{speed_up} shows the speed-up when system $S$ was executed with two threads versus one thread.
+Confidence intervals are shown but are negligible with the largest being a speed-up range of $\pm$0.0165.
 When $\rho = 0$, every action is a bound output action and therefore depends on both $R$ automata.
 Consequently, every action must be serialized yielding a maximum speed-up of 1.
 When $\rho = 1$, every action is an internal action and can be executed concurrently with a corresponding maximum speed-up of 2.
@@ -65,12 +66,12 @@ Figures~\ref{overhead1} and \ref{overhead2} show the average per thread of the f
 Since the number of actions to be executed is constant, the single threaded execution shows a relatively consistent fraction for each value of $N$.
 The fraction decreases as $\rho$ goes to 1 and the system transitions from acquiring two locks to one lock.
 The multi-threaded execution shows that the fraction of time devoted to system overhead decreases as $\rho$ goes to 1 and is more pronounced when $N$ is large.
-For example, when $N=1000000$ one thread spends half of its time waiting on the other thread when $\rho = 0$ and spends virtually no time on synchronization when $\rho = 1$.
+For example, when $N=1000000$ one thread spends half of its time waiting on the other thread when $\rho = 0$ and spends very little time on synchronization when $\rho = 1$.
 
-This experiment indicates that concurrent execution is possible with ioa++ but a speed-up will only be achieved if (1) enough independent actions are enabled and (2) the duration of the independent actions overcome the overhead of ioa++.
+This experiment indicates that although concurrent execution is possible with ioa++, a significant speed-up will only be achieved if (1) enough independent actions are enabled and (2) the durations of the independent actions are large relative to the overhead of ioa++.
 The overhead of ioa++ can be divided into three components corresponding to the time it takes to dispatch an action, the time required to synchronize using the pthreads library, and the time required to add an action to the scheduler via the ioa::schedule call.
 From the results, we calculated the average overhead per action of the ioa++ framework when dispatching an action and found it to be 4316ns $\pm$ 3.5ns for the single threaded experiments and 6067ns $\pm$ 3.6ns for the multi-threaded experiments.
 Similarly, we calculated the scheduling overhead and found it to be 247ns $\pm$ 0.678ns for the single threaded experiments and 307ns $\pm$ 0.357ns for the multi-threaded experiments.
 Both of these potentially can be improved with better scheduler design.
 The synchronization time depends on the interactions among the automata comprising the system, the scheduler, and the locking scheme used by the framework.
-We plan to address scheduling and synchronization in future work.
+We plan to optimize scheduling and synchronization performance in ioa++ as future work.
