@@ -75,7 +75,6 @@ Actions are depicted as dotted rectangles and bindings are indicate by dotted li
 Output actions are suffixed with \emph{!} (e.g., \emph{detect!}), input actions are suffixed with \emph{?} (e.g., \emph{detected?}), and internal actions have neither suffix (e.g., \emph{process1}).
 The type associated with the value produced or consumed by an action is in parentheses after the name (e.g., \emph{out!(s)}).
 
-
 \paragraph*{Explicit composition}
 Composition in the I/O automata model is based on actions having the same name and can be applied to an arbitrary number of automata.
 However, when using recursive encapsulation, developers must have the ability to compose component automata regardless of the naming convention used by the original developers.
@@ -236,7 +235,8 @@ The \emph{destroy} action allows an automaton to destroy a child automaton and a
 % Thus, $S_{t+1}$ need not be equal to $S_{t}$.
 % A \emph{system action} is an action that \emph{can} change the system $S$.
 % The set of automata $A$ and set of bindings $B$ are managed by the \emph{system automaton} which represents the run-time system.
-As Figure~\ref{system_action} illustrates, the system automaton provides: parameterized input actions for receiving requests to create, bind, unbind, and destroy automata; internal actions for evaluating and enacting system action requests; and corresponding parameterized output actions through which to return results of the requests.
+As Figure~\ref{system_action} illustrates, the system automaton provides: parameterized input actions for receiving requests to create, bind, unbind, and destroy automata; internal actions for evaluating and enacting system action requests; and corresponding parameterized output actions for returning responses to system action requests.
+(Parameterized actions are indicated with [].)
 The base automaton provides output actions that trigger requests to create, bind, unbind, and destroy automata, along with
 input actions to receive the results.
 User-defined component automata (i.e., \emph{user automata}) inherit from the base automaton, which as we describe in Section~\ref{framework_architecture} is implemented in ioa++ as a C++ class. 
@@ -273,6 +273,5 @@ To be specific, the set of implied automata for internal actions does not change
 
 To allow a dynamic system to provide semantics consistent with a static system, the execution of output actions must be delayed until the set of implied automata matches the set implied by the static system.
 To do this, we take the conjunction of the precondition of an output action with a predicate over the set of bindings $B$ (called a \emph{binding predicate}) to ensure that the output action is not executed until its set of implied automata is correct.
-Notice that this only requires reading $B$ and is permitted since all updates to $B$ are serialized as was previously discussed.
 Thus, a dynamic system can be analyzed as a static system by ignoring system actions and the binding predicates.
 A system defined statically can be implemented as a dynamic system by adding binding predicates and logic to create the required constellation of automata.
