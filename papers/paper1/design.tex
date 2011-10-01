@@ -7,10 +7,17 @@
 \label{framework_architecture}
 \end{figure}
 
-ioa++ implements the component model described in Section~\ref{component_model}, for POSIX environments (in C++).
+The ioa++ framework implements the component model described in Section~\ref{component_model}, for POSIX environments (in C++).
 Our implementation provides services for executing local actions and facilities for manipulating the set of automata and bindings.
 The architecture of the ioa++ framework is depicted in Figure~\ref{framework_architecture}.
-The Scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
+
+Conceptually, state variables belong to the system automaton.
+However, the state they encode is shared and is used in the execution of every action.
+For a system $S=(A,B)$ consisting of a set of automata $A$ and a set of bindings $B$,
+a \emph{scheduler} uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
+Thus, the set of actions implied by any action is the union of the set defined in Section~\ref{component_structure} and the system automaton.
+However, the opportunities for concurrency discussed in Section~\ref{component_structure} are not lost when one considers that only actions that modify $A$ and $B$ must be serialized, i.e., not executed concurrently with other actions.
+The scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
 All user automata inherit from a common base class that provides facilities for asynchronously creating and destroying child automata and bindings.
 The services provided by that common base class are indicated by the Base Automaton layer shown in Figure~\ref{framework_architecture}.
 The Base Automaton class contains statically composed System Actions that are used to communicate with the System Automaton.

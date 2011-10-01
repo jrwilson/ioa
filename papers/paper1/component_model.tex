@@ -8,7 +8,7 @@
 
 In this section we describe how the I/O automata model offers a natural realization of components and interfaces, and provides natural support for concurrency and composition.
 %% We then describe extensions to support dynamic semantics as participants in the system may arrive and depart at run-time.
-We then describe extensions to support semantics for dynamic systems, i.e., systems whose set of constituent automata changes over time.
+We then describe extensions to support semantics for \emph{dynamic systems,} i.e., systems whose set of constituent automata changes over time.
 
 \subsection{Background: I/O Automata}
 
@@ -41,7 +41,7 @@ Often, the properties of the resulting aggregate automaton can be reasoned about
 Execution in the I/O automata model consists of non-deterministically and repeatedly selecting a local action and then if the precondition is true applying the effect.
 The scheduler is assumed to be fair, meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
 Executing internal actions and output actions that are not composed with any input actions is straightforward: in one atomic step, the precondition is evaluated and the effect is applied if and only if the precondition is true.
-Executing a composed output action consists of atomically evaluating the precondition and applying the effect of the output action and all composed input actions using the value produced by the output action subject to the precondition.
+Executing a composed output action consists of atomically evaluating the precondition, and if it is true applying the effect of the output action and all composed input actions using the value produced by the output action.
 The atomic relationship between composed output actions and input actions means that multiple automata may change state atomically when executing an output action.
 The guarantee of atomicity allows a developer to relate the state of one automaton to another, resulting in well-defined interactions that facilitate composition.
 
@@ -53,6 +53,7 @@ The contained component is the \emph{child} while the containing component is th
 The resulting hierarchy helps developers organize programs by separating concerns and facilitates the reuse of existing components.
 A distinction is made between the \emph{name} given to an instance and the \emph{type} of a child component to allow a parent component to contain multiple children of the same type.
 
+\paragraph*{Motivation for I/O automata based components}
 %The I/O automata formalism was developed to model reactive systems~\cite{lynch1987hierarchical} and has been used in the design and verification of concurrent and distributed systems.
 I/O automata are a good foundation for such components because they have independent state, straightforward interfaces, and precise semantics for event generation, distribution, and consumption resulting in well-defined interactions under composition.
 \emph{Hierarchical decomposition}, the modeling dual of recursive encapsulation, is an established technique for I/O automata~\cite{lynch1987hierarchical},~\cite{lynch1994atomic}.
@@ -66,30 +67,29 @@ The \emph{root automaton} is the automaton at the top of the hierarchy and repre
 \label{sys_model}
 \end{figure}
 
-Figure~\ref{sys_model} shows a sample event detector system where automata are depicted as solid rectangles.
-The type of the automaton appears in a box in the upper left or lower left corner, e.g., Processor.
+To illustrate how components can be expressed naturally using I/O automata, Figure~\ref{sys_model} shows a simple event detector system comprising three component automata: an anonymous Processor, a Converter named C, and a Detector named D. 
+The Processor automaton is the root and C and D are its children.
+Automata are depicted as solid rectangles. The type of the automaton appears in a box in the upper left or lower left corner, e.g., Processor.
 The name of a named automaton appears after its type, e.g., Converter C.
 Actions are depicted as dotted rectangles and bindings are indicate by dotted lines with an arrow pointing to the input action.
 Output actions are suffixed with \emph{!} (e.g., \emph{detect!}), input actions are suffixed with \emph{?} (e.g., \emph{detected?}), and internal actions have neither suffix (e.g., \emph{process1}).
 The type associated with the value produced or consumed by an action is in parentheses after the name (e.g., \emph{out!(s)}).
 
-The event detector system illustrated in Figure~\ref{sys_model} contains three component automata:  an anonymous Processor, a Converter named C, and a Detector named D.
-The Processor automaton is the root and C and D are its children.
 
-\paragraph*{Explicit Composition}
+\paragraph*{Explicit composition}
 Composition in the I/O automata model is based on actions having the same name and can be applied to an arbitrary number of automata.
-However, when using recursive encapsulation, developers must have the ability to compose automata regardless of the naming convention used by the original developers.
+However, when using recursive encapsulation, developers must have the ability to compose component automata regardless of the naming convention used by the original developers.
 To prepare for dynamic composition, we limit the scope of composition to associating a single output action with a single input action.
 Such an association is called a \emph{binding} and consists of a pair $(output, input)$ where $output$ is the name of the output action and $input$ is the name of the input action.
 
 %% This is only true for static systems.  Dynamic system can do crazy things.
-Each automaton contains a set of bindings referring to its own actions, the actions of its children, the actions of its children's children, etc.
+Each component automaton contains a set of bindings referring to its own actions, the actions of its children, the actions of its children's children, etc.
 The automaton that prescribes a binding is said to \emph{own} that binding.
 The global set of bindings can be used to rename input actions before applying composition as defined by the I/O automata model.
 A map for renaming inputs is generated by replacing action names with their fully-qualified names in all bindings by tracing from the root automaton.
 For example, the fully-qualified name of the $in?(s)$ action of Converter C in Figure~\ref{sys_model} is $[root].C.in?(s)$.
 Composition as defined by the I/O automata model can be applied after using the map to rename all input actions to their corresponding output action.
-The map of bindings for the event detection system in Figure~\ref{sys_model} is: 
+The map of bindings for the event detection system shown in Figure~\ref{sys_model} is: 
 \begin{displaymath}
 \begin{split}
 \{ ([root].out!(s), [root].C.in?(s)),\\
@@ -107,7 +107,7 @@ Second, an input action can be bound to at most one output action.
 Composing an input action with multiple output actions would introduce ambiguity into the relationship between the states of the automata and is therefore prohibited by the model.
 A binding map where all bindings that mention the same input action are equivalent satisfies this rule.
 For dynamics, which are discussed in Section~\ref{dynamics}, we must strengthen this rule to say that an input action can appear at most once in the global binding map.
-This strengthened rule means that an input is the sink of at most one binding and that every binding has exactly one owner.
+This stronger rule means that an input is the sink of at most one binding and that every binding has exactly one owner.
 Third, an output action cannot be bound to more than one input action in the same automaton:  the state of the automaton containing the input actions would not be well-defined after the output is executed since the input action effects would be applied in an undefined order.
 %% Let $\pi$ be a prefix operator that strips the action name (leaving the path and hence the automaton) of a fully-qualified action name.
 %% The following must be true for the global binding map $B$:  $\langle \forall o : (o, z) \in B :: \langle \forall i,j : (o, i) \in B \land (o, j) \in B \land i \neq j:: \pi (i) \neq \pi (j) \rangle \rangle$.
@@ -116,7 +116,7 @@ Allowing such bindings would result in undefined behavior since the order of the
 The I/O automata model prevents this by requiring that all actions belonging to the same automaton have a unique name.
 To elaborate, we usually think about the output action occurring before the input action because a value must be generated.
 However, the I/O automata model admits an interpretation where the value is generated first and the effects of the output action and input action are applied non-deterministically.
-Graphically, an arrow originating in one component must terminate in another component as Figure~\ref{sys_model} illustrates.
+Graphically, an arrow originating in one component automaton must terminate in another component automaton as Figure~\ref{sys_model} illustrates.
 %% To adhere to this rule, the following must be true for the global binding map $B$:  $\langle \forall o, i : (o, i) \in B :: \pi (o) \neq \pi (i) \rangle$.
 
 \paragraph*{Concurrent execution}
@@ -186,11 +186,11 @@ The set of automata implied by $Z.trigger!$ is $\{Z, S\}$ while the set of autom
 Since the sets are disjoint, the two actions can be executed concurrently.
 \fi
 
-I/O automata thus provide a natural component abstraction and are therefore a suitable foundation for a reusable, asynchronous, and concurrent software system.
-Each action is only allowed to modify the state of the automaton with which it is associated, which serves to encapsulate behavior and avoid unexpected side effects.
-The absence of shared state thus ensures that each automaton can be deployed independently.
-The external signature of an I/O automaton constitutes its interface and the result of interacting with an I/O automaton is well-defined since every action is atomic.
-Composition, asynchrony, and concurrency are guaranteed by the model itself.
+I/O automata thus provide a natural component abstraction and are therefore a suitable foundation for developing reusable components for asynchronous and concurrent software systems.
+Each action is only allowed to modify the state of the component automaton with which it is associated, which serves to encapsulate behavior and avoid unexpected side effects.
+The absence of shared state thus ensures that each component automaton can be deployed independently.
+The external signature of a component automaton constitutes its interface and the result of interacting with it is well-defined since every action is atomic.
+Composition, atomicity, asynchrony, and concurrency are thus well supported by the model itself.
 
 %% \subsection{Practical Considerations\label{practical}}
 
@@ -203,9 +203,10 @@ Composition, asynchrony, and concurrency are guaranteed by the model itself.
 The I/O automata model assumes that systems are composed of a finite or countably infinite number of automata~\cite{lynch1996distributed}.
 Assuming a countably infinite number of participants allows properties of the systems to be stated in terms of an abstract quantity representing the number of members, e.g., $N$, and is reasonable because all real systems are composed of a finite number of members.
 The set of interactions in the I/O automata model is also fixed since automata are statically composed.
-Dynamic systems are modeled in that approach by assuming that only a subset of the all the automata that could possibly exist are actively participating in the system.
+Dynamic systems can be modeled in that approach by assuming that only a subset of the all the automata that could possibly exist are actively participating in the system.
 To use this technique, a flag is associated with each automaton indicating if it is active or inactive and external actions for activation and deactivation are defined~\cite{lynch1994atomic}.
 
+\paragraph*{Limitations of the static model}
 While assuming a fixed number of automata is reasonable for modeling, assuming a fixed number of automata for a real system may result in either over-provisioning or inflexibility.
 To develop a component based on the static I/O automata model, a developer must choose a concrete value for the abstract quantity $N$.
 System resources are wasted if the actual number of participants is much smaller than $N$.
@@ -214,37 +215,37 @@ Thus, the techniques for \emph{modeling} a dynamic system of I/O automata are no
 %% Consequently, we add the ability to deal with a dynamic set of automata and interactions.
 
 To illustrate, let a system $S=(A,B)$ be a pair consisting of a set of automata $A$ and a set of bindings $B$.
-The I/O automata model assumes that $S$ and therefore $A$ and $B$ are both fixed.
-Dynamics are simulated via the manipulation of activation flags.
-A dynamic system implies that the system $S$ must be dependent on time $t$ as a function of the number of actions that have been executed by $t$.
-Thus, $S_{t+1}$ need not be equal to $S_{t}$.
-A \emph{system action} is an action that \emph{can} change the system $S$.
+The I/O automata model assumes that $S$ and therefore $A$ and $B$ are both fixed, so that dynamics must be \emph{simulated} via the manipulation of activation flags.
 
+\paragraph*{Support for dynamic systems}
+To address the limitations of the static representation of dynamic systems, ioa++ provides
+architectural support for dynamic systems by separating the concerns of \emph{enacting} versus \emph{initiating} 
+actions for managing dynamics into distinct \emph{system} and \emph{base} automata respectively.
+We define four \emph{system actions} for managing dynamic systems of automata: \emph{create}, \emph{bind}, \emph{unbind}, and \emph{destroy}.
+The \emph{create} action allows an automaton to create a child automaton.
+The \emph{bind} action allows an automaton to associate an input action with an output action while the \emph{unbind} action allows an automaton to dissociate an input action from an output action.
+The \emph{destroy} action allows an automaton to destroy a child automaton and all bindings associated with it (recursively).
 \begin{figure}
 \center
 \includegraphics[width=\columnwidth]{system_action}
-\caption{System actions.
-  A base automaton contains output actions for creating, binding, unbinding, and destroying.
-  The system automaton contains parameterized input actions for receiving the requests to create, binding, unbind, and destroy.
-  The system automaton returns a result using the appropriate parameterized output action.
-  The base automaton contains input actions to receive the results.}
+\caption{System automaton and actions.}
 \label{system_action}
 \end{figure}
 
-The set of automata $A$ and set of bindings $B$ are managed by the \emph{system automaton} which represents the run-time system.
-Each automaton is composed (not bound) with the system automaton and has output actions for requesting system actions and input actions for receiving the results of system actions.
-The system automaton, in turn, has input actions for receiving requests for system actions, internal actions for evaluating system action requests, and output actions for responding with the result of system actions.
-We define four actions in the system automaton for managing a dynamic system of automata: \emph{create}, \emph{bind}, \emph{unbind}, and \emph{destroy}.
-The \emph{create} action allows an automaton to create a child automaton.
-The \emph{bind} action allows an automaton to bind an input action to an output action while the \emph{unbind} action allows an automaton to separate an input action from an output action.
-The \emph{destroy} action allows an automaton to recursively destroy a child automaton and all bindings associated with it.
-Figure~\ref{system_action} shows the relationship between a base automaton and the system automaton.
+% A dynamic system implies that the system $S$ must be dependent on time $t$ as a function of the number of actions that have been executed by $t$.
+% Thus, $S_{t+1}$ need not be equal to $S_{t}$.
+% A \emph{system action} is an action that \emph{can} change the system $S$.
+% The set of automata $A$ and set of bindings $B$ are managed by the \emph{system automaton} which represents the run-time system.
+As Figure~\ref{system_action} illustrates, the system automaton provides: parameterized input actions for receiving requests to create, bind, unbind, and destroy automata; internal actions for evaluating and enacting system action requests; and corresponding parameterized output actions through which to return results of the requests.
+The base automaton provides output actions that trigger requests to create, bind, unbind, and destroy automata, along with
+input actions to receive the results.
+Component automata \emph{must} inherit from the base automaton, which as we describe in Section~\ref{framework_architecture} is implemented in ioa++ as a C++ class. Each component automaton is thus composed (not bound) with the system automaton and inherits output actions for requesting system actions and input actions for receiving the results of system actions.
 
-System actions can fail for a variety of reasons.
-A create fails if the automaton that should be added to the set of automata, i.e., the automata being created, already exists.
-A bind fails if the automaton associated with the output action doesn't exist, the automaton associated with the input action doesn't exist, or any of the binding rules outlined in Section~\ref{component_structure} would be violated.
+We note that system action requests may fail for a variety of reasons.
+A create fails if the automaton that should be added to the set of automata, i.e., the automaton being created, already exists.
+A bind fails if the automaton associated with the output action or the automaton associated with the input action doesn't exist, or if any of the binding rules outlined in Section~\ref{component_structure} would be violated.
 An unbind fails if the binding does not exist.
-Note that the owner of binding is taken into account when determining if the binding exists so only the owner of a binding can dissolve it.
+Note that the owner of the binding is taken into account when determining whether the binding exists, such that only the owner of a binding can dissolve it.
 A destroy fails if the automaton being destroyed does not exist or is not a child of the automaton requesting the destroy action.
 
 %% Let $A$ be the set of automata that exist where each element in $A$ is a pair $(p, a)$ where $p$ is the parent of $a$.
@@ -263,19 +264,13 @@ A destroy fails if the automaton being destroyed does not exist or is not a chil
 % Are partial successes allowed?
 % Furthermore, such  transactions can be arbitrarily complex which doesn't bode well for efficiency.
 
-Conceptually, the state variables $A$ and $B$ belong to the system automaton.
-However, the state encoded by $A$ and $B$ is shared and is used in the execution of every action.
-A \emph{scheduler} uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
-Thus, the set of actions implied by any action is the union of the set defined in Section~\ref{component_structure} and the system automaton.
-However, the opportunities for concurrency explored in Section~\ref{component_structure} are not lost when one considers that only actions that modify $A$ and $B$ must be serialized, i.e., not executed concurrently with other actions.
-
 \paragraph*{Binding predicates}
 The static configuration of a system as prescribed by the I/O automata model guarantees that the set of implied automata for an action is always the same.
 This property is necessary and desirable for reasoning about the behavior of the system.
 Admitting dynamics removes this guarantee since the set of implied automata will change according to the various system actions being executed.
 To be specific, the set of implied automata for internal actions does not change but the set of implied automata for output actions can be changed with a successful bind, unbind, or destroy.
 
-To force a dynamic system to behave like a static system, the execution of output actions must be delayed until the set of implied automata matches the set implied by the static system.
+To allow a dynamic system to provide semantics consistent with a static system, the execution of output actions must be delayed until the set of implied automata matches the set implied by the static system.
 To do this, we take the conjunction of the precondition of an output action with a predicate over the set of bindings $B$ (called a \emph{binding predicate}) to ensure that the output action is not executed until its set of implied automata is correct.
 Notice that this only requires reading $B$ and is permitted since all updates to $B$ are serialized as was previously discussed.
 Thus, a dynamic system can be analyzed as a static system by ignoring system actions and the binding predicates.
