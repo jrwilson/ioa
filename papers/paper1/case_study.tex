@@ -1,21 +1,22 @@
 \section{Example:  The TCP LCR Automaton\label{case_study}}
 
-In this section, we demonstrate that ioa++ can be used to build real distributed systems.
-Real distributed systems are designed using a layered approach where the upper layers contain semantically rich business logic while the bottom layers contain low-level network message-passing.
-The middle layers, i.e., middleware, contain generic high-level coordination mechanisms that abstract away the low-level details of message-passing.
-The lower layers contain abstractions of operating system services such as TCP/UDP sockets (for communicating with other peers) and timers (for detecting time-outs and performing periodic tasks), e.g., \cite{schmidt2001c++},~\cite{schmidt2002c++}.
-We apply this layered architecture technique to the simple but representative network programming problem of electing a leader in a unidirectional ring of processes connected by TCP sockets.
+In this section, we illustrate how ioa++ can be used to build real distributed systems.
+In practice, distributed systems are designed using a layered approach where the highest layers contain (often semantically rich) application logic.
+The lower layers provide services such as TCP/UDP sockets (for communicating between endsystems) and timers (for detecting time-outs and performing periodic tasks), e.g., \cite{schmidt2001c++},~\cite{schmidt2002c++}.
+The intermediate layers, i.e., frameworks like ioa++, contain generic coordination mechanisms that serve to abstract away the low-level details from the application logic.
 
-The ``business logic'' we will implement is quite simple and consists of periodically circulating a token around a ring of nodes.
-If a node has not received a token in a specified amount of time, it initiates a leader election protocol.
+We apply this layered architecture technique to the simple but representative network programming problem of electing a leader in a unidirectional ring of processes connected by TCP sockets.  
+In order to focus on how ioa++ supports distributed applications in general, rather than on the details of any
+particular application, the application logic in this example consists simply of periodically circulating a token around a ring of nodes.
+If a node has not received a token in a specified amount of time it initiates a leader election protocol.
 Once a leader has been elected, the leader injects a token and the protocol resumes.
-Nodes can join and leave the ring at any time.
-The protocol should eventually succeed for complete rings.
-These dynamics admit fault situations where a ring might lose its leader or contain multiple leaders.
-A ring containing multiple leaders should stabilize to having a single leader.
-A rare (but possible and valid) situation is a ring circulating a token without a leader, i.e., the leader sends a token, leaves the ring, and is replaced before the token makes a full cycle.
-This situation requires no action as a token is circulating in the ring.
-We divide the problem into two sub-problems:  leader election and ring formation.
+
+Despite the simplicity of the application logic, the resulting \emph{dynamic} distributed system serves to motivate why and illustrate how a number of crucial features are provided by ioa++.
+For example, nodes can join and leave the ring at any time, and yet the protocol should eventually succeed for complete rings when they stabilize.
+These dynamics admit fault situations where a ring might lose its leader or temporarily contain multiple leaders, and yet each ring should stabilize to having a single leader.
+Another possible and valid (if potentially rare) situation is a ring circulating a token without a leader, i.e., the leader sends a token, leaves the ring, and is replaced before the token makes a full cycle.
+% This situation requires no action as a token is circulating in the ring.
+We divide these problems into two sub-problems:  leader election and ring formation.
 
 Nodes in a distributed system may be arranged in a ring so that two consecutive nodes are connected by a directed channel.
 The goal is to designate one of the nodes as the leader of the ring.
@@ -41,9 +42,10 @@ The tcp\_ring\_automaton contains two external actions:  one for receiving messa
 \end{figure}
 
 The tcp\_lcr\_automaton which is listed in examples/tcp\_lcr.cpp\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/tcp_lcr.cpp}} of the ioa++ package implements the complete protocol by composing an asynch\_lcr\_automaton and a tcp\_ring\_automaton.
-Figure~\ref{tcp_lcr_automaton} shows the layered architecture of the TCP LCR system.
-The bottom layer consists of component automata for TCP sockets, the middle layer consists of a component automaton that supports coordination via a unidirectional ring, and the top layer implements the business logic.
-Thus, ioa++ supports features we expect from a component framework for distributed systems.
+
+Figure~\ref{tcp_lcr_automaton} shows the resulting layered architecture of the TCP LCR system.
+The bottom layer consists of component automata for TCP sockets, the middle layer consists of a component automaton that supports coordination via a unidirectional ring, and the top layer implements the application logic.
+As this simple but representative example illustrates, the ioa++ framework readily supports the development of architecturally layered component-based distributed systems involving non-trivial dynamics.
 
 %% The key idea is that all of these modules have well-defined interactions when composed, while being inherently concurrent.
 %% One need only focus on the protocol implemented by an automaton when composing it with an existing system, as opposed to worrying about interacting threads and race conditions.
