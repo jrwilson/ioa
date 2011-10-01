@@ -2,7 +2,7 @@
 
 In this section, we illustrate how ioa++ can be used to build real distributed systems.
 In practice, distributed systems are designed using a layered approach where the highest layers contain (often semantically rich) application logic.
-The lower layers provide services such as TCP/UDP sockets (for communicating between endsystems) and timers (for detecting time-outs and performing periodic tasks), e.g., \cite{schmidt2001c++},~\cite{schmidt2002c++}.
+The lower layers provide services such as TCP/UDP sockets (for communicating between end systems) and timers (for detecting time-outs and performing periodic tasks), e.g., \cite{schmidt2001c++},~\cite{schmidt2002c++}.
 The intermediate layers, i.e., frameworks like ioa++, contain generic coordination mechanisms that serve to abstract away the low-level details from the application logic.
 
 We apply this layered architecture technique to the simple but representative network programming problem of electing a leader in a unidirectional ring of processes connected by TCP sockets.  
