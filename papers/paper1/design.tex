@@ -7,7 +7,7 @@
 \label{framework_architecture}
 \end{figure}
 
-The ioa++ framework is a C++ implementation of the component model described in Section~\ref{component_model} for POSIX environments .
+The ioa++ framework is a C++ implementation of the component model described in Section~\ref{component_model} for POSIX environments.
 The architecture of the ioa++ framework is depicted in Figure~\ref{framework_architecture}.
 
 Conceptually, the set of automata $A$ and set of bindings $B$ belong to the system automaton.
@@ -33,7 +33,7 @@ The dispatcher enforces the execution and concurrency constraints of Section~\re
 Input actions are executed with corresponding output actions, according to the current set of bindings.
 The dispatcher allows actions to be executed concurrently by (1)~requiring that the sets of automata implied by each action are disjoint and (2)~serializing all updates to the set of automata and bindings.
 
-Since concurrent access to the dispatcher is allowed, the dispatcher implementation the dispatcher must be thread-safe.
+Since concurrent access to the dispatcher is allowed, the dispatcher implementation must be thread-safe.
 Our implementation of the dispatcher uses a two-level locking scheme to enforce the concurrent execution constraints.
 Any action that modifies the set of automata and bindings must first acquire a write lock to prevent concurrent access.
 All other actions acquire a read lock to implement single-writer/multiple-reader semantics.

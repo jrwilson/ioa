@@ -64,7 +64,7 @@ Consequently, contention is reduced allowing for greater speed-ups as indicated 
 
 Figures~\ref{overhead1} and \ref{overhead2} show the average per thread of the fraction of time devoted to framework code and synchronization calls for the single and multi-threaded executions; confidence intervals are again negligible with largest being $\pm$0.002155 for Figure~\ref{overhead1} and $\pm$0.001781 for Figure~\ref{overhead2}.
 Since the number of actions to be executed is constant, the single threaded execution shows a relatively consistent fraction for each value of $N$.
-The fraction decreases as $\rho$ goes to 1 and the system transitions from acquiring two locks to one lock.
+The fraction decreases as $\rho$ goes from 0 to 1 because the system transitions from always acquiring two locks to always acquiring one lock.
 The multi-threaded execution shows that the fraction of time devoted to system overhead decreases as $\rho$ goes to 1 and is more pronounced when $N$ is large.
 For example, when $N=1000000$ one thread spends half of its time waiting on the other thread when $\rho = 0$ and spends very little time on synchronization when $\rho = 1$.
 

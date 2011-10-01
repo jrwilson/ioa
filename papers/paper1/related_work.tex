@@ -58,7 +58,7 @@ The next action to be executed is selected by a function that resolves the non-d
 
 IOA and ioa++ represent two fundamentally different approaches to programming directly with I/O automata.
 The development of a new language was necessary for IOA due to its focus on formal verification.
-On the other hand ioa++ uses the existing C++ language and compilers, towards easing portability of ioa++ systems to new platforms.
+% On the other hand ioa++ uses the existing C++ language and compilers.
 IOA encapsulates external services using built in ``mediators'' while ioa++ exposes operating system services via file descriptors, relying on the programmer to ensure non-blocking operation.
 IOA focuses on static composition to produce a single node program while ioa++ focuses on dynamic composition and allows concurrent execution.
 Both IOA and ioa++ require the programmer to add code to schedule actions, which may be a common source of errors.

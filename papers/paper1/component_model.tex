@@ -39,7 +39,7 @@ Often, the properties of the resulting aggregate automaton can be reasoned about
 %% A useful operation in composite automata is \emph{hiding}~\cite{lynch1996distributed} which converts an output action to an internal action.
 
 Execution in the I/O automata model consists of non-deterministically and repeatedly selecting a local action and then if the precondition is true applying the effect.
-The scheduler is assumed to be fair, meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
+The scheduler is assumed to be \emph{fair,} meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
 Executing internal actions and output actions that are not composed with any input actions is straightforward: in one atomic step, the precondition is evaluated and the effect is applied if and only if the precondition is true.
 Executing a composed output action consists of atomically evaluating the precondition, and if it is true applying the effect of the output action and all composed input actions using the value produced by the output action.
 The atomic relationship between composed output actions and input actions means that multiple automata may change state atomically when executing an output action.
@@ -47,6 +47,12 @@ The guarantee of atomicity allows a developer to relate the state of one automat
 
 \subsection{Component Structure\label{component_structure}}
 
+\begin{figure*}
+\center
+\includegraphics[width=\textwidth]{system_model}
+\caption{Example event detection system.}
+\label{sys_model}
+\end{figure*}
 Component frameworks that support \emph{recursive encapsulation} allow components to contain other components.
 Recursive encapsulation is at the heart of both bottom-up design strategies where smaller components are composed to produce larger ones, and top-down design strategies in which larger components are decomposed into smaller ones.
 The contained component is the \emph{child} while the containing component is the \emph{parent}.
@@ -59,13 +65,6 @@ I/O automata are a good foundation for such components because they have indepen
 \emph{Hierarchical decomposition}, the modeling dual of recursive encapsulation, is an established technique for I/O automata~\cite{lynch1987hierarchical},~\cite{lynch1994atomic}.
 For convenience, we extend the notion that a parent automaton is the composition of its children to include an anonymous child that contains state and actions attributed to the parent.
 The \emph{root automaton} is the automaton at the top of the hierarchy and represents the entire system as composition is applied recursively up the hierarchy.
-
-\begin{figure}
-\center
-\includegraphics[width=\columnwidth]{system_model}
-\caption{Example event detection system.}
-\label{sys_model}
-\end{figure}
 
 To illustrate how components can be expressed naturally using I/O automata, Figure~\ref{sys_model} shows a simple event detector system comprising three component automata: an anonymous Processor, a Converter named C, and a Detector named D. 
 The Processor automaton is the root and C and D are its children.
@@ -119,7 +118,7 @@ Graphically, an arrow originating in one component automaton must terminate in a
 %% To adhere to this rule, the following must be true for the global binding map $B$:  $\langle \forall o, i : (o, i) \in B :: \pi (o) \neq \pi (i) \rangle$.
 
 \paragraph*{Concurrent execution}
-Recall that composing I/O automata consists of concatenating state vectors and folding input actions into output actions and that the result of composition is a single equivalent automaton.
+Recall that composing I/O automata consists of concatenating state variables and folding input actions into output actions and that the result of composition is a single equivalent automaton.
 Since the state of each automaton is independent, opportunities exist for concurrent execution if the state of each automaton is preserved and a composition is not reduced to a single equivalent automaton.
 Each local action implies a set of automata which in turn implies a set of state variables that might be modified.
 For an internal action, this set consists of the automaton containing the internal action.
@@ -202,7 +201,7 @@ Composition, atomicity, asynchrony, and concurrency are thus well supported by t
 The I/O automata model assumes that systems are composed of a finite or countably infinite number of automata~\cite{lynch1996distributed}.
 Assuming a countably infinite number of participants allows properties of the systems to be stated in terms of an abstract quantity representing the number of members, e.g., $N$, and is reasonable because all real systems are composed of a finite number of members.
 The set of interactions in the I/O automata model is also fixed since automata are statically composed.
-Dynamic systems can be modeled in that approach by assuming that only a subset of the all the automata that could possibly exist are actively participating in the system.
+Dynamic systems can be \emph{modeled} in that approach by assuming that only a subset of the all the automata that could possibly exist are actively participating in the system.
 To use this technique, a flag is associated with each automaton indicating if it is active or inactive and external actions for activation and deactivation are defined~\cite{lynch1994atomic}.
 
 \paragraph*{Limitations of the static model}
@@ -224,13 +223,13 @@ We define four \emph{system actions} for managing dynamic systems of automata: \
 The \emph{create} action allows an automaton to create a child automaton.
 The \emph{bind} action allows an automaton to associate an input action with an output action while the \emph{unbind} action allows an automaton to dissociate an input action from an output action.
 The \emph{destroy} action allows an automaton to destroy a child automaton and all bindings associated with it (recursively).
-\begin{figure}
+
+\begin{figure*}
 \center
-\includegraphics[width=\columnwidth]{system_action}
+\includegraphics[width=\textwidth]{system_action}
 \caption{System automaton and actions.}
 \label{system_action}
-\end{figure}
-
+\end{figure*}
 % A dynamic system implies that the system $S$ must be dependent on time $t$ as a function of the number of actions that have been executed by $t$.
 % Thus, $S_{t+1}$ need not be equal to $S_{t}$.
 % A \emph{system action} is an action that \emph{can} change the system $S$.
