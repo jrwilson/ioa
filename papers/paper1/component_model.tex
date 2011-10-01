@@ -239,7 +239,8 @@ The \emph{destroy} action allows an automaton to destroy a child automaton and a
 As Figure~\ref{system_action} illustrates, the system automaton provides: parameterized input actions for receiving requests to create, bind, unbind, and destroy automata; internal actions for evaluating and enacting system action requests; and corresponding parameterized output actions through which to return results of the requests.
 The base automaton provides output actions that trigger requests to create, bind, unbind, and destroy automata, along with
 input actions to receive the results.
-Component automata \emph{must} inherit from the base automaton, which as we describe in Section~\ref{framework_architecture} is implemented in ioa++ as a C++ class. Each component automaton is thus composed (not bound) with the system automaton and inherits output actions for requesting system actions and input actions for receiving the results of system actions.
+User-defined component automata (i.e., \emph{user automata}) inherit from the base automaton, which as we describe in Section~\ref{framework_architecture} is implemented in ioa++ as a C++ class. 
+Each user automaton is thus composed (not bound) with the system automaton and inherits output actions for requesting system actions and input actions for receiving the results of system actions.
 
 We note that system action requests may fail for a variety of reasons.
 A create fails if the automaton that should be added to the set of automata, i.e., the automaton being created, already exists.
