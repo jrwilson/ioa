@@ -2,21 +2,23 @@
 
 Our development of ioa++ grew out of the challenges faced when trying to develop distributed systems with threads.
 Lee elaborates on the problems faced when using threads for concurrency in~\cite{lee2006problem}.
-Given the leveling of processor clock frequencies and the advent of multi-core, these same concerns are relevant to trends that look to deliver performance increases through increasingly concurrent programs~\cite{sutter2005software}.
+Given the shift from higher clock frequencies to larger numbers of cores as the driver of hardware performance, these same concerns are relevant to trends that look to deliver performance improvements through increasingly concurrent programs~\cite{sutter2005software}.
 
-The direct implementation of a formal model to simplify concurrent programming was inspired by the application of structured programming~\cite{dijkstra1968letters} to programming language design.
-Structured programming simplifies development by allowing programmers to reason about their programs directly from the source code; regardless of whether of not the code is formally verified.
-The I/O automata model of Lynch and Tuttle\cite{lynch1987hierarchical} was selected because it supports features essential to developing distributed systems~\cite{lynch1996distributed}.
+Leveraging a formal model of concurrency to make concurrent programming easier is a well established technique.
+We consider three exemplars that are most relevant to the discussion in this paper: Communicating Sequential Processes, Actors, and I/O automata.
+Of these, we selected the I/O automata model of Lynch and Tuttle\cite{lynch1987hierarchical} because of its support for features essential to developing distributed systems~\cite{lynch1996distributed}.
 %% Temporal logic proof techniques~\cite{manna1992temporal},~\cite{lamport1978time} also can be used to reason about I/O automata, towards developing \emph{correct} systems.
 
-Incorporating a formal model of concurrency into a language to make concurrent programming easier is an established technique.
-We consider three exemplars:  Communicating Sequential Processes, Actors, and threads.
-The Communicating Sequential Processes (CSP) model~\cite{hoare1978communicating} is an extremely popular technique for modeling concurrent systems.
+The Communicating Sequential Processes (CSP) model~\cite{hoare1978communicating} is a popular technique for modeling concurrent systems.
 The fundamental concurrency control primitive in CSP is the \emph{rendezvous} which allows processes to synchronize and possibly exchange values.
 CSP was influential in the design of the occam programming language~\cite{jones1987programming} and continues to influence the design of modern programming languages, e.g., Go~\cite{go}.
+
 An actor~\cite{agha1986actors} is a behavior that can perform a number of actions when receiving a message including (1) replacing itself with a new behavior, (2) sending messages to other actors, and (3) creating new actors.
-The Actor model influenced the design of languages such as Erlang~\cite{armstrong1996concurrent} and Scala~\cite{odersky2004overview}.
-The collective formalization of threads, i.e., semaphores~\cite{dijkstra1968cooperating}, monitors~\cite{hoare1974monitors}, etc., appears in popular libraries, e.g., POSIX threads~\cite{butenhof1997programming}, and languages, e.g., Java~\cite{christopher2000high}.
+The Actor model has influenced the design of languages such as Erlang~\cite{armstrong1996concurrent} and Scala~\cite{odersky2004overview}.
+
+% The direct implementation of a formal model to simplify concurrent programming was inspired by the application of structured programming~\cite{dijkstra1968letters} to programming language design.
+% Structured programming simplifies development by allowing programmers to reason about their programs directly from the source code; regardless of whether of not the code is formally verified.
+% The collective formalization of threads, i.e., semaphores~\cite{dijkstra1968cooperating}, monitors~\cite{hoare1974monitors}, etc., appears in popular libraries, e.g., POSIX threads~\cite{butenhof1997programming}, and languages, e.g., Java~\cite{christopher2000high}.
 
 %% Frameworks for reusable asynchronous and concurrent modules
 %%   Collective formalization of threads
@@ -48,15 +50,15 @@ IOA focuses on formal software development including both simulation and verific
 
 The ioa++ framework can be compared directly to the IOA language due to the availability of a compiler~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} that has been used to implement a number of protocols~\cite{georgiou2009automated}.
 \cite{georgiou2009automated} lists six challenges when developing the compiler: ``Program structuring,'' ``IOA Programs and external services,'' ``Modeling procedure calls,'' ``Composing automata,'' ``Nondeterminism'', and ``Implementing datatypes.''
-Programs written in IOA are compiled to Java and executed on hosts communicating using the MPI library.
-IOA requires programs to presented in a ``node-channel'' form that allows them to be composed with built in ``mediators'' that implement external services such as MPI.
-IOA lacks support for procedure calls which complicates modeling and interfacing with external services: especially when a procedure call blocks.
+Programs written in IOA are compiled into Java and executed on hosts communicating using the MPI library.
+IOA requires programs to be presented in a ``node-channel'' form that allows them to be composed with built in ``mediators'' that implement external services such as MPI.
+IOA lacks support for procedure calls, which complicates modeling and interfacing with external services, especially when a procedure call may block.
 The IOA compiler composes automata statically using a ``composer'' resulting in a ``node automaton.''
 The next action to be executed is selected by a function that resolves the non-determinism in the schedule.
 
 IOA and ioa++ represent two fundamentally different approaches to programming directly with I/O automata.
-The development of a new language was necessary for IOA due to their focus on formal verification.
-On the other hand ioa++ uses the existing C++ language and compilers.
+The development of a new language was necessary for IOA due to its focus on formal verification.
+On the other hand ioa++ uses the existing C++ language and compilers, towards easing portability of ioa++ systems to new platforms.
 IOA encapsulates external services using built in ``mediators'' while ioa++ exposes operating system services via file descriptors, relying on the programmer to ensure non-blocking operation.
 IOA focuses on static composition to produce a single node program while ioa++ focuses on dynamic composition and allows concurrent execution.
 Both IOA and ioa++ require the programmer to add code to schedule actions, which may be a common source of errors.
