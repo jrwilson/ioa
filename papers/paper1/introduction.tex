@@ -29,12 +29,12 @@ For example, a component that doesn't acquire locks in the same order as others 
 An event loop executes handlers in response to external (I/O) and internal events and has been proposed as a simpler alternative to threads~\cite{ousterhout1996threads}.
 Event loops also match the reactive and asynchronous nature of distributed systems more closely.
 One challenge when using event loops, however, is the lack of common semantics for how events are generated, distributed, and consumed; thus complicating composition.
-To illustrate this issue consider the problem of providing a graphical user interface using Java Swing~\cite{eckstein1998java} for a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
-One solution is to either convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
-Another alternative is to run both event loops in independent threads and thus face the challenges of multi-threaded development.
-Similarly, performance requirements might dictate true concurrent execution using multiple threads in an event system.
+To illustrate this issue consider the problem of providing a graphical user interface using Java Swing~\cite{eckstein1998java} aopt a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
+One solution is either to convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
+Another alternative is to run both event loops in separate threads and thus face the challenges of multi-threading.
+% Similarly, performance requirements might dictate true concurrent execution using multiple threads in an event system.
 %% True concurrent execution in an event system is important given the leveling of clock frequencies and the trend toward multi-core processors.
-A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities to exploit concurrent execution.
+\emph{A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities to exploit concurrent execution.}
 
 \paragraph*{Contributions of this work}
 To address this challenge we present the ioa++ framework for building asynchronous and concurrent systems, which is based on the I/O automata formal model. 
@@ -46,7 +46,7 @@ The ioa++ framework is freely available at \url{http://jrwilson.github.com/ioa/}
 
 %\paragraph*{Paper structure}
 In Section~\ref{component_model}, we motivate I/O automata as a suitable foundation for components and introduce a model for dynamic systems.
-Section~\ref{design} describes the design and implementation of the ioa++ framework and Section~\ref{programming_model} describes how component automata are represented in it.
+Section~\ref{design} describes the design and implementation of the ioa++ framework and Section~\ref{programming_model} describes how component automata are programmed within it.
 In Section~\ref{case_study}, we show how ioa++ can be used to build a simple but representative example of distributed software by implementing a leader election protocol for a ring of processes connected by TCP sockets.
 We evaluate the ability of ioa++ to exploit potential concurrency with a series of micro-benchmarks in Section~\ref{evaluation}.
 Section~\ref{related_work} summarizes related work and we offer conclusions in Section~\ref{conclusion}.
