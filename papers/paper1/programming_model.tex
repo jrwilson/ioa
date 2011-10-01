@@ -1,13 +1,13 @@
-\section{I/O Automata Programming Model\label{programming_model}}
+\section{Programming Model\label{programming_model}}
 
-In this section, we show how I/O automata can be used to construct programs using ioa++.
+In this section, we show how I/O automata can be used to construct component based systems using ioa++.
 Section~\ref{representation} describes how I/O automata are represented in the C++ language.
 We then discuss the mechanisms available for dynamic composition in Section~\ref{dynamic_composition}.
 Section~\ref{constellations} concludes with techniques for managing dynamic constellations of automata.
 
 \subsection{I/O Automata Representation\label{representation}}
 
-All automata inherit from the common base class ioa::automaton which implements the system action interface.
+As was mentioned in Section~\ref{design}, all user automata inherit from the common base class (ioa::automaton) which implements the system action interface.
 \ifjournal
 The following code declares the asynch\_lcr\_automaton:
 \begin{lstlisting}
@@ -18,11 +18,11 @@ class asynch_lcr_automaton :
   ...
 };
 \end{lstlisting}
-The asynch\_lcr\_automaton is declared as a C++ template where the UID template parameter must model the \emph{unique identifier} concept.
-The metaprogramming facilities of the C++ language aid in the development of general purpose reusable components.
-\fi
+The asynch\_lcr\_automaton is declared as a C++ template where the UID template parameter must model the \emph{unique identifier} concept\footnote{The term ``concept'' is used here in the sense of generic programming in C++, i.e., a collection of type requirements imposed by a C++ template.}.
+The generic programming facilities of the C++ language aid in the development of general purpose reusable components.
 
 \paragraph*{Declaring and initializing state variables}
+\fi
 The state variables of an automaton are expressed as member variables of its corresponding class or class template.
 \ifjournal
 The four state variables of the asynch\_lcr\_automaton include the UID of the automaton, a queue of outgoing messages, and flags for reporting a change in status.
@@ -53,7 +53,12 @@ The constructor also bootstraps the scheduler by scheduling all enabled local ac
 \fi
 
 \paragraph*{Declaring/defining actions}
-Actions are member variables that model the \emph{action} concept.
+Actions are member variables that model the \emph{action} 
+\ifjournal
+concept.
+\else
+concept\footnote{The term ``concept'' is used here in the sense of generic programming in C++, i.e., a collection of type requirements imposed by a C++ template.}.
+\fi
 Actions contain methods for preconditions, effects, and scheduling along with \emph{traits} that indicate the action's type (input, output, internal), value status, value type, parameter status, and parameter type.
 These traits are used to guide the execution of the methods by the model and to supply values and parameters as necessary.
 The traits are also used to check that input actions are bound to output actions with the same value status and type.
@@ -82,8 +87,8 @@ The macros for actions that are subject to binding by other automata are declare
 Automata submit actions to the scheduler using the ioa::schedule function.
 The ioa::schedule function can be called at any time.
 However, automata are generally easier to read if scheduling calls are relegated to the scheduling functions.
-A common pattern is to schedule all local actions using one member function where each action is guarded by its precondition as described in section~\ref{scheduling}.
-Another common pattern is to have all scheduling functions dispatch to a single scheduling function to avoid replicating scheduling logic.
+A common idiom is to schedule all local actions using one member function where each action is guarded by its precondition as described in section~\ref{scheduling}.
+Another common idiom is to have all scheduling functions dispatch to a single scheduling function to avoid replicating scheduling logic.
 \ifjournal
 For the asynch\_lcr\_automaton, the scheduling function is:
 \begin{lstlisting}
@@ -129,7 +134,7 @@ ioa::make_binding_manager (this,
 An automaton manager object requires an ioa::automaton object for its system action implementation and a factory for allocating child automata.
 %%Bindings are managed by ioa::binding\_manager objects which can be created via the ioa::make\_binding\_manager function.
 A binding manager object requires an ioa::automaton object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
-The ioa::automaton\_manager class and ioa::binding\_manager class contain methods for destroying and unbinding respectively.
+The ioa::automaton\_manager class and ioa::binding\_manager class also contain methods for destroying and unbinding respectively.
 \ifjournal
 The m\_self object of the example is an ioa::handle\_manager which can be used to bind to automata that already exist.
 From the example, the tcp\_lcr\_automaton binds the asynch\_lcr\_automaton to itself.
@@ -155,21 +160,21 @@ bool send_precondition () const {
 
 \subsection{Managing Dynamic Constellations\label{constellations}}
 
-In this section, we introduce techniques and principles for managing dynamic constellations of automata and bindings that go beyond the ``nuts and bolts'' presented in the previous section.
-This list is not exhaustive but rather serves as a distillation of our experiences so far working with I/O automata in ioa++.
+In this section, we introduce techniques and principles for managing dynamic constellations of automata and bindings that go beyond the basic versions presented in the previous discussion.
+This list is not exhaustive but rather serves as a distillation of our experiences so far working with ioa++.
 
 \paragraph*{System action events}
 Determining the outcome of a system action event (e.g., that a child automaton was created) is necessary when there are constraints on the order in which system actions must occur.
 For example, the Binding Manager mentioned in section~\ref{system_action_section} waits until the automata that supply the output action and input action are created, before attempting to bind.
-Similarly, an automaton might compose with an automaton that it does not manage and therefore may expect the automaton to exist before attempting to bind.
-To enable such behavior, user automata can observe ioa::automaton\_manager objects and ioa::binding\_manager objects to receive events generated upon the completion of a system action.
+Similarly, an automaton might compose with an automaton that it does not manage, and therefore may expect the automaton to exist before attempting to bind.
+To enable such behavior, user automata can \emph{observe} ioa::automaton\_manager objects and ioa::binding\_manager objects to receive events generated upon the completion of a system action.
 
 \paragraph*{Error reporting}
 The event semantics of I/O automata provide a natural mechanism for reporting errors.
 An automaton that encounters an error can use an output action to signal the error.
 The automaton can continue processing if the error is transient or stop if the error is permanent.
 In either case, the error is propagated to the automaton that is using the automaton that encountered an error.
-Using this technique, errors can be propagated up the hierarchy and resolved at an appropriate level.
+Through this technique, errors can be propagated up the hierarchy and resolved at an appropriate level.
 The two techniques for handling an error are either to reset or to replace the portion of the constellation that encountered the error.
 
 \paragraph*{Handling errors by resetting}
@@ -187,6 +192,6 @@ Thus, a user automaton must receive notification that the first child has been d
 A general solution is to observe the automaton and wait for it to be destroyed.
 
 If all of the bindings of a child automaton are with its parent, then the child can be replaced using parameters.
-Instead of binding the new child to the exact same actions of the parent that are being used by the old child, which is the root problem in the preceding scenario, the new child is bound to actions parameterized by the new child.
+Instead of binding the new child to the exact same actions of the parent that are being used by the old child, which is the key problem in the preceding scenario, the new child is bound to actions parameterized by the new child.
 The parameters serve to differentiate the actions and obviate the need to wait for the old child to be destroyed.
 To use this technique, the parent remembers the parameter associated with the current child and becomes unresponsive to actions not bearing that parameter.

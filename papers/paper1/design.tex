@@ -18,11 +18,10 @@ Thus, the set of actions implied by any action is the union of the set defined i
 The opportunities for concurrent execution discussed in Section~\ref{component_structure} hinge on the fact that \emph{only} actions that modify $A$ and $B$ must be serialized.
 The scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
 
-All user automata inherit from a common Base Automaton class that provides facilities for asynchronously creating and destroying child automata and bindings.
-% The services provided by that common base class are indicated by the Base Automaton shown in Figure~\ref{framework_architecture}.
-The Base Automaton class contains statically composed System Actions that are used to communicate with the system automaton.
-In most situations, the services provided by the Base Automaton class are too low-level to be used directly by a user automaton.
-Instead, an Automaton Manager provides a common higher-level interface for asynchronously managing a single child automaton using the services of the Base Automaton class.
+All user automata inherit from a common base class (indicated by the Base Automaton layer shown in Figure~\ref{framework_architecture}) that provides facilities for asynchronously creating and destroying child automata and bindings.
+The Base Automaton layer provides statically composed system actions that are used to communicate with the system automaton.
+In most situations, the services provided by the Base Automaton layer are too low-level to be used directly by a user automaton.
+Instead, an Automaton Manager provides a common higher-level interface for asynchronously managing a single child automaton using the services of the Base Automaton layer.
 Similarly, a Binding Manager presents a high-level interface for asynchronously managing a single binding.
 
 \subsection{Scheduler\label{scheduling}}
