@@ -1,21 +1,28 @@
 \input texinfo  @c -*-texinfo-*-
 @c %** Start of header
 @setfilename ioa.info
-@settitle IOA++
+@settitle ioa++
 @setchapternewpage odd
 @c %** End of header
 
 @include version.texi
 
 @copying
+This manual is for ioa++, version @value{VERSION}.
+
 Copyright @copyright{} 2011 Justin R. Wilson.
+
 @quotation
-This work is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nd/3.0/ or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
 @end quotation
 @end copying
 
 @titlepage
-@title IOA++
+@title ioa++
 @author Justin R. Wilson
 
 @c The following two commands start the copyright page.
@@ -30,9 +37,9 @@ This work is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unport
 
 @ifnottex
 @node Top
-@top IOA++
+@top ioa++
 
-This manual describes version @value{VERSION} of IOA++.
+This manual describes version @value{VERSION} of ioa++.
 
 @insertcopying
 
@@ -40,44 +47,41 @@ This manual describes version @value{VERSION} of IOA++.
 
 @menu
 * Introduction::                Tutorial sections:
-* Concepts::                    
 * Examples::                    Reference sections:
 * Reference::                   
+* Copying::                     
 @end menu
 
 @node Introduction
 @chapter Introduction
 
-IOA++ is a general-purpose framework for developing asynchronous and concurrent programs based on the I/O automata model.
-Developers using IOA++ construct programs by defining and assembling event-based modules.
-As suggested by the name, IOA++ is implemented in C++.
-
-@node Concepts
-@chapter Concepts
+ioa++ is a general-purpose framework for developing asynchronous and concurrent programs based on the I/O automata model.
+Developers using ioa++ construct programs by defining and assembling event-based modules called I/O automata to form interacting constellations.
+As suggested by the name, ioa++ is implemented in C++.
 
 @section The I/O Automata Model
 
-I/O automata is a model for asynchronous and concurrent systems.
-The I/O automata model was developed by Nancy Lynch and described in Chapter 8 of @cite{Distributed Algorithms}.
+The I/O automata model was developed by Nancy Lynch for asynchronous and concurrent systems and is described in Chapter 8 of @cite{Distributed Algorithms}.
 I/O automata have been used to model and verify a number of real-world systems and protocols.
 
 An I/O automaton consists of state variables and a set of atomic input, output, and internal actions.
 The set of actions in an automaton is known as its @dfn{signature}.
-Output and internal actions are under the control of the automaton and are known as @dfn{local actions}.
-Input and output actions are known as @dfn{external actions}.
+Output and internal actions constitute the automaton's @dfn{local signature}.
+Local actions have a predicate over the state variables of the automaton (called a @dfn{precondition}) that indicates if the action can be executed.
+All actions have an @dfn{effect} which updates the state variables of the corresponding automaton.
+Input and output actions constitute the automaton's @dfn{external signature}.
 
 I/O automata can be composed to form a new automaton by concatenating state variables and folding input actions into similarly named output actions.
-Whereas output and internal actions can selectively be enabled or disabled, input actions are executed whenever their associated output is executed.
+Whereas local actions can be @dfn{enabled} or @dfn{disabled} based on their precondition, input actions are executed whenever their associated output is executed.
 This property is known as being @dfn{input enabled}.
 
 Execution proceeds by repeatedly selecting a local action and executing it if enabled.
 The model admits non-determinism by allowing the scheduler to pick actions in any order.
-The scheduler must select (but not necessarily execute) every action infinitely often.
-Schedulers that meet this criteria are said to be @dfn{fair}.
+Schedulers in I/O automata must be @dfn{fair} meaning they select (but do not necessarily execute) every action infinitely often.
 
 @section Representing I/O Automata
 
-I/O Automata are encoded directly in the C++ programming language as classes that inherit from @code{ioa::automaton}.
+I/O automata are encoded directly in the C++ programming language as classes that inherit from @code{ioa::automaton}.
 The state variables of the I/O automaton are naturally encoded as member variables of the class.
 The actions of the I/O automaton are encoded as a combination of member functions and member variables.
 A suite of templates and macros exist to simplify the definition of actions.
@@ -85,45 +89,42 @@ A suite of templates and macros exist to simplify the definition of actions.
 @section Dynamics
 
 The I/O automata model assumes that systems consist of a static set of automata.
-Often, the size of the set is infinitely countable meaning that it can be represented by an integer variable @var{N}.
+Often, the size of the set is countably infinite meaning that it can be represented by an integer variable @var{N}.
 A model specified in this way is capable of capturing any real system since there is a countable number of participants in all real systems.
-Within an infinitely countable set, a dynamic set of automata is simulated by associating a flag with each automaton indicating if it is active or inactive and defining appropriate ``wake-up'' and ``sleep'' actions.
+Within an countably infinite set, a dynamic set of automata is simulated by associating a flag with each automaton indicating if it is active or inactive and defining appropriate ``wake-up'' and ``sleep'' actions.
 A direct implementation of this strategy does not work for real systems because an implementation must specify a concrete value for @var{N}.
 Computing with a fixed number of automata is either unduly prohibitive if resources exist for additional automata or unduly wasteful if the number of active automata is much less than @var{N}.
 
 Consequently, we require the ability to dynamically create and destroy automata.
+An automaton that creates another automaton is called the @dfn{parent} while the created automaton is called the @dfn{child}.
+The automaton at the top of the hierarchy is called the @dfn{root}.
 Since we can dynamically create and destroy automata, we also require the ability to dynamically compose and decompose.
 @dfn{Binding} and @dfn{unbinding} refer to the act of dynamically composing and decomposing, respectively.
 For simplicity, binding and unbinding is limited to a single output action-input action pair.
-Dynamic binding allows us to drop the requirement that the actions have the same name.
+Explicit binding allows us to drop the requirement that the actions have the same name.
 
 @section Run-time System
 
-The IOA++ run-time system consists of a model, a scheduler, and a user-space library.
+The ioa++ run-time system consists of a system automaton, a dispatcher, a scheduler, and a user-space library.
 
-The @dfn{model} contains the set of automata and bindings and has methods for creating, binding, unbinding, destroying, and executing local actions.
-Creating, binding, unbinding, and destroying are called @dfn{system actions}.
-Users do not interact directly with the model and should only be concerned with the guarantees it provides.
-The model enforces atomic execution according to the I/O automata model.
-Internal actions are executed atomically.
-Output actions are executed by executing the output and all bound input actions in one atomic step.
+The @dfn{system automaton} contains the set of automata and bindings that exist in the system and actions for creating, binding, unbinding, and destroying.
+These actions are collectively called @dfn{system actions}.
+Each automaton is @emph{composed} with the system automaton by inheriting from @code{ioa::automaton}.
 
-The @dfn{scheduler} invokes the model with selected local and system actions.
-Conceptually, the scheduler contains a set of actions that are submitted to the model according to some policy.
-Users, in turn, are responsible for submitting actions that should be considered by the scheduler.
-Users are required to choose a scheduler implementation before execution begins thereby facilitating different scheduling policies.
+The @dfn{dispatcher} enforces atomic execution according to the I/O automata model.
+Internal actions are executed by evaluating the precondition and then applying the effect if the precondition is true.
+The precondition and effect are computed in one atomic step.
+Output actions are executed similarly except that all bound input actions are evaluated atomically with the output action.
 
-The user-space library is designed to help users write actions, submit actions to the scheduler, and execute system actions.
-Local actions consist of a coordinating object and three functions: a precondition, an effect, and a scheduling function.
-Input actions consists of a coordinating object and two functions: an effect and a scheduling function.
-The precondition determines if the effect of the output or internal action will be evaluated.
-The scheduling function is invoked after the effect of all actions and is intended as a place to submit actions to the scheduler.
+The @dfn{scheduler} selects the next action from a set of local actions.
+The set of local actions is updated by the automata in the system via @code{ioa::schedule} calls.
+Different schedulers can be used to realize different scheduling policies.
 
-System actions in IOA++ are asynchronous and resemble a request-response protocol.
-Conceptually, the model is permanently bound to every automaton and contains input actions for receiving system action requests and output actions for delivering system action results.
-The user-space library contains classes that hide the complexities of creating and binding asynchronously.
-Synchronous system actions were considered and rejected because they break the semantics of the I/O automata model.
-For example, it is not clear how to execute an output that bindings itself to an input as part of its execution.
+The user-space library is designed to help users write actions, schedule actions, and request system actions.
+Local actions consist of an object and three functions: a precondition, an effect, and a scheduling function.
+Input actions consists of an object and two functions: an effect and a scheduling function.
+The scheduling function is invoked after the effect of all actions and is intended as a place to schedule actions.
+The user-space library also contains classes that hide the complexities of creating and binding asynchronously.
 
 @section Concurrency
 
@@ -132,7 +133,7 @@ For internal actions, this is just the automaton that contains the internal acti
 For output actions, the set consists of the output action and the automata that contain the input actions bound to the output action.
 The semantics of I/O automata are such that two actions can be executed concurrently if their respective sets of involved automata are disjoint.
 An important consequence is that two actions belonging to the same automaton will never execute concurrently.
-To truly execute actions concurrently, the scheduler must concurrently invoke the model with independent actions.
+True concurrent execution requires a scheduler capable of true concurrent execution, i.e., a multi-threaded scheduler.
 
 @section Actions and Values
 
@@ -160,8 +161,8 @@ Each automaton has a unique identifier called an @dfn{automaton identfier} or @d
 Often, the parameter for a session is the aid of another automaton.
 To prevent errors and make sessions easier to implement, we introduce the concept of an automatic parameter.
 An @dfn{automatic parameter} or @dfn{auto parameter} is a parameter that represents the automaton on the opposite side of a binding.
-For example, an auto parameterized input receives the identifier of the output automaton to which it is bound.
-An auto parameterized output receives the identifier of the input automaton to which it is bound.
+For example, an auto parameterized input bears the identifier of the output automaton to which it is bound.
+An auto parameterized output bears the identifier of the input automaton to which it is bound.
 According to the binding rules below, auto parameterized outputs can only be bound once.
 
 @section Binding Rules
@@ -170,7 +171,7 @@ To enforce the semantics of I/O automata, certain attempts to bind will fail.
 The automaton requesting a binding is called the @dfn{owner}.
 A binding is a tuple (output automaton, output action, output parameter, input automaton, input action, input parameter, owner).
 Unparameterized actions have a null parameter.
-A binding will fail if any of the follow is true:
+A binding will fail if any of the following conditions is true:
 @enumerate
 @item The owner does not exist.
 @item The output automaton does not exist.
@@ -195,7 +196,7 @@ A binding will fail if any of the follow is true:
 @node Compiling and Linking
 @section Compiling and Linking
 
-The purpose of this tutorial is to introduce the necessary machinery for compiling programs with IOA++.
+The purpose of this tutorial is to introduce the necessary machinery for compiling programs with ioa++.
 The following program contains the null automaton---an automaton with no actions.
 The source can be found in @file{tutorial/null_automaton.cpp}.
 
@@ -222,7 +223,7 @@ class null_automaton :
 @end example
 declare a new automaton type called @code{null_automaton}.
 All automata must inherit from @code{ioa::automaton}.
-Also note that all IOA++ types and functions are in the @code{ioa} namespace.
+Also note that all ioa++ types and functions are in the @code{ioa} namespace.
 The main function
 @example
 @verbatim
@@ -234,9 +235,9 @@ int main () {
 @end verbatim
 @end example
 declares a new scheduler @code{sched} and starts the scheduler with a new root automaton of type @code{null_automaton}.
-The @code{run} function takes two arguments: a scheduler and a generator.
-A generator is a @dfn{promise} or an object that can later be invoked to produce a value.
-In this case, the value of the generator is a dynamically created instance of @code{null_automaton}.
+The @code{run} function takes two arguments: a scheduler and an allocator.
+An allocator is an object that can later be invoked to produce a dynamically allocated object.
+In this case, the allocator returns a dynamically created instance of @code{null_automaton}.
 
 Assuming that a copy of @file{null_automaton.cpp} exists in the current directory and that @command{g++} is your C++ compiler, one can compile and run the null automaton with
 @example
@@ -370,7 +371,7 @@ To schedule an unparameterized local action:
 @end example
 
 @strong{Programming Tip:}
-Forgetting to schedule is common source of problems when programming with IOA++.
+Forgetting to schedule is common source of problems when programming with ioa++.
 Remember to call @code{ioa::schedule} for all enabled local actions in the constructor and scheduling functions (or effects).
 As an exercise, experiment with commenting out the call to @code{increment_schedule} in the constructor and the call to @code{ioa::schedule} in @code{increment_schedule}.
 
@@ -403,14 +404,14 @@ Of primary interest is the constructor of the @code{two_counter_automaton}.
 @end example
 The function @code{ioa::make_automaton_manager} creates a dynamically allocated @code{ioa::automaton_manager}.
 An @code{ioa::automaton_manager} uses an @code{ioa::automaton} object and generator to @emph{asynchronously} create a new automaton.
-@emph{Automaton creation and destruction are asynchronous in IOA++.}
+@emph{Automaton creation and destruction are asynchronous in ioa++.}
 A pointer to an @code{ioa::automaton} object is specified by the first argument to the @code{ioa::make_automaton_manager} function.
 This should always be the @code{this} pointer of the automaton that is creating a new automaton.
 The second argument is a generator that returns an instance of the automaton to be created.
 In this example, each generator returns a @code{count_to_ten} automaton.
 
 If automaton A creates automaton B then A is the @dfn{parent} of B and B is the @dfn{child} of A.
-Thus, automata in IOA++ form a tree with the automaton generated by @code{ioa::run} being the root.
+Thus, automata in ioa++ form a tree with the automaton generated by @code{ioa::run} being the root.
 When an automaton is destroyed, so are all of its children.
 
 Something that might concern you is that fact that the automaton managers are dynamically allocated but we neither save their address nor @code{delete} them in a destructor.
@@ -506,7 +507,7 @@ The child automata are created in the same way as in the preceding tutorials onl
 This version of @code{ioa::make_binding_manager} takes a pointer to an @code{ioa::automaton} (@pxref{Creating Automata}), a pointer to an @code{ioa::automaton_handle_interface} for the output automaton, a pointer to a member for the output action, a pointer to an @code{ioa::automaton_handle_interface} for the input automaton, and a pointer to a member for the input action.
 The @code{ioa::automaton_handle_interface} is unimportant save to say that @code{ioa::automaton_manager} implements @code{ioa::automaton_handle_interface}.
 The @code{ioa;:make_binding_manager} function creates a new @code{ioa::binding_manager} that binds the output and input actions once the output and input automata have been created.
-Note that like automata creation, binding is asynchronous in IOA++.
+Note that like automata creation, binding is asynchronous in ioa++.
 
 @subsection Binding Rules
 
@@ -720,6 +721,214 @@ which shows that both consumers receive the values produced by the producer.
 @item SYSTEM_OUTPUT
 @end itemize
 
+
+@node Copying
+@chapter Copying
+
+@quotation
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright [yyyy] [name of copyright owner]
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+@end quotation
+
 @c @node Index
 @c @unnumbered Index
 
@@ -927,14 +1136,14 @@ which shows that both consumers receive the values produced by the producer.
 @c - creation caveats = type safety
 @c - Why is "this" everywhere?
 
-@c @node Why I Created IOA++
-@c @section Why I Created IOA++
+@c @node Why I Created ioa++
+@c @section Why I Created ioa++
 
-@c IOA++ is a framework for asynchronous and concurrent computation based on the I/O automata model.
+@c ioa++ is a framework for asynchronous and concurrent computation based on the I/O automata model.
 @c An I/O automaton is a set of state variables and atomic actions that manipulate the state variables.
 @c I/O automata interact by associating an action in one automaton with an action in another.
 @c The semantics of I/O automata are such that a set of interacting automata can analyzed as a single I/O automaton.
-@c Consequently, IOA++ makes it possible to develop reusable modules for asynchronous and concurrent computation and assemble them to create complex systems.
+@c Consequently, ioa++ makes it possible to develop reusable modules for asynchronous and concurrent computation and assemble them to create complex systems.
 
 
 @c The thread paradigm, a common approach to concurrency, is based on multiple concurrent threads of execution communicating via shared state.
@@ -942,13 +1151,13 @@ which shows that both consumers receive the values produced by the producer.
 @c (See @cite{The Problem with Threads} by Edward Lee for more information.)
 @c Furthermore, assembling complex systems from thread-based modules can easily introduce concurrency hazards, e.g., creating a cycle in the graph of resource locks resulting in deadlock.
 
-@c IOA++ is an alternative to threads.
-@c The absence of shared state and the atomicity of each action obviate the need for locks and other concurrency control mechanisms in IOA++.
+@c ioa++ is an alternative to threads.
+@c The absence of shared state and the atomicity of each action obviate the need for locks and other concurrency control mechanisms in ioa++.
 
 
 @c  and ad hoc event systems.
 
-@c I created IOA++ so I could build distributed systems by assembling reusable concurrent and asynchronous modules.
+@c I created ioa++ so I could build distributed systems by assembling reusable concurrent and asynchronous modules.
 
 @c Threads are an obvious first choice due to their widespread
 
