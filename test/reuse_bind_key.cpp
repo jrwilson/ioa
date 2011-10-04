@@ -216,7 +216,7 @@ private:
     return m_b1 == 0 && !m_binding->is_bound () && !m_rebind_flag;
   }
   void rebind_effect () {
-    ioa::automaton_manager<automaton_B>* b2 = new ioa::automaton_manager<automaton_B> (this, ioa::make_generator<automaton_B> ());
+    ioa::automaton_manager<automaton_B>* b2 = new ioa::automaton_manager<automaton_B> (this, ioa::make_allocator<automaton_B> ());
     m_binding->set_output (&m_self, &automaton_A::output);
     m_binding->set_input (b2, &automaton_B::input);
     m_rebind_flag = true;
@@ -234,7 +234,7 @@ public:
     m_rebind_flag (false) {
     m_binding = new static_binding<automaton_A, output_type, automaton_B, automaton_B::input_type> (this);
     add_observable (m_binding);
-    m_b1 = new ioa::automaton_manager<automaton_B> (this, ioa::make_generator<automaton_B> ());
+    m_b1 = new ioa::automaton_manager<automaton_B> (this, ioa::make_allocator<automaton_B> ());
     add_observable (m_b1);
     m_binding->set_output (&m_self, &automaton_A::output);
     m_binding->set_input (m_b1, &automaton_B::input);
@@ -247,7 +247,7 @@ bind_key_exists ()
   std::cout << __func__ << std::endl;
 
   ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<automaton_A> ());
+  ioa::run (ss, ioa::make_allocator<automaton_A> ());
 
   return 0;
 }

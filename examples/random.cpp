@@ -114,8 +114,8 @@ public:
 			 int const calcs,
 			 float const internal_fraction) {
     srand48 (time (0));
-    ioa::automaton_manager<random_automaton>* r1 = ioa::make_automaton_manager (this, ioa::make_generator<random_automaton> (actions, calcs, internal_fraction));
-    ioa::automaton_manager<random_automaton>* r2 = ioa::make_automaton_manager (this, ioa::make_generator<random_automaton> (actions, calcs, internal_fraction));
+    ioa::automaton_manager<random_automaton>* r1 = ioa::make_automaton_manager (this, ioa::make_allocator<random_automaton> (actions, calcs, internal_fraction));
+    ioa::automaton_manager<random_automaton>* r2 = ioa::make_automaton_manager (this, ioa::make_allocator<random_automaton> (actions, calcs, internal_fraction));
     ioa::make_binding_manager (this,
 			       r1, &random_automaton::output,
 			       r2, &random_automaton::input);
@@ -138,6 +138,6 @@ int main (int argc,
   const float internal_fraction = atof (argv[4]);
 
   ioa::simple_scheduler sched (threads);
-  ioa::run (sched, ioa::make_generator<random_pair_automaton> (actions, calcs, internal_fraction));
+  ioa::run (sched, ioa::make_allocator<random_pair_automaton> (actions, calcs, internal_fraction));
   return 0;
 }

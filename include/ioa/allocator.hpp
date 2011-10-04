@@ -14,22 +14,22 @@
    limitations under the License.
 */
 
-#ifndef __instance_generator_hpp__
-#define __instance_generator_hpp__
+#ifndef __allocator_hpp__
+#define __allocator_hpp__
 
-#include <ioa/generator_interface.hpp>
+#include <ioa/allocator_interface.hpp>
 #include <memory>
 
 namespace ioa {
 
   /*
-    Utility classes for generators of 0 and 1 arguments.
-    TODO:  Define generators for N arguments.
+    Utility classes for allocators of 0 and 1 arguments.
+    TODO:  Define allocators for N arguments.
   */
 
   template <class T>
-  class generator :
-    public typed_generator_interface<T>
+  class allocator :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -37,7 +37,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator () :
+    allocator () :
       m_flag (false)
     { }
 
@@ -49,13 +49,13 @@ namespace ioa {
   };
 
   template <class T>
-  std::auto_ptr<typed_generator_interface<T> > make_generator () {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator<T> ());
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator () {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator<T> ());
   }
 
   template <class T, typename A0>
-  class generator1 :
-    public typed_generator_interface<T>
+  class allocator1 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -64,7 +64,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator1 (A0 a0) :
+    allocator1 (A0 a0) :
       m_flag (false),
       m_a0 (a0)
     { }
@@ -77,13 +77,13 @@ namespace ioa {
   };
 
   template <class T, class A0>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator1<T, A0> (a0));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator1<T, A0> (a0));
   }
 
   template <class T, typename A0, typename A1>
-  class generator2 :
-    public typed_generator_interface<T>
+  class allocator2 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -93,7 +93,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator2 (A0 a0, A1 a1) :
+    allocator2 (A0 a0, A1 a1) :
       m_flag (false),
       m_a0 (a0),
       m_a1 (a1)
@@ -107,13 +107,13 @@ namespace ioa {
   };
 
   template <class T, typename A0, typename A1>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0, A1 a1) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator2<T, A0, A1> (a0, a1));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0, A1 a1) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator2<T, A0, A1> (a0, a1));
   }
 
   template <class T, typename A0, typename A1, typename A2>
-  class generator3 :
-    public typed_generator_interface<T>
+  class allocator3 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -124,7 +124,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator3 (A0 a0, A1 a1, A2 a2) :
+    allocator3 (A0 a0, A1 a1, A2 a2) :
       m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
@@ -139,13 +139,13 @@ namespace ioa {
   };
 
   template <class T, typename A0, typename A1, typename A2>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0, A1 a1, A2 a2) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator3<T, A0, A1, A2> (a0, a1, a2));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0, A1 a1, A2 a2) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator3<T, A0, A1, A2> (a0, a1, a2));
   }
 
   template <class T, typename A0, typename A1, typename A2, typename A3>
-  class generator4 :
-    public typed_generator_interface<T>
+  class allocator4 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -157,7 +157,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator4 (A0 a0, A1 a1, A2 a2, A3 a3) :
+    allocator4 (A0 a0, A1 a1, A2 a2, A3 a3) :
       m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
@@ -173,13 +173,13 @@ namespace ioa {
   };
 
   template <class T, typename A0, typename A1, typename A2, typename A3>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0, A1 a1, A2 a2, A3 a3) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator4<T, A0, A1, A2, A3> (a0, a1, a2, a3));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0, A1 a1, A2 a2, A3 a3) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator4<T, A0, A1, A2, A3> (a0, a1, a2, a3));
   }
 
   template <class T, typename A0, typename A1, typename A2, typename A3, typename A4>
-  class generator5 :
-    public typed_generator_interface<T>
+  class allocator5 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -192,7 +192,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator5 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) :
+    allocator5 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) :
       m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
@@ -209,14 +209,14 @@ namespace ioa {
   };
 
   template <class T, typename A0, typename A1, typename A2, typename A3, typename A4>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator5<T, A0, A1, A2, A3, A4> (a0, a1, a2, a3, a4));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator5<T, A0, A1, A2, A3, A4> (a0, a1, a2, a3, a4));
   }
 
 
   template <class T, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5>
-  class generator6 :
-    public typed_generator_interface<T>
+  class allocator6 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -230,7 +230,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator6 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) :
+    allocator6 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) :
       m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
@@ -248,13 +248,13 @@ namespace ioa {
   };
 
   template <class T, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator6<T, A0, A1, A2, A3, A4, A5> (a0, a1, a2, a3, a4, a5));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator6<T, A0, A1, A2, A3, A4, A5> (a0, a1, a2, a3, a4, a5));
   }
   
   template <class T, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
-  class generator7 :
-    public typed_generator_interface<T>
+  class allocator7 :
+    public typed_allocator_interface<T>
   {
   private:
     bool m_flag;
@@ -269,7 +269,7 @@ namespace ioa {
   public:
     typedef T result_type;
 
-    generator7 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) :
+    allocator7 (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) :
       m_flag (false),
       m_a0 (a0),
       m_a1 (a1),
@@ -288,8 +288,8 @@ namespace ioa {
   };
 
   template <class T, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
-  std::auto_ptr<typed_generator_interface<T> > make_generator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) {
-    return std::auto_ptr<typed_generator_interface<T> > (new generator7<T, A0, A1, A2, A3, A4, A5, A6> (a0, a1, a2, a3, a4, a5, a6));
+  std::auto_ptr<typed_allocator_interface<T> > make_allocator (A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) {
+    return std::auto_ptr<typed_allocator_interface<T> > (new allocator7<T, A0, A1, A2, A3, A4, A5, A6> (a0, a1, a2, a3, a4, a5, a6));
   }
 
 }

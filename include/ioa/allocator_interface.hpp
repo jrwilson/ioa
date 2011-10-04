@@ -14,32 +14,32 @@
    limitations under the License.
 */
 
-#ifndef __generator_interface_hpp__
-#define __generator_interface_hpp__
+#ifndef __allocator_interface_hpp__
+#define __allocator_interface_hpp__
 
 namespace ioa {
 
   /*
-    A generator produces an automaton when invoked.
+    A allocator produces an automaton when invoked.
     The result should be delete'able.
-    Generators are owned by exactly one object at a time and will only be invoked once.  
+    Allocators are owned by exactly one object at a time and will only be invoked once.  
   */
 
   class automaton;
 
-  class generator_interface
+  class allocator_interface
   {
   public:
-    virtual ~generator_interface () { }
+    virtual ~allocator_interface () { }
     virtual automaton* operator() () = 0;
   };
 
   template <class I>
-  class typed_generator_interface :
-    public generator_interface
+  class typed_allocator_interface :
+    public allocator_interface
   {
   public:
-    virtual ~typed_generator_interface () { }
+    virtual ~typed_allocator_interface () { }
     virtual I* operator() () = 0;
   };
 

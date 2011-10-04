@@ -143,9 +143,9 @@ class composer :
 public:
   composer ()
   {
-    ioa::automaton_manager<trigger>* t = new ioa::automaton_manager<trigger> (this, ioa::make_generator<trigger> ());
-    ioa::automaton_manager<clock_automaton>* c = new ioa::automaton_manager<clock_automaton> (this, ioa::make_generator<clock_automaton> ());
-    ioa::automaton_manager<display>* d = new ioa::automaton_manager<display> (this, ioa::make_generator<display> ());
+    ioa::automaton_manager<trigger>* t = new ioa::automaton_manager<trigger> (this, ioa::make_allocator<trigger> ());
+    ioa::automaton_manager<clock_automaton>* c = new ioa::automaton_manager<clock_automaton> (this, ioa::make_allocator<clock_automaton> ());
+    ioa::automaton_manager<display>* d = new ioa::automaton_manager<display> (this, ioa::make_allocator<display> ());
     ioa::make_binding_manager (this, t, &trigger::request, c, &clock_automaton::request);
     ioa::make_binding_manager (this, c, &clock_automaton::clock, d, &display::clock);
   }
@@ -155,6 +155,6 @@ public:
 int
 main () {
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<composer> ());
+  ioa::run (sched, ioa::make_allocator<composer> ());
   return 0; 
 }

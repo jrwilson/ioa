@@ -44,7 +44,7 @@ public:
     m_address (address),
     m_message (message)
   {
-    ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_generator<ioa::udp_sender_automaton> ());
+    ioa::automaton_manager<ioa::udp_sender_automaton>* sender = new ioa::automaton_manager<ioa::udp_sender_automaton> (this, ioa::make_allocator<ioa::udp_sender_automaton> ());
 
     ioa::make_binding_manager (this, &m_self, &udp_sender::send, sender, &ioa::udp_sender_automaton::send);
     ioa::make_binding_manager (this, sender, &ioa::udp_sender_automaton::send_complete, &m_self, &udp_sender::send_complete);
@@ -122,6 +122,6 @@ main (int argc, char* argv[]) {
   std::string message (argv[3]);
 
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<udp_sender> (address, message));
+  ioa::run (sched, ioa::make_allocator<udp_sender> (address, message));
   return 0; 
 }

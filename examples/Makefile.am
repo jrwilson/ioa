@@ -33,5 +33,5 @@ udp_receiver_SOURCES = udp_receiver.cpp
 udp_sender_SOURCES = udp_sender.cpp
 echo_client_SOURCES = echo_client.cpp
 echo_server_SOURCES = echo_server.cpp
-tcp_lcr_SOURCES = tcp_lcr.cpp
+tcp_lcr_SOURCES = asynch_lcr_automaton.hpp tcp_ring_automaton.hpp tcp_lcr.cpp
 random_SOURCES = random.cpp

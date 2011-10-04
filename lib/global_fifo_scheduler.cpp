@@ -169,7 +169,7 @@ namespace ioa {
       schedule_writeq (r, fd);
     }
 
-    void run (std::auto_ptr<generator_interface> generator) {
+    void run (std::auto_ptr<allocator_interface> allocator) {
       assert (m_configq.empty ());
       assert (m_userq.empty ());
       assert (runnable_interface::count () == 0);
@@ -186,7 +186,7 @@ namespace ioa {
 
       clear_current_aid ();
     
-      m_model.create (generator);
+      m_model.create (allocator);
 
       // TODO:  We iterate over the same data structures many times.  Could we do this better?
 
@@ -439,9 +439,9 @@ namespace ioa {
     }
 
     void create (const aid_t automaton,
-		 std::auto_ptr<generator_interface> generator,
+		 std::auto_ptr<allocator_interface> allocator,
 		 void* const key) {
-      schedule_configq (new create_runnable (automaton, generator, key));
+      schedule_configq (new create_runnable (automaton, allocator, key));
     }
 
     void bind (const aid_t automaton,
@@ -561,8 +561,8 @@ namespace ioa {
     m_impl->close (fd);
   }
   
-  void global_fifo_scheduler::run (std::auto_ptr<generator_interface> generator) {
-    m_impl->run (generator);
+  void global_fifo_scheduler::run (std::auto_ptr<allocator_interface> allocator) {
+    m_impl->run (allocator);
   }
   
 }

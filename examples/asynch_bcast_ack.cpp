@@ -41,6 +41,6 @@ int main (int argc,
   srand (time (0));
 
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<bidirectional_network<asynch_bcast_ack_automaton, message_t> > (node_count, rho));
+  ioa::run (sched, ioa::make_allocator<bidirectional_network<asynch_bcast_ack_automaton, message_t> > (node_count, rho));
   return 0;
 }

@@ -56,7 +56,7 @@ namespace ioa {
       }
       
       if (::connect (m_fd, address.get_sockaddr (), address.get_socklen ()) != -1) {
-	automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection, m_fd));
+	automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_allocator<connection_init_automaton> (m_connection, m_fd));
 	make_binding_manager (this,
 			      init, &connection_init_automaton::done,
 			      &m_self, &tcp_connector_automaton::done);
@@ -111,7 +111,7 @@ namespace ioa {
 
     if (val == 0) {
       // Success.
-      automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection, m_fd));
+      automaton_manager<connection_init_automaton>* init = make_automaton_manager (this, make_allocator<connection_init_automaton> (m_connection, m_fd));
       make_binding_manager (this,
 			    init, &connection_init_automaton::done,
 			    &m_self, &tcp_connector_automaton::done);

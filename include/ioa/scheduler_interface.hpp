@@ -53,7 +53,7 @@ namespace ioa {
 
     virtual void close (int fd) = 0;
 
-    virtual void run (std::auto_ptr<generator_interface> generator) = 0;
+    virtual void run (std::auto_ptr<allocator_interface> allocator) = 0;
 
     virtual void begin_sys_call () = 0;
 

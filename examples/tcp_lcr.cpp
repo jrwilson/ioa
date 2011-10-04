@@ -108,7 +108,7 @@ public:
     std::cout << "UUID: " << m_u << std::endl;
 
     // Create an LCR automaton and bind to it.
-    ioa::automaton_manager<asynch_lcr_automaton<uuid> >* lcr = ioa::make_automaton_manager (this, ioa::make_generator<asynch_lcr_automaton<uuid> > (m_u));
+    ioa::automaton_manager<asynch_lcr_automaton<uuid> >* lcr = ioa::make_automaton_manager (this, ioa::make_allocator<asynch_lcr_automaton<uuid> > (m_u));
     ioa::make_binding_manager (this,
 			       lcr, &asynch_lcr_automaton<uuid>::send,
 			       &m_self, &tcp_lcr_automaton::send_lcr);
@@ -123,7 +123,7 @@ public:
 			       lcr, &asynch_lcr_automaton<uuid>::init);
 
     // Create a TCP ring automaton and bind to it.
-    ioa::automaton_manager<tcp_ring_automaton>* ring = ioa::make_automaton_manager (this, ioa::make_generator<tcp_ring_automaton> (recv_address, send_address));
+    ioa::automaton_manager<tcp_ring_automaton>* ring = ioa::make_automaton_manager (this, ioa::make_allocator<tcp_ring_automaton> (recv_address, send_address));
     ioa::make_binding_manager (this,
 			       ring, &tcp_ring_automaton::receive,
 			       &m_self, &tcp_lcr_automaton::receive_ring);
@@ -309,6 +309,6 @@ int main (int argc, char* argv[]) {
   ioa::inet_address send_address (std::string (argv[3]), atoi (argv[4]));
 
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<tcp_lcr_automaton> (recv_address, send_address));
+  ioa::run (sched, ioa::make_allocator<tcp_lcr_automaton> (recv_address, send_address));
   return 0;
 }

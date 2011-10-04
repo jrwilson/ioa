@@ -168,7 +168,7 @@ namespace ioa {
   }
 
   void tcp_acceptor_automaton::create_helper_effect () {
-    automaton_manager<connection_init_automaton>* helper = make_automaton_manager (this, make_generator<connection_init_automaton> (m_connection_queue.front (), m_fd_queue.front ()));
+    automaton_manager<connection_init_automaton>* helper = make_automaton_manager (this, make_allocator<connection_init_automaton> (m_connection_queue.front (), m_fd_queue.front ()));
     m_connection_queue.pop ();
     m_fd_queue.pop ();
     make_binding_manager (this,

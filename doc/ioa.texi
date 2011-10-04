@@ -36,7 +36,7 @@ See the License for the specific language governing permissions and limitations 
 @contents
 
 @ifnottex
-@node Top
+@node Top, Introduction, (dir), (dir)
 @top ioa++
 
 This manual describes version @value{VERSION} of ioa++.
@@ -46,13 +46,35 @@ This manual describes version @value{VERSION} of ioa++.
 @end ifnottex
 
 @menu
-* Introduction::                Tutorial sections:
-* Examples::                    Reference sections:
+* Introduction::                
+* Examples::                    
 * Reference::                   
+* Type Index::                  
+* Function Index::              
 * Copying::                     
+
+@detailmenu
+ --- The Detailed Node Listing ---
+
+Examples
+
+* Compiling and Linking::       
+* Internal Actions::            
+* Creating Automata::           
+* External Actions::            
+* Fan-out and Binding Count::   
+
+Reference
+
+* automaton::                   
+* global_fifo_scheduler::       
+* run::                         
+* make_allocator::              
+
+@end detailmenu
 @end menu
 
-@node Introduction
+@node Introduction, Examples, Top, Top
 @chapter Introduction
 
 ioa++ is a general-purpose framework for developing asynchronous and concurrent programs based on the I/O automata model.
@@ -182,7 +204,7 @@ A binding will fail if any of the following conditions is true:
 @item The output automaton and input automaton are the same.
 @end enumerate
 
-@node Examples
+@node Examples, Reference, Introduction, Top
 @chapter Examples
 
 @menu
@@ -193,7 +215,7 @@ A binding will fail if any of the following conditions is true:
 * Fan-out and Binding Count::   
 @end menu
 
-@node Compiling and Linking
+@node Compiling and Linking, Internal Actions, Examples, Examples
 @section Compiling and Linking
 
 The purpose of this tutorial is to introduce the necessary machinery for compiling programs with ioa++.
@@ -222,21 +244,21 @@ class null_automaton :
 @end verbatim
 @end example
 declare a new automaton type called @code{null_automaton}.
-All automata must inherit from @code{ioa::automaton}.
+All automata must inherit from @code{ioa::automaton} (@pxref{automaton, ioa::automaton, ioa::automaton}).
 Also note that all ioa++ types and functions are in the @code{ioa} namespace.
 The main function
 @example
 @verbatim
 int main () {
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<null_automaton> ());
+  ioa::run (sched, ioa::make_allocator<null_automaton> ());
   return 0;
 }
 @end verbatim
 @end example
-declares a new scheduler @code{sched} and starts the scheduler with a new root automaton of type @code{null_automaton}.
-The @code{run} function takes two arguments: a scheduler and an allocator.
-An allocator is an object that can later be invoked to produce a dynamically allocated object.
+declares a new scheduler @code{sched} of type @code{ioa::global_fifo_scheduler} (@pxref{global_fifo_scheduler, ioa::global_fifo_scheduler, ioa::global_fifo_scheduler}) and starts the scheduler with a new root automaton of type @code{null_automaton}.
+The @code{ioa::run} function takes two arguments: a scheduler and an allocator (@pxref{run, ioa::run, ioa::run}).
+An allocator is an object that can later be invoked to produce a dynamically allocated object (@pxref{make_allocator, ioa::make_allocator, ioa::make_allocator}).
 In this case, the allocator returns a dynamically created instance of @code{null_automaton}.
 
 Assuming that a copy of @file{null_automaton.cpp} exists in the current directory and that @command{g++} is your C++ compiler, one can compile and run the null automaton with
@@ -250,7 +272,7 @@ Notice that we needed to link against the I/O automata library (@option{-lioa}) 
 Some environments, e.g., Mac OS X, include pthreads in the standard C library.
 If you have such an environment, omit the @option{-lpthread} part of the command.
 
-@node Internal Actions
+@node Internal Actions, Creating Automata, Compiling and Linking, Examples
 @section Internal Actions
 
 In this tutorial we develop an automaton that counts to ten using an internal action.
@@ -375,7 +397,7 @@ Forgetting to schedule is common source of problems when programming with ioa++.
 Remember to call @code{ioa::schedule} for all enabled local actions in the constructor and scheduling functions (or effects).
 As an exercise, experiment with commenting out the call to @code{increment_schedule} in the constructor and the call to @code{ioa::schedule} in @code{increment_schedule}.
 
-@node Creating Automata
+@node Creating Automata, External Actions, Internal Actions, Examples
 @section Creating Automata
 
 Decomposition is a powerful technique for managing complexity---especially in concurrent and distributed systems.
@@ -430,7 +452,7 @@ To distinguish the output of the two @code{count_to_ten_automaton}s, we use the 
 @end example
 Associated with each instance of an automaton is an @dfn{automaton identifier (aid)} of type @code{aid_t} that can be retrieved with @code{ioa::get_aid}.
 
-@node External Actions
+@node External Actions, Fan-out and Binding Count, Creating Automata, Examples
 @section External Actions
 
 In this tutorial, we introduce input and output actions and the concept of binding using a simple producer-consumer problem.
@@ -561,7 +583,7 @@ In this example, the producer was allowed to @code{produce} six times before @co
 The @code{produce} action is a @dfn{lossy output} or an output whose values might be lost because no input is bound to receive them.
 We address this topic in the next tutorial.
 
-@node Fan-out and Binding Count
+@node Fan-out and Binding Count,  , External Actions, Examples
 @section Fan-out and Binding Count
 
 In this tutorial, we bind an output action to multiple input actions (fan-out) and prevent lost outputs by counting the number of bindings associated with an action.
@@ -687,14 +709,36 @@ which shows that both consumers receive the values produced by the producer.
 
 @c Show how to self-destruct
 
-@node Reference
+@node Reference, Type Index, Examples, Top
 @chapter Reference
 
+@anchor{automaton}
+@deftp {Class} ioa::automaton
+The base class for all automata that implements the system action interface which allows an automaton to request system actions and receive system action results.
+All automata must publicly inherit from @code{ioa::automaton}.
+From @file{<ioa/automaton.hpp>}.
+@end deftp
+
+@anchor{global_fifo_scheduler}
+@deftp {Class} ioa::global_fifo_scheduler
+A single-threaded scheduler that implements the first-in/first-out (FIFO) policy.
+From @file{<ioa/global_fifo_scheduler.hpp>}.
+@end deftp
+
+@anchor{run}
+@deftypefun @code{template <class T> void} ioa::run (@code{scheduler_interface&} @var{sched}, @code{std::auto_ptr<typed_allocator_interface<T> >} @var{allocator})
+Starts the scheduler @var{sched} with the root automaton produced by @var{allocator}.
+From @file{<ioa/scheduler.hpp>}.
+@end deftypefun
+
+@anchor{make_allocator}
+@deftypefun @code{template <class T, A0, ...> std::auto_ptr<typed_allocator_interface<T, A0, ...> >} make_allocator (@code{A0} @var{a0}, ...)
+A set of helper functions for allocating allocators.
+This set of functions takes advantage of the automatic type deduction rules of C++ to avoid repeating type information.
+From @file{<ioa/allocator.hpp>}.
+@end deftypefun
+
 @itemize
-@item ioa::automaton
-@item ioa::global_fifo_scheduler
-@item ioa::run
-@item ioa::make_generator
 @item ioa::schedule
 @item ioa::make_automaton_manager
 @item ioa::automaton_manager
@@ -721,9 +765,16 @@ which shows that both consumers receive the values produced by the producer.
 @item SYSTEM_OUTPUT
 @end itemize
 
+@node Type Index, Function Index, Reference, Top
+@unnumbered Type Index
+@printindex tp
 
-@node Copying
-@chapter Copying
+@node Function Index, Copying, Type Index, Top
+@unnumbered Function Index
+@printindex fn
+
+@node Copying,  , Function Index, Top
+@unnumbered Copying
 
 @quotation
                                  Apache License
@@ -928,18 +979,6 @@ which shows that both consumers receive the values produced by the producer.
    See the License for the specific language governing permissions and
    limitations under the License.
 @end quotation
-
-@c @node Index
-@c @unnumbered Index
-
-@c @printindex cp
-
-
-
-
-
-
-
 
 @c @chapter Using the Formalism
 

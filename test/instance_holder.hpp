@@ -19,7 +19,7 @@
 
 template <class T>
 class instance_holder :
-  public ioa::generator_interface
+  public ioa::allocator_interface
 {
 private:
   T* m_instance;

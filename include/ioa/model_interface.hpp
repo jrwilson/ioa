@@ -25,7 +25,7 @@ namespace ioa {
   class automaton;
   class output_executor_interface;
   class internal_executor_interface;
-  class generator_interface;
+  class allocator_interface;
   class bind_executor_interface;
   class system_input_executor_interface;
   class input_executor_interface;
@@ -55,7 +55,7 @@ namespace ioa {
 
     // Executing configuation actions.
     virtual aid_t create (const aid_t automaton,
-			  std::auto_ptr<generator_interface> generator,
+			  std::auto_ptr<allocator_interface> allocator,
 			  void* const key) = 0;
     virtual int bind (const aid_t automaton,
 		      std::auto_ptr<bind_executor_interface> exec,

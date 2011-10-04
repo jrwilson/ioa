@@ -23,7 +23,7 @@
 #include <list>
 #include "automaton_record.hpp"
 #include <ioa/shared_mutex.hpp>
-#include <ioa/generator_interface.hpp>
+#include <ioa/allocator_interface.hpp>
 #include <ioa/executor_interface.hpp>
 #include <ioa/model_interface.hpp>
 
@@ -126,9 +126,9 @@ namespace ioa {
 			  void* const key);
 
     void clear (void);
-    aid_t create (std::auto_ptr<generator_interface> generator);
+    aid_t create (std::auto_ptr<allocator_interface> allocator);
     aid_t create (const aid_t automaton,
-		  std::auto_ptr<generator_interface> generator,
+		  std::auto_ptr<allocator_interface> allocator,
 		  void* const key);
     int bind (const aid_t automaton,
 	      std::auto_ptr<bind_executor_interface> exec,

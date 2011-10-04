@@ -59,15 +59,15 @@ class two_counter_automaton :
 public:
   two_counter_automaton () {
     ioa::make_automaton_manager (this,
-        ioa::make_generator<count_to_ten_automaton> ());
+        ioa::make_allocator<count_to_ten_automaton> ());
     ioa::make_automaton_manager (this,
-	ioa::make_generator<count_to_ten_automaton> ());
+	ioa::make_allocator<count_to_ten_automaton> ());
   }
 
 };
 
 int main () {
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<two_counter_automaton> ());
+  ioa::run (sched, ioa::make_allocator<two_counter_automaton> ());
   return 0; 
 }

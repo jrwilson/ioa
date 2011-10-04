@@ -592,7 +592,7 @@ namespace ioa {
       schedule_writeq (r, fd);
     }
 
-    void run (std::auto_ptr<generator_interface> generator) {
+    void run (std::auto_ptr<allocator_interface> allocator) {
       int r;
     
       assert (m_sysq.list.size () == 0);
@@ -607,7 +607,7 @@ namespace ioa {
       assert (r == 0);
 
       // Comes pipe creation because we might want to schedule with delay.
-      m_model.create (generator);
+      m_model.create (allocator);
     
       thread sysq_thread (*this, &simple_scheduler_impl::process_sysq);
       thread timerq_thread (*this, &simple_scheduler_impl::process_ioq);
@@ -697,9 +697,9 @@ namespace ioa {
     }
 
     void create (const aid_t automaton,
-		 std::auto_ptr<generator_interface> generator,
+		 std::auto_ptr<allocator_interface> allocator,
 		 void* const key) {
-      schedule_sysq (new create_runnable (automaton, generator, key));
+      schedule_sysq (new create_runnable (automaton, allocator, key));
     }
 
     void bind (const aid_t automaton,
@@ -833,8 +833,8 @@ namespace ioa {
     m_impl->close (fd);
   }
 
-  void simple_scheduler::run (std::auto_ptr<generator_interface> generator) {
-    m_impl->run (generator);
+  void simple_scheduler::run (std::auto_ptr<allocator_interface> allocator) {
+    m_impl->run (allocator);
   }
 
   void simple_scheduler::begin_sys_call () {

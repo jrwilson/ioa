@@ -32,15 +32,15 @@ namespace ioa {
 
   private:
     automaton* m_automaton;
-    std::auto_ptr<typed_generator_interface<I> > m_generator;
+    std::auto_ptr<typed_allocator_interface<I> > m_allocator;
     state_t m_state;
     automaton_handle<I> m_handle;
 
   public:
     automaton_manager (automaton* automaton,
-		       std::auto_ptr<typed_generator_interface<I> > generator) :
+		       std::auto_ptr<typed_allocator_interface<I> > allocator) :
       m_automaton (automaton),
-      m_generator (generator),
+      m_allocator (allocator),
       m_state (START)
     {
       m_automaton->create (this);
@@ -56,8 +56,8 @@ namespace ioa {
       m_automaton->destroy (this);
     }
 
-    std::auto_ptr<generator_interface> get_generator () {
-      return std::auto_ptr<generator_interface> (m_generator);
+    std::auto_ptr<allocator_interface> get_allocator () {
+      return std::auto_ptr<allocator_interface> (m_allocator);
     }
 
     void created (const created_t result,
@@ -107,8 +107,8 @@ namespace ioa {
 
   template <typename I>
   automaton_manager<I>* make_automaton_manager (automaton* automaton,
-						std::auto_ptr<typed_generator_interface<I> > generator) {
-    return new automaton_manager<I> (automaton, generator);
+						std::auto_ptr<typed_allocator_interface<I> > allocator) {
+    return new automaton_manager<I> (automaton, allocator);
   }
 
 }

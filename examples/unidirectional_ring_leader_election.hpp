@@ -38,8 +38,8 @@ public:
     for (size_t i = 0; i < N; ++i) {
       UID_t u (rand (), i);
       std::cout << u.first << "\t" << u.second << std::endl;
-      T_managers.push_back (ioa::make_automaton_manager (this, ioa::make_generator<T> (u)));
-      channel_automaton_managers.push_back (ioa::make_automaton_manager (this, ioa::make_generator<channel_automaton<UID_t> > ()));
+      T_managers.push_back (ioa::make_automaton_manager (this, ioa::make_allocator<T> (u)));
+      channel_automaton_managers.push_back (ioa::make_automaton_manager (this, ioa::make_allocator<channel_automaton<UID_t> > ()));
     }
     
     for (size_t i = 0; i < N; ++i) {

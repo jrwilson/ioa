@@ -87,7 +87,7 @@ private:
 
   void create_acceptor_effect () {
     std::cout << "Listening on " << m_recv_address.address_str () << ":" << m_recv_address.port () << std::endl;
-    m_acceptor = ioa::make_automaton_manager (this, ioa::make_generator<ioa::tcp_acceptor_automaton> (m_recv_address));
+    m_acceptor = ioa::make_automaton_manager (this, ioa::make_allocator<ioa::tcp_acceptor_automaton> (m_recv_address));
     ioa::make_binding_manager (this,
     			       &m_self, &tcp_ring_automaton::accept, m_acceptor,
     			       m_acceptor, &ioa::tcp_acceptor_automaton::accept);
@@ -141,7 +141,7 @@ private:
   }
 
   void create_predecessor_effect () {
-    m_predecessor = ioa::make_automaton_manager (this, ioa::make_generator<ioa::tcp_connection_automaton> ());
+    m_predecessor = ioa::make_automaton_manager (this, ioa::make_allocator<ioa::tcp_connection_automaton> ());
     add_observable (m_predecessor);
     ioa::make_binding_manager (this,
     			       m_predecessor, &ioa::tcp_connection_automaton::receive,
@@ -193,7 +193,7 @@ private:
   }
 
   void create_successor_effect () {
-    m_successor = ioa::make_automaton_manager (this, ioa::make_generator<ioa::tcp_connection_automaton> ());
+    m_successor = ioa::make_automaton_manager (this, ioa::make_allocator<ioa::tcp_connection_automaton> ());
     add_observable (m_successor);
     ioa::make_binding_manager (this,
 			       &m_self, &tcp_ring_automaton::send_successor, m_successor,
@@ -272,7 +272,7 @@ private:
 
   void connect_effect () {
     std::cout << "Connecting to " << m_send_address.address_str () << ":" << m_send_address.port () << std::endl;
-    m_connector = ioa::make_automaton_manager (this, ioa::make_generator<ioa::tcp_connector_automaton> (m_send_address, m_successor->get_handle ()));
+    m_connector = ioa::make_automaton_manager (this, ioa::make_allocator<ioa::tcp_connector_automaton> (m_send_address, m_successor->get_handle ()));
 
     ioa::make_binding_manager (this, 
 			       m_connector, &ioa::tcp_connector_automaton::error,

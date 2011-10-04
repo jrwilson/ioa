@@ -5,6 +5,8 @@ ioa/action_runnable.hpp \
 ioa/action_runnable_interface.hpp \
 ioa/action_wrapper.hpp \
 ioa/aid.hpp \
+ioa/allocator.hpp \
+ioa/allocator_interface.hpp \
 ioa/automaton.hpp \
 ioa/automaton_handle.hpp \
 ioa/automaton_manager.hpp \
@@ -12,8 +14,6 @@ ioa/automaton_manager_interface.hpp \
 ioa/binding_manager.hpp \
 ioa/environment.hpp \
 ioa/executor_interface.hpp \
-ioa/generator.hpp \
-ioa/generator_interface.hpp \
 ioa/global_fifo_scheduler.hpp \
 ioa/handle_manager.hpp \
 ioa/inet_address.hpp \

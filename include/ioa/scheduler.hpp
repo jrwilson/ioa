@@ -19,7 +19,7 @@
 
 #include <ioa/time.hpp>
 #include <ioa/action.hpp>
-#include <ioa/generator_interface.hpp>
+#include <ioa/allocator_interface.hpp>
 #include <ioa/scheduler_interface.hpp>
 #include <ioa/action_runnable.hpp>
 #include <ioa/automaton.hpp>
@@ -112,9 +112,9 @@ namespace ioa {
   
   template <class T>
   void run (scheduler_interface& s,
-	    std::auto_ptr<typed_generator_interface<T> > generator) {
+	    std::auto_ptr<typed_allocator_interface<T> > allocator) {
     scheduler = &s;
-    scheduler->run (std::auto_ptr<generator_interface> (generator));
+    scheduler->run (std::auto_ptr<allocator_interface> (allocator));
     scheduler = 0;
   }
   

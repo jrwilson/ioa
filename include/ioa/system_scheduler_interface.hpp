@@ -35,7 +35,7 @@ namespace ioa {
     virtual void clear_current_aid () = 0;
     
     virtual void create (const aid_t automaton,
-			 std::auto_ptr<generator_interface> generator,
+			 std::auto_ptr<allocator_interface> allocator,
 			 void* const key) = 0;
     
     virtual void bind (const aid_t automaton,

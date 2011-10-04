@@ -65,7 +65,7 @@ public:
     }
 
     for (size_t i = 0; i < N; ++i) {
-      T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_generator<T> (i, i0, nbrhd[i])));
+      T_helpers.push_back (new ioa::automaton_manager<T> (this, ioa::make_allocator<T> (i, i0, nbrhd[i])));
       make_binding_manager (this,
 			T_helpers[i],
 			&T::parent,
@@ -80,8 +80,8 @@ public:
 
         if (nbrhd[i].count (j) != 0) {
           // Link between i and j.
-          ioa::automaton_manager<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
-          ioa::automaton_manager<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_generator<channel_automaton<M> > ());
+          ioa::automaton_manager<channel_automaton<M> >* i_to_j_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_allocator<channel_automaton<M> > ());
+          ioa::automaton_manager<channel_automaton<M> >* j_to_i_channel = new ioa::automaton_manager<channel_automaton<M> > (this, ioa::make_allocator<channel_automaton<M> > ());
 
           make_binding_manager (this,
                             T_helpers[i],

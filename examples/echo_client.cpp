@@ -186,7 +186,7 @@ public:
     m_address (address),
     m_created_flag (false)
   {
-    m_s = ioa::make_automaton_manager (this, ioa::make_generator<stdin_automaton> ());
+    m_s = ioa::make_automaton_manager (this, ioa::make_allocator<stdin_automaton> ());
     
     ioa::make_binding_manager (this,
     			       m_s, &stdin_automaton::receive,
@@ -196,7 +196,7 @@ public:
     			       m_s, &stdin_automaton::closed,
     			       &m_self, &echo_client_automaton::stdin_closed);
 
-    m_connection = ioa::make_automaton_manager (this, ioa::make_generator<ioa::tcp_connection_automaton> ());
+    m_connection = ioa::make_automaton_manager (this, ioa::make_allocator<ioa::tcp_connection_automaton> ());
     add_observable (m_connection);
 
     ioa::make_binding_manager (this,
@@ -265,7 +265,7 @@ private:
 
   void create_effect () {
     m_created_flag = true;
-    ioa::automaton_manager<ioa::tcp_connector_automaton>* connector = new ioa::automaton_manager<ioa::tcp_connector_automaton> (this, ioa::make_generator<ioa::tcp_connector_automaton> (m_address, m_connection->get_handle ()));
+    ioa::automaton_manager<ioa::tcp_connector_automaton>* connector = new ioa::automaton_manager<ioa::tcp_connector_automaton> (this, ioa::make_allocator<ioa::tcp_connector_automaton> (m_address, m_connection->get_handle ()));
     
     ioa::make_binding_manager (this,
     			       connector, &ioa::tcp_connector_automaton::error,
@@ -358,6 +358,6 @@ int main () {
   // TODO
   ioa::inet_address address ("127.0.0.1", 54321);
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<echo_client_automaton> (address));
+  ioa::run (sched, ioa::make_allocator<echo_client_automaton> (address));
   return 0;
 }

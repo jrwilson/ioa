@@ -53,6 +53,6 @@ private:
 
 int main () {
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<count_to_ten_automaton> ());
+  ioa::run (sched, ioa::make_allocator<count_to_ten_automaton> ());
   return 0; 
 }

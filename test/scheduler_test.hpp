@@ -17,7 +17,7 @@
 #include "minunit.h"
 
 #include <ioa/scheduler.hpp>
-#include <ioa/generator.hpp>
+#include <ioa/allocator.hpp>
 #include "automaton2.hpp"
 #include "instance_holder.hpp"
 #include <ioa/automaton_manager.hpp>
@@ -43,8 +43,8 @@ private:
       m_instance (instance)
     { }
 
-    std::auto_ptr<ioa::generator_interface> get_generator () {
-      return std::auto_ptr<ioa::generator_interface> (new instance_holder<automaton2> (m_instance));
+    std::auto_ptr<ioa::allocator_interface> get_allocator () {
+      return std::auto_ptr<ioa::allocator_interface> (new instance_holder<automaton2> (m_instance));
     }
 
     void created (const ioa::created_t result,
@@ -92,7 +92,7 @@ instance_exists ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<create_instance_exists> ());
+  ioa::run (ss, ioa::make_allocator<create_instance_exists> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -105,8 +105,8 @@ private:
   struct helper :
     public ioa::system_automaton_manager_interface
   {
-    std::auto_ptr<ioa::generator_interface> get_generator () {
-      return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
+    std::auto_ptr<ioa::allocator_interface> get_allocator () {
+      return std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton2> ());
     }
 
     void created (const ioa::created_t result,
@@ -150,7 +150,7 @@ automaton_created ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<create_automaton_created> ());
+  ioa::run (ss, ioa::make_allocator<create_automaton_created> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -245,7 +245,7 @@ public:
   
   bind_output_automaton_dne ()
   {
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<automaton2, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
@@ -256,7 +256,7 @@ output_automaton_dne ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_output_automaton_dne> ());
+  ioa::run (ss, ioa::make_allocator<bind_output_automaton_dne> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -351,7 +351,7 @@ public:
   
   bind_input_automaton_dne ()
   {
-    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, automaton2, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, &automaton2::uv_up_input);
   }
 };
@@ -362,7 +362,7 @@ input_automaton_dne ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_input_automaton_dne> ());
+  ioa::run (ss, ioa::make_allocator<bind_input_automaton_dne> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -475,8 +475,8 @@ public:
   
   bind_binding_exists ()
   {
-    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
@@ -488,7 +488,7 @@ binding_exists ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_binding_exists> ());
+  ioa::run (ss, ioa::make_allocator<bind_binding_exists> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -600,9 +600,9 @@ public:
   
   bind_input_action_unavailable ()
   {
-    ioa::automaton_manager<automaton2>* m_output1 = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_output2 = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output1 = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output2 = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output1, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output2, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
@@ -614,7 +614,7 @@ input_action_unavailable ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_input_action_unavailable> ());
+  ioa::run (ss, ioa::make_allocator<bind_input_action_unavailable> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -727,8 +727,8 @@ public:
   
   bind_output_action_unavailable ()
   {
-    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input2_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input2);
   }
@@ -740,7 +740,7 @@ output_action_unavailable ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_output_action_unavailable> ());
+  ioa::run (ss, ioa::make_allocator<bind_output_action_unavailable> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -852,8 +852,8 @@ public:
   
   bind_bound ()
   {
-    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
@@ -864,7 +864,7 @@ bound ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_bound> ());
+  ioa::run (ss, ioa::make_allocator<bind_bound> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -995,8 +995,8 @@ public:
   
   bind_unbound ()
   {
-    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     m_helper = new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
     ioa::schedule (&bind_unbound::poll);
   }
@@ -1008,7 +1008,7 @@ unbound ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_unbound> ());
+  ioa::run (ss, ioa::make_allocator<bind_unbound> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1119,8 +1119,8 @@ public:
   
   bind_unbound2 ()
   {
-    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
-    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_generator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_output = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
+    ioa::automaton_manager<automaton2>* m_input = new ioa::automaton_manager<automaton2> (this, ioa::make_allocator<automaton2> ());
     new helper<ioa::automaton_manager<automaton2>, automaton2::uv_up_output_type, ioa::automaton_manager<automaton2>, automaton2::uv_up_input_type> (*this, m_output, &automaton2::uv_up_output, m_input, &automaton2::uv_up_input);
   }
 };
@@ -1131,7 +1131,7 @@ unbound2 ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<bind_unbound2> ());
+  ioa::run (ss, ioa::make_allocator<bind_unbound2> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1150,8 +1150,8 @@ private:
       m_created (false)
     { }
 
-    std::auto_ptr<ioa::generator_interface> get_generator () {
-      return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
+    std::auto_ptr<ioa::allocator_interface> get_allocator () {
+      return std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton2> ());
     }
 
     void created (const ioa::created_t result,
@@ -1222,7 +1222,7 @@ automaton_destroyed ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<destroy_automaton_destroyed> ());
+  ioa::run (ss, ioa::make_allocator<destroy_automaton_destroyed> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1235,8 +1235,8 @@ private:
   struct helper :
     public ioa::system_automaton_manager_interface
   {
-    std::auto_ptr<ioa::generator_interface> get_generator () {
-      return std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton2> ());
+    std::auto_ptr<ioa::allocator_interface> get_allocator () {
+      return std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton2> ());
     }
 
     void created (const ioa::created_t result,
@@ -1284,7 +1284,7 @@ automaton_destroyed2 ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<destroy_automaton_destroyed2> ());
+  ioa::run (ss, ioa::make_allocator<destroy_automaton_destroyed2> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1322,7 +1322,7 @@ schedule ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1362,7 +1362,7 @@ schedulep ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_automatonp> ());
+  ioa::run (ss, ioa::make_allocator<schedule_automatonp> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1442,7 +1442,7 @@ schedule_after ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_after_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_after_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1528,7 +1528,7 @@ schedule_afterp ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_afterp_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_afterp_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1581,7 +1581,7 @@ schedule_read_ready ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_read_ready_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_read_ready_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1636,7 +1636,7 @@ schedule_read_readyp ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_read_readyp_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_read_readyp_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1682,7 +1682,7 @@ schedule_write_ready ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_write_ready_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_write_ready_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }
@@ -1731,7 +1731,7 @@ schedule_write_readyp ()
   std::cout << __func__ << std::endl;
   goal_reached = false;
   SCHEDULER_TYPE ss;
-  ioa::run (ss, ioa::make_generator<schedule_write_readyp_automaton> ());
+  ioa::run (ss, ioa::make_allocator<schedule_write_readyp_automaton> ());
   mu_assert (goal_reached);
   return 0;
 }

@@ -59,7 +59,7 @@ public:
 int
 main () {
   ioa::simple_scheduler ss;
-  ioa::run (ss, ioa::make_generator<count_to_ten> ());
+  ioa::run (ss, ioa::make_allocator<count_to_ten> ());
   return 0; 
 }
 

@@ -41,6 +41,6 @@ int main (int argc,
   srand (time (0));
 
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<bidirectional_spanning_tree<asynch_spanning_tree_automaton, search_t> > (node_count, rho));
+  ioa::run (sched, ioa::make_allocator<bidirectional_spanning_tree<asynch_spanning_tree_automaton, search_t> > (node_count, rho));
   return 0;
 }

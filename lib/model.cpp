@@ -20,7 +20,7 @@
 #include "unique_lock.hpp"
 #include "shared_lock.hpp"
 #include <algorithm>
-#include <ioa/generator_interface.hpp>
+#include <ioa/allocator_interface.hpp>
 #include <ioa/automaton.hpp>
 #include <ioa/system_scheduler_interface.hpp>
 #include <ioa/automaton_handle.hpp>
@@ -64,7 +64,7 @@ namespace ioa {
     assert (m_bindings.empty ());
   }
   
-  aid_t model::create (std::auto_ptr<generator_interface> generator)
+  aid_t model::create (std::auto_ptr<allocator_interface> allocator)
   {
     unique_lock lock (m_mutex);
     
@@ -74,8 +74,8 @@ namespace ioa {
     // Set the current aid.
     m_system_scheduler.set_current_aid (aid);
     
-    // Run the generator.
-    automaton* instance = (*generator) ();
+    // Run the allocator.
+    automaton* instance = (*allocator) ();
     assert (instance != 0);
     
     // Clear the current aid.
@@ -95,7 +95,7 @@ namespace ioa {
   }
   
   aid_t model::create (const aid_t creator_aid,
-		       std::auto_ptr<generator_interface> generator,
+		       std::auto_ptr<allocator_interface> allocator,
 		       void* const key)
   {
     unique_lock lock (m_mutex);
@@ -117,8 +117,8 @@ namespace ioa {
     // Set the current aid.
     m_system_scheduler.set_current_aid (aid);
     
-    // Run the generator.
-    automaton* instance = (*generator) ();
+    // Run the allocator.
+    automaton* instance = (*allocator) ();
     assert (instance != 0);
     
     // Clear the current aid.
@@ -379,11 +379,11 @@ namespace ioa {
     lock_automaton (aid);
     m_system_scheduler.set_current_aid (aid);
     if (instance->sys_create.precondition (const_cast<const automaton&> (*instance))) {
-      std::pair<generator_interface*, void*> key = instance->sys_create.effect (*instance);
+      std::pair<allocator_interface*, void*> key = instance->sys_create.effect (*instance);
       instance->sys_create.schedule (const_cast<const automaton&> (*instance));
       m_system_scheduler.clear_current_aid ();
       unlock_automaton (aid);
-      m_system_scheduler.create (aid, std::auto_ptr<generator_interface> (key.first), key.second);
+      m_system_scheduler.create (aid, std::auto_ptr<allocator_interface> (key.first), key.second);
     }
     else {
       m_system_scheduler.clear_current_aid ();

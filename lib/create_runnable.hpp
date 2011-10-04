@@ -26,19 +26,19 @@ namespace ioa {
   {
   private:
     const aid_t m_automaton;
-    std::auto_ptr<generator_interface> m_generator;
+    std::auto_ptr<allocator_interface> m_allocator;
     void* const m_key;
   public:
     create_runnable (const aid_t automaton,
-		     std::auto_ptr<generator_interface> generator,
+		     std::auto_ptr<allocator_interface> allocator,
 		     void* const key) :
       m_automaton (automaton),
-      m_generator (generator),
+      m_allocator (allocator),
       m_key (key)
     { }
     
     void operator() (model_interface& model) {
-      model.create (m_automaton, m_generator, m_key);
+      model.create (m_automaton, m_allocator, m_key);
     }
   };
   

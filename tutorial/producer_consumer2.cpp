@@ -72,15 +72,15 @@ public:
   producer_consumer_automaton () {
     ioa::automaton_manager<producer_automaton>* producer =
       ioa::make_automaton_manager (this,
-	  ioa::make_generator<producer_automaton> ());
+	  ioa::make_allocator<producer_automaton> ());
 
     ioa::automaton_manager<consumer_automaton>* consumer1 =
       ioa::make_automaton_manager (this,
-          ioa::make_generator<consumer_automaton> ());
+          ioa::make_allocator<consumer_automaton> ());
 
     ioa::automaton_manager<consumer_automaton>* consumer2 =
       ioa::make_automaton_manager (this,
-          ioa::make_generator<consumer_automaton> ());
+          ioa::make_allocator<consumer_automaton> ());
 
     ioa::make_binding_manager (this,
 			       producer, &producer_automaton::produce,
@@ -95,6 +95,6 @@ public:
 
 int main () {
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<producer_consumer_automaton> ());
+  ioa::run (sched, ioa::make_allocator<producer_consumer_automaton> ());
   return 0; 
 }

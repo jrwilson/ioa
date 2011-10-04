@@ -62,7 +62,7 @@ namespace ioa {
 
     void close (int fd);
     
-    void run (std::auto_ptr<generator_interface> generator);
+    void run (std::auto_ptr<allocator_interface> allocator);
 
     void begin_sys_call () { }
 

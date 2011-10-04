@@ -36,7 +36,7 @@ public:
     m_self (ioa::get_aid ()),
     m_address (address)
   {
-    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_address));
+    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_allocator<ioa::udp_receiver_automaton> (m_address));
 
     ioa::make_binding_manager (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
   }
@@ -47,7 +47,7 @@ public:
     m_group (group),
     m_address (address)
   {
-    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_generator<ioa::udp_receiver_automaton> (m_group, m_address));
+    ioa::automaton_manager<ioa::udp_receiver_automaton>* receiver = new ioa::automaton_manager<ioa::udp_receiver_automaton> (this, ioa::make_allocator<ioa::udp_receiver_automaton> (m_group, m_address));
 
     ioa::make_binding_manager (this, receiver, &ioa::udp_receiver_automaton::receive, &m_self, &udp_receiver::receive);
     ioa::make_binding_manager (this, receiver, &ioa::udp_receiver_automaton::error, &m_self, &udp_receiver::error);
@@ -95,7 +95,7 @@ main (int argc, char* argv[]) {
     }
 
     ioa::global_fifo_scheduler sched;
-    ioa::run (sched, ioa::make_generator<udp_receiver> (address));
+    ioa::run (sched, ioa::make_allocator<udp_receiver> (address));
   }
   else if (argc == 4) {
     std::string grp (argv[1]);
@@ -116,7 +116,7 @@ main (int argc, char* argv[]) {
     }
     
     ioa::global_fifo_scheduler sched;
-    ioa::run (sched, ioa::make_generator<udp_receiver> (group, address));
+    ioa::run (sched, ioa::make_allocator<udp_receiver> (group, address));
   }
 
   return 0; 

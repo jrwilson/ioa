@@ -17,7 +17,7 @@
 #include "minunit.h"
 
 #include "../lib/model.hpp"
-#include <ioa/generator.hpp>
+#include <ioa/allocator.hpp>
 #include <ioa/action_executor.hpp>
 #include "automaton1.hpp"
 
@@ -156,7 +156,7 @@ struct test_system_scheduler :
   void clear_current_aid () { }
 
   void create (const ioa::aid_t automaton,
-	       std::auto_ptr<ioa::generator_interface> generator,
+	       std::auto_ptr<ioa::allocator_interface> allocator,
 	       void* const key) {
     assert (false);
   }
@@ -230,9 +230,9 @@ struct test_system_scheduler :
 
 ioa::aid_t create (ioa::model& model,
 		   test_system_scheduler& tss,
-		   std::auto_ptr<ioa::generator_interface> generator) {
+		   std::auto_ptr<ioa::allocator_interface> allocator) {
   tss.reset ();
-  ioa::aid_t handle = model.create (generator);
+  ioa::aid_t handle = model.create (allocator);
   assert (handle != -1);
 
   return handle;
@@ -241,10 +241,10 @@ ioa::aid_t create (ioa::model& model,
 ioa::aid_t create (ioa::model& model,
 		   test_system_scheduler& tss,
 		   const ioa::aid_t creator,
-		   std::auto_ptr<ioa::generator_interface> generator,
+		   std::auto_ptr<ioa::allocator_interface> allocator,
 		   void* const key) {
   tss.reset ();
-  ioa::aid_t handle = model.create (creator, generator, key);
+  ioa::aid_t handle = model.create (creator, allocator, key);
   assert (handle != -1);
   assert (tss.m_created_automaton == creator);
   assert (tss.m_created_type == ioa::AUTOMATON_CREATED_RESULT);
@@ -295,12 +295,12 @@ creator_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::aid_t creator_handle = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t creator_handle = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   destroy (model, tss, creator_handle);
 
   tss.reset ();
-  ioa::aid_t handle = model.create (creator_handle, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), 0);
+  ioa::aid_t handle = model.create (creator_handle, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), 0);
   mu_assert (handle == -1);
 
   return 0;
@@ -313,13 +313,13 @@ create_key_exists ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::aid_t creator_handle = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t creator_handle = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int key;
-  create (model, tss, creator_handle, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
+  create (model, tss, creator_handle, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &key);
 
   tss.reset ();
-  ioa::aid_t handle = model.create (creator_handle, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
+  ioa::aid_t handle = model.create (creator_handle, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &key);
   mu_assert (handle == -1);
   mu_assert (tss.m_created_automaton == creator_handle);
   mu_assert (tss.m_created_type == ioa::CREATE_KEY_EXISTS_RESULT);
@@ -336,10 +336,10 @@ instance_exists ()
   ioa::model model (tss);
 
   automaton1* instance2 = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder2 (new instance_holder<automaton1> (instance2));
-  std::auto_ptr<ioa::generator_interface> holder3 (new instance_holder<automaton1> (instance2));
+  std::auto_ptr<ioa::allocator_interface> holder2 (new instance_holder<automaton1> (instance2));
+  std::auto_ptr<ioa::allocator_interface> holder3 (new instance_holder<automaton1> (instance2));
 
-  ioa::aid_t creator = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t creator = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int key1;
   create (model, tss, creator, holder2, &key1);
@@ -362,10 +362,10 @@ automaton_created ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::aid_t creator = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t creator = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int key;
-  ioa::aid_t handle = model.create (creator, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
+  ioa::aid_t handle = model.create (creator, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &key);
   mu_assert (handle != -1);
   mu_assert (tss.m_created_automaton == creator);
   mu_assert (tss.m_created_type == ioa::AUTOMATON_CREATED_RESULT);
@@ -382,12 +382,12 @@ binder_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
   
-  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   destroy (model, tss, binder);
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
   mu_assert (model.bind (binder,
 			 ioa::make_bind_executor (output, &automaton1::uv_up_output,
@@ -404,16 +404,16 @@ bind_key_exists ()
   test_system_scheduler tss;
   ioa::model model (tss);
   
-  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output1 = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output1 = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> input1 = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input1 = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
 
-  ioa::automaton_handle<automaton1> output2 = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output2 = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> input2 = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input2 = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int key;
   bind (model, tss, binder,
@@ -440,12 +440,12 @@ output_automaton_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   destroy (model, tss, output);
   
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   tss.reset ();
   int key;
@@ -467,11 +467,11 @@ input_automaton_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
 
   destroy (model, tss, input);
@@ -496,11 +496,11 @@ binding_exists ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
 
   int key1;
@@ -529,13 +529,13 @@ input_action_unavailable ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output1 = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output1 = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
-  ioa::automaton_handle<automaton1> output2 = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output2 = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int key1;
   bind (model, tss, binder,
@@ -565,11 +565,11 @@ output_action_unavailable ()
   
   int parameter = 0;
 
-  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
     
   int key1;
   bind (model, tss, binder,
@@ -602,10 +602,10 @@ bound ()
   
   int parameter = 0;
 
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   automaton1* instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (instance));
+  std::auto_ptr<ioa::allocator_interface> holder (new instance_holder<automaton1> (instance));
 
   ioa::automaton_handle<automaton1> input = create (model, tss, holder);
   
@@ -633,11 +633,11 @@ unbinder_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
   
-  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
   bind (model, tss, binder,
 	ioa::make_bind_executor (output, &automaton1::uv_up_output,
@@ -659,11 +659,11 @@ bind_key_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
   
-  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> binder = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int key;
   bind (model, tss, binder,
@@ -694,9 +694,9 @@ unbound ()
   
   int parameter = 0;
 
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
-  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> input = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   std::auto_ptr<ioa::bind_executor_interface> bind_exec = ioa::make_bind_executor (output, &automaton1::uv_p_output, parameter, input, &automaton1::uv_up_input);
 
@@ -725,9 +725,9 @@ destroyer_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
   
-  ioa::automaton_handle<automaton1> parent_handle = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> parent_handle = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   int key;
-  ioa::automaton_handle<automaton1> child_handle = create (model, tss, parent_handle, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
+  ioa::automaton_handle<automaton1> child_handle = create (model, tss, parent_handle, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &key);
 
   destroy (model, tss, parent_handle);
   
@@ -743,10 +743,10 @@ create_key_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
 
-  ioa::aid_t parent_handle = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::aid_t parent_handle = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
   int key;
-  ioa::automaton_handle<automaton1> child_handle = create (model, tss, parent_handle, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &key);
+  ioa::automaton_handle<automaton1> child_handle = create (model, tss, parent_handle, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &key);
   
   tss.reset ();
   mu_assert (model.destroy (parent_handle, &key) == 0);
@@ -768,13 +768,13 @@ automaton_destroyed ()
   
   int parameter = 0;
 
-  ioa::automaton_handle<automaton1> alpha = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> alpha = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 
   int beta_key;
-  ioa::automaton_handle<automaton1> beta = create (model, tss, alpha, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &beta_key);
+  ioa::automaton_handle<automaton1> beta = create (model, tss, alpha, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &beta_key);
 
   int gamma_key;
-  ioa::automaton_handle<automaton1> gamma = create (model, tss, beta, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()), &gamma_key);
+  ioa::automaton_handle<automaton1> gamma = create (model, tss, beta, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()), &gamma_key);
 
   std::auto_ptr<ioa::bind_executor_interface> bind_exec1 = 
     ioa::make_bind_executor (alpha, &automaton1::uv_p_output, parameter,
@@ -835,7 +835,7 @@ execute_automaton_dne ()
   test_system_scheduler tss;
   ioa::model model (tss);
   
-  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+  ioa::automaton_handle<automaton1> output = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
   
   destroy (model, tss, output);
   
@@ -853,7 +853,7 @@ execute_output ()
   ioa::model model (tss);
   
   automaton1* output_instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
+  std::auto_ptr<ioa::allocator_interface> holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (model, tss, holder);
 
@@ -886,7 +886,7 @@ execute_internal ()
   ioa::model model (tss);
   
   automaton1* output_instance = new automaton1 ();
-  std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (output_instance));
+  std::auto_ptr<ioa::allocator_interface> holder (new instance_holder<automaton1> (output_instance));
 
   ioa::automaton_handle<automaton1> output = create (model, tss, holder);
 
@@ -909,9 +909,9 @@ execute_internal ()
 //   ioa::model model (tss);
   
 //   automaton1* event_instance = new automaton1 ();
-//   std::auto_ptr<ioa::generator_interface> holder (new instance_holder<automaton1> (event_instance));
+//   std::auto_ptr<ioa::allocator_interface> holder (new instance_holder<automaton1> (event_instance));
 
-//   ioa::automaton_handle<automaton1> from = create (model, tss, std::auto_ptr<ioa::generator_interface> (ioa::make_generator<automaton1> ()));
+//   ioa::automaton_handle<automaton1> from = create (model, tss, std::auto_ptr<ioa::allocator_interface> (ioa::make_allocator<automaton1> ()));
 //   ioa::automaton_handle<automaton1> to = create (model, tss, holder);
 
 //   // tss.reset ();

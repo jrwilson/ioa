@@ -57,7 +57,7 @@ public:
 			       &m_self, &client_handler_automaton::accept,
 			       &m_acceptor, &ioa::tcp_acceptor_automaton::accept);
 
-    m_connection = ioa::make_automaton_manager (this, ioa::make_generator<ioa::tcp_connection_automaton> ());
+    m_connection = ioa::make_automaton_manager (this, ioa::make_allocator<ioa::tcp_connection_automaton> ());
     add_observable (m_connection);
     ioa::make_binding_manager (this,
     			       &m_self, &client_handler_automaton::send,
@@ -226,7 +226,7 @@ public:
     m_self (ioa::get_aid ())
   {
     // Create the acceptor, observe it so we know when it is created, and bind to its error output.
-    m_acceptor = new ioa::automaton_manager<ioa::tcp_acceptor_automaton> (this, ioa::make_generator<ioa::tcp_acceptor_automaton> (address));
+    m_acceptor = new ioa::automaton_manager<ioa::tcp_acceptor_automaton> (this, ioa::make_allocator<ioa::tcp_acceptor_automaton> (address));
     add_observable (m_acceptor);
     ioa::make_binding_manager (this,
 			       m_acceptor, &ioa::tcp_acceptor_automaton::error,
@@ -271,7 +271,7 @@ private:
 
   void create_effect () {
     // Create another client to fill the pool.
-    ioa::automaton_manager<client_handler_automaton>* m_client = ioa::make_automaton_manager (this, ioa::make_generator<client_handler_automaton> (m_acceptor->get_handle ()));
+    ioa::automaton_manager<client_handler_automaton>* m_client = ioa::make_automaton_manager (this, ioa::make_allocator<client_handler_automaton> (m_acceptor->get_handle ()));
     m_not_connected.insert (m_client);
     ioa::make_binding_manager (this,
 			       m_client, &client_handler_automaton::connected,
@@ -324,6 +324,6 @@ int main () {
   // TODO
   ioa::inet_address address ("0.0.0.0", 54321);
   ioa::global_fifo_scheduler sched;
-  ioa::run (sched, ioa::make_generator<echo_server_automaton> (address));
+  ioa::run (sched, ioa::make_allocator<echo_server_automaton> (address));
   return 0;
 }
