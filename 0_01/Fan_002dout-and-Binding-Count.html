@@ -1,21 +1,28 @@
 <html lang="en">
 <head>
-<title>Fan-out and Binding Count - IOA++</title>
+<title>Fan-out and Binding Count - ioa++</title>
 <meta http-equiv="Content-Type" content="text/html">
-<meta name="description" content="IOA++">
+<meta name="description" content="ioa++">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
 <link rel="up" href="Examples.html#Examples" title="Examples">
 <link rel="prev" href="External-Actions.html#External-Actions" title="External Actions">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
+This manual is for ioa++, version 0.01.
+
 Copyright (C) 2011 Justin R. Wilson.
 
-     This work is licensed under the Creative Commons
-     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
-     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
-     send a letter to Creative Commons, 444 Castro Street, Suite 900,
-     Mountain View, California, 94041, USA.
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+     http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an "AS
+     IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+     express or implied.  See the License for the specific language
+     governing permissions and limitations under the License.
    -->
 <meta http-equiv="Content-Style-Type" content="text/css">
 <style type="text/css"><!--
@@ -40,12 +47,28 @@ Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
 <hr>
 </div>
 
-<h3 class="section">3.5 Fan-out and Binding Count</h3>
+<h3 class="section">2.5 Fan-out and Binding Count</h3>
 
 <p>In this tutorial, we bind an output action to multiple input actions (fan-out) and prevent lost outputs by counting the number of bindings associated with an action. 
 The source is given below and can be found in <samp><span class="file">tutorial/producer_consumer2.cpp</span></samp>.
 
-<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+<pre class="example"><pre class="verbatim">     /*
+        Copyright 2011 Justin R. Wilson
+     
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+     
+            http://www.apache.org/licenses/LICENSE-2.0
+     
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
+     */
+     
+     #include &lt;ioa/ioa.hpp>
      #include &lt;ioa/global_fifo_scheduler.hpp>
      
      #include &lt;iostream>
@@ -103,15 +126,15 @@ The source is given below and can be found in <samp><span class="file">tutorial/
        producer_consumer_automaton () {
          ioa::automaton_manager&lt;producer_automaton>* producer =
            ioa::make_automaton_manager (this,
-     	  ioa::make_generator&lt;producer_automaton> ());
+     	  ioa::make_allocator&lt;producer_automaton> ());
      
          ioa::automaton_manager&lt;consumer_automaton>* consumer1 =
            ioa::make_automaton_manager (this,
-               ioa::make_generator&lt;consumer_automaton> ());
+               ioa::make_allocator&lt;consumer_automaton> ());
      
          ioa::automaton_manager&lt;consumer_automaton>* consumer2 =
            ioa::make_automaton_manager (this,
-               ioa::make_generator&lt;consumer_automaton> ());
+               ioa::make_allocator&lt;consumer_automaton> ());
      
          ioa::make_binding_manager (this,
      			       producer, &amp;producer_automaton::produce,
@@ -126,7 +149,7 @@ The source is given below and can be found in <samp><span class="file">tutorial/
      
      int main () {
        ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;producer_consumer_automaton> ());
+       ioa::run (sched, ioa::make_allocator&lt;producer_consumer_automaton> ());
        return 0; 
      }
 </pre></pre>

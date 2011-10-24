@@ -1,8 +1,8 @@
 <html lang="en">
 <head>
-<title>Internal Actions - IOA++</title>
+<title>Internal Actions - ioa++</title>
 <meta http-equiv="Content-Type" content="text/html">
-<meta name="description" content="IOA++">
+<meta name="description" content="ioa++">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
 <link rel="up" href="Examples.html#Examples" title="Examples">
@@ -10,13 +10,20 @@
 <link rel="next" href="Creating-Automata.html#Creating-Automata" title="Creating Automata">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
+This manual is for ioa++, version 0.01.
+
 Copyright (C) 2011 Justin R. Wilson.
 
-     This work is licensed under the Creative Commons
-     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
-     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
-     send a letter to Creative Commons, 444 Castro Street, Suite 900,
-     Mountain View, California, 94041, USA.
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+     http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an "AS
+     IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+     express or implied.  See the License for the specific language
+     governing permissions and limitations under the License.
    -->
 <meta http-equiv="Content-Style-Type" content="text/css">
 <style type="text/css"><!--
@@ -41,7 +48,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
 <hr>
 </div>
 
-<h3 class="section">3.2 Internal Actions</h3>
+<h3 class="section">2.2 Internal Actions</h3>
 
 <p>In this tutorial we develop an automaton that counts to ten using an internal action. 
 The source is given below and can be found in <samp><span class="file">tutorial/count_to_ten_automaton.cpp</span></samp>.
@@ -85,7 +92,7 @@ The source is given below and can be found in <samp><span class="file">tutorial/
      
      int main () {
        ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;count_to_ten_automaton> ());
+       ioa::run (sched, ioa::make_allocator&lt;count_to_ten_automaton> ());
        return 0; 
      }
 </pre></pre>
@@ -100,7 +107,7 @@ In general, an automaton will have the following structure:
 
      <li>Private member functions &mdash; Declare/define useful functions.
 
-     <li>Actions &mdash; Declare/define the actions of the automaton.  Local actions consist of a precondition, an effect, a scheduling function, and a member variable.  Input actions consist of an effect, a scheduling function, and a member variable.
+     <li>Actions &mdash; Declare/define the actions of the automaton.  Local actions consist of a precondition, an effect, and a scheduling function.  Input actions consist of an effect and a scheduling function.
 
    </ul>
 
@@ -113,7 +120,7 @@ The state of the automaton is declared with
    <p>In this case, the state of the automaton consists of a single integer <code>m_count</code>. 
 State variables should always be declared <code>private</code>.
 
-   <p>The constructor initializes the count to 1 and calls the <code>increment_schedule</code> member function to tell the scheduler to select the <code>increment</code> action:
+   <p>The constructor initializes the count to 1 and calls the <code>increment_schedule</code> member function which is described below:
 <pre class="example"><pre class="verbatim">     public:
        count_to_ten_automaton () :
          m_count (1) {
@@ -141,14 +148,15 @@ State variables should always be declared <code>private</code>.
    <p>Following the style in <cite>Distributed Algorithms</cite>, internal actions are divided into a <dfn>precondition</dfn> and <dfn>effect</dfn>. 
 The precondition returns a <code>bool</code> indicating if the action can be executed. 
 In this example, the precondition returns true so long as the count is less than or equal to ten. 
-The pattern for declaring the precondition for an unparameterized internal actions is <code>bool </code><var>action-name</var><code>_precondition () const;</code>. 
+The pattern for declaring the precondition for an unparameterized internal actions is <code>bool </code><var>action-name</var><code>_precondition () const</code>. 
 Note that preconditions have the <code>const</code> modifier as they should not change the state of the automaton. 
 The effect changes the state of the automaton. 
 In this example, the effect prints the current value of the count and increments the count. 
-The pattern for declaring the effect of an unparameterized internal action is <code>void </code><var>action-name</var><code>_effect ();</code>. 
+The pattern for declaring the effect of an unparameterized internal action is <code>void </code><var>action-name</var><code>_effect ()</code>. 
 The scheduling function is called after the effect and it used to tell the scheduler about actions that should be selected. 
+SCHEDULE see <a href="schedule.html#schedule">ioa::schedule</a>
 In this example, the <code>increment</code> action is scheduled if its precondition is true. 
-The pattern for declaring a scheduling fuctions is <code>void </code><var>action-name</var><code>_schedule () const;</code>. 
+The pattern for declaring a scheduling fuctions is <code>void </code><var>action-name</var><code>_schedule () const</code>. 
 Preconditions, effects, and scheduling functions should always be declared <code>private</code>.
 
    <p>The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition, effect, and scheduling function and also contains appropriate typedefs for the scheduler. 
@@ -168,24 +176,26 @@ To declare an automaton:
 <pre class="example">     <code>class </code><var>automaton-name</var><code> : public ioa::automaton ...</code>
 </pre>
    <p>To declare a precondition for an unparameterized internal action:
-<pre class="example">     <code>bool </code><var>action-name</var><code>_precondition () const;</code>
+<pre class="example">     <code>bool </code><var>action-name</var><code>_precondition () const</code>
 </pre>
    <p>To declare a effect for an unparameterized internal action:
-<pre class="example">     <code>void </code><var>action-name</var><code>_effect ();</code>
+<pre class="example">     <code>void </code><var>action-name</var><code>_effect ()</code>
 </pre>
    <p>To declare a scheduling function:
-<pre class="example">     <code>void </code><var>action-name</var><code>_schedule () const;</code>
+<pre class="example">     <code>void </code><var>action-name</var><code>_schedule () const</code>
 </pre>
    <p>To declare an unparameterized internal action:
-<pre class="example">     <code>UP_INTERNAL (</code><var>automaton-name</var><code>, </code><var>action-name</var><code>);</code>
+<pre class="example">     <code>UP_INTERNAL (</code><var>automaton-name</var><code>, </code><var>action-name</var><code>)</code>
 </pre>
    <p>To schedule an unparameterized local action:
-<pre class="example">     <code>ioa::schedule (&amp;</code><var>automaton-name</var><code>::</code><var>action-name</var><code>);</code>
+<pre class="example">     <code>ioa::schedule (&amp;</code><var>automaton-name</var><code>::</code><var>action-name</var><code>)</code>
 </pre>
    <p><strong>Programming Tip:</strong>
-Forgetting to schedule is common source of problems when programming with IOA++. 
+Forgetting to schedule is common source of problems when programming with ioa++. 
 Remember to call <code>ioa::schedule</code> for all enabled local actions in the constructor and scheduling functions (or effects). 
 As an exercise, experiment with commenting out the call to <code>increment_schedule</code> in the constructor and the call to <code>ioa::schedule</code> in <code>increment_schedule</code>.
+
+   <p>HALTING
 
    </body></html>
 

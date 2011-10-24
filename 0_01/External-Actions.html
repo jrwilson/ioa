@@ -1,8 +1,8 @@
 <html lang="en">
 <head>
-<title>External Actions - IOA++</title>
+<title>External Actions - ioa++</title>
 <meta http-equiv="Content-Type" content="text/html">
-<meta name="description" content="IOA++">
+<meta name="description" content="ioa++">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
 <link rel="up" href="Examples.html#Examples" title="Examples">
@@ -10,13 +10,20 @@
 <link rel="next" href="Fan_002dout-and-Binding-Count.html#Fan_002dout-and-Binding-Count" title="Fan-out and Binding Count">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
+This manual is for ioa++, version 0.01.
+
 Copyright (C) 2011 Justin R. Wilson.
 
-     This work is licensed under the Creative Commons
-     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
-     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
-     send a letter to Creative Commons, 444 Castro Street, Suite 900,
-     Mountain View, California, 94041, USA.
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+     http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an "AS
+     IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+     express or implied.  See the License for the specific language
+     governing permissions and limitations under the License.
    -->
 <meta http-equiv="Content-Style-Type" content="text/css">
 <style type="text/css"><!--
@@ -41,13 +48,29 @@ Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
 <hr>
 </div>
 
-<h3 class="section">3.4 External Actions</h3>
+<h3 class="section">2.4 External Actions</h3>
 
 <p>In this tutorial, we introduce input and output actions and the concept of binding using a simple producer-consumer problem. 
 We split the <code>count_to_ten_automaton</code> in previous tutorials into an automaton that produces numbers and another automaton that prints numbers. 
 The source is given below and can be found in <samp><span class="file">tutorial/producer_consumer.cpp</span></samp>.
 
-<pre class="example"><pre class="verbatim">     #include &lt;ioa/ioa.hpp>
+<pre class="example"><pre class="verbatim">     /*
+        Copyright 2011 Justin R. Wilson
+     
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+     
+            http://www.apache.org/licenses/LICENSE-2.0
+     
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
+     */
+     
+     #include &lt;ioa/ioa.hpp>
      #include &lt;ioa/global_fifo_scheduler.hpp>
      
      #include &lt;iostream>
@@ -106,11 +129,11 @@ The source is given below and can be found in <samp><span class="file">tutorial/
        producer_consumer_automaton () {
          ioa::automaton_manager&lt;producer_automaton>* producer =
            ioa::make_automaton_manager (this,
-     	  ioa::make_generator&lt;producer_automaton> ());
+     	  ioa::make_allocator&lt;producer_automaton> ());
      
          ioa::automaton_manager&lt;consumer_automaton>* consumer =
            ioa::make_automaton_manager (this,
-               ioa::make_generator&lt;consumer_automaton> ());
+               ioa::make_allocator&lt;consumer_automaton> ());
      
          ioa::make_binding_manager (this,
      			       producer, &amp;producer_automaton::produce,
@@ -121,7 +144,7 @@ The source is given below and can be found in <samp><span class="file">tutorial/
      
      int main () {
        ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;producer_consumer_automaton> ());
+       ioa::run (sched, ioa::make_allocator&lt;producer_consumer_automaton> ());
        return 0; 
      }
      
@@ -186,9 +209,9 @@ As an exercise, comment out the <code>consume_schedule</code> function and recom
 This version of <code>ioa::make_binding_manager</code> takes a pointer to an <code>ioa::automaton</code> (see <a href="Creating-Automata.html#Creating-Automata">Creating Automata</a>), a pointer to an <code>ioa::automaton_handle_interface</code> for the output automaton, a pointer to a member for the output action, a pointer to an <code>ioa::automaton_handle_interface</code> for the input automaton, and a pointer to a member for the input action. 
 The <code>ioa::automaton_handle_interface</code> is unimportant save to say that <code>ioa::automaton_manager</code> implements <code>ioa::automaton_handle_interface</code>. 
 The <code>ioa;:make_binding_manager</code> function creates a new <code>ioa::binding_manager</code> that binds the output and input actions once the output and input automata have been created. 
-Note that like automata creation, binding is asynchronous in IOA++.
+Note that like automata creation, binding is asynchronous in ioa++.
 
-<h4 class="subsection">3.4.1 Binding Rules</h4>
+<h4 class="subsection">2.4.1 Binding Rules</h4>
 
 <p>There are a number of rules that must be observed when binding. 
 The first set of rules are checked at compile time.
@@ -213,7 +236,7 @@ Recall that automata are composed by matching the names of output and input acti
 One could imagine a function that rewrites the names of all actions before composing. 
 These rules say that such a function exists.
 
-<h4 class="subsection">3.4.2 Binding Dynamics</h4>
+<h4 class="subsection">2.4.2 Binding Dynamics</h4>
 
 <p>When I execute <code>producer_consumer</code>, I get the following output:
 <pre class="example"><pre class="verbatim">     $ ./producer_consumer 

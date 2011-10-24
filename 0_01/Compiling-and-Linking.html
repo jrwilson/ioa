@@ -1,21 +1,29 @@
 <html lang="en">
 <head>
-<title>Compiling and Linking - IOA++</title>
+<title>Compiling and Linking - ioa++</title>
 <meta http-equiv="Content-Type" content="text/html">
-<meta name="description" content="IOA++">
+<meta name="description" content="ioa++">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
 <link rel="up" href="Examples.html#Examples" title="Examples">
+<link rel="prev" href="Examples.html#Examples" title="Examples">
 <link rel="next" href="Internal-Actions.html#Internal-Actions" title="Internal Actions">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
+This manual is for ioa++, version 0.01.
+
 Copyright (C) 2011 Justin R. Wilson.
 
-     This work is licensed under the Creative Commons
-     Attribution-NoDerivs 3.0 Unported License. To view a copy of this
-     license, visit http://creativecommons.org/licenses/by-nd/3.0/ or
-     send a letter to Creative Commons, 444 Castro Street, Suite 900,
-     Mountain View, California, 94041, USA.
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+     http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an "AS
+     IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+     express or implied.  See the License for the specific language
+     governing permissions and limitations under the License.
    -->
 <meta http-equiv="Content-Style-Type" content="text/css">
 <style type="text/css"><!--
@@ -35,13 +43,14 @@ Copyright (C) 2011 Justin R. Wilson.
 <a name="Compiling-and-Linking"></a>
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="Internal-Actions.html#Internal-Actions">Internal Actions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Examples.html#Examples">Examples</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="Examples.html#Examples">Examples</a>
 <hr>
 </div>
 
-<h3 class="section">3.1 Compiling and Linking</h3>
+<h3 class="section">2.1 Compiling and Linking</h3>
 
-<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with IOA++. 
+<p>The purpose of this tutorial is to introduce the necessary machinery for compiling programs with ioa++. 
 The following program contains the null automaton&mdash;an automaton with no actions. 
 The source can be found in <samp><span class="file">tutorial/null_automaton.cpp</span></samp>.
 
@@ -54,7 +63,7 @@ The source can be found in <samp><span class="file">tutorial/null_automaton.cpp<
      
      int main () {
        ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
+       ioa::run (sched, ioa::make_allocator&lt;null_automaton> ());
        return 0;
      }
 </pre></pre>
@@ -72,20 +81,20 @@ The lines
 </pre>
 </pre>
    <p>declare a new automaton type called <code>null_automaton</code>. 
-All automata must inherit from <code>ioa::automaton</code>. 
-Also note that all IOA++ types and functions are in the <code>ioa</code> namespace. 
+All automata must inherit from <code>ioa::automaton</code> (see <a href="automaton.html#automaton">ioa::automaton</a>). 
+Also note that all ioa++ types and functions are in the <code>ioa</code> namespace. 
 The main function
 <pre class="example"><pre class="verbatim">     int main () {
        ioa::global_fifo_scheduler sched;
-       ioa::run (sched, ioa::make_generator&lt;null_automaton> ());
+       ioa::run (sched, ioa::make_allocator&lt;null_automaton> ());
        return 0;
      }
 </pre>
 </pre>
-   <p>declares a new scheduler <code>sched</code> and starts the scheduler with a new root automaton of type <code>null_automaton</code>. 
-The <code>run</code> function takes two arguments: a scheduler and a generator. 
-A generator is a <dfn>promise</dfn> or an object that can later be invoked to produce a value. 
-In this case, the value of the generator is a dynamically created instance of <code>null_automaton</code>.
+   <p>declares a new scheduler <code>sched</code> of type <code>ioa::global_fifo_scheduler</code> (see <a href="global_005ffifo_005fscheduler.html#global_005ffifo_005fscheduler">ioa::global_fifo_scheduler</a>) and starts the scheduler with a new root automaton of type <code>null_automaton</code>. 
+The <code>ioa::run</code> function takes two arguments: a scheduler and an allocator (see <a href="run.html#run">ioa::run</a>). 
+An allocator is an object that can later be invoked to produce a dynamically allocated object (see <a href="make_005fallocator.html#make_005fallocator">ioa::make_allocator</a>). 
+In this case, the allocator returns a dynamically created instance of <code>null_automaton</code>.
 
    <p>Assuming that a copy of <samp><span class="file">null_automaton.cpp</span></samp> exists in the current directory and that <samp><span class="command">g++</span></samp> is your C++ compiler, one can compile and run the null automaton with
 <pre class="example"><pre class="verbatim">     $ g++ null_automaton.cpp -o null_automaton -lioa -lpthread
