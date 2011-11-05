@@ -294,7 +294,7 @@ In general, an automaton will have the following structure:
 
 @item Private member functions --- Declare/define useful functions.
 
-@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, an effect, a scheduling function, and a member variable.  Input actions consist of an effect, a scheduling function, and a member variable.
+@item Actions --- Declare/define the actions of the automaton.  Local actions consist of a precondition, an effect, and a scheduling function.  Input actions consist of an effect and a scheduling function.
 
 @end itemize
 
@@ -309,7 +309,7 @@ private:
 In this case, the state of the automaton consists of a single integer @code{m_count}.
 State variables should always be declared @code{private}.
 
-The constructor initializes the count to 1 and calls the @code{increment_schedule} member function to tell the scheduler to select the @code{increment} action:
+The constructor initializes the count to 1 and calls the @code{increment_schedule} member function which is described below:
 @example
 @verbatim
 public:
@@ -342,14 +342,15 @@ The next section defines the precondition, effect, and scheduling function for a
 Following the style in @cite{Distributed Algorithms}, internal actions are divided into a @dfn{precondition} and @dfn{effect}.
 The precondition returns a @code{bool} indicating if the action can be executed.
 In this example, the precondition returns true so long as the count is less than or equal to ten.
-The pattern for declaring the precondition for an unparameterized internal actions is @code{bool @var{action-name}_precondition () const;}.
+The pattern for declaring the precondition for an unparameterized internal actions is @code{bool @var{action-name}_precondition () const}.
 Note that preconditions have the @code{const} modifier as they should not change the state of the automaton.
 The effect changes the state of the automaton.
 In this example, the effect prints the current value of the count and increments the count.
-The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ();}.
+The pattern for declaring the effect of an unparameterized internal action is @code{void @var{action-name}_effect ()}.
 The scheduling function is called after the effect and it used to tell the scheduler about actions that should be selected.
+SCHEDULE @pxref{schedule, ioa::schedule, ioa::schedule}
 In this example, the @code{increment} action is scheduled if its precondition is true.
-The pattern for declaring a scheduling fuctions is @code{void @var{action-name}_schedule () const;}.
+The pattern for declaring a scheduling fuctions is @code{void @var{action-name}_schedule () const}.
 Preconditions, effects, and scheduling functions should always be declared @code{private}.
 
 The final part of declaring/defining an unparameterized internal action is to declare a member variable representing the action that dispatches to the precondition, effect, and scheduling function and also contains appropriate typedefs for the scheduler.
@@ -373,29 +374,32 @@ To declare an automaton:
 @end example
 To declare a precondition for an unparameterized internal action:
 @example
-@code{bool @var{action-name}_precondition () const;}
+@code{bool @var{action-name}_precondition () const}
 @end example
 To declare a effect for an unparameterized internal action:
 @example
-@code{void @var{action-name}_effect ();}
+@code{void @var{action-name}_effect ()}
 @end example
 To declare a scheduling function:
 @example
-@code{void @var{action-name}_schedule () const;}
+@code{void @var{action-name}_schedule () const}
 @end example
 To declare an unparameterized internal action:
 @example
-@code{UP_INTERNAL (@var{automaton-name}, @var{action-name});}
+@code{UP_INTERNAL (@var{automaton-name}, @var{action-name})}
 @end example
 To schedule an unparameterized local action:
 @example
-@code{ioa::schedule (&@var{automaton-name}::@var{action-name});}
+@code{ioa::schedule (&@var{automaton-name}::@var{action-name})}
 @end example
 
 @strong{Programming Tip:}
 Forgetting to schedule is common source of problems when programming with ioa++.
 Remember to call @code{ioa::schedule} for all enabled local actions in the constructor and scheduling functions (or effects).
 As an exercise, experiment with commenting out the call to @code{increment_schedule} in the constructor and the call to @code{ioa::schedule} in @code{increment_schedule}.
+
+
+HALTING
 
 @node Creating Automata, External Actions, Internal Actions, Examples
 @section Creating Automata
@@ -737,6 +741,10 @@ A set of helper functions for allocating allocators.
 This set of functions takes advantage of the automatic type deduction rules of C++ to avoid repeating type information.
 From @file{<ioa/allocator.hpp>}.
 @end deftypefun
+
+@anchor{schedule}
+
+@anchor{UP_INTERNAL}
 
 @itemize
 @item ioa::schedule
