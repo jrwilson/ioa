@@ -243,7 +243,7 @@ Each user automaton is thus composed (not bound) with the system automaton and i
 
 We note that system action requests may fail for a variety of reasons.
 A create fails if the automaton that should be added to the set of automata, i.e., the automaton being created, already exists.
-A bind fails if the automaton associated with the output action or the automaton associated with the input action doesn't exist, or if any of the binding rules outlined in Section~\ref{component_structure} would be violated.
+A bind fails if the automaton associated with the output action or the automaton associated with the input action does not exist, or if any of the binding rules outlined in Section~\ref{component_structure} would be violated.
 An unbind fails if the binding does not exist.
 Note that the owner of the binding is taken into account when determining whether the binding exists, such that only the owner of a binding can dissolve it.
 A destroy fails if the automaton being destroyed does not exist or is not a child of the automaton requesting the destroy action.
@@ -262,7 +262,7 @@ A destroy fails if the automaton being destroyed does not exist or is not a chil
 
 % I didn't do more complex transactions, i.e., create-and-bind, because its not clear how it fails.
 % Are partial successes allowed?
-% Furthermore, such  transactions can be arbitrarily complex which doesn't bode well for efficiency.
+% Furthermore, such  transactions can be arbitrarily complex which does not bode well for efficiency.
 
 \paragraph*{Binding predicates}
 The static configuration of a system as prescribed by the I/O automata model guarantees that the set of implied automata for an action is always the same.

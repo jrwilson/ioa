@@ -186,7 +186,7 @@ Automaton designers should strive to write automata that are capable of being re
 The non-deterministic and asynchronous nature of system actions complicates replacing an automaton.
 To replace a child automaton, the parent automaton must destroy the child (thus dissolving all bindings with the child), create a new child, and bind to the new child.
 Recall that system actions are asynchronous and can be executed in any order.
-Thus, the user might might request the actions in one order, e.g., destroy, create, bind, but the system may execute them in a different order, e.g., create, bind, destroy.
+Thus, the user might request the actions in one order, e.g., destroy, create, bind, but the system may execute them in a different order, e.g., create, bind, destroy.
 If the sequence executed by the system automaton is (create, bind, destroy) then the bind will fail because the user automaton's actions are still bound to the old child.
 Note that executing the bind action before the create will also fail but this case is prevented by the ioa::binding\_manager class.
 Thus, a user automaton must receive notification that the first child has been destroyed before (creating and) binding to the second child.

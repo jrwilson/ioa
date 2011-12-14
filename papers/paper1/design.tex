@@ -136,7 +136,7 @@ Once the system automaton sends the response, the subject transitions to the Cre
 When the user automaton requests that the child automaton be destroyed, the subject is either (1) added to the DestroySend state if the subject is in CreateRecv or CreateDone or (2) removed from all states if the subject is in CreateSend.
 A subject appearing in both CreateDone and DestroySend transitions to the DestroyRecv state when the automaton makes the request to destroy it.
 The system automaton can process system actions in any order.
-This protocol ensures that an automaton doesn't request that a child automaton be destroyed until it receives confirmation that it was created.
+This protocol ensures that an automaton does not request that a child automaton be destroyed until it receives confirmation that it was created.
 The subject is forgotten when the system automaton responds with the result of the destroy action.
 
 The protocol for binding is similar but addresses the possibility that a binding can be dissolved at any point due to the asynchronous destruction of automata.
