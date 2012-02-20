@@ -1,17 +1,28 @@
 \begin{abstract}
-The ability to realize sophisticated distributed systems such as those found in cyber-physical, pervasive, or enterprise computing environments is predicated on a suitable model and implementation of asynchrony and concurrency.
+The ability to realize sophisticated distributed reactive systems such as those found in cyber-physical, pervasive, or enterprise computing environments is predicated on a suitable model and implementation of asynchrony and concurrency.
 The size and complexity of these systems implies that software re-use in their development, maintenance, and evolution is also essential.
 Taken together, these requirements demand appropriate programming abstractions through which different forms of asynchrony and concurrency can be realized directly in reusable software.
-% By ``different forms'' we mean single-threaded, multi-threaded, time triggered, event triggered, etc.
 
-To that end, this paper presents the \emph{ioa++ framework} for developing distributed systems, which is the primary contribution of this research.
-We develop a component model for asynchronous and concurrent systems based on I/O automata and dynamic composition.
-We describe the design and implementation of the component model in ioa++ and show how it can be used to develop protocols and other forms of distributed software.
-
-Our experiences demonstrate that ioa++ can help simplify developing distributed systems, by supporting reasoning about asynchronous and concurrent programs directly from source code using the I/O automata formal model.
-Common concurrency and interaction semantics allow simple modules to be aggregated into complex systems without building adapters that convert from one concurrency model to another.
-% I've just commented this out instead of trying to weave it in elsewhere, especially since I think it is already somewhat implied by the threads discussion in the intro - Chris
-%Whereas reasoning about the correctness of modules in a threaded program requires considering interactions among the various threads, reasoning about the correctness of modules in ioa++ is limited to the modules themselves and a well-defined set of composition rules.
-
-We evaluate concurrency performance in ioa++ through a series of micro-benchmarks which confirm that the framework's ability to exploit potentially concurrent execution is limited only by the interactions of the automata that comprise the system and the overhead of synchronization.
+To that end, this paper presents the ioa++ framework for developing distributed reactive systems, which is the primary contribution of this research.
+We develop a component model in which the asynchrony and concurrency of reactive distributed systems can be represented naturally based on I/O automata and dynamic composition.
+We describe the design and implementation of that component model in ioa++ and illustrate its use in developing a prototype distributed coordination protocol.
+We also evaluate concurrency performance in ioa++ through a series of micro-benchmarks which confirm that the framework’s ability to exploit potentially concurrent execution is limited only by the interactions of the automata that comprise the system and the overhead of synchronization.
 \end{abstract}
+
+%% \begin{abstract}
+%% The ability to realize sophisticated distributed systems such as those found in cyber-physical, pervasive, or enterprise computing environments is predicated on a suitable model and implementation of asynchrony and concurrency.
+%% The size and complexity of these systems implies that software re-use in their development, maintenance, and evolution is also essential.
+%% Taken together, these requirements demand appropriate programming abstractions through which different forms of asynchrony and concurrency can be realized directly in reusable software.
+%% % By ``different forms'' we mean single-threaded, multi-threaded, time triggered, event triggered, etc.
+
+%% To that end, this paper presents the \emph{ioa++ framework} for developing distributed systems, which is the primary contribution of this research.
+%% We develop a component model for asynchronous and concurrent systems based on I/O automata and dynamic composition.
+%% We describe the design and implementation of the component model in ioa++ and show how it can be used to develop protocols and other forms of distributed software.
+
+%% Our experiences demonstrate that ioa++ can help simplify developing distributed systems, by supporting reasoning about asynchronous and concurrent programs directly from source code using the I/O automata formal model.
+%% Common concurrency and interaction semantics allow simple modules to be aggregated into complex systems without building adapters that convert from one concurrency model to another.
+%% % I've just commented this out instead of trying to weave it in elsewhere, especially since I think it is already somewhat implied by the threads discussion in the intro - Chris
+%% %Whereas reasoning about the correctness of modules in a threaded program requires considering interactions among the various threads, reasoning about the correctness of modules in ioa++ is limited to the modules themselves and a well-defined set of composition rules.
+
+%% We evaluate concurrency performance in ioa++ through a series of micro-benchmarks which confirm that the framework's ability to exploit potentially concurrent execution is limited only by the interactions of the automata that comprise the system and the overhead of synchronization.
+%% \end{abstract}
