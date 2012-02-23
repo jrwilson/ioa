@@ -1,0 +1,60 @@
+\documentclass{llncs}
+
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{amsmath}
+
+\lstset{language=C++, basicstyle=\footnotesize}
+
+\newif\ifjournal
+\journalfalse
+
+\begin{document}
+
+\title{Implementing Reactive Systems Directly\\with I/O Automata in ioa++}
+\author{Justin R. Wilson\inst{1} \and Christopher D. Gill\inst{1} \and Gruia-Catalin Roman\inst{2}}
+
+\institute{
+  Department of Computer Science and Engineering\\
+  Washington University in St. Louis\\
+  Campus Box 1045\\
+  One Brookings Drive\\
+  St. Louis, MO 63130\\
+  \{wilsonj,cdgill\}@cse.wustl.edu
+\and
+  School of Engineering\\
+  University of New Mexico\\
+  Centennial Engineering Center, Suite 3071\\
+  1 University of New Mexico, MSC01 1140\\
+  Albuquerque, NM 87131-0001\\
+  gcroman@unm.edu
+}
+
+\maketitle
+
+\input{abstract}
+
+\keywords{concurrency, I/O automata, components}
+
+\input{introduction}
+
+\input{component_model}
+
+\input{design}
+
+\input{programming_model}
+
+\input{case_study}
+
+\input{evaluation}
+
+\input{related_work}
+
+\input{conclusion}
+
+\bibliographystyle{splncs03}
+\bibliography{bibliography}{}
+
+\end{document}
