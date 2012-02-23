@@ -1,0 +1,303 @@
+\section{Introduction\label{introduction}}
+
+Advances in platforms and networks are paving the way for distributed reactive systems of unprecedented sophistication.
+Cyber-physical systems go beyond the traditional embedded system paradigm by explicitly integrating the dynamics of the physical system in the computational task.
+Pervasive computing environments are emerging in our homes, offices, and hospitals as more and more devices are equipped with wireless network interfaces.
+Enterprise computing systems continue to grow in size, complexity, and diversity as businesses look for new ways to utilize their computing infrastructure to support client interactions and internal business processes.
+The interactions these systems have with the physical environment, communities of users, and each other, require a degree of interoperability, configurability, adaptability, scalability, robustness, and security not readily supported by current system development approaches.
+
+In particular, the activities performed by such reactive distributed systems are intrinsically concurrent and asynchronous.
+Nodes sense and manipulate the environment and interact with other nodes by sending and receiving messages.
+Often, the program running on a node will straddle multiple logically independent systems and participate in a number of protocols.
+To produce more sophisticated systems with current levels of effort, we require the ability to construct programs by integrating a number of system-specific modules where each module itself is concurrent and asynchronous.
+Consequently, the ease with which asynchronous and concurrent modules can be \emph{developed} and \emph{reused} is important for the development of distributed systems.
+Modularity, well-defined interfaces, and composition are also crucial for these systems, to facilitate reasoning about the interactions among system components and to allow a group of interacting components to be understood as a cohesive unit.
+
+\paragraph*{Limitations of the state of the art.}
+While a number of component frameworks for distributed systems have been developed, each such framework is implemented using threads, event loops, or a combination of both.
+We limit our scope to imperative frameworks but note that functional approaches are also gaining popularity~\cite{armstrong1996concurrent},~\cite{halloway2009programming}.
+Although threads offer a seemingly straightforward extension of the synchronous sequential processing model (supported by modern processors, programming languages, and operating systems),
+the difficulties of using threads in practice (e.g., using locks to control access to shared state) are well known~\cite{lee2006problem},~\cite{sutter2005free}.
+Locks also complicate composition, since the locking strategy of each component must be taken into account when integrating them.
+For example, a component that doesn't acquire locks in the same order as others may cause deadlock~\cite{havender1968avoiding}.
+
+An event loop executes handlers in response to external (I/O) and internal events and has been proposed as a simpler alternative to threads~\cite{ousterhout1996threads}.
+Event loops also match the reactive and asynchronous nature of distributed systems more closely.
+One challenge when using event loops, however, is the lack of common semantics for how events are generated, distributed, and consumed; thus complicating composition.
+Consider for example the problem of providing a graphical user interface using Java Swing~\cite{eckstein1998java} atop a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
+One solution is either to convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
+Another alternative is to run both event loops in separate threads and thus face the challenges of multi-threading.
+% Similarly, performance requirements might dictate true concurrent execution using multiple threads in an event system.
+%% True concurrent execution in an event system is important given the leveling of clock frequencies and the trend toward multi-core processors.
+\emph{A key challenge, then, is to provide a component framework for programming asynchronous and concurrent systems that avoids the complications of thread-based development while providing common event semantics and opportunities to exploit concurrent execution.}
+
+\paragraph*{Contributions of this work.}
+To address this challenge we present the ioa++ framework for building distributed reactive systems, which is based on the I/O automata formal model. 
+This paper makes three main contributions to the state of the art:
+(1)  a model for \emph{dynamic} systems of I/O automata which is necessary for implementing (as opposed to only modeling) many distributed systems,
+(2)  a C++ implementation of the model that allows one to build real systems using the facilities provided by POSIX environments, and
+(3)  a preliminary investigation into the degree of \emph{exploitable concurrency} in a system as a function of the automata interactions and framework overhead.
+The ioa++ framework is freely available at \url{http://jrwilson.github.com/ioa/}.
+
+%\paragraph*{Paper structure}
+In Section~\ref{component_model}, we motivate I/O automata as a suitable foundation for components and introduce a model for dynamic systems.
+Section~\ref{design} describes the design and implementation of the ioa++ framework and Section~\ref{programming_model} describes how component automata are programmed within it.
+In Section~\ref{case_study}, we show how ioa++ can be used to build a simple but representative example of distributed software by implementing a leader election protocol for a ring of processes connected by TCP sockets.
+We evaluate the ability of ioa++ to exploit potential concurrency with a series of micro-benchmarks in Section~\ref{evaluation}.
+Section~\ref{related_work} summarizes related work and we offer conclusions in Section~\ref{conclusion}.
+
+%% The component model behind our framework is based on our objectives for aysnchrony and concurrency tempered with a number practical considerations.
+%% (1) Internally, components are imperative instead of functional.
+%% A component is a set of state variables that are manipulated by assignment statements.
+%% This matches existing machine architectures and popular languages such as C, C++, and Java.
+%% (2) Components communicate with messages instead of reading and writing shared variables.
+%% We observe that the auxiliary variables necessary to access shared variables correctly add unnecessary complexity.
+%% Furthermore, the distributed systems we are targeting are based on message passing instead of shared memory and a component based on message passing can be integrated without an impedance mismatch.
+%% (3) The state of one component is independent from another and components are structured as a set of atomic actions or events.
+%% This obviates the need for primitive locks which are tedious and error-prone.
+%% Events match the asynchronous and reactive nature of the targeted distributed systems.
+%% (4) The concurrent execution of \emph{some} actions in different components should be possible.
+%% Concurrent execution on multiple processor cores is the only foreseeable way to achieve increased levels of performance given the leveling of clock frequencies and the advent of multi-core technologies.
+%% The atomicity of each action prohibits the concurrent execution of two actions in the same component while the independent state of each component implies that actions in different components can be executed concurrently.
+%% We entertain the idea that some actions might not be capable of executing concurrently due to composition.
+%% (5) Components can be configured to communicate with each other.
+%% It must be possible for component $C$ to direct an output of component $O$ to an input in component $I$.
+%% We call such a relationship a \emph{binding}.
+%% %% This is analogous to connecting the pin of one electrical component to another with a wire.
+%% Factoring the interaction into an output, a binding, and an input is important because it encourages modular designs with configurable communication.
+%% (6) Communication among components will be unbuffered.
+%% Unbuffered communication seems more fundamental as buffered communication can be implemented in terms of unbuffered communication but not vice versa.
+%% Unbuffered communication and atomic actions imply that an output action in one component executes atomically with a bound input in another component.
+%% This allows the state of communicating components to be correlated and facilitates composition.
+%% (7) 
+
+%% dynamics
+%% backed by a formal model
+
+%% The two main approaches to developing concurrent modules are threads and event handling.
+%% Threads offer a seemingly straightforward extension of the synchronous sequential processing model supported by modern processors, programming languages, and operating systems.
+%% Applications using threads are often structured for functional modularity, e.g., using the object-oriented paradigm where separate modules use one another to accomplish a computational task and locks are used to control concurrent access to each module.
+%% The thread approach is typified by the synchronization, e.g., Strategized Locking, and concurrency patterns, e.g., Active Object, of~\cite{schmidt2000pattern}.
+
+%% Developing concurrent modules with threads is difficult and the very nature of threads complicates composition.
+%% The majority of threaded systems are developed with locks which is considered hazardous by industry~\cite{sutter2005free}.
+%% In a position paper, Lee identifies that the difficulties encountered when using threads arise from the pairing of shared state and non-determinism~\cite{lee2006problem}.
+%% Automated program analysis and verification techniques are often required to find and correct bugs in threaded programs.
+%% One way to avoid deadlock when using multiple shared resources is for the threads to acquire the locks in order~\cite{havender1968avoiding}.
+%% However, doing so would break encapsulation because of the need to know the recursive locking requirements for any used module.
+%% The difficulty of identifying and evaluating the behavior and requirements of concurrent modules thus may inhibit the construction of truly reusable concurrent modules.
+
+%% The event handling approach is typified by software engineering patterns like Reactor~\cite{schmidt2000pattern}, and Proactor~\cite{schmidt2000pattern}.
+%% Event handling is based on a loop containing a call to an event multiplexer, e.g., an event loop, that dispatches registered event handlers.
+%% Computation is structured as a set of event handlers that are invoked for the corresponding event.
+%% Event handling is often a simpler alternative to threads, especially when true concurrent execution is not required~\cite{ousterhout1996threads}.
+
+%% The event handling approach suffers from a problem that prevents composition that can summarized by the question:  ``Who has the event loop?''
+%% To illustrate this issue consider the problem of providing a graphical user interface using Java Swing for a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
+%% One solution involves running both event loops in independent threads and thus facing all of the challenges associated with multiple threads discussed previously.
+%% The alternative is to either convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
+%% Composing two event systems thus requires a common definition of events and agreement upon how events are generated, distributed, and consumed, which is not often the case.
+
+%% If we step back
+
+
+
+%% Implementation matters.
+%% You can't build a skyscrapper with toothpicks.
+
+%% How are systems implemented in practice:
+%% threads ->
+%% event loops ->
+%% actors ->
+
+%% If we want a new ``brick'', what should it look like?
+%% - Should resemble a formal model.  This helps even if we don't write proofs.
+%% - The right level of abstraction.  Not two high, not too low.  Sometime we need to get down and dirty.
+%% - Composition (fractal nature)
+%% - Components
+%% - Should resemble what we believe to be fundamental.
+
+%% Formal models and their ability to produce new ``bricks'':
+
+
+
+
+
+
+%% Advances in platforms and networks are paving the way for distributed systems of unprecedented sophistication.
+%% Cyber-physical systems go beyond the traditional embedded system paradigm by explicitly integrating the dynamics of the physical system and communication network in the computational task.
+%% Pervasive computing environments are emerging in our homes, offices, and hospitals as more and more electronic devices are equipped with wireless network interfaces.
+%% Enterprise computing systems continue to grow in size, complexity, and diversity as businesses look for new ways to utilize their computing infrastructure to support client interactions and internal business processes.
+%% The interactions these systems have with the physical environment, its community of users, and each other, require a degree of interoperability, configurability, adaptability, scalability, robustness, and security not readily supported by current system development approaches.
+
+%% The activities performed by the nodes in the distributed systems we desire to build are intrinsically concurrent and asynchronous.
+%% Nodes may continuously sense and manipulate the environment, perform background processing, and interact with other nodes by sending and receiving messages.
+%% Often, the program running on a node will straddle multiple logically independent systems and participate in a number of protocols.
+%% To achieve increasing degrees of sophistication with current levels of effort, we require the ability to construct programs by integrating a number of protocol-specific modules where each module itself is concurrent and asynchronous.
+
+%% %% However, existing techniques for developing concurrent and asynchronous software modules do not match the semantics of distributed systems and fail to provide the degree of reusability necessary for developing sophisticated distributed systems.
+%% %% The three techniques that are commonly used in practice are threads, communicating sequential processes, and events.
+
+%% %% Distributed systems are built using threads by assembling a constellation of reusable thread-safe objects.
+%% %% However, developing even simple thread-safe objects is difficult due to the pairing of shared state with the arbitrary interleaving of machine instructions~\cite{lee2006problem}.
+%% %% Furthermore, the use of locks to control access to shared state complicates re-use as the locking requirements of each used module must be recursively understood to prevent currency hazards.
+%% %% The inability to communicate and cope with arbitrary locking requirements and the general difficulty associated with developing thread-safe modules implies that threads are an inappropriate abstraction for building sophisticated distributed systems.
+
+%% %% Distributed systems are built using communicating sequential processes by decomposing the problem into pieces of independent state manipulated by a sequential process and then configuring the processes to communicate using channels\footnote{For this discussion, we assume that processes that communicate using multiple channels have at least two rendezvous points to distinguish communicating sequential processes from events.}.
+%% %% The sequential nature of communicating sequential processes forces a deterministic and synchronous interpretation of inherently non-deterministic and asynchronous problems.
+%% %% For example, the arrival of a sensor reading in relation to network messages is often irrelevant but the developer is forced to choose an order for these activities.
+%% %% Artificially ordering communication can introduce concurrency hazards when communicating sequential processes are assembled to form complex systems, e.g., a deadlocking system might reduce to process A expecting to read channel 1 and then 2 while process B expects to write channel 2 and then channel 1 when the nature of problem makes the order in which the channels are read irrelevant.
+
+%% % Core Issues
+%% %% One of the forces that complicates the development of any kind of sophisticated software system is accidental complexity~\cite{brooks1987no}.
+%% %% Accidental complexity stems from a mismatch between the semantics of the conceptual model and semantics of the implementation method introduces errors and slows development as developers are constantly switching from one set of semantics to the other.
+%% %% While there is no ``silver bullet''~\cite{brooks1987no}, reducing accidental complexity increases productivity and makes new levels of sophistication possible with existing levels of effort.
+
+%% %% In the context of distributed systems, a major source of accidental complexity is the mismatch between the asynchronous semantics of distributed systems and the synchronous techniques used to implement them.
+%% \paragraph*{Limitations of thread models}
+%% Threads are the \emph{de facto} standard concurrency mechanism for many distributed systems.
+%% Threads offer a seemingly straightforward extension of the synchronous sequential processing model supported by modern processors, programming languages, and operating systems.
+%% While the widespread availability of thread libraries makes them a natural choice for system development, using threads to develop distributed systems has significant drawbacks.
+
+%% % Illustrate the problem
+%% First, developing concurrent programs with threads is difficult.
+%% Lee identifies the source of this difficulty as the pairing of shared state with the non-deterministic interleaving of machine instructions~\cite{lee2006problem}.
+%% The properties that make the synchronous sequential model of computation useful for developing programs, i.e., ``understandability, predictability, and determinism''~\cite{lee2006problem}, are lost with the immediate introduction of non-determinism.
+%% After introducing non-deterministic execution with threads, programmers must ``prune''~\cite{lee2006problem} the portions of the resulting reachable state space to remove execution sequences that result in bad states.
+%% Identifying all possible paths to bad states is sufficiently challenging that automated program analsysis and verification techniques are often required to find and correct such errors.
+
+%% %% [Additional fodder.]
+%% %% First, threads are difficult to treat formally and therefore \emph{very} difficult to treat informally.
+%% %% The correctness of programs is reasoned about either formally as part of formal software design and verification and/or informally during the debugging process.
+%% %% Since most programs will never be formally verified, the correctness of most programs hinges solely on the developers ability to reason about the program.
+%% %% Based on the historical example of structured programming~\cite{goto_considered_harmful}, there is a strong correlation between what is ``easy'' in the formal arena and what is ``easy'' in the informal arena, especially when the implementation mimics the formal model, e.g., structured programming languages.
+%% %% It is well known that a formal treatment of threads is difficult due to the arbitrary interleaving of critical sections and the ability to define critical sections of arbitrary scope~\cite{lee_threads}.
+%% %% Thus, the correctness of most multi-threaded programs hinges on the developer's ability to explore arbitrary interleavings of critical sections, i.e., model checking, in their head.
+
+%% Second, the lack of a common standard calculus for controlling access to shared state variables inhibits the development of reusable software modules.
+%% Applications using threads are often structured for functional modularity, e.g., using the object-oriented paradigm where separate modules use one another to accomplish a computational task and locks are used to control concurrent access to each module.
+%% One way to avoid deadlock when using multiple shared resources is for the threads to acquire the locks in order~\cite{havender1968avoiding}.
+%% However, doing so would break encapsulation because of the need to know the recursive locking requirements for any used module.
+%% The difficulty of identifying and evaluating the behavior and requirements of concurrent modules thus may inhibit the construction of truly reusable concurrent modules.
+
+%% %% [Additional fodder.]
+%% %% Second, the lack of a standard calculus for threads prevents developing reusable software modules.
+%% %% To illustrate this problem consider the challenge of developing an application with a graphical user interface that also uses a multi-threaded middleware library.
+%% %% Graphical user interfaces often use a single-threaded event-based design, e.g., X, Swing.
+%% %% The system integrator must write glue code that bridges the single-threaded event-based semantics to multi-threaded semantics.
+%% %% Bridging between two thread models is achievable, however, the systems we desire to build will rely on many libraries each with their own thread model.
+%% %% The importance of a unified approach to concurrency becomes apparent when one considers bridging between different threading models, e.g., event-based, reactor, proactor, active objects, and their attributes, e.g., thread creation, blocking vs. non-blocking I/O.
+
+%% %% The decision to use threads stems from a desire to support multiple concurrent activities.
+%% %% Threads are a good choice if the problem is embarrassingly parallel and necessary if one wishes to achieve true CPU concurrency, e.g., high performance computing.
+%% %% To support multiple concurrent activities without threads, the different tasks are encoded as event handlers.
+%% %% A single thread then waits for the events and dispatches the appropriate handler.
+%% %% The illusion of concurrency, then, is accomplished by interleaving event handlers for different tasks.
+
+%% \paragraph*{Limitations of event models}
+%% Events~\cite{lamport1978time}, \cite{manna1992temporal} are a good choice for developing distributed systems due to their reactive semantics and support for asynchrony.
+%% A node in a distributed system senses and actuates its environment and sends and receives messages to communicate with other nodes.
+%% The input activities, sensing and receiving, are naturally asynchronous, i.e., they can come from the environment at any time.
+%% The output activities, actuating and sending, in their most general form are also asynchronous as the environment might not be able to immediately consume data produced by a node.
+%% Distributed systems are often specified as reactive state transition systems which map cleanly into events; transitions are encoded as event handlers and conditions which trigger a transition are encoded as events.
+
+%% While events more closely match the semantics of distributed systems, the lack of a common standard calculus for events prevents the development of reusable software.
+%% To illustrate this issue consider the problem of providing a graphical user interface using Java Swing for a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
+%% One solution involves running both event loops in independent threads and thus facing all of the challenges associated with multiple threads discussed previously.
+%% The alternative is to either convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
+%% Composing two event systems thus requires a common definition of events and agreement upon how events are generated, distributed, and consumed, which is not often the case.
+%% % Continuous vs. halting. (search reactive systems, Amir Pnueli, Zohar Manna)
+
+%% \paragraph*{Motivation for I/O automata}
+%% It is thus clear that existing concurrency abstractions are inadequate to the needs of many sophisticated distributed systems and new approaches must be pursued.
+%% While threads match the semantics of widely available synchronous processors, thread-based development may introduce hazards for the distributed system developer including obscure race conditions, poor support for asynchrony, and difficulties integrating software developed using different thread models.
+%% Events, while matching the semantics of distributed systems more closely, are often inflexible, ad hoc, and lack a standard calculus to facilitate the creation of reusable event-based modules.
+%% Alternative concurrency abstractions that more closely match the semantics of distributed systems \emph{and} facilitate software re-use are therefore needed.
+%% % We aren't saying I/O automata are the best, just better than threads.
+
+%% % Can we give an example?
+%% %% Third, threads are ill-suited for the asynchronous semantics present in the systems we desire to build.
+%% %% The distributed systems we desire to build are asynchronous at both the device and network levels.
+%% %% Embedded devices must respond to asynchronous events in the environment.
+%% %% The interrupt-driven TinyOS operating system for wireless sensor network motes is an exemplar in this area.
+%% %% The fundamental communication primitive in real-world distributed systems is asynchronous message passing.
+%% %% Realizing asynchrony in a threaded program requires the use of signals (interrupts) and/or (a)synchronous I/O multiplexing.
+%% %% Signals are primitive, rigid, and difficult to use correctly.
+%% %% Synchronous I/O multiplexing, e.g., a select loop, is limited to operating system abstractions, e.g., file descriptors, and induces a reactive state machine structure that is difficult to understand and maintain.
+%% %% Asynchronous I/O improves efficiency by avoiding the dispatching necessary to determine the I/O operation but are subject to the same limitations of shared-state thread-based programming.
+
+%% % This starts to got a bit far afield from the core points you're making, and probably should be (1) moved to the related work section and (2) replaced with a brief transition (a sentence or 2) in part D which outlines the contributions of the work.
+%% %% Difficulties in developing asynchronous and concurrent software using threads has prompted a number of concurrent programming languages, e.g., Esterel, Erlang, Ptolemy, Autopipe, and language extensions, e.g., OpenMP, Cilk, Split-C.
+%% %% Solutions that involve creating a new language or extending an existing language suffer from two main problems.
+%% %% First, such solutions are often domain-specific and do not generalize to different applications, a necessity for heterogeneous distributed systems.
+%% %% Furthermore, solutions not connected to a general-purpose formal model lack the important property that the complete system including the environment can be modeled as another component.
+%% %% Second, such solutions often fail to become mainstream due to practical considerations.
+%% %% For example, the combination of C and pthreads is much more popular than Erlang due to the popularity of C-like languages and C's connection with UNIX operating system.
+%% %% Most language extensions are targeted at niche markets and therefore never standardized and implemented in mainstream compilers.
+
+%% The reactive semantics of the I/O automata model match the asynchronous and concurrent semantics of distributed systems well and have been proven effective in the formal design and verification of real world distributed systems.
+%% The I/O automata model prohibits shared state and thus avoids the problems stemming from it.
+%% Furthermore, its precise semantics for composition facilitate the creation of reusable event-based modules that may be executed with different degrees of concurrency as we demonstrate in our evaluation presented in Section~\ref{evaluation}.
+%% However, there is to date insufficient experience \emph{building} and \emph{evaluating} real distributed systems directly atop I/O automata.
+%% Previous efforts in this area have focused mainly on formal software development, i.e., automata are described in a language suitable for theorem proving and simulation and afterward are translated into a production language for deployment\footnote{TODO:  Add citations.}.
+%% The translation from modeling language to production language complicates interfacing with system facilities and makes developing low-level protocols difficult, an area which could greatly benefit from the direct application of I/O automata.
+%% % Before giving the paper structure, needs to say (1) what the main contributions of the paper are, and (2) how the help address the challenges raised earlier in the intro
+%% % Thus, in order to build sophisticated distributed systems, we require a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+
+%% \paragraph*{Paper structure and contributions}
+%% This paper presents ioa++, a framework for building asynchronous and concurrent systems that is based on the I/O automata formal model.
+%% %% The model must be general to support the wide variety of devices and protocols necessary for cyber-physical and pervasive computing systems.
+%% %% The model must facilitate the development of concurrent modules that can be reused.
+%% %% The model must have a strong connection with a formal model to simplify the task of reasoning about individual components and complete systems.
+%% %% The model must be implemented in such a way that it is easily approachable.
+%% We develop a component model based on I/O automata in Section~\ref{component_model} and describe its design and implementation in Section~\ref{design}.
+%% Section~\ref{representation} describes how I/O automata are represented in the ioa++ framework.
+%% In Section~\ref{case_study}, we use ioa++ to develop a leader election protocol for a ring of processes connected by TCP sockets.
+%% In Section~\ref{evaluation}, we evaluate concurrent execution in ioa++ with a series of micro-benchmarks.
+%% Section~\ref{related_work} summarizes related work and we offer conclusions and thoughts for future work in Section~\ref{conclusion}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.
+
+%%formal models, e.g., UNITY, I/O Automata,
+
+%% Devices are asynchronous and concurrent.
+%% Networks are asynchronous and concurrent.
+%% Why not start with a model that is asynchronous and concurrent?
+
+%% What inspires us:
+%% \begin{itemize}
+%%   \item CORBA - Remote Method Invocation (Remote Procedure Call with a ``this'' pointer).
+%%     ``Let's make synchronous function calls over a network.''
+%%     Assumes a thread of control.
+%%     Asynchronous calls were added later (Did these result in obfuscation?)
+
+%%   \item Patterns for asynchronous concurrency in a synchronous, thread-based world: Active objects, Reactor, Proactor, etc.
+%%     Examples: X server, OS2 Presentation Manager, Java Swing
+
+%%   \item AJAX - The modern Web is built on JavaScript + \emph{asynchronous} web page requests = AJAX.
+
+%%   \item Michi Henning - ICE
+
+%%   \item Steve Vinoski - Toolbox of programming languages
+
+%% \end{itemize}
+
+%% We provide a common semantics and model for building concurrent and asynchronous systems with straight-forward abstractions.

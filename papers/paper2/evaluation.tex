@@ -1,0 +1,77 @@
+\section{Evaluation\label{evaluation}}
+
+The ioa++ framework permits independent actions to be executed concurrently.
+The goal of this evaluation is to show that the degree of exploitable concurrency depends only on (1) the interactions of the I/O automata comprising a system, and (2) the overhead of the framework which this evaluation serves to quantify for our current implementation of ioa++.
+
+To evaluate concurrent execution, we examine a system whose actions can be configured to span the range from having no independent actions to having only independent actions.
+We measure the time required to execute a fixed number of actions using a scheduler with a configurable number of threads.
+We then calculate the speed-up by comparing an execution using one thread to an equivalent execution using two threads.
+We also vary the complexity of each action to gain insight into how overhead and synchronization affect concurrent execution.
+
+An automaton of type $R$ contains an input, output, and internal action.
+The output and internal action effects execute an algorithm whose complexity is proportional to the parameter $N$.
+The automaton executes a fixed number of local actions.
+The automaton schedules the internal action with probability $\sqrt{\rho}$ and schedules the output action otherwise.
+The system $S$ to be executed consists of two $R$ automata composed so the output action of one is composed with the input action of the other.
+If we divide the execution into rounds where each automaton executes a single action, the probability that both $R$ automata execute an internal action is $\sqrt{\rho} \times \sqrt{\rho} = \rho$.
+Thus, we can use the parameter $\rho$ to vary the independence of the automata.
+
+For this experiment, we used a simple multi-threaded scheduler that assigns each local action to a thread based on the automaton identifier of the local action using the techniques described in Section~\ref{scheduling}.
+When the scheduler is configured to use a single thread, all actions are executed by that same thread.
+When two threads are used, one thread executes the actions of one $R$ automaton while the other thread executes the actions of the other $R$ automaton.
+
+A trial consists of a choice for $\rho$, $N$, and the number of actions to be executed.
+For our experiments, the parameter $\rho$ was varied from $0.0$ to $1.0$ in increments of $0.1$ and the parameter $N$ was varied from $1$ to $1000000$ by factors of $10$.
+The number of actions executed by each automaton was fixed at 1000.
+Each trial was repeated 1000 times.
+All calculations were performed assuming a normal distribution at a confidence level of 95\%.
+
+\begin{figure}
+\center
+\includegraphics[width=.72\columnwidth]{speed_up}
+\caption{Speed-up for system $S$.\label{speed_up}}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=.72\columnwidth]{overhead1}
+\caption{Overhead for system $S$ when using one thread.\label{overhead1}}
+\end{figure}
+
+\begin{figure}
+\center
+\includegraphics[width=.72\columnwidth]{overhead2}
+\caption{Overhead for system $S$ when using two threads.\label{overhead2}}
+\end{figure}
+
+The driver for a single trial can be found in examples/random.cpp\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/random.cpp}} of the ioa++ package.
+The trials were performed on a Mac Pro running OS X 10.5.8 with two 2.66 GHz Dual-Core Intel Xeon processors with 2GB of memory.
+The code was compiled and linked with i686-apple-darwin9-g++-4.0.1 build 5493 with -O2 optimization and the -DPROFILE flag to enable profiling in ioa++.
+
+Figure~\ref{speed_up} shows the speed-up when system $S$ was executed with two threads versus one thread.
+Confidence intervals are shown but are negligible with the largest being a speed-up range of $\pm$0.0165.
+When $\rho = 0$, every action is a bound output action and therefore depends on both $R$ automata.
+Consequently, every action must be serialized yielding a maximum speed-up of 1.
+When $\rho = 1$, every action is an internal action and can be executed concurrently with a corresponding maximum speed-up of 2.
+
+The speed-up shows a strong dependence on the duration of each local action which is proportional to $N$.
+A small value for $N$ means that very little time is spent executing automaton code.
+Consequently, a greater fraction of time is spent executing framework code which includes various synchronization calls to the pthreads library.
+For a small enough $N$, this overhead dominates the execution time.
+This situation is exacerbated by multiple threads since they will actively interfere with one another which can be seen in the slow-down for small values of $N$.
+Conversely, when $N$ is large, relatively little time is spent executing framework and synchronization code.
+Consequently, contention is reduced allowing for greater speed-ups as indicated by Figure~\ref{speed_up}.
+
+Figures~\ref{overhead1} and \ref{overhead2} show the average per thread of the fraction of time devoted to framework code and synchronization calls for the single and multi-threaded executions; confidence intervals are again negligible with largest being $\pm$0.002155 for Figure~\ref{overhead1} and $\pm$0.001781 for Figure~\ref{overhead2}.
+Since the number of actions to be executed is constant, the single threaded execution shows a relatively consistent fraction for each value of $N$.
+The fraction decreases as $\rho$ goes from 0 to 1 because the system transitions from always acquiring two locks to always acquiring one lock.
+The multi-threaded execution shows that the fraction of time devoted to system overhead decreases as $\rho$ goes to 1 and is more pronounced when $N$ is large.
+For example, when $N=1000000$ one thread spends half of its time waiting on the other thread when $\rho = 0$ and spends very little time on synchronization when $\rho = 1$.
+
+This experiment indicates that although concurrent execution is possible with ioa++, a significant speed-up will only be achieved if (1) enough independent actions are enabled and (2) the durations of the independent actions are large relative to the overhead of ioa++.
+The overhead of ioa++ can be divided into three components corresponding to the time it takes to dispatch an action, the time required to synchronize using the pthreads library, and the time required to add an action to the scheduler via the ioa::schedule call.
+From the results, we calculated the average overhead per action of the ioa++ framework when dispatching an action and found it to be 4316ns $\pm$ 3.5ns for the single threaded experiments and 6067ns $\pm$ 3.6ns for the multi-threaded experiments.
+Similarly, we calculated the scheduling overhead and found it to be 247ns $\pm$ 0.678ns for the single threaded experiments and 307ns $\pm$ 0.357ns for the multi-threaded experiments.
+Both of these potentially can be improved with better scheduler design.
+The synchronization time depends on the interactions among the automata comprising the system, the scheduler, and the locking scheme used by the framework.
+We plan to optimize scheduling and synchronization performance in ioa++ as future work.

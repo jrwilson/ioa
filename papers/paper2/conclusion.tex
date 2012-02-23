@@ -1,0 +1,24 @@
+\section{Conclusions\label{conclusion}}
+
+I/O automata are a good basis for asynchronous and concurrent components due to their support for independent state, well-defined interfaces, and well-defined interactions under composition.
+The ioa++ framework facilitates concurrent execution via dynamic composition and the degree of concurrency is limited only by the interactions of the automata and the overhead of the framework.
+Two key challenges when moving from the formal model to an actual implementation were introducing features for managing dynamic constellations of automata and providing a concrete scheduling mechanism.
+We agree with~\cite{georgiou2009automated} that having a model that can be compiled is beneficial for reasoning about the program directly from the source code and helps to close the gap between the developer's mental model and the code listing.
+Our primary goal moving forward is to use the ioa++ framework to gain further experience building real systems with I/O automata, and to support optimization of its performance with respect to an increasingly diverse range of use cases.
+
+%% The ioa++ has no support for static composition.
+%% We hope to resolve this weakness in the future.
+%% A significant open problem in ioa++ is the design of an efficient dispatcher and scheduler(s).
+
+%% \begin{itemize}
+%%   \item We are going to use it to build the substrate.
+%%   \item Speculate on moving down into operating system (device drivers would be easy, IPC including filesystem replaced by automata)
+%%   \item Speculate on moving down into the hardware level (Local talent, Ivan Sutherland)
+%%   \item We can take advantage of multi-core in a very straight-forward way
+%%   \item New problems in scheduling (Pinning automata to processors to minimize actions that span two processors.  Maximum independent set.)
+%%   \item We are non-blocking all the way.  Combine this with a deterministic implementation of the scheduler and model and there are serious opportunities for real-time.
+%%   \item Static composition
+%%   \item Grandparents
+%%   \item We own the event loop
+%%   \item The procedure
+%% \end{itemize}
