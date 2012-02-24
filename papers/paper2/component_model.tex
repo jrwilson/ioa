@@ -10,8 +10,7 @@ In this section we describe how the I/O automata model offers a natural realizat
 %% We then describe extensions to support dynamic semantics as participants in the system may arrive and depart at run-time.
 We then describe extensions to support semantics for \emph{dynamic systems,} i.e., systems whose set of constituent automata changes over time.
 
-\subsection{Background: I/O Automata}
-
+\paragraph*{I/O automata.}
 The Input/Output (I/O) automata model was developed to model reactive concurrent and asynchronous systems~\cite{lynch1996distributed}.
 An I/O automaton consists of state variables and a set of atomic actions that manipulate the state variables.
 An action is only permitted to manipulate the state variables of the automaton to which it belongs.
@@ -32,8 +31,6 @@ I/O automata are \emph{composed} by (1)~concatenating the state variables of the
 Execution in the I/O automata model consists of non-deterministically and repeatedly selecting a local action (an output or internal action~\cite{lynch1996distributed}) and then if the precondition is true applying the effect.
 The scheduler is assumed to be \emph{fair,} meaning that a local action is guaranteed to be selected (but not necessarily executed) infinitely often.
 
-\subsection{Component Structure\label{component_structure}}
-
 \begin{figure*}
 \center
 \includegraphics[width=\textwidth]{system_model}
@@ -44,7 +41,7 @@ The scheduler is assumed to be \emph{fair,} meaning that a local action is guara
 \paragraph*{Motivation for I/O automata based components.}
 %The I/O automata formalism was developed to model reactive systems~\cite{lynch1987hierarchical} and has been used in the design and verification of concurrent and distributed systems.
 I/O automata are a good foundation for such components because they have independent state, straightforward interfaces, and precise semantics for event generation, distribution, and consumption resulting in well-defined interactions under composition.
-\emph{Hierarchical decomposition}, the modeling dual of recursive encapsulation, is an established technique for I/O automata~\cite{lynch1994atomic} which allows a \emph{parent} to contain zero or more \emph{children}.
+\emph{Hierarchical decomposition} is an established technique for I/O automata~\cite{lynch1994atomic} which allows a \emph{parent} to contain zero or more \emph{children}.
 The \emph{root automaton} is the automaton at the top of the hierarchy and represents the entire system as composition is applied recursively up the hierarchy.
 
 To illustrate how components can be expressed naturally using I/O automata, Figure~\ref{sys_model} shows a simple event detector system comprising three component automata: an anonymous Processor, a Converter named C, and a Detector named D. 
@@ -56,7 +53,7 @@ Output actions are suffixed with \emph{!} (e.g., \emph{detect!}), input actions 
 The type associated with the value produced or consumed by an action is in parentheses after the name (e.g., \emph{out!(s)}).
 
 \paragraph*{Explicit composition.}
-Composition in the I/O automata model is defined at the automaton level and is based on actions having the same name.
+Composition of I/O automata is based on actions having the same name.
 To prepare for dynamic composition, we redefine composition at the action level.
 An explicit association between an output action and input action is called a \emph{binding}.
 %% The automaton that prescribes a binding is said to \emph{own} the binding.
@@ -71,7 +68,6 @@ Graphically, an arrow originating in one component automaton must terminate in a
 %% To adhere to this rule, the following must be true for the global binding map $B$:  $\langle \forall o, i : (o, i) \in B :: \pi (o) \neq \pi (i) \rangle$.
 
 \paragraph*{Concurrent execution.}
-Recall that composing I/O automata consists of concatenating state variables and folding input actions into output actions and that the result of composition is a single equivalent automaton.
 Since the state of each automaton is independent, opportunities exist for concurrent execution if the state of each automaton is preserved and a composition is not reduced to a single equivalent automaton.
 Each local action implies a set of automata which in turn implies a set of state variables that might be modified.
 For an internal action, this set consists of the automaton containing the internal action.
@@ -142,8 +138,6 @@ Since the sets are disjoint, the two actions can be executed concurrently.
 %% As a mathematical abstraction the I/O automata model is appropriate for modeling reactive asynchronous and concurrent systems.
 %% However, it lacks certain features needed to develop real components.
 %% This subsection introduces these features and lays the foundation for adding the dynamics discussed in Section~\ref{dynamics}.
-
-\subsection{Dynamics\label{dynamics}}
 
 %% The I/O automata model assumes that systems are composed of a finite or countably infinite number of automata~\cite{lynch1996distributed}.
 %% Assuming a countably infinite number of participants allows properties of the systems to be stated in terms of an abstract quantity representing the number of members, e.g., $N$, and is reasonable because all real systems are composed of a finite number of members.

@@ -8,22 +8,17 @@ The interactions these systems have with the physical environment, communities o
 
 In particular, the activities performed by such reactive distributed systems are intrinsically concurrent and asynchronous.
 Nodes sense and manipulate the environment and interact with other nodes by sending and receiving messages.
-Often, the program running on a node will straddle multiple logically independent systems and participate in a number of protocols.
-To produce more sophisticated systems with current levels of effort, we require the ability to construct programs by integrating a number of system-specific modules where each module itself is concurrent and asynchronous.
-Consequently, the ease with which asynchronous and concurrent modules can be \emph{developed} and \emph{reused} is important for the development of distributed systems.
-Modularity, well-defined interfaces, and composition are also crucial for these systems, to facilitate reasoning about the interactions among system components and to allow a group of interacting components to be understood as a cohesive unit.
+To produce more sophisticated systems with current levels of effort, we wish to construct \emph{correct} systems by \emph{composing} modules whose execution is concurrent and asynchronous.
+The ease with which asynchronous and concurrent modules can be \emph{developed} and \emph{reused} is thus essential.
+Modularity, well-defined interfaces, and rigorous composition rules are also crucial to facilitate reasoning about the interactions among system components and to allow a group of interacting components to be understood as a cohesive unit.
 
 \paragraph*{Limitations of the state of the art.}
-While a number of component frameworks for distributed systems have been developed, each such framework is implemented using threads, event loops, or a combination of both.
+Existing component frameworks are often implemented using threads, event loops, or a combination of both.
 We limit our scope to imperative frameworks but note that functional approaches are also gaining popularity~\cite{armstrong1996concurrent},~\cite{halloway2009programming}.
-Although threads offer a seemingly straightforward extension of the synchronous sequential processing model (supported by modern processors, programming languages, and operating systems),
-the difficulties of using threads in practice (e.g., using locks to control access to shared state) are well known~\cite{lee2006problem},~\cite{sutter2005free}.
-Locks also complicate composition, since the locking strategy of each component must be taken into account when integrating them.
+Although threads provide a natural synchronous sequential processing model, the difficulties of using threads in practice are well known~\cite{lee2006problem},~\cite{sutter2005free}.
 For example, a component that doesn't acquire locks in the same order as others may cause deadlock~\cite{havender1968avoiding}.
-
-An event loop executes handlers in response to external (I/O) and internal events and has been proposed as a simpler alternative to threads~\cite{ousterhout1996threads}.
-Event loops also match the reactive and asynchronous nature of distributed systems more closely.
-One challenge when using event loops, however, is the lack of common semantics for how events are generated, distributed, and consumed; thus complicating composition.
+Event loops execute handlers in response to external (I/O) and internal events and have been proposed as a simpler alternative to threads~\cite{ousterhout1996threads}.
+However, that approach lacks common semantics for how events are generated, distributed, and consumed; thus complicating composition.
 Consider for example the problem of providing a graphical user interface using Java Swing~\cite{eckstein1998java} atop a middleware based on the Reactor or Proactor design pattern~\cite{schmidt2000pattern}.
 One solution is either to convert Java Swing to use the middleware's event loop or to convert the middleware to use Java Swing's event loop.
 Another alternative is to run both event loops in separate threads and thus face the challenges of multi-threading.
@@ -37,7 +32,7 @@ This paper makes three main contributions to the state of the art:
 (1)  a model for \emph{dynamic} systems of I/O automata which is necessary for implementing (as opposed to only modeling) many distributed systems,
 (2)  a C++ implementation of the model that allows one to build real systems using the facilities provided by POSIX environments, and
 (3)  a preliminary investigation into the degree of \emph{exploitable concurrency} in a system as a function of the automata interactions and framework overhead.
-The ioa++ framework is freely available at \url{http://jrwilson.github.com/ioa/}.
+The ioa++ framework is freely available as open-source at \url{http://jrwilson.github.com/ioa/}.
 
 %\paragraph*{Paper structure}
 In Section~\ref{component_model}, we motivate I/O automata as a suitable foundation for components and introduce a model for dynamic systems.

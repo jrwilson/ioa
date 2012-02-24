@@ -2,11 +2,10 @@
 
 Our development of ioa++ grew out of the challenges faced when trying to develop distributed systems with threads.
 Lee elaborates on the problems faced when using threads for concurrency in~\cite{lee2006problem}.
-Given the shift from higher clock frequencies to larger numbers of cores as the driver of hardware performance, these same concerns are relevant to trends that look to deliver performance improvements through increasingly concurrent programs~\cite{sutter2005software}.
+Given the shift from higher clock frequencies to larger numbers of cores as the main driver of hardware performance, these same concerns are relevant to trends that look to deliver performance improvements through increasingly concurrent programs~\cite{sutter2005software}.
 
-Leveraging a formal model of concurrency to make concurrent programming easier is a well established technique.
-We consider three exemplars that are most relevant to the discussion in this paper: Communicating Sequential Processes~\cite{hoare1978communicating}, Actors~\cite{agha1986actors}, and I/O automata~\cite{lynch1996distributed}.
-Of these, we selected the I/O automata model because of its support for features essential to developing distributed systems.
+Formal models of concurrency are also relevant to the discussion in this paper, e.g., Communicating Sequential Processes~\cite{hoare1978communicating}, Actors~\cite{agha1986actors}, and I/O automata~\cite{lynch1996distributed}.
+Of these, we selected the I/O automata model because it offers a straightforward representation of reactive systems.
 %% Temporal logic proof techniques~\cite{manna1992temporal},~\cite{lamport1978time} also can be used to reason about I/O automata, towards developing \emph{correct} systems.
 
 % The direct implementation of a formal model to simplify concurrent programming was inspired by the application of structured programming~\cite{dijkstra1968letters} to programming language design.
@@ -38,23 +37,13 @@ Of these, we selected the I/O automata model because of its support for features
 % However, where~\cite{georgiou2009automated} introduces a new language and uses the Message Passing Interface (MPI)~\cite{gropp1999using} library for communication, ioa++ uses the existing C++ language and exposes native operating system services.
 
 To our knowledge, the Spectrum Simulation System~\cite{goldman1990distributed} and the IOA language~\cite{garland2003ioa} are the only existing approaches that allow one to execute a system expressed as a collection of I/O automata.
-Spectrum focuses on algorithm development through simulation.
-IOA focuses on formal software development including both simulation and verification.
-
-The ioa++ framework can be compared directly to the IOA language due to the availability of a compiler~\cite{tsai2002code},~\cite{tauber2004verifiable},~\cite{tauber2004compiling} that has been used to implement a number of protocols~\cite{georgiou2009automated}.
-\cite{georgiou2009automated} lists six challenges when developing the compiler: ``Program structuring,'' ``IOA Programs and external services,'' ``Modeling procedure calls,'' ``Composing automata,'' ``Nondeterminism'', and ``Implementing datatypes.''
-Programs written in IOA are compiled into Java and executed on hosts communicating using the MPI library.
-IOA requires programs to be presented in a ``node-channel'' form that allows them to be composed with built in ``mediators'' that implement external services such as MPI.
-IOA lacks support for procedure calls, which complicates modeling and interfacing with external services, especially when a procedure call may block.
-The IOA compiler composes automata statically using a ``composer'' resulting in a ``node automaton.''
-The next action to be executed is selected by a function that resolves the non-determinism in the schedule.
-
+Spectrum focuses on algorithm development through simulation while the focus of ioa++ is to support the direct implementation of real systems.
 IOA and ioa++ represent two fundamentally different approaches to programming directly with I/O automata.
 The development of a new language was necessary for IOA due to its focus on formal verification.
 % On the other hand ioa++ uses the existing C++ language and compilers.
 IOA encapsulates external services using built in ``mediators'' while ioa++ exposes operating system services via file descriptors, relying on the programmer to ensure non-blocking operation.
 IOA focuses on static composition to produce a single node program while ioa++ focuses on dynamic composition and allows concurrent execution.
-Both IOA and ioa++ require the programmer to add code to schedule actions, which may be a common source of errors.
+Both IOA and ioa++ require the programmer to add code to schedule actions.
 In IOA, the programmer provides a deterministic scheduling policy.
 Scheduling in ioa++, however, is non-deterministic according to the global policy encoded by the controller.
 
