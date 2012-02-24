@@ -2,7 +2,7 @@
 
 In this section, we illustrate how ioa++ can be used to build real distributed systems.
 In practice, distributed systems are designed using a layered approach where the highest layers contain (often semantically rich) application logic.
-The lower layers provide services such as TCP/UDP sockets (for communicating between end systems) and timers (for detecting time-outs and performing periodic tasks), e.g., \cite{schmidt2001c++},~\cite{schmidt2002c++}.
+The lower layers provide services such as TCP/UDP sockets (for communicating between end systems) and timers (for detecting time-outs and performing periodic tasks).
 Intermediate layers offer generic coordination mechanisms that serve to abstract away the low-level details from the application logic.
 
 We apply this layered architecture technique to the simple but representative network programming problem of electing a leader in a unidirectional ring of processes connected by TCP sockets.  
@@ -24,10 +24,10 @@ When the protocol begins, each node sends its UID to its successor.
 When a node receives a UID from its predecessor that is greater than its own, it forwards the UID to its successor.
 When a node receives its own UID, it elects itself the leader of the ring.
 We add actions for starting an election and withdrawing an election which are necessary to cope with the dynamics discussed previously.
-Our implementation of the asynchronous LCR automaton is also freely available as open-source\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/asynch_lcr_automaton.hpp}}.
+Our asynchronous LCR automaton is also freely available as open-source\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/asynch_lcr_automaton.hpp}}.
 
 A node in the ring passively waits for a connection from its successor and actively tries to connect to its successor.
-The tcp\_ring\_automaton listed in examples/tcp\_ring\_automaton.hpp\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/tcp_ring_automaton.hpp}} of the ioa++ package implements this logic and is a composition of an automaton for accepting TCP connections (acceptor), an automaton for making TCP connections (connector), and two automata for TCP connections representing the channel from the predecessor and the channel to the successor.
+The tcp\_ring\_automaton\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/tcp_ring_automaton.hpp}} implements this logic and is a composition of an automaton for accepting TCP connections (acceptor), an automaton for making TCP connections (connector), and two automata for TCP connections representing the channel from the predecessor and the channel to the successor.
 The TCP automata are provided by the ioa++ package and are ordinary automata implemented using file descriptors and the techniques described in Section~\ref{design}.
 The tcp\_ring\_automaton uses timeouts and the techniques listed in Section~\ref{programming_model} to manage the dynamic constellation of automata and recover from errors.
 The tcp\_ring\_automaton contains two external actions:  one for receiving messages from a predecessor and one for sending messages to a successor.
@@ -39,7 +39,7 @@ The tcp\_ring\_automaton contains two external actions:  one for receiving messa
 %% \label{tcp_lcr_automaton}
 %% \end{figure}
 
-The tcp\_lcr\_automaton which is listed in examples/tcp\_lcr.cpp\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/tcp_lcr.cpp}} of the ioa++ package implements the complete protocol by composing an asynch\_lcr\_automaton and a tcp\_ring\_automaton.
+The tcp\_lcr\_automaton\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/tcp_lcr.cpp}} implements the complete protocol by composing an asynch\_lcr\_automaton and a tcp\_ring\_automaton.
 In the resulting layered architecture of the TCP LCR system, the bottom layer consists of component automata for TCP sockets, the middle layer consists of a component automaton that supports coordination via a unidirectional ring, and the top layer implements the application logic.
 As this simple but representative example illustrates, the ioa++ framework readily supports the development of architecturally layered component-based distributed systems involving non-trivial dynamics.
 

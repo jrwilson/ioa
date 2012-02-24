@@ -42,12 +42,10 @@ The scheduler is assumed to be \emph{fair,} meaning that a local action is guara
 %The I/O automata formalism was developed to model reactive systems~\cite{lynch1987hierarchical} and has been used in the design and verification of concurrent and distributed systems.
 I/O automata are a good foundation for such components because they have independent state, straightforward interfaces, and precise semantics for event generation, distribution, and consumption resulting in well-defined interactions under composition.
 \emph{Hierarchical decomposition} is an established technique for I/O automata~\cite{lynch1994atomic} which allows a \emph{parent} to contain zero or more \emph{children}.
-The \emph{root automaton} is the automaton at the top of the hierarchy and represents the entire system as composition is applied recursively up the hierarchy.
-
-To illustrate how components can be expressed naturally using I/O automata, Figure~\ref{sys_model} shows a simple event detector system comprising three component automata: an anonymous Processor, a Converter named C, and a Detector named D. 
-The Processor automaton is the root and C and D are its children.
+The \emph{root automaton} is at the top of the hierarchy represents the entire system as composition is applied recursively upward.
+To illustrate how components can be expressed naturally using I/O automata, Figure~\ref{sys_model} shows a simple event detector comprising three component automata: an anonymous Processor, a Converter named C, and a Detector named D. 
+The Processor is the root and C and D are its children.
 Automata are depicted as solid rectangles. The type of the automaton appears in a box in the upper left or lower left corner, e.g., Processor.
-The name of a named automaton appears after its type, e.g., Converter C.
 Actions are depicted as dotted rectangles and bindings are indicate by dotted lines with an arrow pointing to the input action.
 Output actions are suffixed with \emph{!} (e.g., \emph{detect!}), input actions are suffixed with \emph{?} (e.g., \emph{detected?}), and internal actions have neither suffix (e.g., \emph{process1}).
 The type associated with the value produced or consumed by an action is in parentheses after the name (e.g., \emph{out!(s)}).
@@ -63,12 +61,12 @@ First, the output action and input action of a binding must agree on the type be
 Second, an input action can be bound to at most one output action.
 Third, an output action cannot be bound to more than one input action in the same automaton.
 Fourth, an output action cannot be bound to an input action in the same automaton.
-The second, third, and fourth rules exist because they admit ambiguity into the relationship between the states of the associated automata.
+The second, third, and fourth rules prevent ambiguity in the relationship between the states of the associated automata.
 Graphically, an arrow originating in one component automaton must terminate in another component automaton as Figure~\ref{sys_model} illustrates.
 %% To adhere to this rule, the following must be true for the global binding map $B$:  $\langle \forall o, i : (o, i) \in B :: \pi (o) \neq \pi (i) \rangle$.
 
 \paragraph*{Concurrent execution.}
-Since the state of each automaton is independent, opportunities exist for concurrent execution if the state of each automaton is preserved and a composition is not reduced to a single equivalent automaton.
+Since each automaton is independent, opportunities exist for concurrent execution if the state of each automaton is preserved and a composition is not reduced to a single equivalent automaton.
 Each local action implies a set of automata which in turn implies a set of state variables that might be modified.
 For an internal action, this set consists of the automaton containing the internal action.
 For an output action, this set consists of the automaton containing the output action and the automata that contain the input actions to which the output action is bound.
@@ -179,7 +177,7 @@ As Figure~\ref{system_action} illustrates, the system automaton provides: parame
 (Parameterized actions are indicated with [].)
 The base automaton provides output actions that trigger requests to create, bind, unbind, and destroy automata, along with
 input actions to receive the results.
-User-defined component automata (i.e., \emph{user automata}) inherit from the base automaton, which as we describe in Section~\ref{framework_architecture} is implemented in ioa++ as a C++ class. 
+User-defined component automata (i.e., \emph{user automata}) inherit from the base automaton.
 Each user automaton is thus composed (not bound) with the system automaton and inherits output actions for requesting system actions and input actions for receiving the results of system actions.
 
 %% Let $A$ be the set of automata that exist where each element in $A$ is a pair $(p, a)$ where $p$ is the parent of $a$.

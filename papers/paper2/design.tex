@@ -9,28 +9,27 @@
 
 The ioa++ framework is a C++ implementation of the component model described in Section~\ref{component_model} for POSIX environments.
 The architecture of the ioa++ framework is depicted in Figure~\ref{framework_architecture}.
-Conceptually, the set of automata $A$ and set of bindings $B$ belong to the system automaton.
-However, the state they encode is shared and is used in the execution of every action.
-The \emph{scheduler} uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
-Thus, the set of actions implied by any action is the union of the set defined in Section~\ref{component_model} and the system automaton.
-The opportunities for concurrent execution discussed in Section~\ref{component_model} hinge on the fact that \emph{only} actions that modify $A$ and $B$ must be serialized.
-Binding predicates do not modify $B$ and therefore do not affect concurrent execution.
+
 The scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
+A \emph{dispatcher} executes actions and a \emph{controller} selects the next action.
+Input actions are executed with corresponding output actions, according to the current set of bindings.
+The dispatcher allows actions to be executed concurrently by (1)~requiring that the sets of automata implied by each action are disjoint and (2)~serializing all updates to the set of automata and bindings.
+The controller encodes a \emph{policy} that selects the next local action.
+For fidelity to the I/O automata model, the controller used by the scheduler must be \emph{fair} as defined in Section~\ref{component_model}.
+The ioa++ distribution provides both a basic scheduler that is single-threaded and uses a single queue of actions that is processed using first-in/first-out semantics, and a multi-threaded scheduler with a configurable number of threads that we use in the performance evaluation described in Section~\ref{evaluation}.
+
+%% Conceptually, the set of automata $A$ and set of bindings $B$ belong to the system automaton.
+%% However, the state they encode is shared and is used in the execution of every action.
+%% The \emph{scheduler} uses $A$ to ensure that only actions belonging to automata that exist are selected and uses $B$ to ensure that the appropriate set of input actions receive the value produced when an output action is executed.
+%% Thus, the set of actions implied by any action is the union of the set defined in Section~\ref{component_model} and the system automaton.
+%% The opportunities for concurrent execution discussed in Section~\ref{component_model} hinge on the fact that \emph{only} actions that modify $A$ and $B$ must be serialized.
+%% Binding predicates do not modify $B$ and therefore do not affect concurrent execution.
 
 All user automata inherit from a common base class (indicated by the Base Automaton layer shown in Figure~\ref{framework_architecture}) that provides facilities for asynchronously creating and destroying child automata and bindings.
 The Base Automaton layer provides statically composed system actions that are used to communicate with the system automaton.
 In most situations, the services provided by the Base Automaton layer are too low-level to be used directly by a user automaton.
 Instead, an Automaton Manager provides a common higher-level interface for asynchronously managing a single child automaton using the services of the Base Automaton layer.
 Similarly, a Binding Manager presents a high-level interface for asynchronously managing a single binding.
-
-The scheduler is responsible for both selecting and executing local actions.
-These two activities are decomposed into a \emph{dispatcher} that executes actions and a \emph{controller} that selects the next action.
-The dispatcher enforces the execution and concurrency constraints of Section~\ref{component_model}.
-Input actions are executed with corresponding output actions, according to the current set of bindings.
-The dispatcher allows actions to be executed concurrently by (1)~requiring that the sets of automata implied by each action are disjoint and (2)~serializing all updates to the set of automata and bindings.
-The controller encodes a \emph{policy} that selects the next local action.
-For fidelity to the I/O automata model, the controller used by the scheduler must be \emph{fair} as defined in Section~\ref{component_model}.
-The ioa++ distribution provides both a basic scheduler that is single-threaded and uses a single queue of actions that is processed using first-in/first-out semantics, and a multi-threaded scheduler with a configurable number of threads that we use in the performance evaluation described in Section~\ref{evaluation}.
 
 \paragraph*{Explicit dynamic scheduling.}
 Automata declare \emph{dynamically} the actions they would like the scheduler to consider, and executing an action may change the state of the automaton which in turn may cause the set of enabled actions to change.
@@ -67,7 +66,7 @@ This causes an action to be scheduled when a file descriptor is ready for readin
 A user automaton creates a file descriptor and configures it for non-blocking I/O.
 The automaton then tells the scheduler to release a local action whenever the automaton becomes ready for reading or writing.
 Subsequent requests made using the same file descriptor and event are ignored.
-Once the file descriptor is ready, the action is released for consideration by the controller.
+Once the file descriptor is ready, the action is released to the controller.
 
 \paragraph*{System actions.}
 Our approach to system actions follows the model introduced in Section~\ref{component_model}.
