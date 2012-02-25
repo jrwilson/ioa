@@ -9,8 +9,7 @@
 
 The ioa++ framework is a C++ implementation of the component model described in Section~\ref{component_model} for POSIX environments.
 The architecture of the ioa++ framework is depicted in Figure~\ref{framework_architecture}.
-
-The scheduler is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
+The \emph{scheduler} is responsible for selecting and executing local actions subject to the I/O automata model and the concurrency constraints described in Section~\ref{component_model}.
 A \emph{dispatcher} executes actions and a \emph{controller} selects the next action.
 Input actions are executed with corresponding output actions, according to the current set of bindings.
 The dispatcher allows actions to be executed concurrently by (1)~requiring that the sets of automata implied by each action are disjoint and (2)~serializing all updates to the set of automata and bindings.

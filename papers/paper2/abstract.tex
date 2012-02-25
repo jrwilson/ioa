@@ -1,12 +1,13 @@
 \begin{abstract}
-The ability to realize sophisticated distributed reactive systems such as those found in cyber-physical, pervasive, or enterprise computing environments is predicated on a suitable model and implementation of asynchrony and concurrency.
+The ability to realize sophisticated distributed reactive systems such as those found in cyber-physical or pervasive computing environments is predicated on a suitable model and implementation of asynchrony and concurrency.
 The size and complexity of these systems implies that software re-use in their development, maintenance, and evolution is also essential.
 Taken together, these requirements demand appropriate programming abstractions through which different forms of asynchrony and concurrency can be realized directly in reusable software.
-
 To that end, this paper presents the ioa++ framework for developing distributed reactive systems, which is the primary contribution of this research.
 We develop a component model in which the asynchrony and concurrency of reactive distributed systems can be represented naturally based on I/O automata and dynamic composition.
 We describe the design and implementation of that component model in ioa++ and illustrate its use in developing a prototype distributed coordination protocol.
 We also evaluate concurrency performance in ioa++ through a series of micro-benchmarks which confirm that the framework’s ability to exploit potentially concurrent execution is limited only by the interactions of the automata that comprise the system and the overhead of synchronization.
+
+\keywords{concurrency, I/O automata, components}
 \end{abstract}
 
 %% \begin{abstract}

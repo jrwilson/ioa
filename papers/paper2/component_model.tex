@@ -173,11 +173,10 @@ The \emph{destroy} action allows an automaton to destroy a child automaton and a
 % Thus, $S_{t+1}$ need not be equal to $S_{t}$.
 % A \emph{system action} is an action that \emph{can} change the system $S$.
 % The set of automata $A$ and set of bindings $B$ are managed by the \emph{system automaton} which represents the run-time system.
-As Figure~\ref{system_action} illustrates, the system automaton provides: parameterized input actions for receiving requests to create, bind, unbind, and destroy automata; internal actions for evaluating and enacting system action requests; and corresponding parameterized output actions for returning responses to system action requests.
-(Parameterized actions are indicated with [].)
+As Figure~\ref{system_action} illustrates, the system automaton provides: parameterized input actions (marked []) for receiving requests to create, bind, unbind, and destroy automata; internal actions for evaluating and enacting system action requests; and corresponding parameterized output actions for returning responses to system action requests.
 The base automaton provides output actions that trigger requests to create, bind, unbind, and destroy automata, along with
 input actions to receive the results.
-User-defined component automata (i.e., \emph{user automata}) inherit from the base automaton.
+User-defined component automata inherit from the base automaton.
 Each user automaton is thus composed (not bound) with the system automaton and inherits output actions for requesting system actions and input actions for receiving the results of system actions.
 
 %% Let $A$ be the set of automata that exist where each element in $A$ is a pair $(p, a)$ where $p$ is the parent of $a$.

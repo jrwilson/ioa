@@ -91,40 +91,9 @@ The various scheduling functions in the asynch\_lcr\_automaton and the construct
 \fi
 
 \paragraph*{Dynamic composition.}
-%% The asynch\_lcr\_automaton is a reusable component designed to be composed in the context of a larger system.
-Dynamic composition is accomplished by creating child automata and bindings via ioa::automaton\_manager and ioa::binding\_manager objects.
-\ifjournal
-The tcp\_lcr\_automaton discussed in Section~\ref{case_study} creates a asynch\_lcr\_automaton and binds to it with the following code:
-\begin{lstlisting}
-ioa::automaton_manager<asynch_lcr_automaton<uuid> >*
-lcr = ioa::make_automaton_manager (this,
-  ioa::make_generator<asynch_lcr_automaton<uuid> > (
-    m_u));
-ioa::make_binding_manager (this,
-  lcr, &asynch_lcr_automaton<uuid>::send,
-  &m_self, &tcp_lcr_automaton::send_lcr);
-ioa::make_binding_manager (this,
-  &m_self, &tcp_lcr_automaton::receive_lcr,
-  lcr, &asynch_lcr_automaton<uuid>::receive);
-ioa::make_binding_manager (this,
-  lcr, &asynch_lcr_automaton<uuid>::leader,
-  &m_self, &tcp_lcr_automaton::leader_lcr);
-ioa::make_binding_manager (this,
-  &m_self, &tcp_lcr_automaton::init_lcr,
-  lcr, &asynch_lcr_automaton<uuid>::init);
-\end{lstlisting}
-\fi
-%%Child automata are managed by ioa::automaton\_manager objects which can be created via the ioa::make\_automaton\_manager function.
-An automaton manager object requires an ioa::automaton object for its system action implementation and a factory for allocating child automata.
-%%Bindings are managed by ioa::binding\_manager objects which can be created via the ioa::make\_binding\_manager function.
-A binding manager object requires an ioa::automaton object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
-The ioa::automaton\_manager class and ioa::binding\_manager class also contain methods for destroying and unbinding respectively.
-\ifjournal
-The m\_self object of the example is an ioa::handle\_manager which can be used to bind to automata that already exist.
-From the example, the tcp\_lcr\_automaton binds the asynch\_lcr\_automaton to itself.
-The wary reader might notice that the ioa::automaton\_manager and ioa::binding\_managers in the example are dynamically allocated but never recorded and thus never freed.
-Both classes are managed by the ioa::automaton and automatically deallocated when the automaton or binding they manage is destroyed or unbound respectively.
-\fi
+Dynamic composition is accomplished by creating and removing child automata and bindings.
+An ioa::automaton\_manager object requires an ioa::automaton object for its system action implementation and a factory for allocating child automata.
+An ioa::binding\_manager object requires an ioa::automaton object for its system action implementation, a manager object for the output automaton, a reference to the output action, a manger object for the input automaton, a reference to the input action, and parameters for the actions if required.
 
 \paragraph*{Binding predicates.}
 Recall that automata require the ability to inspect the current set of bindings.
@@ -141,7 +110,6 @@ bool send_precondition () const {
 }
 \end{lstlisting}
 \fi
-
 
 \paragraph*{Managing Dynamic Constellations}
 Determining the outcome of a system action event is necessary when there are constraints on the order in which system actions must occur.

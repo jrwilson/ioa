@@ -30,7 +30,7 @@ A node in the ring passively waits for a connection from its successor and activ
 The tcp\_ring\_automaton\footnote{\url{github.com/jrwilson/ioa/blob/master/examples/tcp_ring_automaton.hpp}} implements this logic and is a composition of an automaton for accepting TCP connections (acceptor), an automaton for making TCP connections (connector), and two automata for TCP connections representing the channel from the predecessor and the channel to the successor.
 The TCP automata are provided by the ioa++ package and are ordinary automata implemented using file descriptors and the techniques described in Section~\ref{design}.
 The tcp\_ring\_automaton uses timeouts and the techniques listed in Section~\ref{programming_model} to manage the dynamic constellation of automata and recover from errors.
-The tcp\_ring\_automaton contains two external actions:  one for receiving messages from a predecessor and one for sending messages to a successor.
+The tcp\_ring\_automaton has actions for receiving messages from a predecessor and for sending messages to a successor.
 
 %% \begin{figure}
 %% \center
